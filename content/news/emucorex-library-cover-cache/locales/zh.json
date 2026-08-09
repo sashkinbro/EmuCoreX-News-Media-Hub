@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "为什么 EmuCoreX 将封面艺术视为可恢复的库数据",
+  "summary": "游戏封面看起来很有装饰性，但陈旧的路径、部分下载和重复的缺失可能会让 Android 库显得不可靠。EmuCoreX 会隔离已下载的艺术作品，验证每张缓存的图像，并在不触及用户自定义封面的情况下修复可见列表。",
+  "heroAlt": "最终幻想X PS2封面，从EmuCoreX使用的默认艺术作品来源获取",
+  "searchKeywords": [
+    "EmuCoreX 覆盖缓存",
+    "PS2 游戏库艺术作品",
+    "封面艺术仓库",
+    "Android 图像缓存"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "图书馆",
+    "reliability": "可靠性"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "覆盖缓存可靠性提交",
+    "cover-repository-source": "封面艺术资料库来源",
+    "cover-policy-source": "CoverCachePolicy 源",
+    "home-view-model-source": "HomeViewModel 封面同步源"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "两个存储区域划分了一次性和个人艺术品"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` 会将自动下载的 PS2 封面保存在 `cacheDir/game-covers` 下，并将远程临时图片保存在 `cacheDir/remote-image-cache` 下。用户选择的艺术作品刻意存放在这些根目录之外的持久应用存储中。这种分离为设置操作提供了明确的保证：`clearCache()` 会删除下载的封面，而 `clearAllTemporaryImageCaches()` 也会删除临时远程图片，但无论哪种操作都不应删除玩家选择的封面。"
+    },
+    {
+      "type": "heading",
+      "text": "文件名不能作为图像存活的证明"
+    },
+    {
+      "type": "paragraph",
+      "text": "每次查找都会通过 `isUsableCoverFile()` 处理候选文件。该存储库要求文件是常规的、非空的，并要求 `BitmapFactory` 仅解码其边界；宽度和高度都必须为正。因此，零字节响应或中断的图像无法冒充缓存命中。在存储库在 JPG 和 PNG 变体之间进行选择之前，无效的候选文件会被删除，包括三维封面样式使用的单独 `_3d` 命名。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "同样的《最终幻想X》系列可以在来源的3D合集里找到。EmuCoreX 给那种风格一个独特的 `_3d` 缓存名称，所以切换展示不会将其与默认封面混淆。"
+    },
+    {
+      "type": "heading",
+      "text": "串行归一化使一个游戏标识对应一个缓存条目"
+    },
+    {
+      "type": "paragraph",
+      "text": "在构建 URL 或文件名之前，存储库会将类似 `SLUS-20312` 的序列号规范化为大写的四字母加五位数字的身份标识。它接受标点变体，首先尝试规范形式，并且可以在没有连字符的情况下重试紧凑形式。配置的封面来源可能提供单独的默认和 3D 基础 URL；否则使用内置来源。成功的响应会先复制到临时文件中，解码后再重命名到缓存中，因此读者永远不会看到半写入的最终文件。"
+    },
+    {
+      "type": "heading",
+      "text": "已知的缺失会被缓存，但不会永久保存"
+    },
+    {
+      "type": "paragraph",
+      "text": "HTTP 404 会在预期封面旁创建一个小的 `.miss` 标记。在七天内，另一次扫描可以跳过相同的请求，而不是重复向服务器请求不存在的艺术作品。标记在有效图像到达后消失，其有限的寿命为上游封面收集稍后获取该序列号提供了机会。其他网络故障不会成为封面不存在的永久证据。"
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel 在有边界的并发下修复过期行"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 `syncMissingCovers()` 期间，`HomeViewModel` 首先仅清理指向受管理封面缓存内部且不再解析为可用文件的路径。它发布该修复后的列表，然后通过一个限制为三个并发作业的信号量处理没有本地封面或 HTTP 封面的游戏。每次成功下载都会按路径替换匹配的游戏并重新发布可见状态。如果虚拟机处于活动状态，封面工作将被延迟，以免与模拟竞争，并且在同步后保存刷新后的库快照。"
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` 在删除之前会规范化候选项和缓存根。内容 URI 和 HTTP URL 会被立即拒绝，文件必须是管理根的子孙。这可以防止错误格式的库值扩展缓存清理操作。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "检查封面验证、下载和清理"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "在图书馆遵循缺失封面的同步"
+    }
+  ]
+}

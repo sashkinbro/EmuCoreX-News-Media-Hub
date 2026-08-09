@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dentro de shadPS4: un enfoque nativo de C++ y Vulkan para la emulación de PS4",
+  "summary": "La estructura oficial del proyecto muestra cómo shadPS4 combina un núcleo C++ nativo, interfaces de plataforma y una ruta de gráficos centrada en Vulkan en lugar de tratar la compatibilidad como un solo conmutador.",
+  "heroAlt": "Captura de juego distribuida en el repositorio oficial de shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Dentro de shadPS4",
+    "emulador de playstation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "Estación de juegos 4",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "official-readme": "Léame del núcleo de shadPS4",
+    "core-linker": "Implementación del enlazador central",
+    "shader-pipeline": "Árbol de origen del recompilador de sombreadores",
+    "video-core": "Árbol de fuentes principales de vídeo"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La ruta de la CPU comienza con la ejecución nativa x86-64"
+    },
+    {
+      "type": "paragraph",
+      "text": "La PlayStation 4 y la mayoría de los hosts de escritorio compatibles comparten x86-64, y el archivo README de shadPS4 acredita que una investigación anterior sobre el emulador ayudó al equipo a resolver la ejecución nativa de los archivos binarios de PS4. Esa elección evita traducir cada instrucción de la CPU invitada en hosts x86-64, pero hace que el diseño del espacio de direcciones, el manejo de excepciones, el estado de los subprocesos y las funciones importadas del sistema formen parte del límite de compatibilidad. `src/core/address_space.cpp`, `memory.cpp` y la implementación del hilo del kernel son, por lo tanto, tan importantes para la ejecución como el propio punto de entrada."
+    },
+    {
+      "type": "heading",
+      "text": "Carga ELF, resolución de símbolos y Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/loader/elf.cpp` analiza objetos ELF invitados, mientras que `src/core/linker.cpp` y `loader/symbols_resolver.cpp` conectan nombres importados con implementaciones. Aerolib, en `src/core/aerolib`, proporciona la capa de registro de exportación utilizada por los reemplazos de bibliotecas de alto nivel. El gran árbol `src/core/libraries` proporciona kernel, sistema de archivos, audio, datos guardados, salida de video y otras API orientadas a PS4. Un título puede llegar al código nativo y aun así detenerse inmediatamente cuando un servicio importado está ausente o devuelve una estructura incorrecta."
+    },
+    {
+      "type": "heading",
+      "text": "Las instrucciones GCN se vuelven IR estructuradas, luego SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "El compilador de gráficos es una canalización separada en `src/shader_recompiler`. Su interfaz decodifica instrucciones AMD GCN, construye flujo de control y traduce operaciones escalares, vectoriales, de interpolación y de memoria. Los pases de representación intermedia normalizan ese programa antes de que `backend/spirv` emita SPIR-V consumible por el host. Esto explica por qué las notas de la versión nombran códigos de operación individuales, coordenadas baricéntricas, memoria compartida y correcciones de exportación: cada uno de ellos es un comportamiento faltante concreto en la ruta del sombreador de huésped a host."
+    },
+    {
+      "type": "heading",
+      "text": "video_core posee comandos, cachés y recursos de Vulkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "La capa `src/video_core` se encuentra alrededor del compilador de sombreadores. Su renderizador Vulkan crea dispositivos, canalizaciones, imágenes y recursos de presentación, mientras que los cachés de textura y búfer mantienen la memoria del huésped coherente con los objetos de la GPU del host. Aquí se reúnen el manejo de comandos PM4, el mosaico, la reinterpretación del formato de imagen y las relecturas. Un fotograma roto puede originarse antes de la emisión del sombreador, durante la búsqueda de caché, en una transición de recursos o en la presentación, razón por la cual una captura de pantalla por sí sola no puede identificar el componente responsable."
+    },
+    {
+      "type": "heading",
+      "text": "El ejecutable principal y las interfaces de usuario son productos separados."
+    },
+    {
+      "type": "paragraph",
+      "text": "El archivo README oficial llama explícitamente a este repositorio el núcleo del emulador y dirige a los usuarios comunes al QtLauncher separado. Dentro del repositorio principal, `src/main.cpp`, `emulator.cpp`, el código de ventana SDL y las capas `src/imgui` aún proporcionan ejecución de línea de comandos, superposiciones, recursos de panorama general y vistas orientadas al desarrollador. Mantener el lanzador de Qt separado permite que la administración de su biblioteca evolucione sin convertir cada cambio de interfaz en un cambio de emulación central."
+    },
+    {
+      "type": "heading",
+      "text": "Un informe de arquitectura útil nombra el límite fallido"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una falla de arranque alrededor de una exportación no resuelta apunta hacia el cargador, el vinculador, Aerolib o una biblioteca HLE. Un error de decodificación de GCN pertenece cerca de la interfaz del sombreador; La validación de Vulkan, la corrupción de texturas o la memoria de la GPU obsoleta apuntan hacia video_core y sus cachés. La entrada llega al huésped a través de `src/input`, mientras que el registro del host y los archivos auxiliares se encuentran en `src/common`. Registrar la compilación exacta, el último subsistema de registro, el renderizador y la plataforma host convierte \"el juego no funciona\" en un informe alineado con el árbol de fuentes."
+    }
+  ]
+}

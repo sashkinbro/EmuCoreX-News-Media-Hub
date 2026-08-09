@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "なぜEmuCoreXはカバーアートを回復可能なライブラリデータとして扱うのか",
+  "summary": "ゲームカバーは装飾的に見えるが、古くなったパス、部分的なダウンロード、繰り返されるミスは、Androidライブラリを信頼できないものに感じさせることがある。EmuCoreXはダウンロードされたアートワークを分離し、キャッシュされたすべての画像を検証し、ユーザーのカスタムカバーに触れることなく表示リストを修復する。",
+  "heroAlt": "EmuCoreX が使用するデフォルトのアートワークソースから取得したファイナルファンタジーX PS2のカバー",
+  "searchKeywords": [
+    "EmuCoreX カバーメモリ",
+    "PS2 ライブラリーのアートワーク",
+    "カバーアートリポジトリ",
+    "Android 画像キャッシュ"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "図書館",
+    "reliability": "信頼性"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "カバーキャッシュ信頼性コミット",
+    "cover-repository-source": "CoverArtRepository のソース",
+    "cover-policy-source": "CoverCachePolicy のソース",
+    "home-view-model-source": "HomeViewModel のカバー同期ソース"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "2つの保管エリアが、使い捨ての作品と個人的な作品の間に線を引く"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository`は自動的にダウンロードされたPS2カバーを`cacheDir/game-covers`の下に、リモートの一時的な画像を`cacheDir/remote-image-cache`の下に保存します。ユーザーが選択したアートワークは、意図的にこれらのルートの外側で永続的なアプリケーションストレージに保持されます。この分離により、設定アクションには明確な約束があります：`clearCache()`はダウンロードされたカバーを削除し、`clearAllTemporaryImageCaches()`は一時的なリモート画像も削除しますが、どちらの操作もプレイヤーが選んだカバーを消去すべきではありません。"
+    },
+    {
+      "type": "heading",
+      "text": "ファイル名は画像が残っている証拠としては認められません"
+    },
+    {
+      "type": "paragraph",
+      "text": "すべての検索は、候補ファイルを`isUsableCoverFile()`を通して処理します。リポジトリは通常の非空ファイルを要求し、`BitmapFactory`に対してその境界のみをデコードするように指示します。幅と高さは両方とも正でなければなりません。したがって、ゼロバイトの応答や途中で中断された画像はキャッシュヒットとして偽装することはできません。無効な候補は削除され、その後リポジトリはJPGおよびPNGのバリアントの間で選択を行い、三次元カバースタイルで使用される個別の`_3d`命名も含まれます。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "同じファイナルファンタジーXのシリアルは、ソースの3Dコレクションで利用可能です。EmuCoreXはそのスタイルに独自の`_3d`キャッシュ名を与えるので、表示を切り替えてもデフォルトのカバーと混同することはありません。"
+    },
+    {
+      "type": "heading",
+      "text": "シリアル正規化により、1つのゲーム識別子が1つのキャッシュエントリを指すようになります"
+    },
+    {
+      "type": "paragraph",
+      "text": "URLやファイル名を構築する前に、リポジトリは`SLUS-20312`のようなシリアルを大文字の4文字と5桁の識別子に正規化します。句読点のバリエーションも受け付け、まず標準形式を試し、ハイフンなしの簡略形式を再試行することもできます。設定されたカバーソースは、個別のデフォルトおよび3DベースのURLを提供する場合があります。そうでない場合は、組み込みのソースが使用されます。成功した応答はまず一時ファイルにコピーされ、デコードされ、それからキャッシュにリネームされるため、読者が半分しか書かれていない最終ファイルを見ることはありません。"
+    },
+    {
+      "type": "heading",
+      "text": "既知のミスはキャッシュされますが、永遠ではありません"
+    },
+    {
+      "type": "paragraph",
+      "text": "HTTP 404 は、予想されるカバーの横に小さな `.miss` マーカーを作成します。7 日間、別のスキャンでは、存在しないアートワークのためにサーバーに繰り返しリクエストを送る代わりに、同じリクエストをスキップできます。有効な画像が到着するとマーカーは消え、その有限の寿命により、上流のカバーコレクションが後でそのシリアルを取得する余地が残ります。他のネットワーク障害は、カバーが存在しない恒久的な証拠にはなりません。"
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel は制限付き同時実行下で古くなった行を修復します"
+    },
+    {
+      "type": "paragraph",
+      "text": "`syncMissingCovers()` の間、`HomeViewModel` はまず管理されたカバーキャッシュの内部を指しているパスのみをクリアし、もはや使用可能なファイルに解決されないものを取り除きます。それが修復されたリストを公開した後、ローカルカバーがないゲームや HTTP カバーを持つゲームを、同時に最大三つのジョブに制限されたセマフォを通して処理します。各ダウンロードが成功すると、対応するゲームをパスで置き換え、可視状態を再公開します。VM がアクティブな場合、カバー作業はエミュレーションと競合する代わりに延期され、同期後に更新されたライブラリのスナップショットが保存されます。"
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy`は、削除の前に候補とキャッシュルートの両方を正規化します。コンテンツURIおよびHTTPのURLは即座に拒否され、ファイルは管理されたルートの子孫でなければなりません。これにより、不正なライブラリ値がキャッシュクリア操作を拡大することを防ぎます。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "カバーの検証、ダウンロード、クリーンアップを確認する"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "ライブラリで欠落カバーの同期を行う"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "将渲染器匹配到 Android GPU 和驱动程序",
+  "summary": "识别真实的 SoC 和 GPU，区分 Adreno 与 Mali 及其他系列，测试 API 支持，并基于设备的驱动程序而非营销名称选择渲染器。",
+  "heroAlt": "电路板上的高通骁龙芯片照片",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Vulkan 支持",
+    "SoC 检测",
+    "渲染器兼容性"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "兼容性"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan 指南",
+    "vulkan-profiles": "Khronos Vulkan 配置文件"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "手机型号并非图形规格"
+    },
+    {
+      "type": "paragraph",
+      "text": "制造商在不同地区重复使用产品名称，并在版本间悄悄更改 SoC。因此，渲染器的决策应从检测到的芯片和 GPU 开始——在许多骁龙设备上是 Adreno，在许多联发科/Exynos 设备上是 Mali 或 Immortalis，其他系列则存在于不太常见的平台上。仅凭 Android 版本无法说明 Vulkan 扩展、编译器稳定性或供应商驱动提供的内存行为。"
+    },
+    {
+      "type": "callout",
+      "text": "首先使用 EmuCoreX 检测到的处理器对话框作为线索，然后通过系统信息确认。切勿在 Mali/Immortalis 设备上安装 Adreno 驱动程序包。"
+    },
+    {
+      "type": "heading",
+      "text": "前提条件和干净的基线环境"
+    },
+    {
+      "type": "paragraph",
+      "text": "在测试前记录 SoC、GPU 系列、Android 构建及供应商驱动版本。从系统驱动和 Safe 配置文件开始。渲染器可能成功启动，但仍可能在着色器编译、帧缓冲提取或内存压力下失败，因此仅凭一个菜单界面不能算作能力测试。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "检测到的 SoC 和 GPU 系列。",
+        "Android 构建号和安全补丁级别。",
+        "禁用自定义驱动的 System driver 基线。",
+        "一个着重着色器的游戏场景和一个着重特效的游戏场景。",
+        "用于日志和着色器缓存的足够空闲存储空间。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "构建基于能力的渲染器选择"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. 使用 \"显示检测到的处理器\" 并验证报告的系列是否与设备的可信系统信息相符。",
+        "2. 在 Adreno 上，除非已知的设备或游戏问题指向 OpenGL，否则从 Vulkan 开始；在 MediaTek/Mali 上，从 EmuCoreX 推荐的 OpenGL 路径开始。",
+        "3. 对第一个场景进行两次冷启动，以将初始着色器编译与重复故障分开。",
+        "4. 测试第二个场景的混合、帧缓冲和内存行为，然后运行足够长的时间以超过设备的热量上升。",
+        "5. 仅对已证明的例外情况存储每个游戏的渲染器，并保持全局选择与 GPU 系列一致。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "验证结果"
+    },
+    {
+      "type": "paragraph",
+      "text": "兼容路径可完成加载密集的着色器过渡而不会导致驱动丢失，正确渲染效果，并在缓存变热后仍保持稳定。关注日志中的设备驱动错误，而不是把每一帧黑屏都视为弱 GPU。如果软件渲染正确，证据指向硬件 API 或其设置问题。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "GPU 系列与渲染器/驱动程序包系列匹配。",
+        "两次冷启动和一次热启动完成。",
+        "没有重复的着色器编译器或设备丢失错误。",
+        "效果密集的场景匹配软件渲染器结构。",
+        "全局选择在多个游戏中仍可使用。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "回滚与恢复"
+    },
+    {
+      "type": "paragraph",
+      "text": "每当识别不确定时，返回系统驱动和默认渲染器。在比较设备前移除每个游戏的覆盖。如果 Android 系统更新更改了驱动行为，应重复基线测试，而不是沿用之前版本的结论。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "禁用自定义驱动。",
+        "恢复推荐的特定系列渲染器。",
+        "重置受影响的每个游戏配置。",
+        "Vulkan 设备丢失循环后重启。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "常见故障模式"
+    },
+    {
+      "type": "list",
+      "items": [
+        "错误的软件包系列：加载立即失败或渲染前崩溃。",
+        "仅在着色器编译前工作：编译器/扩展问题，而非原始性能问题。",
+        "某一地区设备渲染器良好，另一地区设备差：产品名称隐藏了不同的 SoC。",
+        "菜单可用，游戏失败：测试覆盖面太浅。"
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "简明的硬件记录使社区建议更有用：设备、SoC、GPU、Android 构建、驱动程序、渲染器、游戏序列号和场景。没有这些信息，建议就会变成手机品牌的传说。有了这些信息，渲染器例外可以被重复并安全回滚。"
+    },
+    {
+      "type": "link",
+      "text": "查看 Android 的 Vulkan 指导",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

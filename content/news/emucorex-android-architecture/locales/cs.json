@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "cs",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Jak EmuCoreX rozděluje PS2 relaci mezi Compose, SurfaceView a nativní kód PCSX2",
+  "summary": "Hra pro PS2 spuštěná z EmuCoreX překračuje několik úmyslně úzkých hranic, než první rámec dorazí na displej. Aplikace Android, smlouva JNI, zobrazovací plocha, stav relace a překladače ARM64 mají každý na této cestě jinou část.",
+  "heroAlt": "Oficiální banner EmuCoreX Android na tmavě modrém pozadí",
+  "searchKeywords": [
+    "architektura EmuCoreX",
+    "Nativní aplikace JNI",
+    "Emulační obrazovka SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "Architektura",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "Runtime ARM64 a implementace televizního vysílání Android commit",
+    "jit-cache-lifecycle": "ARM64 životní cyklus cache JIT commit",
+    "native-app-source": "Zdroj NativeApp",
+    "emulation-screen-source": "Zdroj obrazovky emulace"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proces Android vybírá a připravuje nativní jádro"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hranice začíná v `NativeApp`, objektu Kotlin, který vybírá jádro knihovny kompatibilní s velikostí stránky přes `AndroidNativeCoreSelector`, načítá jej pomocí `System.loadLibrary` a zaznamenává, zda jsou k dispozici nativní jádro a pomocné nativní nástroje. `initializeOnce()` poté připraví kořen dat emulátoru, zkopíruje zabalené zdroje, ověří archiv záplaty, exportuje balíček důvěryhodných certifikátů Android CA, nakonfiguruje cestu k nativnímu protokolu havárií a nakonec zavolá vstupní bod JNI `initialize(dataRoot, sdkInt)`. Toto pořadí je důležité: strana C++ nikdy nemusí hádat, kde se nachází úložiště nebo certifikáty Android."
+    },
+    {
+      "type": "heading",
+      "text": "Vykreslen? hern? sn?mek p?ich?z? ze skute?n?ho SurfaceView, ne z pl?tna Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` vkládá neprůhledný Android `SurfaceView` přes `AndroidView`. Jeho `SurfaceHolder.Callback` přeposílá `surfaceCreated`, změny velikosti a zničení do `EmulatorBridge`, který následně dosahuje nativního vykreslovače. Compose vykresluje dotykové ovládací prvky, informace o výkonu, úspěchy a rozhraní pauzy nad touto plochou. Udržování těchto vrstev oddělených umožňuje vykreslovači vlastnit nízkoúrovňový Android `Surface`, zatímco překryv udržuje stav, animaci, přístupnost a adaptivní rozvržení Compose."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "Oficiální grafika aplikace EmuCoreX představuje obal Android; samotný emulovaný rám je poskytován nativní plochou pod překryvem Compose."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel je koordinátor relace"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` není emulátor. Koordinuje stav orientovaný na Android kolem emulátoru: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, data kompatibility, profily hráčů, synchronizaci herního času a `AndroidGamePerformance`. `StateFlow<EmulationUiState>` poskytuje data uživatelskému rozhraní, zatímco životní cyklus a transportní mutexy serializují práci při spuštění, pauze, obnovení a vypnutí. Prchavá pole uchovávají aktuální cestu, sériové číslo, CRC, obálku a profil ovládání dotykem, aby pozdní zpětné volání nemohlo omylem pracovat na příští hře."
+    },
+    {
+      "type": "heading",
+      "text": "JNI odhaluje operace, ne druhé uživatelské rozhraní"
+    },
+    {
+      "type": "paragraph",
+      "text": "Smlouva `NativeApp` obsahuje explicitní volání pro povrchy, tlak ovladače, výběr rendereru, dávková nastavení, ukládání stavů, paměťové karty, RetroAchievements, výpisy GS, JIT profiler, trasování zavěšení a transport VM. Kotlin rozhoduje, kdy jsou tyto akce legální a jak se zobrazují; C++ je provádí vůči stavu odvozenému od PCSX2. Například vrstva Compose může skrýt rychlé přehrávání a cheaty, když nativní klient RetroAchievements hlásí aktivní hardcore relaci, a poté vynutit omezovač snímků a opravit stav zpět na bezpečné hodnoty prostřednictvím stejného mostu."
+    },
+    {
+      "type": "heading",
+      "text": "Dva commity z 22. července ukazují, proč je rozdělení testováno jako jeden systém"
+    },
+    {
+      "type": "paragraph",
+      "text": "Commit `0a16b80d` ze dne 22. července 2026 zasáhl obě strany hranice: `MainActivity`, `TvUiPolicy`, vychystávače úložiště, `EmulationViewModel`, ARM64 EE/IOP/VU překladače, virtuální paměť, nahrazení textur GS a kód rendereru. Později toho dne commit `f0e19666` zpřísnil životnost JIT cache napříč EE, IOP, VIF a microVU a rozšířil `JitProfiler`. Tyto změny jsou užitečným architektonickým snímkem: oprava životního cyklu Android může vyžadovat disciplínu nativní paměti pro spustitelné soubory a nativní oprava stále potřebuje Android cestu, která ji bezpečně spustí, sleduje a zastaví."
+    },
+    {
+      "type": "callout",
+      "text": "Repository popisuje EmuCoreX jako raně vyvíjený PS2 emulátor. Oddělení odpovědností usnadňuje lokalizaci chyb, ale nezajišťuje, že kompatibilita bude nezávislá na hře, zařízení, ovladači GPU nebo rendereru."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "Přečtěte si smlouvu NativeApp JNI"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "Zkontrolujte integraci překrytí SurfaceView a Compose"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "ar",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "داخل EmuCoreV: SDLActivity، تغطيات Compose، وطبقة محول Vita3K",
+  "summary": "EmuCoreV لا يلف نافذة سطح المكتب في موضوع Android. مسار إطلاقه يحضر تخزين Vita، ويهيئ واجهة Vita3K مشتقة من خلال محول صغير، ويعطي SDL سطح العرض، ثم يرفق عناصر التحكم والقوائم الأصلية لـ Android حول الجلسة الجارية.",
+  "heroAlt": "شعار مشغل EmuCoreV الأزرق الرسمي في مركز خلفية داكنة",
+  "searchKeywords": [
+    "هندسة EmuCoreV",
+    "Vita3K Android",
+    "SDLActivity Compose تراكب",
+    "جسر_المكتبة_الأصلية"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "العمارة",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "التزام استقرار وقت التشغيل والإعدادات",
+    "vita3k-core-sync": "ارتباط المزامنة الأساسي المشتق من Vita3K",
+    "native-loader-source": "مصدر محمل المكتبة الأصلية",
+    "adapter-source": "مصدر محول JNI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "يُنشئ NativeLibraryLoader واجهة أمامية واحدة مهيأة"
+    },
+    {
+      "type": "paragraph",
+      "text": "قبل أن يطلب تحديث الكتالوج أو إطلاق اللعبة أي شيء من النواة، يقوم `NativeLibraryLoader.ensureLoaded()` بإعطاء SDL سياق التطبيق ويحمّل مكتبة `Vita3K`. داخل الأقسام المتزامنة، يستدعي `EmulatorStorage.prepareRuntime()`، ويخزن القيم الافتراضية لـ `VitaCoreConfigRepository`، ويستدعي `NativeLib.prepareFrontend()`، ويفحص `NativeLib.isInitialized()`. فقط عندما يكون التهيئة لا تزال مطلوبة، يقوم بتمرير وقت التشغيل المحلول وجذور تخزين Vita إلى `NativeLib.init()`. العلامتان المتقلبتان تمنعان تحميل أو تهيئة شاشات Android الأصلية مرتين في وقت واحد."
+    },
+    {
+      "type": "heading",
+      "text": "محول بأربع وظائف يحافظ على صغر الجسر الخاص بالحزمة"
+    },
+    {
+      "type": "paragraph",
+      "text": "تم وسم `app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` صراحة كطبقة محول EmuCoreV. يقوم بتصدير أسماء JNI المتوقعة من `com.sbro.emucorev.core.NativeLib` ويحولها إلى تطبيقات مشتقة من Vita3K: تحضير الواجهة الأمامية، التهيئة باستخدام وقت التشغيل ومسارات Vita، الاستعلام عن التهيئة، وتحديث قائمة التطبيقات. تظل الدوال الموجهة للأعلى تحت `org.vita3k.emulator.NativeLib`؛ EmuCoreV لا يكرر منطق تهيئتها فقط لاستخدام حزمه Android الخاصة."
+    },
+    {
+      "type": "heading",
+      "text": "تعمل اللعبة داخل SDLActivity مع حالة Android قابلة للمراقبة"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator` يوسّع `SDLActivity` ويسمّي `Vita3K` كمكتبته الأصلية. يقوم بإنشاء `EmuSurface`، يمتلك `InputOverlay`، يراقب أجهزة الإدخال Android، ويُعرض معرف اللعبة الحالي كحالة قابلة للمراقبة بواسطة Compose. `getArguments()` يُحوّل نية الإطلاق إلى وسائط سطر الأوامر Vita3K بعد مزامنة برنامج تشغيل GPU الفعّال لكل لعبة. لا تحاول نية إطلاق جديدة تكديس جلسة أصلية أخرى؛ بل تُسجّل العنوان وتُثير إعادة ولادة عملية مُتحكّم فيها بعد إيقاف التشغيل الأصلي."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "شبكة الاتجاهات الرسمية (D-pad) هي عنصر واحد من طبقة الإدخال Android الخاصة بـ EmuCoreV. يقوم `InputOverlay` بتحويل حالة واجهة المستخدم هذه إلى محاور أزرار أصلية واستدعاءات باللمس الأمامي أو الخلفي."
+    },
+    {
+      "type": "heading",
+      "text": "تبلغ EmuSurface عن الملكية وتحتفظ بالإيماءات للطبقة التراكبية"
+    },
+    {
+      "type": "paragraph",
+      "text": "تعتبر فئة `EmuSurface` فرعية من SDL لـ `SDLSurface` بدلاً من استبداله. تحوي استدعاءات `surfaceCreated()` و `surfaceDestroyed()` على استدعاء هوك `setSurfaceStatus()` الأصلي قبل أو بعد عمل دورة حياة SDL، مما يجعل ملكية السطح مرئية للمُحرك. تراقب `GestureDetector` الضربات المزدوجة وتطلب من `Emulator` إظهار زر قائمة التراكب، لكنها تعيد التحكم بعد ذلك إلى SDL. يحفظ هذا التفصيل إدخال اللعبة مع إعطاء طريقة للمستخدم الذي يعتمد فقط على اللمس للعودة إلى قائمة Android."
+    },
+    {
+      "type": "heading",
+      "text": "عمل وقت التشغيل في يوليو على تغيير التخزين والإدخال والعرض والاختبارات معًا"
+    },
+    {
+      "type": "paragraph",
+      "text": "لقد غيّر الالتزام الخاص باستقرار وقت التشغيل بتاريخ 29 يوليو 2026 (`d06e1575`) `native_lib_bridge.cpp` و`runtime_bridge.cpp` وVita3K في `native_bootstrap.cpp`، وتجميع العرض (renderer batching)، و`EmulatorStorage`، ونشاط SDL، وقوائم محاكاة Compose، ومستودعات الإعدادات في وحدة واحدة تمت مراجعتها. كما قدم أيضًا `AtomicTextFile` و`FrameLimit` و`ControllerAttachmentState` و`ImmersiveMode` والاختبارات المركزة لتلك العقود. وقد حدّث التزام التزامن الأساسي السابق بتاريخ 21 مايو (`811a7cd6`) خيط Vita3K والذاكرة وGXM وdialog-overlay والعرض (renderer) ورمز التمهيد Android. وتوضح هذه التحديثات معًا مكان قيام EmuCoreV بتكييف الجوهر عمدًا وأين يستمر في تتبع سلوك المصدر الأصلي."
+    },
+    {
+      "type": "list",
+      "items": [
+        "يمتلك Compose تنقل التطبيق والواجهة المتراكبة Android داخل اللعبة.",
+        "تمتلك SDL النشاط وعقد السطح المتوقع من الواجهة الأمامية الأصلية.",
+        "المحول يمتلك ترجمة اسم الحزمة لمجموعة صغيرة من استدعاءات الإقلاع JNI.",
+        "النواة المشتقة من Vita3K تمتلك نواة محاكاة، وذاكرة، وGXM، ومُعالج رسومات، ووحدات، وتنفيذ اللعبة."
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "اقرأ مسار التهيئة الأصلي المحمي"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "افحص محول EmuCoreV إلى Vita3K JNI"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Jak EmuCoreV proměňuje skleněnou obrazovku na ovládání Vity",
+  "summary": "Dotyková vrstva EmuCoreV je víc než jen namalovaná tlačítka. Data rozvržení jsou normalizována a trvale uložena, vektorové ovládací prvky udržují vzhled odděleně od geometrie zásahu, pohybové senzory mohou ovládat analogové osy a konečný stav prochází kompaktním vstupním kontraktem JNI.",
+  "heroAlt": "Oficiální grafika tlačítek EmuCoreV uspořádaná do diamantu jako u Vity",
+  "searchKeywords": [
+    "EmuCoreV dotykové ovládání",
+    "Vektorové dotykové ovládání",
+    "Vstup gyroskopu Vita",
+    "InputOverlay JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "Vstup",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "Zavedení ovládacích prvků vstupu",
+    "touch-spacing-commit": "Potvrzení upřesnění rozestupů dotyku",
+    "vector-controls-source": "Zdroj VectorTouchControls",
+    "layout-repository-source": "Zdroj úložiště rozvržení dotykového ovládání"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uložené rozvržení popisuje normalizované plátno"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` ukládá každý ovládací prvek jako ID plus normalizované hodnoty `x`, `y`, `width` a `height`, příznak viditelnosti a analogový režim. Načítání je defensivní: rozměry jsou omezeny mezi 0,035 a 0,5 plátna, poté jsou pozice omezeny tak, aby změněný prvek nekončil mimo pravý nebo spodní okraj. Levé a pravé páčky se mohou chovat jako viditelné páčky nebo jako dotykové oblasti, zatímco pojmenovaná ID pokrývají ramena, směrové klávesy, tlačítka na tváři, Select, Start a dotykovou plochu Vita."
+    },
+    {
+      "type": "heading",
+      "text": "Vektorové vykreslování mění styl, aniž by se cílový objekt přesouval"
+    },
+    {
+      "type": "paragraph",
+      "text": "Práce vložená 29. července přidala velkou implementaci `VectorTouchControls.kt` a vytvořila explicitní smlouvu v nastavení: vizuální styl nikdy neurčuje geometrii ovládacího prvku a animace stisku nikdy neurčuje odesílání vstupu. Hráči si mohou vybrat mezi úpravami Classic, Legacy, Modern, Arcade nebo Minimal, a poté nezávisle zvolit zpětnou vazbu Grow, Shrink, Spring nebo Glow. Compose animuje škálování a záři kolem stejné interakční oblasti, takže kosmetický přednastavený režim nemůže tiše změnit místo, kde tlačítko přijímá dotyk prstu."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "Oficiální rozsah joysticku a mřížky stisku páčky tvoří starší analogové ovládání. Vektorové styly mohou překreslit jeho prezentaci, ale logická osa a její původní mapování zůstávají nezměněny."
+    },
+    {
+      "type": "heading",
+      "text": "Dotyk, tyčinky a tlačítka se sbíhají v InputOverlay"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay` vlastní kompaktní nativní hranici. Připojuje nebo odpojuje virtuální ovladač, odesílá podepsané hodnoty os, nastavuje stavy tlačítek a označuje, zda dotyk směřuje na přední nebo zadní panel. `EmulationOverlay` skládá ovládací prvky a převádí gesta na tyto volání. Tím se zachovává zpracování ukazatele a vizuální režim úprav na straně Android, zatímco jádro odvozené z Vita3K přijímá stav ve tvaru ovladače místo událostí Compose nebo souřadnic obrazovky, kterým nerozumí."
+    },
+    {
+      "type": "heading",
+      "text": "Vstup pohybu je filtrován, než dosáhne analogové osy"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput` podporuje míření prostřednictvím hardwarového gyroskopu a řízení prostřednictvím vektoru rotace hry. Zohledňuje rotaci displeje, centruje řízení při aktivaci, aplikuje nastavitelou citlivost, vyhlazování, inverzi os a malou mrtvou zónu a poté se vyhýbá odesílání téměř identických vzorků. Míření cílí na pravý joystick; řízení cílí na osu X levého joysticku. Spuštění režimu nejprve zastaví předplatné předchozího senzoru a zastavení odesílá neutrální hodnotu, aby hra nemohla zachovat starý náklon."
+    },
+    {
+      "type": "heading",
+      "text": "Haptika zůstává mimo cestu tlačítka citlivého na zpoždění"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` jednou vyřeší systémový vibrátor a schopnost amplitudy, poté spustí vibrace prostřednictvím dedikovaného démonického exekutora. Měkké, křupavé, silné a systémově orientované předvolby tvarují samostatné pulsy při stlačení a uvolnění. Pokud vibrátor není k dispozici, vrstva se vrátí k haptické odezvě prostřednictvím zobrazení. Důležité pořadí je architektonické: pomalý volání binderu na službu vibrátoru Android nesmí zdržovat stav tlačítka, který musí dosáhnout jádra emulátoru."
+    },
+    {
+      "type": "callout",
+      "text": "Commit `4f01d13e` změnil ovládací prvky vektorů, chování překryvů, vstup z gyroskopu, haptiku, nastavení a kontraktní testy dohromady. Předchozí práce `db7965b5` na rozestupech poskytuje druhou polovinu návrhu: ovládací prvky musí zůstat dosažitelné kolem výřezů a okrajů obrazovky a zároveň vypadat správně."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "Prozkoumejte styly ovládání vektorů a efekty stisku"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "Zkontrolovat perzistenci normalizovaného rozvržení"
+    }
+  ]
+}

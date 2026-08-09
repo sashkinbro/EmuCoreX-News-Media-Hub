@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Proč je překlad shaderů základní hranicí kompatibility se shadPS4",
+  "summary": "Zdroje videa dokumentují překladový kanál, který musí převést programy GPU PS4 na shadery kompatibilní s hostitelem při zachování paměti a numerického chování.",
+  "heroAlt": "Sn?mek hry zve?ejn?n? v ofici?ln?m repozit??i shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Proč je překlad shaderů základní hranicí kompatibility se shadPS4",
+    "emulátor PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "shader-tree": "Zdrojový strom rekompilátoru shaderu",
+    "gcn-decoder": "GCN instrukční dekodér",
+    "spirv-backend": "Vstupní bod backendu SPIR-V"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dekódování začíná instrukcemi AMD GCN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafické programy PS4 jsou kódovány pro hardware AMD GCN, takže shadPS4 nejprve potřebuje frontend na úrovni instrukcí spíše než kompilátor zdrojového jazyka. `frontend/decode.cpp` a `frontend/opcodes.h` identifikují operace hosta; soubory instrukcí a řídicích toků změní větve na strukturu, kterou může pozdější kompilátor procházet. Selhání dekódování je konkrétní: operační kód, kódovací pole nebo cíl větve nebyly správně reprezentovány, než Vulkan vložil obrázek."
+    },
+    {
+      "type": "heading",
+      "text": "Skalární, vektorové a paměťové operace vstupují do střední reprezentace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Překladová vrstva je rozdělena podle chování: skalární ALU a tok, vektorová ALU a interpolace, skalární a vektorová paměť, exporty a operace sdílení dat. Tito překladatelé vysílají shadPS4 IR místo přímého zápisu SPIR-V. Udržování stabilního IR umožňuje optimalizaci a legalizaci předávat důvody týkající se sdílené paměti, bariér, sledování zdrojů a řízení toku bez duplikace hostujícího dekodéru v každém hostitelském backendu."
+    },
+    {
+      "type": "heading",
+      "text": "IR průchody připraví kód pro backend SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Strom `ir` obsahuje bloky, instrukce a průchody, které zjednodušují nebo přepisují operace před vysíláním hostitele. Backend SPIR-V pak zpracovává chování celých čísel, s pohyblivou řádovou čárkou, obrázků, atomů, bariér, kompozitů a podskupin ve fokusovaných emitorech, jako jsou `emit_spirv_image.cpp` a `emit_spirv_shared_memory.cpp`. Chybějící chování GCN může být proto opraveno v dekódování, překladu, IR průchodu nebo konečné emisi; to jsou různé fáze selhání."
+    },
+    {
+      "type": "heading",
+      "text": "Výstup shaderu stále závisí na stavu video_core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Správně emitovaný modul SPIR-V může vykreslit nesprávný výsledek, pokud jsou nesprávné formáty obrázků, vazby mezi vyrovnávací paměti, vzorkovače nebo paměť hosta. `video_core` dodává tyto zdroje prostřednictvím svých mezipamětí textur a vyrovnávacích pamětí a vytváří potrubí Vulkan kolem shaderu. Naopak ověřovací zpráva při vytváření kanálu může odhalit neplatné rozhraní vytvořené kompilátorem. Ladění musí sledovat shader a jeho vázaný stav společně."
+    },
+    {
+      "type": "heading",
+      "text": "Protokoly a zachycení by měly identifikovat první špatnou fázi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Užitečná zpráva zaznamenává přesnou scénu, aktualizaci titulu, revizi shadPS4, GPU a ovladač. Snímek obrazovky stanoví symptom; výpis shaderu, protokol kompilátoru nebo zachycení RenderDoc může ukázat, zda dekódování selhalo, SPIR-V bylo odmítnuto, zdroj byl odpojen nebo se pixely rozcházely až po pozdějším průchodu. Změna rozlišení, HDR, FSR a několik experimentálních možností najednou toto srovnání ničí, takže základní linie by měla zůstat úzká."
+    }
+  ]
+}

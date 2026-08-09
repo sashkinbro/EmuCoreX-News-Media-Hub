@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 内部：PS4 模拟的原生 C++ 和 Vulkan 方法",
+  "summary": "官方项目结构展示了 shadPS4 如何结合原生 C++ 核心、平台前端和以 Vulkan 为中心的图形路径，而不是将兼容性视为单个开关。",
+  "heroAlt": "由 shadPS4 官方仓库分发的游戏截图",
+  "searchKeywords": [
+    "沙德PS4",
+    "shadPS4内部",
+    "PlayStation 4 模拟器"
+  ],
+  "categoryLabels": {
+    "shadps4": "沙德PS4",
+    "ps4": "游戏机4",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "official-readme": "shadPS4 核心自述文件",
+    "core-linker": "核心链接器实现",
+    "shader-pipeline": "着色器重新编译器源代码树",
+    "video-core": "视频核心源码树"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU 路径以本机 x86-64 执行开始"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 4 和最受支持的桌面主机共享 x86-64，shadPS4 自述文件将早期的模拟器研究归功于帮助团队解决 PS4 二进制文件的本机执行问题。这种选择避免了翻译 x86-64 主机上的每条客户 CPU 指令，但它使地址空间布局、异常处理、线程状态和导入的系统函数成为兼容性边界的一部分。因此，`src/core/address_space.cpp`、`memory.cpp` 和内核线程实现对于执行来说与入口点本身一样重要。"
+    },
+    {
+      "type": "heading",
+      "text": "ELF 加载、符号解析和 Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/loader/elf.cpp` 解析 guest ELF 对象，而 `src/core/linker.cpp` 和 `loader/symbols_resolver.cpp` 将导入的名称与实现连接起来。 Aerolib 位于 `src/core/aerolib` 下，提供了高级库替换所使用的导出注册层。然后，大型“src/core/libraries”树提供内核、文件系统、音频、保存数据、视频输出和其他面向 PS4 的 API。游戏可以到达本机代码，但当一项导入的服务不存在或返回错误的结构时，仍然会立即停止。"
+    },
+    {
+      "type": "heading",
+      "text": "GCN指令变成结构化IR，然后是SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "图形编译器是`src/shader_recompiler`下的一个单独的管道。其前端解码 AMD GCN 指令、构建控制流并转换标量、向量、插值和内存操作。在“backend/spirv”发出主机可用的 SPIR-V 之前，中间表示过程会对该程序进行规范化。这解释了为什么发行说明会命名各个操作码、重心坐标、共享内存和导出修复：每一个都是来宾到主机着色器路径中具体缺失的行为。"
+    },
+    {
+      "type": "heading",
+      "text": "video_core 拥有命令、缓存和 Vulkan 资源"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/video_core` 层位于着色器编译器周围。其 Vulkan 渲染器创建设备、管道、图像和演示资源，而纹理和缓冲区缓存则使来宾内存与主机 GPU 对象保持一致。 PM4 命令处理、平铺、图像格式重新解释和读回都在这里满足。损坏的帧可能起源于着色器发射之前、缓存查找期间、资源转换时或呈现时，这就是为什么仅凭屏幕截图无法识别负责的组件的原因。"
+    },
+    {
+      "type": "heading",
+      "text": "核心可执行文件和用户前端是独立的产品"
+    },
+    {
+      "type": "paragraph",
+      "text": "官方 README 明确将此存储库称为模拟器核心，并将普通用户引导至单独的 QtLauncher。在核心存储库中，“src/main.cpp”、“emulator.cpp”、SDL 窗口代码和“src/imgui”层仍然提供命令行执行、覆盖、大图资源和面向开发人员的视图。保持 Qt 启动器独立可以使其库管理不断发展，而无需将每个前端更改都转变为核心模拟更改。"
+    },
+    {
+      "type": "heading",
+      "text": "有用的架构报告指出了失败的边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "围绕未解决的导出的引导失败指向加载器、链接器、Aerolib 或 HLE 库。 GCN 解码错误属于着色器前端附近； Vulkan 验证、纹理损坏或陈旧的 GPU 内存指向 video_core 及其缓存。输入通过“src/input”到达来宾，而主机日志记录和文件帮助程序位于“src/common”下。记录确切的构建、最后的日志子系统、渲染器和主机平台将“游戏无法运行”转换为与源树对齐的报告。"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Readbacks de GPU reconectam imagens de host do shadPS4 com memória visível para convidados",
+  "summary": "As leituras transferem dados modificados pela GPU para o lado da CPU quando o software PS4 espera memória compartilhada, trocando velocidade pela correção nas cargas de trabalho que precisam dela.",
+  "heroAlt": "Captura de jogo distribu?da no reposit?rio oficial do shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Readbacks de GPU reconectam imagens de host do shadPS4 com memória visível para convidados",
+    "Emulador de PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Fonte de cache do buffer de vídeo",
+    "page-manager": "Gerenciador de páginas de memória de vídeo",
+    "readback-notes": "Notas de engenharia de leitura",
+    "module-viewer": "Implementação do visualizador de módulo"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "As gravações da GPU não são automaticamente visíveis como memória da CPU convidada"
+    },
+    {
+      "type": "paragraph",
+      "text": "O software PS4 pode tratar uma região de memória como compartilhada mesmo depois que os comandos da GPU modificaram os dados correspondentes. No host, esses dados podem existir em um buffer ou imagem Vulkan, em vez de nos bytes visíveis da CPU que o convidado lê posteriormente. Um readback copia o resultado modificado para o lado da CPU no ponto em que a coerência é necessária. Sem ele, o jogo pode consumir vértices, contadores ou outros resultados obsoletos enquanto a visualização da GPU parece válida."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache rastreia regiões em vez de copiar tudo"
+    },
+    {
+      "type": "paragraph",
+      "text": "A árvore `src/video_core/buffer_cache` mantida separa objetos de buffer, definições de região, um gerenciador de região, rastreamento de memória e tratamento de falhas. Essa organização existe porque copiar toda a memória de vídeo após cada comando seria proibitivamente caro. O cache precisa identificar quais intervalos se sobrepõem, qual lado os alterou e quando o acesso de um convidado precisa de sincronização. `page_manager` participa do limite mais amplo da memória, onde as páginas convidadas mapeadas e os recursos da GPU se encontram."
+    },
+    {
+      "type": "heading",
+      "text": "A correção tem um custo de sincronização mensurável"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um readback pode parar até que o trabalho da GPU do host termine e, em seguida, transferir dados através de um limite que normalmente permanece assíncrono. Poucas leituras deixam a memória obsoleta; muitos podem reduzir a taxa de quadros e causar gagueira. As notas oficiais de engenharia da v0.10 documentaram essa compensação e conectaram o caminho experimental com explosões de vértices reduzidas e progresso em títulos usando resultados compartilhados de GPU para CPU. Essa evidência descreve um mecanismo, não uma recomendação universal de configuração."
+    },
+    {
+      "type": "heading",
+      "text": "O Module Viewer responde a uma pergunta de depuração diferente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O Module Viewer em `src/core/devtools/widget/module_list.cpp` expõe módulos executáveis ​​​​carregados e seu estado. Ele não realiza a transferência de memória, mas ajuda o desenvolvedor a identificar qual componente convidado está ativo quando um caminho dependente de readback falha. Emparelhar o estado do módulo com logs de cache de buffer é mais informativo do que assumir que cada explosão de geometria pertence ao compilador de shader."
+    },
+    {
+      "type": "heading",
+      "text": "Uma comparação controlada isola o comportamento de readback"
+    },
+    {
+      "type": "paragraph",
+      "text": "O teste mantém o mesmo salvamento, cena, renderizador, resolução e revisão e, em seguida, altera apenas a opção de leitura relevante. Grave o primeiro quadro corrompido, o impacto do tempo de quadro e o log completo. Se a corrupção desaparecer enquanto o desempenho cai no mesmo evento, isso suporta uma dependência de coerência. Se nada mudar, a interpretação de texturas, o processamento de comandos, a tradução de shaders ou o comportamento do driver permanecerão candidatos mais fortes."
+    }
+  ]
+}

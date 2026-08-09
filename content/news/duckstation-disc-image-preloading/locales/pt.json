@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "O pré-carregamento de imagem de disco troca RAM por latência de leitura previsível",
+  "summary": "O caminho da imagem de memória do DuckStation carrega dados de disco estruturados na RAM, preservando trilhas, setores e semântica de folhas de sinalização.",
+  "heroAlt": "Gr?fico oficial do DuckStation sobre fundo escuro",
+  "searchKeywords": [
+    "Estação Pato",
+    "O pré-carregamento de imagem de disco troca RAM por latência de leitura previsível",
+    "Emulador de PlayStation"
+  ],
+  "categoryLabels": {
+    "duckstation": "Estação Pato",
+    "ps1": "Playstation",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementação de imagem de CD na memória",
+    "cue-parser": "Analisador de imagem CUE",
+    "playlist-parser": "Analisador multi-disco M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O pré-carregamento altera o armazenamento de apoio, não o modelo do disco"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation pode mover dados de imagem de disco para RAM para evitar ativações de armazenamento e buscar latência durante a reprodução. `src/util/cd_image_memory.cpp` ainda apresenta uma imagem de CD através da mesma interface lógica que fontes baseadas em arquivo. As leituras dos convidados permanecem abordadas por setores e faixas; o pré-carregamento só é útil se a representação na memória preservar exatamente o índice e todos os setores suportados."
+    },
+    {
+      "type": "heading",
+      "text": "Os metadados CUE definem mais do que um nome de arquivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma folha CUE pode descrever vários dados e trilhas de áudio, pontos de índice, pregaps e modos de setor. `cd_image_cue.cpp` analisa essa estrutura antes que o caminho da memória possa copiar conteúdo significativo. Comandos raros são importantes porque uma imagem de arquivo válida pode exercê-los mesmo quando dumps comuns de trilha única não o fazem. Achatar arquivos sem o layout analisado mudaria os endereços ou retornaria os bytes errados ao controlador de CD emulado."
+    },
+    {
+      "type": "heading",
+      "text": "Playlists de vários discos ficam acima de imagens individuais"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` lida com listas de reprodução que ordenam várias imagens para um título. O comportamento do cartão de memória compartilhado e a troca de discos dependem da manutenção desse agrupamento, enquanto cada imagem membro ainda precisa de suas próprias faixas e setores válidos. Pré-carregar um membro não pode mesclar discos silenciosamente ou descartar a identidade da lista de reprodução. Uma falha de troca deve, portanto, registrar tanto o M3U quanto o formato de cada imagem referenciada."
+    },
+    {
+      "type": "heading",
+      "text": "O custo da RAM varia de acordo com o tamanho do conteúdo"
+    },
+    {
+      "type": "paragraph",
+      "text": "O benefício de latência é pago antecipadamente por meio de alocação e cópia. Imagens grandes aumentam a pressão da memória, e um evento de falta de memória ou paginação pode ser pior do que o problema de armazenamento que a opção deveria evitar. Dispositivos com RAM limitada precisam de um substituto previsível para leitura baseada em arquivos. Os benchmarks devem incluir o tempo de pré-carregamento, a memória residente e a cena exata onde a latência de armazenamento era anteriormente visível."
+    },
+    {
+      "type": "heading",
+      "text": "Um relatório de disco inclui layout e estado de pré-carregamento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Grave a revisão do DuckStation, formato de imagem, somas de verificação, CUE ou texto da lista de reprodução, configuração de pré-carregamento e memória disponível. Se apenas o modo pré-carregado falhar, compare o mesmo setor lógico por meio do caminho apoiado pelo arquivo. Se ambos falharem, a análise ou o despejo em si será um candidato mais forte. Esta divisão controlada permite que os desenvolvedores investiguem `cd_image_memory` sem confundi-lo com CHD, PBP, CCD, MDS ou análise de imagem de CD base."
+    }
+  ]
+}

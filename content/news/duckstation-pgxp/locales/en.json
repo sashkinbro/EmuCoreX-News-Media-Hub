@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pgxp",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PGXP reduces PlayStation geometry wobble by tracking precision beyond the original pipeline",
+  "summary": "DuckStation officially supports PGXP geometry precision, texture correction and depth-buffer emulation as optional enhancements.",
+  "heroAlt": "Official DuckStation graphic on a dark background",
+  "searchKeywords": [
+    "DuckStation",
+    "PGXP reduces PlayStation geometry wobble by tracking precision beyond the original pipeline",
+    "PlayStation emulator"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "ps1": "PlayStation",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pgxp-core": "PGXP CPU implementation",
+    "gte-core": "Geometry Transformation Engine implementation",
+    "feature-reference": "DuckStation maintained feature reference"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The original PlayStation loses precision before rasterization"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation geometry uses limited fixed-point precision and affine texture mapping. As vertices move, rounding can make edges wobble and textures swim even when the emulated GPU is behaving like the console. DuckStation’s PGXP path tracks additional values alongside the ordinary CPU and GTE flow so an enhanced renderer can use more precise geometry without pretending the original registers stored those values."
+    },
+    {
+      "type": "heading",
+      "text": "cpu_pgxp and GTE code meet at transformed data"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/cpu_pgxp.cpp` contains the precision-tracking implementation, while `src/core/gte.cpp` implements the Geometry Transformation Engine behavior games rely on. PGXP must associate extended values with the correct guest operations and memory movement; stale or mismatched metadata can be worse than ordinary wobble. The base emulation result remains available when a title depends on edge cases the enhanced path cannot reconstruct safely."
+    },
+    {
+      "type": "heading",
+      "text": "Geometry, texture correction and depth are separate choices"
+    },
+    {
+      "type": "paragraph",
+      "text": "PGXP geometry precision stabilizes vertex positions. Perspective-correct texture mapping changes how texture coordinates interpolate across a polygon. Depth-buffer emulation adds ordering information the original rendering path did not expose in the same way. DuckStation presents these as related enhancements, but a title can benefit from one and show artifacts with another, so a report must name the exact combination."
+    },
+    {
+      "type": "heading",
+      "text": "Enhancement evidence needs a native control image"
+    },
+    {
+      "type": "paragraph",
+      "text": "Take the same camera position and frame at native settings with PGXP disabled, then repeat with one PGXP option enabled. Keep resolution scale, filtering, widescreen patches and post-processing unchanged. The control image shows whether the symptom is original hardware behavior; the enhanced image shows what PGXP changed. Motion footage can reveal temporal wobble that two still frames miss, while a depth artifact may require a scene with overlapping geometry."
+    },
+    {
+      "type": "heading",
+      "text": "GameDB rules and CPU mode should stay visible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some software needs a narrower compatibility path, and maintained GameDB traits can encode known requirements. Manual overrides may hide that baseline. When CPU-mode precision tracking or another compatibility option is involved, record it explicitly with the disc revision and DuckStation commit. PGXP is an optional presentation and geometry system, not a reason to weaken accurate default CPU or GPU behavior globally."
+    }
+  ]
+}

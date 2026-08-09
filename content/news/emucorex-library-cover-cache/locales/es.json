@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Por qué EmuCoreX trata el arte de portada como datos recuperables de la biblioteca",
+  "summary": "Una portada de juego parece decorativa, pero los caminos obsoletos, las descargas parciales y los fallos repetidos pueden hacer que una biblioteca Android se sienta poco confiable. EmuCoreX aísla el arte descargado, valida cada imagen en caché y repara la lista visible sin tocar las portadas personalizadas de un usuario.",
+  "heroAlt": "La portada de Final Fantasy X para PS2 se obtuvo de la fuente de arte predeterminada utilizada por EmuCoreX",
+  "searchKeywords": [
+    "caché de cubierta EmuCoreX",
+    "Arte de la biblioteca de PS2",
+    "RepositorioDePortadas",
+    "caché de imágenes Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Biblioteca",
+    "reliability": "Confiabilidad"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Compromiso de fiabilidad de la caché de cobertura",
+    "cover-repository-source": "RepositorioDePortadas fuente",
+    "cover-policy-source": "PolíticaDeCachéDePortada fuente",
+    "home-view-model-source": "Fuente de sincronización de portada de HomeViewModel"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dos áreas de almacenamiento trazan una línea entre el arte desechable y el personal"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` mantiene las carátulas de PS2 descargadas automáticamente bajo `cacheDir/game-covers` y las imágenes temporales remotas bajo `cacheDir/remote-image-cache`. El arte seleccionado por el usuario está deliberadamente fuera de esas raíces en el almacenamiento persistente de la aplicación. Esa separación le da a la acción de configuración una promesa precisa: `clearCache()` elimina las carátulas descargadas, mientras que `clearAllTemporaryImageCaches()` también elimina las imágenes remotas temporales, pero ninguna de las dos operaciones debería borrar una carátula elegida por el jugador."
+    },
+    {
+      "type": "heading",
+      "text": "Un nombre de archivo no se acepta como prueba de que una imagen haya sobrevivido"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada búsqueda pasa archivos candidatos a través de `isUsableCoverFile()`. El repositorio requiere un archivo regular y no vacío y solicita a `BitmapFactory` que decodifique solo sus límites; tanto el ancho como la altura deben ser positivos. Por lo tanto, una respuesta de cero bytes o una imagen interrumpida no puede hacerse pasar por un acierto de caché. Los candidatos inválidos se eliminan antes de que el repositorio elija entre las variantes JPG y PNG, incluyendo el nombre separado `_3d` usado por el estilo de cubierta tridimensional."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "El mismo serial de Final Fantasy X está disponible en la colección 3D de la fuente. EmuCoreX le da a ese estilo un nombre de caché `_3d` distinto, por lo que cambiar la presentación no lo confunde con la portada predeterminada."
+    },
+    {
+      "type": "heading",
+      "text": "La normalización serial hace que una identidad de juego apunte a una entrada de caché"
+    },
+    {
+      "type": "paragraph",
+      "text": "Antes de construir una URL o un nombre de archivo, el repositorio normaliza los seriales como `SLUS-20312` en una identidad de cuatro letras y cinco dígitos en mayúsculas. Acepta variantes de puntuación, intenta primero la forma canónica y puede volver a intentar una forma compacta sin el guion. La fuente de portada configurada puede proporcionar URL base separadas por defecto y en 3D; de lo contrario, se utilizan las fuentes incorporadas. Una respuesta exitosa se copia primero en un archivo temporal, se decodifica y solo entonces se renombra en la caché, de modo que los lectores nunca observan un archivo final parcialmente escrito."
+    },
+    {
+      "type": "heading",
+      "text": "Los fallos conocidos se almacenan en caché, pero no para siempre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un HTTP 404 crea un pequeño marcador `.miss` junto a la portada esperada. Durante siete días, otro escaneo puede omitir la misma solicitud en lugar de preguntar repetidamente al servidor por una obra de arte que no está presente. El marcador desaparece después de que llega una imagen válida, y su tiempo de vida finito deja espacio para que la colección de portadas aguas arriba obtenga ese serial más tarde. Otros fallos de la red no se convierten en evidencia permanente de que una portada no existe."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel repara filas obsoletas bajo concurrencia limitada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Durante `syncMissingCovers()`, `HomeViewModel` primero limpia solo las rutas que apuntan dentro del caché de portadas gestionado y que ya no se resuelven a archivos utilizables. Publica esa lista reparada, luego procesa juegos sin portada local o con una portada HTTP a través de un semáforo limitado a tres trabajos concurrentes. Cada descarga exitosa reemplaza el juego correspondiente por ruta y republica el estado visible. Si una VM está activa, el trabajo de portadas se difiere en lugar de competir con la emulación, y la instantánea de la biblioteca actualizada se guarda después de la sincronización."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` canoniza tanto el candidato como la raíz de la caché antes de la eliminación. Las URIs de contenido y las URLs HTTP se rechazan de inmediato, y un archivo debe ser un descendiente de la raíz administrada. Esto evita que un valor de biblioteca malformado amplíe una operación de borrado de caché."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Inspeccionar la validación de la portada, la descarga y la limpieza"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Sigue la sincronización de cubierta faltante en la biblioteca"
+    }
+  ]
+}

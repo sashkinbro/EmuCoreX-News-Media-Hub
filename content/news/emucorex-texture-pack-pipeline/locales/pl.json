@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Od wyboru w katalogu do zweryfikowanej instalacji: proces pakiet?w tekstur EmuCoreX",
+  "summary": "Du?e pakiety zamiennych tekstur wymagaj? czego? wi?cej ni? paska post?pu. EmuCoreX nadaje ka?demu pobieraniu trwa?y identyfikator, wznawia cz??ciowe dane za pomoc? zakres?w HTTP, sprawdza deklarowany rozmiar i SHA-256, a instaluje dopiero po pomy?lnej weryfikacji ca?ego archiwum.",
+  "heroAlt": "Przykład renderowania tekstury przechowywany w źródle SDL dołączonym do EmuCoreX",
+  "searchKeywords": [
+    "Pakiety tekstur EmuCoreX",
+    "MenedżerPobieraniaTekstur",
+    "pobieranie wieloczęściowe",
+    "weryfikacja SHA-256"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "Tekstury",
+    "downloads": "Pobrane"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "Odporne zatwierdzenie menedżera pobierania",
+    "multipart-commit": "Komit wsparcia pobierania wieloczęściowego",
+    "extraction-limit-commit": "Zatwierdzenie limitu ekstrakcji tekstury",
+    "download-manager-source": "MenedżerPobieraniaTekstur źródło"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wpis w kolejce przetrwa ekran, który go utworzył"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` najpierw sprawdza, czy pakiet katalogu deklaruje kompatybilność z wybranym numerem seryjnym gry. `TextureDownloadStore` następnie wyprowadza 32-znakowy klucz z pakietu i numeru seryjnego, zapisuje stan zadania pod `noBackupFilesDir/texture-downloads` i przekazuje unikalnie nazwane zadanie do Android `WorkManager`. Zamknięcie katalogu tekstur nie powoduje, że to zadanie staje się anonimowe: stany oczekujące w kolejce, pobierania, wstrzymania, oczekiwania, weryfikacji, instalacji, zakończone, niepowodzenia i anulowane pozostają dostępne dla interfejsu użytkownika."
+    },
+    {
+      "type": "heading",
+      "text": "Wznowienie jest negocjowane z serwerem, a nie zakładane"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pracownik mierzy istniejący częściowy plik i wysyła żądanie HTTP `Range`, gdy dostępny jest offset. Dodaje dane tylko po otrzymaniu częściowej odpowiedzi, której `Content-Range` zaczyna się dokładnie od tego bajtu. Jeśli serwer zignoruje zakres, pracownik usuwa stary fragment i rozpoczyna od zera; jeśli zakres jest niespójny, odrzuca odpowiedź. Połączenia są wyłącznie HTTPS, przekierowania są śledzone ręcznie maksymalnie do ośmiu przeskoków, a przekierowanie nie może obniżyć transferu do HTTP."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "Przykład z obracającą się teksturą pochodzi z drzewa SDL zawartego w EmuCoreX. Rurociąg pobierania dostarcza dane zastępcze obrazu; renderujący pozostaje odpowiedzialny za przekształcanie zweryfikowanej zawartości w aktywne tekstury."
+    },
+    {
+      "type": "heading",
+      "text": "Progress jest obliczany na podstawie bajtów, które już znajdują się na dysku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Każdy fragment jest zapisywany przez `RandomAccessFile`, podczas gdy próbki pobierane mniej więcej co 750 milisekund przekazują pobrane bajty, wygładzoną szybkość bajtów oraz szacowany pozostały czas zarówno do postępu WorkManager, jak i do powiadomienia na pierwszym planie. Wstrzymanie anuluje unikalnego pracownika, ale zachowuje jego ładunek. Wznawianie ponownie odczytuje częściową długość przed zaplanowaniem pracy zastępczej. Anulowanie oznacza zadanie, zatrzymuje jego pracownika i usuwa pliki ładunku, co sprawia, że pauza i anulowanie mają celowo różne semantyki przechowywania."
+    },
+    {
+      "type": "heading",
+      "text": "Pakiety wieloczęściowe są weryfikowane dwukrotnie, zanim montaż zostanie zaufany"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana wieloczęściowa z 27 lipca pozwala wpisowi katalogowemu wymieniać kilka rekordów `RemoteTexturePart`. Każda część ma własny URL, liczbę bajtów i skrót SHA-256. Pracownik pobiera je w kolejności, sprawdza rozmiar i skrót każdej części podczas kopiowania ich do jednego archiwum, a jednocześnie oblicza skrót dla złożonego strumienia. Ostateczna liczba bajtów i cały skrót paczki SHA-256 muszą również zgadzać się z katalogiem. Niekompletna lista, zbyt duża odpowiedź, zmieniona część lub uszkodzone ostateczne archiwum przerywają proces przed instalacją."
+    },
+    {
+      "type": "heading",
+      "text": "Instalacja jest odrębnym stanem z wyraźnymi konsekwencjami"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dopiero po weryfikacji zadanie wchodzi do `INSTALLING` i wywołuje `TexturePackRepository.installRemotePack()` dla wybranego numeru seryjnego. Pomyślna instalacja aktualizuje `RemoteContentInstallState`, umożliwia zamianę tekstur w `AppPreferences`, usuwa tymczasowe ładunki i oznacza zadanie jako zakończone. Wyjątki sieciowe przenoszą natomiast działające zadanie do `WAITING_NETWORK` i proszą WorkManager o ponowną próbę z wykładniczym opóźnieniem; błędy katalogu lub integralności traktowane są jako trwałe awarie, a nie jako niekończące się próby."
+    },
+    {
+      "type": "callout",
+      "text": "Rozpakowywanie archiwów jest również ograniczone. Kontynuacja z 28 lipca podniosła sufit wyodrębniania tekstur do 12 GiB dla naprawdę dużych pakietów, ale zachowała skończony limit, aby skompresowane dane wejściowe nie mogły się niekontrolowanie rozprzestrzeniać."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "Odczytaj trwałego pracownika pobierania i magazyn"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "Zobacz, jak karty katalogowe ujawniają kontrolki kolejki"
+    }
+  ]
+}

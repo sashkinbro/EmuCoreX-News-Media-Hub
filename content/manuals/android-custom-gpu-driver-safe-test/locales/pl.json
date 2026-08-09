@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-custom-gpu-driver-safe-test",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zainstaluj, przetestuj i przywróć niestandardowy sterownik Android GPU",
+  "summary": "Używaj niestandardowych sterowników zgodnych z AdrenoTools tylko na obsługiwanym sprzęcie Adreno, zanotuj bazowy stan sterownika systemowego, zweryfikuj pakiet, przetestuj jedną zmienną i utrzymuj możliwość natychmiastowego przywrócenia.",
+  "heroAlt": "Logo Mesa: trójwymiarowe trybiki reprezentujące otwartoźródłowy stos sterowników Turnip Vulkan",
+  "searchKeywords": [
+    "niestandardowy sterownik GPU",
+    "Turnip",
+    "AdrenoTools",
+    "Mesa Android",
+    "przywracanie sterownika"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "drivers": "Sterowniki"
+  },
+  "sourceLabels": {
+    "adrenotools": "framework AdrenoTools",
+    "mesa-freedreno": "Dokumentacja Mesa Freedreno/Turnip"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Niestandardowy sterownik to eksperyment, a nie przycisk aktualizacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "AdrenoTools pozwala aplikacji załadować sterownik Vulkan w przestrzeni użytkownika bez zastępowania partycji systemowej Androida. Pakiety Turnip mogą naprawiać lub ujawniać odmienne zachowanie w zależności od generacji Adreno, ale nie są uniwersalne: pakiet przeznaczony dla niewłaściwej generacji GPU, innego Android ABI lub niezgodnych wymagań Vulkan może ulec awarii przed wyświetleniem pierwszej klatki. Urządzenia Mali i Immortalis nie korzystają z pakietów Turnip."
+    },
+    {
+      "type": "callout",
+      "text": "Przystępuj tylko wtedy, gdy EmuCoreX identyfikuje obsługiwany Qualcomm Adreno GPU i pakiet sterownika dokumentuje tę generację. Zachowaj wybrany sterownik systemowy, dopóki odtwarzalny problem nie uzasadni testu."
+    },
+    {
+      "type": "heading",
+      "text": "Wymagania wstępne i czysty punkt odniesienia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wykonaj kopię zapasową ustawień per-gra i zanotuj rezultat sterownika systemowego w dokładnie tej scenie, która zawodzi. Uzyskaj pakiet od możliwego do prześledzenia opiekuna, zachowaj jego archiwum w nienaruszonym stanie i zanotuj nazwę pliku, stronę wydania i SHA-256. Nie instaluj modułów Magisk ani systemowych zamienników sterowników do porównań na poziomie aplikacji."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Potwierdzony model Adreno GPU i ABI Android.",
+        "Bazowy stan sterownika systemowego ze zrzutami ekranu lub notatkami czasowymi.",
+        "Możliwe do prześledzenia archiwum sterownika w formacie AdrenoTools.",
+        "Zanotowany SHA-256 i strona źródłowa.",
+        "Sposób ponownego otwarcia ustawień i wyboru System driver po awarii."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Przetestuj jeden pakiet w stosunku do bazowego sterownika systemowego"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Pobierz paczkę z jej udokumentowanego źródła, oblicz SHA-256 i zachowaj oryginalny archiwum poza folderem emulator-data.",
+        "2. W ustawieniach sterownika EmuCoreX zaimportuj paczkę i potwierdź, że jej etykieta/generacja pasuje do wykrytych Adreno GPU.",
+        "3. Wybierz ją tylko dla gry testowej, jeśli aplikacja obsługuje wybór sterownika dla każdej gry; w przeciwnym razie zanotuj zakres globalny przed uruchomieniem.",
+        "4. Uruchom znaną scenę dwa razy w trybie zimnego startu, a następnie przetestuj drugą grę, która już działała na sterowniku systemowym.",
+        "5. Jeśli paczka wygrywa pod względem poprawności lub stabilności bez regresji, zachowaj dowody i dokładny hash; w przeciwnym razie natychmiast wybierz System driver."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zweryfikuj wynik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sterownik musi się załadować bez pętli utraty urządzenia, skompilować shadery, renderować docelowy efekt i pozostać stabilnym podczas sesji na ciepło. Wyższa maksymalna liczba klatek na sekundę jest niewystarczająca, jeśli występują problemy z rytmem klatek, zużyciem baterii lub regresją innej gry. Logi powinny wskazywać wybrany sterownik, aby przyszły raport mógł zostać odtworzony."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Cel paczki odpowiada generacji GPU.",
+        "Identyfikacja sterownika jest widoczna w ustawieniach lub logach.",
+        "Błąd celu poprawia się w dwóch zimnych uruchomieniach.",
+        "Porównawcza dobra gra nie ma regresji.",
+        "Powrót do sterownika systemowego działa bez usuwania danych użytkownika."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Cofanie i odzyskiwanie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wybierz System driver, całkowicie zatrzymaj EmuCoreX i uruchom ponownie przed oceną odzyskiwania. Usuń eksperymentalną paczkę z listy aktywnych sterowników dopiero po tym, jak ścieżka systemowa działa. Jeśli aplikacja nie może dotrzeć do ustawień, wyczyść tylko preferencję wyboru sterownika lub zresetuj profil dotkniętej gry za pomocą ścieżki odzyskiwania aplikacji—nie usuwaj kart pamięci ani całego folderu danych."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Wybierz System driver i uruchom ponownie aplikację.",
+        "Zresetuj nadpisanie sterownika dla każdej gry.",
+        "Kwarantanna nieudanej paczki wraz z jej hashem i notatkami wyników.",
+        "Uruchom ponownie Android po powtarzających się błędach utraty urządzenia Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Typowe wzorce awarii"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Archiwum zostało zaimportowane, ale nie może się załadować: niepoprawny ABI, układ paczki lub generacja GPU.",
+        "Jedna gra poprawia się, inna się zawiesza: zachowaj pakiet specyficzny dla gry lub go odrzuć.",
+        "Wydajność rośnie tylko podczas chłodzenia: sterownik zmienił zachowanie cieplne, a nie trwałą pojemność.",
+        "Brak rekordu przywracania: pakiety eksperymentalne później stają się niemożliwe do rozróżnienia."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Zachowaj mały rejestr sterownika: pakiet, źródło, hash, GPU, Android kompilacja, testowane gry i wyniki. Zastąp zaakceptowany pakiet dopiero po ponownym uruchomieniu tego samego punktu odniesienia. To sprawia, że niestandardowe sterowniki są narzędziami inżynierii odwrotnej, zamiast rosnącą stertą anonimowych plików ZIP."
+    },
+    {
+      "type": "link",
+      "text": "Zbadaj oficjalny projekt libadrenotools",
+      "url": "https://github.com/bylaws/libadrenotools"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "pt",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Como EmuCoreX divide uma sessão PS2 entre Compose, SurfaceView e o código nativo PCSX2",
+  "summary": "Um jogo de PS2 lançado a partir de EmuCoreX atravessa várias fronteiras deliberadamente estreitas antes que o primeiro quadro alcance a tela. O aplicativo Android, o contrato JNI, a superfície de renderização, o estado da sessão e os recompiladores ARM64 possuem cada um uma parte diferente desse caminho.",
+  "heroAlt": "Banner oficial EmuCoreX Android de TV em um fundo azul escuro",
+  "searchKeywords": [
+    "arquitetura EmuCoreX",
+    "AplicativoNativo JNI",
+    "TelaDeEmulação SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "Arquitetura",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "commit de implementação de ARM64 runtime e Android TV",
+    "jit-cache-lifecycle": "ARM64 ciclo de vida de commit do cache JIT",
+    "native-app-source": "Fonte do aplicativo nativo",
+    "emulation-screen-source": "Fonte da Tela de Emulação"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O processo Android escolhe e prepara o núcleo nativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "O limite começa em `NativeApp`, um objeto Kotlin que seleciona uma biblioteca central compatível com o tamanho da página através de `AndroidNativeCoreSelector`, carrega-a com `System.loadLibrary` e registra se a biblioteca central nativa e as ferramentas nativas auxiliares estão disponíveis. `initializeOnce()` então prepara a raiz de dados do emulador, copia recursos incluídos, verifica o arquivo de patch, exporta o pacote de confiança CA Android, configura um caminho de log de falhas nativo e, finalmente, chama o ponto de entrada JNI `initialize(dataRoot, sdkInt)`. Essa ordem é importante: o lado C++ nunca precisa adivinhar onde os armazenamentos Android ou certificados vivem."
+    },
+    {
+      "type": "heading",
+      "text": "O quadro renderizado do jogo vem de um SurfaceView real, n?o de uma tela do Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` incorpora um Android opaco `SurfaceView` através de `AndroidView`. Seu `SurfaceHolder.Callback` encaminha `surfaceCreated`, alterações de tamanho e destruição para `EmulatorBridge`, que por sua vez alcança o renderizador nativo. Compose desenha os controles de toque, informações de desempenho, conquistas e interface de pausa acima dessa superfície. Manter essas camadas separadas permite que o renderizador possua um Android `Surface` de baixo nível enquanto a sobreposição mantém o estado Compose, animação, acessibilidade e layout adaptativo."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "A arte oficial do aplicativo EmuCoreX representa a interface Android; o próprio quadro emulado é fornecido pela superfície nativa abaixo da sobreposição Compose."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel é o coordenador da sessão"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` não é o emulador. Ele coordena o estado voltado para Android em torno do emulador: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, dados de compatibilidade, perfis de jogador, sincronização de tempo de jogo e `AndroidGamePerformance`. Um `StateFlow<EmulationUiState>` alimenta a interface do usuário, enquanto mutexes de ciclo de vida e transporte serializam os trabalhos de iniciar, pausar, retomar e desligar. Campos voláteis mantêm o caminho atual, serial, CRC, capa e perfil de layout de toque para que um callback tardio não opere acidentalmente sobre o próximo jogo."
+    },
+    {
+      "type": "heading",
+      "text": "JNI expõe operações, não uma segunda interface de usuário"
+    },
+    {
+      "type": "paragraph",
+      "text": "O contrato `NativeApp` contém chamadas explícitas para superfícies, pressão do controlador, seleção de renderizador, configurações em lote, estados salvos, cartões de memória, RetroAchievements, dumps de GS, o profiler JIT, rastros de travamento e transporte de VM. Kotlin decide quando essas ações são legais e como elas aparecem; C++ as executa com base no estado derivado de PCSX2. Por exemplo, a camada Compose pode ocultar avanço rápido e trapaças quando o cliente nativo RetroAchievements relata uma sessão hardcore ativa, então força o limitador de quadros e corrige o estado de volta para valores seguros através da mesma ponte."
+    },
+    {
+      "type": "heading",
+      "text": "Dois commits de 22 de julho mostram por que a divisão é testada como um único sistema"
+    },
+    {
+      "type": "paragraph",
+      "text": "O commit `0a16b80d` em 22 de julho de 2026 tocou ambos os lados da fronteira: `MainActivity`, `TvUiPolicy`, seletores de armazenamento, `EmulationViewModel`, recompiladores EE/IOP/VU, memória virtual, substituição de texturas GS e código do renderizador. Mais tarde naquele dia, o commit `f0e19666` estreitou os tempos de vida do cache JIT em EE, IOP, VIF e microVU e estendeu `JitProfiler`. Essas mudanças são uma captura arquitetônica útil: uma correção de ciclo de vida Android pode exigir disciplina de memória executável nativa, e uma correção nativa ainda precisa de um caminho Android que o inicie, observe e pare com segurança."
+    },
+    {
+      "type": "callout",
+      "text": "O repositório descreve EmuCoreX como uma pilha de emulador de PS2 em estágio inicial de desenvolvimento. A separação de responsabilidades torna as falhas mais fáceis de localizar, mas não torna a compatibilidade independente do jogo, do dispositivo, do driver da GPU ou do renderizador."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "Leia o contrato do NativeApp JNI"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "Inspecione a integração de sobreposição SurfaceView e Compose"
+    }
+  ]
+}

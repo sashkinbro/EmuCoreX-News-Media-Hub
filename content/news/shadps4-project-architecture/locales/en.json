@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Inside shadPS4: a native C++ and Vulkan approach to PS4 emulation",
+  "summary": "The official project structure shows how shadPS4 combines a native C++ core, platform frontends and a Vulkan-focused graphics path instead of treating compatibility as a single switch.",
+  "heroAlt": "Gameplay screenshot distributed in the official shadPS4 repository",
+  "searchKeywords": [
+    "shadPS4",
+    "Inside shadPS4",
+    "PlayStation 4 emulator"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "official-readme": "shadPS4 core README",
+    "core-linker": "Core linker implementation",
+    "shader-pipeline": "Shader recompiler source tree",
+    "video-core": "Video core source tree"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The CPU path starts with native x86-64 execution"
+    },
+    {
+      "type": "paragraph",
+      "text": "The PlayStation 4 and most supported desktop hosts share x86-64, and the shadPS4 README credits earlier emulator research with helping the team solve native execution of PS4 binaries. That choice avoids translating every guest CPU instruction on x86-64 hosts, but it makes address-space layout, exception handling, thread state and imported system functions part of the compatibility boundary. `src/core/address_space.cpp`, `memory.cpp` and the kernel thread implementation are therefore as important to execution as the entry point itself."
+    },
+    {
+      "type": "heading",
+      "text": "ELF loading, symbol resolution and Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/loader/elf.cpp` parses guest ELF objects, while `src/core/linker.cpp` and `loader/symbols_resolver.cpp` connect imported names with implementations. Aerolib, under `src/core/aerolib`, provides the export-registration layer used by high-level library replacements. The large `src/core/libraries` tree then supplies kernel, filesystem, audio, savedata, video-out and other PS4-facing APIs. A title can reach native code yet still stop immediately when one imported service is absent or returns the wrong structure."
+    },
+    {
+      "type": "heading",
+      "text": "GCN instructions become structured IR, then SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "The graphics compiler is a separate pipeline under `src/shader_recompiler`. Its frontend decodes AMD GCN instructions, constructs control flow and translates scalar, vector, interpolation and memory operations. The intermediate-representation passes normalize that program before `backend/spirv` emits host-consumable SPIR-V. This explains why release notes name individual opcodes, barycentric coordinates, shared memory and export fixes: each is a concrete missing behavior in the guest-to-host shader path."
+    },
+    {
+      "type": "heading",
+      "text": "video_core owns commands, caches and Vulkan resources"
+    },
+    {
+      "type": "paragraph",
+      "text": "The `src/video_core` layer sits around the shader compiler. Its Vulkan renderer creates devices, pipelines, images and presentation resources, while texture and buffer caches keep guest memory coherent with host GPU objects. PM4 command handling, tiling, image-format reinterpretation and readbacks all meet here. A broken frame can originate before shader emission, during cache lookup, at a resource transition or at presentation, which is why a screenshot alone cannot identify the responsible component."
+    },
+    {
+      "type": "heading",
+      "text": "The core executable and user frontends are separate products"
+    },
+    {
+      "type": "paragraph",
+      "text": "The official README explicitly calls this repository the emulator core and directs ordinary users to the separate QtLauncher. Inside the core repository, `src/main.cpp`, `emulator.cpp`, SDL window code and the `src/imgui` layers still provide command-line execution, overlays, Big Picture resources and developer-facing views. Keeping the Qt launcher separate lets its library management evolve without turning every frontend change into a core-emulation change."
+    },
+    {
+      "type": "heading",
+      "text": "A useful architecture report names the failing boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "A boot failure around an unresolved export points toward the loader, linker, Aerolib or an HLE library. A GCN decode error belongs near the shader frontend; Vulkan validation, texture corruption or stale GPU memory points toward video_core and its caches. Input reaches the guest through `src/input`, while host logging and file helpers live under `src/common`. Recording the exact build, last log subsystem, renderer and host platform turns “the game does not work” into a report aligned with the source tree."
+    }
+  ]
+}

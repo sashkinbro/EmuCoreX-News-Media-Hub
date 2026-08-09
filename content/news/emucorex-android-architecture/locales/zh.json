@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "zh",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreX 如何在 Compose、SurfaceView 和本地 PCSX2 代码之间拆分 PS2 会话",
+  "summary": "从 EmuCoreX 启动的 PS2 游戏在第一帧到达显示屏之前穿越了几个故意设置的狭窄边界。Android 应用程序、JNI 合约、渲染表面、会话状态以及 ARM64 重新编译器各自拥有该路径的不同部分。",
+  "heroAlt": "官方 EmuCoreX Android 电视横幅在深蓝色背景上",
+  "searchKeywords": [
+    "EmuCoreX 架构",
+    "原生应用 JNI",
+    "仿真屏 SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "建筑学",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "ARM64 运行时和 Android 电视实现提交",
+    "jit-cache-lifecycle": "ARM64 JIT 缓存生命周期提交",
+    "native-app-source": "NativeApp 源码",
+    "emulation-screen-source": "仿真屏幕源"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android 过程选择并准备本地核心"
+    },
+    {
+      "type": "paragraph",
+      "text": "边界开始于 `NativeApp`，这是一个 Kotlin 对象，通过 `AndroidNativeCoreSelector` 选择一个与页面大小兼容的核心库，使用 `System.loadLibrary` 加载它，并记录本地核心和辅助本地工具是否可用。然后 `initializeOnce()` 准备模拟器数据根目录，复制捆绑资源，验证补丁归档，导出 Android CA 信任包，配置本地崩溃日志路径，最后调用 JNI `initialize(dataRoot, sdkInt)` 入口点。顺序很重要：C++ 端从不需要猜测 Android 存储或证书的位置。"
+    },
+    {
+      "type": "heading",
+      "text": "游戏画面使用真正的 SurfaceView，而不是 Compose 画布"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` 通过 `AndroidView` 嵌入了一个不透明的 Android `SurfaceView`。它的 `SurfaceHolder.Callback` 将 `surfaceCreated`、大小变化和销毁转发给 `EmulatorBridge`，而 `EmulatorBridge` 又到达本地渲染器。Compose 在该表面上绘制触控控件、性能信息、成就和暂停界面。保持这些图层分离可以让渲染器拥有低级别的 Android `Surface`，而叠加层保持 Compose 的状态、动画、可访问性和自适应布局。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "官方 EmuCoreX 应用程序艺术作品代表 Android 外壳；模拟框架本身由 Compose 覆盖层下方的本机表面提供。"
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel 是会话协调器"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` 不是模拟器。它协调模拟器周围的 Android 状态：`PerGameSettingsRepository`、`CheatRepository`、`MemoryCardRepository`、兼容性数据、玩家档案、游戏时间同步和 `AndroidGamePerformance`。`StateFlow<EmulationUiState>` 提供用户界面数据，而生命周期和传输互斥量会序列化启动、暂停、恢复和关闭操作。易失性字段保留当前路径、序列号、CRC、封面和触控布局档案，以防晚到的回调意外操作下一个游戏。"
+    },
+    {
+      "type": "heading",
+      "text": "JNI 暴露操作，而不是第二个用户界面"
+    },
+    {
+      "type": "paragraph",
+      "text": "`NativeApp` 合约包含对表面、控制器压力、渲染器选择、批量设置、保存状态、存储卡、RetroAchievements、GS 转储、JIT 分析器、挂起跟踪和 VM 传输的明确调用。Kotlin 决定这些操作何时合法以及它们如何呈现；C++ 根据 PCSX2 衍生的状态执行它们。例如，当本机 RetroAchievements 客户端报告一个活跃的硬核会话时，Compose 层可以隐藏快进和作弊，然后通过同一桥接将帧速限制器和补丁状态强制回安全值。"
+    },
+    {
+      "type": "heading",
+      "text": "两个7月22日的提交显示了为什么分支作为一个系统进行测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "2026年7月22日的提交 `0a16b80d` 涉及边界的两侧：`MainActivity`、`TvUiPolicy`、存储挑选器、`EmulationViewModel`、ARM64 EE/IOP/VU 重编译器、虚拟内存、GS 纹理替换以及渲染器代码。当天稍晚，提交 `f0e19666` 收紧了 EE、IOP、VIF 和 microVU 的 JIT 缓存生命周期，并扩展了 `JitProfiler`。这些变化提供了一个有用的架构快照：Android 生命周期修复可能需要本地可执行内存管理，而本地修复仍然需要一个 Android 路径来安全地启动、观察和停止它。"
+    },
+    {
+      "type": "callout",
+      "text": "该仓库将 EmuCoreX 描述为一个早期开发的 PS2 模拟器堆栈。职责分离使得定位故障更容易，但它并不能使兼容性独立于游戏、设备、GPU 驱动或渲染器。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "阅读 NativeApp JNI 合同"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "检查 SurfaceView 和 Compose 覆盖集成"
+    }
+  ]
+}

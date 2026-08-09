@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Por que EmuCoreX trata a arte da capa como dados recuperáveis da biblioteca",
+  "summary": "Uma capa de jogo parece decorativa, mas caminhos obsoletos, downloads parciais e falhas repetidas podem fazer uma biblioteca Android parecer pouco confiável. EmuCoreX isola obras de arte baixadas, valida cada imagem em cache e repara a lista visível sem tocar nas capas personalizadas de um usuário.",
+  "heroAlt": "Capa de Final Fantasy X para PS2 obtida a partir da fonte de arte padrão usada por EmuCoreX",
+  "searchKeywords": [
+    "cache de capa EmuCoreX",
+    "arte da biblioteca do PS2",
+    "RepositórioDeCapas",
+    "cache de imagem Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Biblioteca",
+    "reliability": "Confiabilidade"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Compromisso de confiabilidade de cache de cobertura",
+    "cover-repository-source": "Fonte do Repositório de Arte da Capa",
+    "cover-policy-source": "Fonte da Política CoverCache",
+    "home-view-model-source": "Fonte de sincronização da capa do HomeViewModel"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Duas áreas de armazenamento traçam uma linha entre obras descartáveis e pessoais"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` mantém coberturas de PS2 baixadas automaticamente sob `cacheDir/game-covers` e imagens temporárias remotas sob `cacheDir/remote-image-cache`. A arte selecionada pelo usuário está deliberadamente fora dessas raízes no armazenamento persistente do aplicativo. Essa divisão dá à ação de configurações uma promessa precisa: `clearCache()` remove coberturas baixadas, enquanto `clearAllTemporaryImageCaches()` também remove imagens remotas temporárias, mas nenhuma das operações deve apagar uma cobertura escolhida pelo jogador."
+    },
+    {
+      "type": "heading",
+      "text": "Um nome de arquivo não é aceito como prova de que uma imagem sobreviveu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada pesquisa passa os arquivos candidatos pelo `isUsableCoverFile()`. O repositório requer um arquivo regular, não vazio, e pede ao `BitmapFactory` para decodificar apenas seus limites; tanto a largura quanto a altura devem ser positivas. Uma resposta de zero bytes ou uma imagem interrompida, portanto, não pode se passar por um acerto de cache. Candidatos inválidos são excluídos antes que o repositório escolha entre as variantes JPG e PNG, incluindo a nomenclatura separada `_3d` usada pelo estilo de capa tridimensional."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "O mesmo serial de Final Fantasy X está disponível na coleção 3D da fonte. EmuCoreX dá a esse estilo um nome de cache `_3d` distinto, então mudar a apresentação não o confunde com a capa padrão."
+    },
+    {
+      "type": "heading",
+      "text": "A normalização serial faz com que uma identidade de jogo enderece uma entrada de cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "Antes de construir uma URL ou nome de arquivo, o repositório normaliza seriais como `SLUS-20312` em uma identidade de quatro letras maiúsculas e cinco dígitos. Ele aceita variantes de pontuação, tenta primeiro a forma canônica e pode tentar novamente uma forma compacta sem o hífen. A fonte de capa configurada pode fornecer URLs base padrão e 3D separadas; caso contrário, são usadas as fontes internas. Uma resposta bem-sucedida é primeiro copiada para um arquivo temporário, decodificada e só então renomeada para o cache, de modo que os leitores nunca vejam um arquivo final parcialmente escrito."
+    },
+    {
+      "type": "heading",
+      "text": "Erros conhecidos são armazenados em cache, mas não para sempre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um HTTP 404 cria um pequeno marcador `.miss` ao lado da capa esperada. Por sete dias, outra verificação pode pular a mesma solicitação em vez de perguntar repetidamente ao servidor por uma arte que não está presente. O marcador desaparece após a chegada de uma imagem válida, e sua vida útil finita deixa espaço para que a coleção de capas upstream obtenha aquele serial depois. Outras falhas de rede não se tornam evidências permanentes de que uma capa não existe."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel repara linhas desatualizadas sob concorrência limitada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Durante o `syncMissingCovers()`, o `HomeViewModel` primeiro limpa apenas os caminhos que apontam para dentro do cache de capas gerenciado e que não resolvem mais para arquivos utilizáveis. Ele publica essa lista reparada, depois processa jogos sem capa local ou com uma capa HTTP através de um semáforo limitado a três tarefas concorrentes. Cada download bem-sucedido substitui o jogo correspondente pelo caminho e republica o estado visível. Se uma VM estiver ativa, o trabalho com capas é adiado em vez de competir com a emulação, e o instantâneo da biblioteca atualizado é salvo após a sincronização."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` canonicaliza tanto o candidato quanto a raiz do cache antes da exclusão. URIs de conteúdo e URLs HTTP são rejeitados imediatamente, e um arquivo deve ser um descendente da raiz gerenciada. Isso evita que um valor de biblioteca malformado amplie uma operação de limpeza de cache."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Inspecionar validação da capa, download e limpeza"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Siga a sincronização de cobertura ausente na biblioteca"
+    }
+  ]
+}

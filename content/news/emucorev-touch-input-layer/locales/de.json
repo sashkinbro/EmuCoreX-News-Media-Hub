@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Wie EmuCoreV einen Glasschirm in Vita-Steuerungen verwandelt",
+  "summary": "Die Touch-Ebene von EmuCoreV ist mehr als nur bemalte Tasten. Layout-Daten werden normalisiert und gespeichert, Vektorsteuerungen trennen das Aussehen von der Treffergeometrie, Bewegungssensoren können analoge Achsen steuern, und der Endzustand überschreitet einen kompakten JNI-Eingabevertrag.",
+  "heroAlt": "Offizielle EmuCoreV Gesichtstasten-Grafiken, im Vita-Diamond-Layout angeordnet",
+  "searchKeywords": [
+    "EmuCoreV Touch-Steuerung",
+    "VektorTouchSteuerungen",
+    "Vita-Kreiselbewegungseingabe",
+    "InputOverlay JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "Eingabe",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "Implementierungs-Commit für Eingabesteuerungen",
+    "touch-spacing-commit": "Verfeinerung des Touch-Abstands Commit",
+    "vector-controls-source": "VectorTouchControls Quelle",
+    "layout-repository-source": "Touch-Layout-Repository-Quelle"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Das gespeicherte Layout beschreibt eine normalisierte Leinwand"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` speichert jede Steuerung als eine ID plus normalisierte `x`-, `y`-, `width`- und `height`-Werte, ein Sichtbarkeitskennzeichen und einen Analogmodus. Das Laden ist defensiv: Die Abmessungen werden auf Werte zwischen 0,035 und 0,5 der Leinwand begrenzt, und die Positionen werden so eingeschränkt, dass das größenveränderte Element nicht außerhalb der rechten oder unteren Kante endet. Die linken und rechten Sticks können als sichtbare Sticks oder als Berührungsbereiche fungieren, während benannte IDs die Schultertasten, das Steuerkreuz, die Gesichtsbuttons, Select, Start und die Vita-Touchoberfläche abdecken."
+    },
+    {
+      "type": "heading",
+      "text": "Vektordarstellung ändert den Stil, ohne das Ziel des Treffers zu verschieben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Eingabearbeit vom 29. Juli fügte die große `VectorTouchControls.kt`-Implementierung hinzu und machte einen expliziten Vertrag in den Einstellungen: Der visuelle Stil bestimmt niemals die Geometrie der Steuerung, und die Druckanimation bestimmt niemals die Eingabeverarbeitung. Spieler können Classic, Legacy, Modern, Arcade oder Minimal-Behandlungen wählen und dann unabhängig Grow, Shrink, Spring oder Glow-Feedback auswählen. Compose animiert Skala und Leuchten um denselben Interaktionsbereich, sodass ein kosmetisches Preset nicht heimlich ändern kann, wo eine Taste einen Finger akzeptiert."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "Die offizielle Joystick-Reichweite und die Raster der gedrückten Sticks bilden die ursprüngliche analoge Steuerung. Vektor-Stile können ihre Darstellung neu zeichnen, aber die logische Achse und ihre native Zuordnung bleiben unverändert."
+    },
+    {
+      "type": "heading",
+      "text": "Berührung, Sticks und Tasten treffen bei InputOverlay zusammen"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay` besitzt die kompakte native Grenze. Es verbindet oder trennt einen virtuellen Controller, sendet signierte Achsenwerte, setzt Button-Zustände und markiert, ob Berührungen das Front- oder das Rückpanel betreffen. `EmulationOverlay` setzt die Steuerungen zusammen und übersetzt Gesten in diese Aufrufe. Das hält die Zeigersteuerung und die Bearbeitungsmodus-Visualisierungen auf der Android-Seite, während der von Vita3K abgeleitete Kern stattdessen den Controller-förmigen Zustand erhält, anstatt Compose-Ereignisse oder Bildschirmkoordinaten, die er nicht versteht."
+    },
+    {
+      "type": "heading",
+      "text": "Bewegungseingaben werden gefiltert, bevor sie eine analoge Achse erreichen"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput` unterstützt das Zielen über das Hardware-Gyroskop und das Steuern über den Spiel-Rotationsvektor. Es berücksichtigt die Bildschirmdrehung, zentriert das Steuern beim Aktivieren, wendet konfigurierbare Empfindlichkeit, Glättung, Achseninvertierung und eine kleine Totzone an und verhindert dann das Senden nahezu identischer Proben. Das Zielen richtet sich auf den rechten Stick; das Steuern auf den linken Stick X. Das Starten eines Modus stoppt zuerst das vorherige Sensorabonnement, und das Anhalten sendet einen neutralen Wert, sodass das Spiel keine alte Neigung behalten kann."
+    },
+    {
+      "type": "heading",
+      "text": "Haptik bleibt vom latenzsensitiven Button-Pfad ausgeschlossen"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` löst einmal das Systemvibrator- und Amplitudenvermögen auf und sendet dann Vibrationen über einen dedizierten Daemon-Executor. Weiche, klare, starke und systemorientierte Voreinstellungen formen separate Druck- und Loslassimpulse. Wenn kein Vibrator verfügbar ist, greift die Schicht auf haptisches Feedback der Ansicht zurück. Die wichtige Reihenfolge ist architektonisch: Ein langsamer Binder-Aufruf an den Vibrator-Dienst von Android darf den Button-Zustand, der den Emulator-Kern erreichen muss, nicht verzögern."
+    },
+    {
+      "type": "callout",
+      "text": "Commit `4f01d13e` änderte Vektorkontrollen, Overlay-Verhalten, Gyroskop-Eingaben, haptisches Feedback, Einstellungen und Vertragstests zusammen. Die frühere `db7965b5`-Abstandsarbeit liefert die andere Hälfte des Designs: Die Kontrollen müssen sowohl um Aussparungen und Bildschirmränder erreichbar bleiben als auch korrekt aussehen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "Erkunde die Vektorsteuerungsstile und Tasteneffekte"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "Normalisierte Layout-Persistenz überprüfen"
+    }
+  ]
+}

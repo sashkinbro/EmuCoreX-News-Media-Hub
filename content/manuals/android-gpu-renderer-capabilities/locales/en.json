@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Match the renderer to the Android GPU and driver",
+  "summary": "Identify the real SoC and GPU, distinguish Adreno from Mali and other families, test API support, and choose a renderer based on the device's driver rather than marketing names.",
+  "heroAlt": "A Qualcomm Snapdragon chipset photographed on a circuit board",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Vulkan support",
+    "SoC detection",
+    "renderer compatibility"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "Compatibility"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan guidance",
+    "vulkan-profiles": "Khronos Vulkan Profiles"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The phone model is not the graphics specification"
+    },
+    {
+      "type": "paragraph",
+      "text": "Manufacturers reuse product names across regions and silently change SoCs between revisions. Renderer decisions therefore start with the detected chip and GPU—Adreno on many Snapdragon devices, Mali or Immortalis on many MediaTek/Exynos devices, and other families on less common platforms. Android version alone does not state the Vulkan extensions, compiler stability or memory behaviour delivered by the vendor driver."
+    },
+    {
+      "type": "callout",
+      "text": "Use EmuCoreX's detected processor dialog as the first clue, then confirm with system information. Never install an Adreno driver package on a Mali/Immortalis device."
+    },
+    {
+      "type": "heading",
+      "text": "Prerequisites and a clean baseline"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record SoC, GPU family, Android build and vendor driver version before testing. Start with the system driver and the Safe profile. A renderer can launch successfully yet still fail later on shader compilation, framebuffer fetch or memory pressure, so one menu screen is not a capability test."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Detected SoC and GPU family.",
+        "Android build number and security patch level.",
+        "System driver baseline with custom driver disabled.",
+        "One shader-heavy and one effects-heavy game scene.",
+        "Enough free storage for logs and shader caches."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Build a capability-backed renderer choice"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Use Show detected processor and verify the reported family against the device's trusted system information.",
+        "2. On Adreno, begin with Vulkan unless a known device or game issue points to OpenGL; on MediaTek/Mali, begin with the EmuCoreX-recommended OpenGL path.",
+        "3. Cold-start the first scene twice to separate initial shader compilation from recurring faults.",
+        "4. Test the second scene for blending, framebuffer and memory behaviour, then run long enough to cross the device's thermal ramp.",
+        "5. Store a per-game renderer only for a demonstrated exception and keep the global choice aligned with the GPU family."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verify the result"
+    },
+    {
+      "type": "paragraph",
+      "text": "A compatible path completes shader-heavy transitions without driver loss, renders effects correctly and remains stable after the cache is warm. Watch for device-driver errors in logs rather than treating every black frame as a weak GPU. If software rendering is correct, the evidence points toward the hardware API or its settings."
+    },
+    {
+      "type": "list",
+      "items": [
+        "GPU family matches the renderer/driver package family.",
+        "Two cold starts and one warm start complete.",
+        "No recurring shader compiler or device-lost error.",
+        "Effects-heavy scene matches software-renderer structure.",
+        "The global choice remains usable across several games."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rollback and recovery"
+    },
+    {
+      "type": "paragraph",
+      "text": "Return to the system driver and default renderer whenever identification is uncertain. Remove per-game overrides before comparing devices. If an Android system update changes driver behaviour, repeat the baseline rather than carrying conclusions from the previous build."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Disable custom drivers.",
+        "Restore the recommended family-specific renderer.",
+        "Reset the affected per-game profile.",
+        "Reboot after a Vulkan device-loss loop."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Common failure patterns"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Wrong package family: immediate load failure or crash before rendering.",
+        "Works only until shaders compile: compiler/extension problem rather than raw performance.",
+        "Renderer good on one regional device, bad on another: product name hides a different SoC.",
+        "Menu works, gameplay fails: test coverage was too shallow."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "A concise hardware record makes community advice useful: device, SoC, GPU, Android build, driver, renderer, game serial and scene. Without that chain, recommendations collapse into phone-brand folklore. With it, renderer exceptions can be repeated and rolled back safely."
+    },
+    {
+      "type": "link",
+      "text": "Review Android's Vulkan guidance",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

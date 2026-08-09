@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "De la s?lection dans le catalogue ? l?installation v?rifi?e : le pipeline de packs de textures d?EmuCoreX",
+  "summary": "Les grands packs de remplacement exigent plus qu?une barre de progression. EmuCoreX attribue un identifiant durable ? chaque t?l?chargement, reprend les donn?es partielles avec les plages HTTP, v?rifie la taille annonc?e et SHA-256, puis n?installe le pack qu?apr?s validation de l?archive enti?re.",
+  "heroAlt": "Un exemple de rendu de texture stocké dans la source SDL incluse avec EmuCoreX",
+  "searchKeywords": [
+    "Packs de textures EmuCoreX",
+    "GestionnaireDeTéléchargementDeTextures",
+    "téléchargement multipart",
+    "Vérification SHA-256"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "Textures",
+    "downloads": "Téléchargements"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "Engagement du gestionnaire de téléchargement résilient",
+    "multipart-commit": "Validation du support du téléchargement multipart",
+    "extraction-limit-commit": "Validation de la limite d'extraction de texture",
+    "download-manager-source": "GestionnaireDeTéléchargementDeTextures source"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une entrée de file d'attente survit à l'écran qui l'a créée"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` vérifie d'abord que le paquet de catalogues déclare la compatibilité avec le numéro de série du jeu sélectionné. `TextureDownloadStore` dérive ensuite une clé de 32 caractères à partir du paquet et du numéro de série, écrit l'état de la tâche sous `noBackupFilesDir/texture-downloads`, et remet un travail portant un nom unique à Android `WorkManager`. La fermeture du catalogue de textures ne rend pas ce travail anonyme : les états en attente, téléchargement, en pause, attente, vérification, installation, terminé, échoué et annulé restent accessibles à l'interface utilisateur."
+    },
+    {
+      "type": "heading",
+      "text": "La reprise est négociée avec le serveur, elle n'est pas supposée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le travailleur mesure le fichier partiel existant et envoie une requête HTTP `Range` lorsqu'un décalage est disponible. Il n'ajoute des données qu'après avoir reçu une réponse partielle dont le `Content-Range` commence exactement à cet octet. Si le serveur ignore la plage, le travailleur supprime l'ancien fragment et recommence depuis zéro ; si la plage est incohérente, il rejette la réponse. Les connexions sont uniquement HTTPS, les redirections sont suivies manuellement pour au maximum huit sauts, et une redirection ne peut pas rétrograder le transfert vers HTTP."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "L'exemple de texture rotative provient de l'arbre SDL contenu dans EmuCoreX. Le pipeline de téléchargement fournit des données d'image de remplacement ; le moteur de rendu reste responsable de transformer le contenu vérifié en textures actives."
+    },
+    {
+      "type": "heading",
+      "text": "Progress est calculé à partir des octets qui sont déjà sur le disque"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chaque segment est écrit via `RandomAccessFile`, tandis que des échantillons prélevés environ toutes les 750 millisecondes alimentent les octets téléchargés, un taux d'octets lissé et un temps restant estimé à la fois dans la progression WorkManager et dans une notification au premier plan. Mettre en pause annule le travailleur unique mais conserve sa charge utile. Reprendre relit la longueur partielle avant de planifier un travail de remplacement. Annuler marque la tâche, arrête son travailleur et supprime les fichiers de charge utile, ce qui donne à pause et annuler des sémantiques de stockage intentionnellement différentes."
+    },
+    {
+      "type": "heading",
+      "text": "Les packs multipart sont vérifiés deux fois avant que l'assemblage ne soit approuvé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement multiple du 27 juillet permet à une entrée de catalogue de répertorier plusieurs enregistrements `RemoteTexturePart`. Chaque partie a sa propre URL, son nombre de bytes et son digest SHA-256. Le travailleur les télécharge dans l'ordre, vérifie la taille et le digest de chaque partie tout en les copiant dans une archive unique, et calcule simultanément un digest pour le flux assemblé. Le nombre final de bytes et le SHA-256 de l’archive complète doivent également correspondre au catalogue. Une liste incomplète, une réponse trop volumineuse, une partie modifiée ou une archive finale corrompue met fin au processus avant l’installation."
+    },
+    {
+      "type": "heading",
+      "text": "L'installation est un état distinct avec des conséquences explicites"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ce n'est qu'après vérification que la tâche entre dans `INSTALLING` et appelle `TexturePackRepository.installRemotePack()` pour le numéro de série sélectionné. Une installation réussie met à jour `RemoteContentInstallState`, active les remplacements de textures dans `AppPreferences`, supprime les charges utiles temporaires et marque la tâche comme terminée. Les exceptions réseau déplacent plutôt un travail en cours vers `WAITING_NETWORK` et demandent à WorkManager une nouvelle tentative avec une temporisation exponentielle ; les erreurs de catalogue ou d'intégrité sont traitées comme des échecs permanents plutôt que comme des tentatives infinies."
+    },
+    {
+      "type": "callout",
+      "text": "L'extraction des archives est également limitée. Le suivi du 28 juillet a relevé le plafond d'extraction des textures à 12 Gio pour les packs réellement volumineux, mais a maintenu une limite finie afin que l'entrée compressée ne puisse pas se développer sans contrôle."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "Lire le travailleur de téléchargement persistant et le magasin"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "Voyez comment les fiches de catalogue révèlent les contrôles de la file d'attente"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "为什么着色器翻译是 shadPS4 兼容性的核心前沿",
+  "summary": "视频核心源记录了一个转换管道，该管道必须将 PS4 GPU 程序转换为主机兼容的着色器，同时保留内存和数字行为。",
+  "heroAlt": "由 shadPS4 官方仓库分发的游戏截图",
+  "searchKeywords": [
+    "沙德PS4",
+    "为什么着色器翻译是 shadPS4 兼容性的核心前沿",
+    "PlayStation 4 模拟器"
+  ],
+  "categoryLabels": {
+    "shadps4": "沙德PS4",
+    "ps4": "游戏机4",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "shader-tree": "着色器重新编译器源代码树",
+    "gcn-decoder": "GCN指令译码器",
+    "spirv-backend": "SPIR-V 后端入口点"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "解码从 AMD GCN 指令开始"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS4图形程序是针对AMD GCN硬件进行编码的，因此shadPS4首先需要一个指令级前端而不是源语言编译器。 `frontend/decode.cpp` 和 `frontend/opcodes.h` 识别访客操作；指令和控制流文件将分支转换为以后编译器可以遍历的结构。解码失败是具体的：在 Vulkan 进入图片之前，操作码、编码字段或分支目标未正确表示。"
+    },
+    {
+      "type": "heading",
+      "text": "标量、向量和内存运算输入中间表示"
+    },
+    {
+      "type": "paragraph",
+      "text": "翻译层按行为划分：标量 ALU 和流、向量 ALU 和插值、标量和向量内存、导出和数据共享操作。这些翻译器发出 shadPS4 IR，而不是直接写入 SPIR-V。保持稳定的 IR 可以让优化和合法化传递有关共享内存、屏障、资源跟踪和控制流的原因，而无需在每个主机后端复制访客解码器。"
+    },
+    {
+      "type": "heading",
+      "text": "IR 通行证为 SPIR-V 后端准备代码"
+    },
+    {
+      "type": "paragraph",
+      "text": "“ir”树包含在主机发射之前简化或重写操作的块、指令和通道。然后，SPIR-V 后端处理聚焦发射器（例如“emit_spirv_image.cpp”和“emit_spirv_shared_memory.cpp”）中的整数、浮点、图像、原子、屏障、复合和子组行为。因此，缺失的 GCN 行为可以在解码、翻译、IR 通道或最终发射中修复；这些是不同的故障阶段。"
+    },
+    {
+      "type": "heading",
+      "text": "着色器输出仍然取决于 video_core 状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果图像格式、缓冲区绑定、采样器或来宾内存错误，则正确发出的 SPIR-V 模块可能会呈现错误的结果。 “video_core”通过其纹理和缓冲区缓存提供这些资源，并围绕着色器构建 Vulkan 管道。相反，管道创建时的验证消息可能会揭示编译器生成的无效接口。调试必须同时跟踪着色器及其绑定状态。"
+    },
+    {
+      "type": "heading",
+      "text": "日志和捕获应该识别第一个不良阶段"
+    },
+    {
+      "type": "paragraph",
+      "text": "有用的报告记录了确切的场景、标题更新、shadPS4 版本、GPU 和驱动程序。屏幕截图可确定症状；着色器转储、编译器日志或 RenderDoc 捕获可以显示解码是否失败、SPIR-V 被拒绝、资源未绑定或仅在稍后的传递后像素才发生分歧。同时改变分辨率、HDR、FSR 和几个实验选项会破坏这种比较，因此基线应该保持狭窄。"
+    }
+  ]
+}

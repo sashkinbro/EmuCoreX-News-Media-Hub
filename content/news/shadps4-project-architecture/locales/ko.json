@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 내부: PS4 에뮬레이션에 대한 기본 C++ 및 Vulkan 접근 방식",
+  "summary": "공식 프로젝트 구조는 shadPS4가 호환성을 단일 스위치로 처리하는 대신 기본 C++ 코어, 플랫폼 프런트엔드 및 Vulkan 중심 그래픽 경로를 결합하는 방법을 보여줍니다.",
+  "heroAlt": "공식 shadPS4 저장소에서 배포된 게임 화면",
+  "searchKeywords": [
+    "shadPS4",
+    "shadPS4 내부",
+    "플레이스테이션 4 에뮬레이터"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "플레이스테이션 4",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "official-readme": "shadPS4 코어 읽어보기",
+    "core-linker": "코어 링커 구현",
+    "shader-pipeline": "셰이더 리컴파일러 소스 트리",
+    "video-core": "비디오 코어 소스 트리"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU 경로는 기본 x86-64 실행으로 시작됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 4와 가장 많이 지원되는 데스크탑 호스트는 x86-64를 공유하며 shadPS4 README는 팀이 PS4 바이너리의 기본 실행을 해결하는 데 도움이 된 초기 에뮬레이터 연구를 인정합니다. 이러한 선택은 x86-64 호스트의 모든 게스트 CPU 명령을 변환하지 않지만 주소 공간 레이아웃, 예외 처리, 스레드 상태 및 가져온 시스템 기능을 호환성 경계의 일부로 만듭니다. 따라서 `src/core/address_space.cpp`, `memory.cpp` 및 커널 스레드 구현은 진입점 자체만큼 실행에 중요합니다."
+    },
+    {
+      "type": "heading",
+      "text": "ELF 로딩, 기호 확인 및 Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/loader/elf.cpp`는 게스트 ELF 객체를 구문 분석하는 반면 `src/core/linker.cpp` 및 `loader/symbols_resolver.cpp`는 가져온 이름을 구현과 연결합니다. 'src/core/aerolib' 아래의 Aerolib는 상위 수준 라이브러리 대체에 사용되는 내보내기 등록 레이어를 제공합니다. 그런 다음 대규모 `src/core/libraries` 트리는 커널, 파일 시스템, 오디오, 저장 데이터, 비디오 출력 및 기타 PS4 관련 API를 제공합니다. 타이틀은 네이티브 코드에 도달할 수 있지만 가져온 서비스 하나가 없거나 잘못된 구조를 반환하는 경우 즉시 중지됩니다."
+    },
+    {
+      "type": "heading",
+      "text": "GCN 명령어는 구조화된 IR이 되고 SPIR-V가 됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "그래픽 컴파일러는 `src/shader_recompiler` 아래의 별도 파이프라인입니다. 프런트엔드는 AMD GCN 명령어를 디코딩하고 제어 흐름을 구성하며 스칼라, 벡터, 보간 및 메모리 작업을 변환합니다. 중간 표현 단계는 `backend/spirv`가 호스트 소비 가능 SPIR-V를 방출하기 전에 해당 프로그램을 정규화합니다. 이는 릴리스 노트에서 개별 opcode, 무게 중심 좌표, 공유 메모리 및 내보내기 수정 사항을 명명하는 이유를 설명합니다. 각각은 게스트-호스트 셰이더 경로에서 누락된 구체적인 동작입니다."
+    },
+    {
+      "type": "heading",
+      "text": "video_core는 명령, 캐시 및 Vulkan 리소스를 소유합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/video_core` 레이어는 셰이더 컴파일러 주변에 위치합니다. Vulkan 렌더러는 장치, 파이프라인, 이미지 및 프레젠테이션 리소스를 생성하는 동시에 텍스처 및 버퍼 캐시는 게스트 메모리를 호스트 GPU 개체와 일관성 있게 유지합니다. PM4 명령 처리, 타일링, 이미지 형식 재해석 및 다시 읽기가 모두 여기에서 만납니다. 깨진 프레임은 셰이더 방출 전, 캐시 조회 중, 리소스 전환 또는 프레젠테이션 시 발생할 수 있으므로 스크린샷만으로는 책임 있는 구성 요소를 식별할 수 없습니다."
+    },
+    {
+      "type": "heading",
+      "text": "핵심 실행 파일과 사용자 프런트엔드는 별도의 제품입니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "공식 README에서는 이 저장소를 에뮬레이터 코어라고 명시적으로 부르고 일반 사용자를 별도의 QtLauncher로 안내합니다. 핵심 저장소 내에서 `src/main.cpp`, `emulator.cpp`, SDL 창 코드 및 `src/imgui` 레이어는 여전히 명령줄 실행, 오버레이, Big Picture 리소스 및 개발자용 보기를 제공합니다. Qt 런처를 별도로 유지하면 모든 프런트엔드 변경 사항을 핵심 에뮬레이션 변경 사항으로 전환하지 않고도 라이브러리 관리를 발전시킬 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "유용한 아키텍처 보고서는 실패한 경계를 지정합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "로더, 링커, Aerolib 또는 HLE 라이브러리를 향한 해결되지 않은 내보내기 지점 주변의 부팅 실패입니다. GCN 디코드 오류는 셰이더 프런트엔드 근처에 속합니다. Vulkan 검증, 텍스처 손상 또는 오래된 GPU 메모리는 video_core 및 해당 캐시를 가리킵니다. 입력은 `src/input`을 통해 게스트에 도달하는 반면, 호스트 로깅 및 파일 도우미는 `src/common`에 있습니다. 정확한 빌드, 마지막 로그 하위 시스템, 렌더러 및 호스트 플랫폼을 기록하면 \"게임이 작동하지 않음\"이 소스 트리에 맞춰 정렬된 보고서로 변환됩니다."
+    }
+  ]
+}

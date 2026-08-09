@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-gpu-timing-model",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Por qué Azahar modela la cola de interrupciones de la GPU 3DS",
+  "summary": "La ruta de temporización experimental tiene como objetivo reemplazar las soluciones de retraso amplio con un comportamiento de interrupción y cola más cercano al hardware original.",
+  "heroAlt": "Por qué Azahar modela la cola de interrupciones de la GPU 3DS: imagen oficial de Azahar",
+  "searchKeywords": [
+    "Azahar",
+    "Por qué Azahar modela la cola de interrupciones de la GPU 3DS",
+    "Emulador de Nintendo 3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "3ds": "nintendo 3ds",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "gpu-timing-pr": "Implementación de sincronización y cola de interrupciones de GPU",
+    "gpu-timing-followup": "Seguimiento de sincronización de GPU"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El modelo apunta a interrupciones de GPU y trabajo en cola."
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar PR #2095 presenta el comportamiento de temporización y cola de interrupciones de la GPU destinado a reflejar cuándo la GPU 3DS completa el trabajo y envía una señal a la CPU. Esto es más limitado que retrasar el hilo de renderizado en una cantidad arbitraria. El emulador tiene que ordenar las operaciones de GPU en cola y exponer la finalización en un momento visible para los invitados, porque los juegos pueden esperar esos eventos antes de avanzar la lógica, cargar un guardado o enviar el siguiente fotograma."
+    },
+    {
+      "type": "heading",
+      "text": "Una corrección de tiempo puede desbloquear un título y hacer retroceder otro"
+    },
+    {
+      "type": "paragraph",
+      "text": "El proyecto vinculó este camino con el progreso de Luigi's Mansion 2: Dark Moon sin la antigua solución de retraso y con un problema de carga guardada de Super Mario 3D Land. Esos ejemplos son casos de prueba, no prueba de que un valor de tiempo se ajuste a toda la biblioteca. Los títulos envían diferentes cargas de trabajo y esperan de diferentes maneras, por lo que una cola inexacta puede manifestarse como un bloqueo, una renderización faltante, un problema de ritmo o una carrera que aparece solo en algunos hosts."
+    },
+    {
+      "type": "heading",
+      "text": "Experimental y deshabilitado por defecto es un límite deliberado"
+    },
+    {
+      "type": "paragraph",
+      "text": "La discusión oficial sobre ingeniería mantiene la sincronización de la GPU simulada detrás de una configuración de gráficos porque su precisión y costo aún necesitan evidencia amplia. Eso permite a los usuarios comparar comportamientos sin cambiar silenciosamente cada instalación. PR #2145 es parte de la misma línea de desarrollo y proporciona un contexto de apoyo para el modelo en evolución. Una solución alternativa que mejore un juego popular debe permanecer activa hasta que se caractericen las regresiones y el rendimiento."
+    },
+    {
+      "type": "heading",
+      "text": "La velocidad de fotogramas por sí sola no puede validar un modelo de interrupción"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una prueba correcta registra la escena exacta, guarda, revisión de Azahar, renderizador y host. Ejecute una vez con los tiempos simulados deshabilitados y una vez habilitados, sin cambiar ninguna otra opción. Compare si el progreso del invitado cambia, cuando el registro informa la finalización de la cola, el ritmo de fotogramas y la utilización de CPU/GPU. Una velocidad de cuadros promedio más alta con un orden de eventos incorrecto no es un éxito; El comportamiento estable de los huéspedes es la señal principal."
+    },
+    {
+      "type": "heading",
+      "text": "Los informes deben describir el primer evento divergente."
+    },
+    {
+      "type": "paragraph",
+      "text": "\"Jugable ahora\" pierde la evidencia que los desarrolladores necesitan. Un informe útil indica qué transición se bloqueó previamente, qué gráficos u operación de guardado la preceden, si el audio y la entrada continúan y qué muestran los dos registros en torno a la divergencia. Si la opción solo cambia el rendimiento, incluya datos de tiempo de fotograma. Si cambia la corrección, conserve el estado reproducible más pequeño para que los cambios de tiempo posteriores puedan verificarse con la misma carga de trabajo."
+    }
+  ]
+}

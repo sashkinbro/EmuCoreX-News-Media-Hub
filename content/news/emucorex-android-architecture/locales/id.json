@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "id",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Bagaimana EmuCoreX membagi sesi PS2 antara Compose, SurfaceView, dan kode PCSX2 asli",
+  "summary": "Sebuah game PS2 yang diluncurkan dari EmuCoreX melewati beberapa batas yang sengaja sempit sebelum frame pertama mencapai layar. Aplikasi Android, kontrak JNI, permukaan rendering, status sesi, dan recompiler ARM64 masing-masing menguasai bagian yang berbeda dari jalur itu.",
+  "heroAlt": "Spanduk TV resmi EmuCoreX Android di latar belakang biru tua",
+  "searchKeywords": [
+    "arsitektur EmuCoreX",
+    "AplikasiAsli JNI",
+    "LayarEmulasi SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "Arsitektur",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "ARM64 runtime dan Android implementasi TV commit",
+    "jit-cache-lifecycle": "ARM64 siklus hidup cache JIT commit",
+    "native-app-source": "Sumber NativeApp",
+    "emulation-screen-source": "Sumber Layar Emulasi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proses Android memilih dan menyiapkan inti asli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Batas dimulai di `NativeApp`, sebuah objek Kotlin yang memilih pustaka inti yang kompatibel dengan ukuran halaman melalui `AndroidNativeCoreSelector`, memuatnya dengan `System.loadLibrary`, dan mencatat apakah inti asli dan alat tambahan asli tersedia. `initializeOnce()` kemudian menyiapkan root data emulator, menyalin sumber daya bundel, memverifikasi arsip patch, mengekspor bundel kepercayaan CA Android, mengonfigurasi jalur log kerusakan asli, dan akhirnya memanggil titik masuk JNI `initialize(dataRoot, sdkInt)`. Urutan itu penting: sisi C++ tidak pernah harus menebak di mana penyimpanan Android atau sertifikat berada."
+    },
+    {
+      "type": "heading",
+      "text": "Frame game yang dirender berasal dari SurfaceView asli, bukan kanvas Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` menanamkan Android `SurfaceView` yang buram melalui `AndroidView`. `SurfaceHolder.Callback`-nya meneruskan `surfaceCreated`, perubahan ukuran, dan penghapusan ke `EmulatorBridge`, yang pada gilirannya mencapai perender asli. Compose menggambar kontrol sentuh, informasi performa, pencapaian, dan antarmuka jeda di atas permukaan itu. Menjaga lapisan-lapisan tersebut tetap terpisah memungkinkan perender memiliki Android `Surface` tingkat rendah sementara overlay menjaga status Compose, animasi, aksesibilitas, dan tata letak adaptif."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "Karya seni aplikasi resmi EmuCoreX mewakili shell Android; bingkai yang diemulasikan itu sendiri disediakan oleh permukaan asli di bawah lapisan Compose."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel adalah koordinator sesi"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` bukan emulator. Ini mengoordinasikan status yang berhadapan dengan Android di sekitar emulator: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, data kompatibilitas, profil pemain, sinkronisasi waktu bermain, dan `AndroidGamePerformance`. `StateFlow<EmulationUiState>` memberi makan UI, sementara mutex siklus hidup dan transportasi menyerialisasi pekerjaan mulai, jeda, lanjutkan, dan shutdown. Field volatile mempertahankan jalur saat ini, serial, CRC, sampul, dan profil tata letak sentuh sehingga callback terlambat tidak secara tidak sengaja bekerja pada game berikutnya."
+    },
+    {
+      "type": "heading",
+      "text": "JNI menampilkan operasi, bukan antarmuka pengguna kedua"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kontrak `NativeApp` berisi panggilan eksplisit untuk permukaan, tekanan pengontrol, pemilihan renderer, pengaturan batch, save state, kartu memori, RetroAchievements, dump GS, profiler JIT, jejak hang, dan transportasi VM. Kotlin memutuskan kapan tindakan tersebut sah dan bagaimana mereka muncul; C++ mengeksekusinya terhadap status yang berasal dari PCSX2. Misalnya, lapisan Compose dapat menyembunyikan fast-forward dan cheat ketika klien RetroAchievements asli melaporkan sesi hardcore aktif, kemudian memaksa pembatas frame dan menambal status kembali ke nilai aman melalui jembatan yang sama."
+    },
+    {
+      "type": "heading",
+      "text": "Dua komit 22 Juli menunjukkan mengapa pembagian diuji sebagai satu sistem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Commit `0a16b80d` pada 22 Juli 2026 menyentuh kedua sisi batas: `MainActivity`, `TvUiPolicy`, pemilih penyimpanan, `EmulationViewModel`, ARM64 kompiler ulang EE/IOP/VU, memori virtual, penggantian tekstur GS, dan kode renderer. Kemudian pada hari itu, commit `f0e19666` memperketat umur cache JIT di seluruh EE, IOP, VIF, dan microVU serta memperluas `JitProfiler`. Perubahan tersebut merupakan snapshot arsitektural yang berguna: perbaikan siklus Android dapat memerlukan disiplin memori-eksekusi asli, dan perbaikan asli masih membutuhkan jalur Android yang dapat memulai, mengamati, dan menghentikannya dengan aman."
+    },
+    {
+      "type": "callout",
+      "text": "Repositori ini menjelaskan EmuCoreX sebagai tumpukan emulator PS2 dalam tahap pengembangan awal. Pemisahan tanggung jawab membuat kegagalan lebih mudah ditemukan, tetapi tidak membuat kompatibilitas menjadi independen dari game, perangkat, driver GPU, atau perender."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "Baca kontrak NativeApp JNI"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "Periksa integrasi overlay SurfaceView dan Compose"
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "tr",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreV içinde: SDLActivity, Compose katmanları ve bir Vita3K adaptör katmanı",
+  "summary": "EmuCoreV, bir masaüstü penceresini Android temasına sarmıyor. Başlatma yolu, Vita depolamayı hazırlar, küçük bir adaptör aracılığıyla Vita3K türetilmiş bir ön ucu başlatır, SDL'e render yüzeyini verir ve ardından çalışan oturumun etrafına Android yerel kontrolleri ve menüleri ekler.",
+  "heroAlt": "Resmi mavi EmuCoreV başlatıcı emblemi, koyu bir arka planın ortasında",
+  "searchKeywords": [
+    "EmuCoreV mimarisi",
+    "Vita3K Android",
+    "SDLActivity Compose üst üste bindirme",
+    "yerel_lib_köprü"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "Mimari",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "Çalışma zamanı ve ayarlar stabilizasyonu taahhüdü",
+    "vita3k-core-sync": "Vita3K türetilmiş çekirdek senkronizasyon taahhüdü",
+    "native-loader-source": "Yerel kütüphane yükleyici kaynağı",
+    "adapter-source": "JNI adaptör kaynağı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoader bir başlatılmış ön yüz oluşturur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir katalog yenilemesi veya oyun başlatma, çekirdekten bir şey istemeden önce, `NativeLibraryLoader.ensureLoaded()`, SDL'ye uygulama bağlamını verir ve `Vita3K` kütüphanesini yükler. Senkronize bölümler içinde `EmulatorStorage.prepareRuntime()`'yi çağırır, varsayılan `VitaCoreConfigRepository` değerlerini kaydeder, `NativeLib.prepareFrontend()`'yi çalıştırır ve `NativeLib.isInitialized()`'yi kontrol eder. Başlatma hâlâ gerektiğinde, çözülmüş çalışma zamanı ve Vita depolama köklerini `NativeLib.init()`'ye iletir. İki değişken bayrak, eşzamanlı Android ekranlarının yerel ön yüzü iki kez yüklemesini veya başlatmasını engeller."
+    },
+    {
+      "type": "heading",
+      "text": "Dört işlevli bir adaptör, paket özel köprüyü küçük tutar"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` açıkça EmuCoreV adaptör katmanı olarak işaretlenmiştir. `com.sbro.emucorev.core.NativeLib` tarafından beklenen JNI adlarını dışa aktarır ve bunları Vita3K türetilmiş uygulamalara iletir: ön yüzü hazırlamak, çalışma zamanı ve Vita yollarıyla başlatmak, başlatma sorgulaması yapmak ve uygulama listesini yenilemek. Yukarı yönlü işlevler `org.vita3k.emulator.NativeLib` altında kalır; EmuCoreV sadece kendi Android paketini kullanmak için onların başlatma mantığını çoğaltmaz."
+    },
+    {
+      "type": "heading",
+      "text": "?al??an oyun, g?zlemlenebilir Android durumuna sahip bir SDLActivity i?inde yer al?r"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator`, `SDLActivity`'i genişletir ve `Vita3K`'yi kendi yerel kütüphanesi olarak adlandırır. Bir `EmuSurface` oluşturur, `InputOverlay`'ye sahiptir, Android giriş cihazlarını izler ve mevcut oyun kimliğini Compose-izlenebilir durum olarak açığa çıkarır. `getArguments()`, geçerli oyuna özel GPU sürücüsünü eşzamanladıktan sonra başlatma niyetini Vita3K komut satırı argümanlarına dönüştürür. Yeni bir başlatma niyeti başka bir yerel oturum yığmaya çalışmaz; başlığı kaydeder ve yerel kapanıştan sonra kontrollü bir süreç yeniden başlatmasını tetikler."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "Resmî D-pad rasteri, EmuCoreV'in Android giriş katmanının bir unsurudur. `InputOverlay`, bu kullanıcı arayüzü durumunu yerel eksen, düğme ve ön veya arka dokunma çağrılarına dönüştürür."
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface, bindirmeye ait sahipliği ve rezerv hareketlerini bildirir"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface`, SDL'nin `SDLSurface`'sini değiştirmek yerine alt sınıf olarak alır. `surfaceCreated()` ve `surfaceDestroyed()` geri çağrıları, SDL yaşam döngüsü işinin öncesinde veya sonrasında yerel `setSurfaceStatus()` kancasını çağırarak yüzey sahipliğini renderleyiciye görünür kılar. Bir `GestureDetector` çift dokunmaları gözlemler ve `Emulator`'den örtüşen menü düğmesini açmasını ister, ancak ardından kontrolü SDL'ye geri verir. Bu detay, yalnızca dokunmatik kullanıcıya Android menüsüne geri dönme yolu sunarken oyun girişini korur."
+    },
+    {
+      "type": "heading",
+      "text": "Temmuz çalışma zamanı, depolama, giriş, render ve testleri birlikte değiştirdi"
+    },
+    {
+      "type": "paragraph",
+      "text": "29 Temmuz 2026 tarihli çalışma zamanı kararlılığı taahhütü (`d06e1575`), `native_lib_bridge.cpp`, `runtime_bridge.cpp`, Vita3K'nin `native_bootstrap.cpp`'sini, renderer gruplamasını, `EmulatorStorage`'yi, SDL aktivitesini, Compose öykünme menülerini ve ayar depolarını tek bir gözden geçirilmiş birimde değiştirdi. Ayrıca `AtomicTextFile`, `FrameLimit`, `ControllerAttachmentState`, `ImmersiveMode`'yi ve bu sözleşmeler için odaklanmış testleri tanıttı. Önceki 21 Mayıs çekirdek senkronizasyonu (`811a7cd6`), Vita3K iş parçacığı, bellek, GXM, diyalog-üstü kaplama, renderer ve Android önyükleme kodunu güncelledi. Birlikte, EmuCoreV'nin çekirdeği nerede kasıtlı olarak uyarladığını ve nerede yerel upstream davranışını izlemeye devam ettiğini gösteriyorlar."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose, uygulama navigasyonuna ve oyun içi Android kaplamasına sahiptir.",
+        "SDL, yerel ön uç tarafından beklenen etkinlik ve yüzey sözleşmesine sahiptir.",
+        "Adaptör, küçük bir JNI bootstrap çağrıları seti için package-name çevirisine sahiptir.",
+        "Vita3K türevi çekirdek, öykünülen çekirdek, bellek, GXM, render motoru, modüller ve oyun yürütmesini yönetir."
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "Korumalı yerel başlatma yolunu oku"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "EmuCoreV'den Vita3K JNI adaptörünü denetleyin"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "ps2-emotion-engine-architecture",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "探索 Emotion Engine 内部：为什么 PS2 代码必须进行并行思考",
+  "summary": "PlayStation 2 的中央芯片不仅仅是一个快速的 MIPS CPU：它的 R5900 核心、两个向量单元、图像解码器和 DMA 网络奖励那些作为合作数据管道构建的程序。",
+  "searchKeywords": [
+    "PlayStation 2",
+    "Emotion Engine",
+    "R5900",
+    "VU0",
+    "VU1",
+    "DMA",
+    "PS2 架构"
+  ],
+  "categoryLabels": {
+    "ps2-history": "PS2 历史",
+    "hardware": "硬件"
+  },
+  "sourceLabels": {
+    "sony-ee-announcement": "用于下一代 PlayStation 的 128 位 CPU Emotion Engine",
+    "toshiba-ee-manufacturing": "东芝与索尼计算机娱乐公司合作制造 Emotion Engine",
+    "date-ee-paper": "PlayStation 2的CPU",
+    "ps2-linux-handbook": "PlayStation 2 Linux 套件手册"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "比‘128位’口号更多"
+    },
+    {
+      "type": "paragraph",
+      "text": "索尼于1999年3月推出了Emotion Engine，作为其下一代主机的核心处理器。最引人注目的数字是128位，但这个标签更多地描述了SIMD整数运算的宽度以及机器的数据通路，而不是传统的128位通用CPU。其核心是一颗64位、基于MIPS的R5900，运行速度约为294 MHz，周围配备了专门的硬件，用于在不要求核心自行执行每个操作的情况下移动和转换几何、动画和视频流。"
+    },
+    {
+      "type": "heading",
+      "text": "被专家包围的CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "该芯片结合了 R5900、两个浮点向量单元、一个 MPEG-2 图像处理单元和一个十通道 DMA 控制器。VU0 可以在 CPU 旁边运行或作为协处理器；VU1 拥有自己的本地内存，并定位于在将绘图数据包发送到 Graphics Synthesizer 之前运行几何微程序。这种布局为开发者提供了可观的算术吞吐量，但只有在工作在各单元之间有意划分时才有效。"
+    },
+    {
+      "type": "heading",
+      "text": "草稿板和本地内存改变了工作"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 程序员不能将内存视为一个平坦、速度均匀的池。Emotion Engine 拥有 32 MB 的外部 RDRAM、一个小型暂存区、CPU 缓存以及每个向量单元内部独立的指令和数据存储。因此，一个快速的渲染器会分批处理紧凑的数据：CPU 准备状态，DMA 传输数据包，向量单元在其本地存储中转换顶点，而在前一个批处理移动的同时准备下一个批处理。布局、对齐和传输大小成为算法设计的一部分，而不是后期的优化步骤。"
+    },
+    {
+      "type": "heading",
+      "text": "DMA 是系统的编排"
+    },
+    {
+      "type": "paragraph",
+      "text": "DMA 控制器将主存储器与矢量接口、图像解码器、图形接口及其他设备连接起来。它的链标签可以描述传输序列，使机器在 CPU 处理游戏或进行后续工作时继续移动数据包。因此，著名的 PS2 演示不仅是算术演示，也是调度演示：当计算和数据传输重叠时性能显现，而当一个单元等待另一个单元或数据包格式错误时性能则消失。"
+    },
+    {
+      "type": "callout",
+      "text": "实际的 PS2 编程模型是一个流水线：准备、传输、转换和绘制——然后将这些阶段重叠，以确保没有处理器闲置。"
+    },
+    {
+      "type": "heading",
+      "text": "具有陡峭学习曲线的力量"
+    },
+    {
+      "type": "paragraph",
+      "text": "这种灵活性使得这款主机难以掌握。通用代码可以保留在R5900上，但雄心勃勃的图形引擎则需要向量微码、明确的DMA链以及精确的同步。忽视VU1的游戏可能无法充分利用机器的几何性能；而充分利用它的游戏同时也会带来平台特定的工具和调试问题。工作室逐渐建立了引擎、分析器和数据包查看器，使这种不同寻常的硬件成为可重复的生产目标。"
+    },
+    {
+      "type": "heading",
+      "text": "为什么模拟器会暴露原始设计"
+    },
+    {
+      "type": "paragraph",
+      "text": "准确的模拟必须保留本地软件依赖的关系：R5900 指令行为、向量单元执行、DMA 顺序、中断以及与 I/O 处理器和 GS 的通信。如果每个块的可见时序发生变化，即使执行速度快也不够。这就是为什么 PS2 模拟器包含多个重新编译器和专用调度器，而不是只翻译一个简单的 CPU 循环的原因，也解释了为什么对一个晦涩的 DMA 或向量边缘情况的修复可以解锁原本看似无关的游戏。"
+    },
+    {
+      "type": "heading",
+      "text": "一个其特性源自协调的机器"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emotion Engine 在主机历史上赢得了它的位置，并不是因为某一个规格定义了那一代，而是因为它鼓励了一种独特的工程风格。团队学会了将动画、物理和几何表示为在不同处理器之间共享的流。最优秀的 PS2 软件让玩家看不到这些界限，但硬件的并行节奏仍然对开发者、保护者和重建每一帧组装方式的模拟器作者可见。"
+    }
+  ],
+  "heroAlt": "PlayStation 2 主板特写照片"
+}

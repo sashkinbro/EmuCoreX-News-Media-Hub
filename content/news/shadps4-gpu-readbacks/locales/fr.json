@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Les relectures GPU reconnectent les images hôtes de ShadPS4 avec la mémoire visible par les invités",
+  "summary": "Les relectures transfèrent les données modifiées par le GPU vers le processeur lorsque le logiciel PS4 attend une mémoire partagée, échangeant ainsi la vitesse contre l'exactitude des charges de travail qui en ont besoin.",
+  "heroAlt": "Capture de jeu distribu?e dans le d?p?t officiel de shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Les relectures GPU reconnectent les images hôtes de ShadPS4 avec la mémoire visible par les invités",
+    "Émulateur PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Source du cache du tampon vidéo",
+    "page-manager": "Gestionnaire de pages de mémoire vidéo",
+    "readback-notes": "Notes d'ingénierie de relecture",
+    "module-viewer": "Implémentation du visualiseur de modules"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les écritures GPU ne sont pas automatiquement visibles en tant que mémoire CPU invité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le logiciel PS4 peut traiter une région mémoire comme partagée même après que les commandes GPU ont modifié les données correspondantes. Sur l'hôte, ces données peuvent exister dans un tampon ou une image Vulkan plutôt que dans les octets visibles par le processeur que l'invité lit ultérieurement. Une relecture copie le résultat modifié vers le côté CPU au point où la cohérence est requise. Sans cela, le jeu peut consommer des sommets, des compteurs ou d'autres résultats obsolètes alors que la vue GPU semblait valide."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache suit les régions au lieu de tout copier"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'arborescence `src/video_core/buffer_cache` maintenue sépare les objets tampon, les définitions de régions, un gestionnaire de régions, le suivi de la mémoire et la gestion des erreurs. Cette organisation existe parce que copier toute la mémoire vidéo après chaque commande serait d'un coût prohibitif. Le cache doit identifier les plages qui se chevauchent, de quel côté les a modifiées et quand un accès invité doit être synchronisé. `page_manager` participe à la limite de mémoire plus large où se rencontrent les pages invité mappées et les ressources GPU."
+    },
+    {
+      "type": "heading",
+      "text": "L'exactitude a un coût de synchronisation mesurable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une relecture peut s'arrêter jusqu'à la fin du travail du GPU hôte, puis transférer les données au-delà d'une limite qui reste normalement asynchrone. Trop peu de relectures laissent une mémoire obsolète ; un trop grand nombre peut réduire la fréquence d’images et introduire du bégaiement. Les notes d'ingénierie officielles de la version 0.10 ont documenté ce compromis et ont relié le chemin expérimental à une réduction des explosions de sommets et à des progrès dans les titres utilisant les résultats partagés GPU à CPU. Ces preuves décrivent un mécanisme et non une recommandation universelle."
+    },
+    {
+      "type": "heading",
+      "text": "Module Viewer répond à une question de débogage différente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le Module Viewer sous `src/core/devtools/widget/module_list.cpp` expose les modules exécutables chargés et leur état. Il n'effectue pas le transfert de mémoire, mais il aide un développeur à identifier quel composant invité est actif lorsqu'un chemin dépendant de la relecture échoue. L'association de l'état du module avec les journaux du cache tampon est plus informative que de supposer que chaque explosion géométrique appartient au compilateur de shader."
+    },
+    {
+      "type": "heading",
+      "text": "Une comparaison contrôlée isole le comportement de relecture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les tests conservent les mêmes sauvegarde, scène, moteur de rendu, résolution et révision, puis modifient uniquement l'option de relecture pertinente. Enregistrez la première image corrompue, l'impact du frametime et le journal complet. Si la corruption disparaît alors que les performances chutent au cours du même événement, cela prend en charge une dépendance de cohérence. Si rien ne change, l’interprétation des textures, le traitement des commandes, la traduction des shaders ou le comportement du pilote restent de meilleurs candidats."
+    }
+  ]
+}

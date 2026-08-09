@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Katalog se?iminden do?rulanm?? kuruluma: EmuCoreX doku paketi s?reci",
+  "summary": "B?y?k de?i?tirme paketleri i?in ilerleme ?ubu?u tek ba??na yeterli de?ildir. EmuCoreX her indirmeye kal?c? bir tan?mlay?c? verir, eksik veriyi HTTP aral?klar?yla s?rd?r?r, belirtilen boyutu ve SHA-256 de?erini do?rular ve paketi ancak t?m ar?iv denetimden ge?tikten sonra kurar.",
+  "heroAlt": "EmuCoreX ile birlikte dahil edilen SDL kaynağında saklanan bir doku-renderlama örneği",
+  "searchKeywords": [
+    "EmuCoreX doku paketleri",
+    "DokuİndirmeYöneticisi",
+    "çok parçalı indirme",
+    "SHA-256 doğrulaması"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "Dokular",
+    "downloads": "İndirilenler"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "Dayanıklı indirme yöneticisi taahhüdü",
+    "multipart-commit": "Parçalı indirme desteği komiti",
+    "extraction-limit-commit": "Doku çıkarma sınırı taahhüdü",
+    "download-manager-source": "TextureDownloadManager kaynağı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bir kuyruk girişi, onu oluşturan ekranın ömrü boyunca yaşar"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` önce katalog paketinin seçilen oyun seri numarası ile uyumluluğunu beyan ettiğini kontrol eder. `TextureDownloadStore` daha sonra paketten ve seri numarasından 32 karakterlik bir anahtar türetir, görev durumunu `noBackupFilesDir/texture-downloads` altında yazar ve Android `WorkManager`'ye benzersiz bir isimle iş verir. Doku kataloğunu kapatmak, bu işi anonim hale getirmez: Kuyrukta, indiriliyor, duraklatıldı, bekliyor, doğrulanıyor, kuruluyor, tamamlandı, başarısız ve iptal edilmiş durumlar UI tarafından görünmeye devam eder."
+    },
+    {
+      "type": "heading",
+      "text": "Devam, varsayılan olarak değil, sunucu ile müzakere edilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "İşçi, mevcut kısmi dosyayı ölçer ve bir ofset mevcut olduğunda HTTP `Range` isteği gönderir. Yalnızca `Content-Range`’si tam olarak o bayttan başlayan kısmi bir yanıt aldıktan sonra ekler. Sunucu aralığı görmezden gelirse, işçi eski parçayı siler ve sıfırdan yeniden başlar; aralık tutarsızsa yanıtı reddeder. Bağlantılar yalnızca HTTPS’dir, yönlendirmeler en fazla sekiz basamak için manuel olarak takip edilir ve bir yönlendirme aktarımı HTTP’e düşüremez."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "Dönen doku örneği, EmuCoreX içinde taşınan SDL ağacından gelir. İndirme hattı, yedek resim verileri sağlar; renderlama, doğrulanmış içeriği canlı dokulara dönüştürmekten sorumlu olmaya devam eder."
+    },
+    {
+      "type": "heading",
+      "text": "Progress, diskte zaten bulunan baytlardan hesaplanır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Her parça `RandomAccessFile` üzerinden yazılırken, yaklaşık her 750 milisaniyede bir alınan örnekler indirilen baytları, dengelenmiş bir bayt oranını ve tahmini kalan süreyi hem WorkManager ilerlemesine hem de ön planda bir bildirime besler. Duraklatma, benzersiz çalışanı iptal eder, ancak yükünü korur. Devam etmek, değiştirilecek işi planlamadan önce kısmi uzunluğu yeniden okur. İptal, görevi işaretler, çalışanını durdurur ve yük dosyalarını atar, bu da duraklatma ve iptale kasıtlı olarak farklı depolama anlamları verir."
+    },
+    {
+      "type": "heading",
+      "text": "Çok parçalı paketler, montaj güvenilir hale gelmeden önce iki kez doğrulanır"
+    },
+    {
+      "type": "paragraph",
+      "text": "27 Temmuz çok parçalı değişikliği, bir katalog girişinin birden fazla `RemoteTexturePart` kaydını listelemesine izin verir. Her parçanın kendi URL'si, bayt sayısı ve SHA-256 özeti vardır. İşçi, onları sırasıyla indirir, her parçanın boyutunu ve özetini kontrol ederken onları tek bir arşive kopyalar ve aynı anda birleştirilmiş akış için bir özet hesaplar. Nihai bayt sayısı ve tüm paket SHA-256 de kataloğa uymalıdır. Eksik bir liste, aşırı büyük yanıt, değiştirilmiş bir parça veya bozuk nihai arşiv, kurulumdan önce hattı sonlandırır."
+    },
+    {
+      "type": "heading",
+      "text": "Kurulum, açık sonuçları olan ayrı bir durumdur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Doğrulama sonrası görev `INSTALLING`'e girer ve seçilen seri için `TexturePackRepository.installRemotePack()`'i çağırır. Başarılı bir kurulum `RemoteContentInstallState`'i günceller, `AppPreferences`'de doku değişimlerini etkinleştirir, geçici yükleri kaldırır ve görevi tamamlanmış olarak işaretler. Ağ istisnaları, çalışmakta olan bir işi `WAITING_NETWORK`'e taşır ve WorkManager'den üstel-gerileme denemesi ister; katalog veya bütünlük hataları sonsuz denemeler yerine kalıcı hata olarak kabul edilir."
+    },
+    {
+      "type": "callout",
+      "text": "Arşiv çıkarma da sınırlıdır. 28 Temmuz takip güncellemesi, gerçekten büyük paketler için doku çıkarma tavanını 12 GiB'ye yükseltti, ancak sıkıştırılmış girdinin kontrolsüz olarak genişleyememesi için sonlu bir limit tuttu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "Kalıcı indirme çalışanını okuyun ve saklayın"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "Katalog kartlarının kuyruk kontrollerini nasıl ortaya çıkardığını görün"
+    }
+  ]
+}

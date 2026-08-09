@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Wstępne ładowanie obrazu dysku zamienia pamięć RAM na przewidywalne opóźnienie odczytu",
+  "summary": "Ścieżka obrazu pamięci DuckStation ładuje strukturalne dane z dysku do pamięci RAM, zachowując jednocześnie ścieżki, sektory i semantykę arkusza cue.",
+  "heroAlt": "Oficjalna grafika DuckStation na ciemnym tle",
+  "searchKeywords": [
+    "Stacja Duck",
+    "Wstępne ładowanie obrazu dysku zamienia pamięć RAM na przewidywalne opóźnienie odczytu",
+    "Emulator PlayStation"
+  ],
+  "categoryLabels": {
+    "duckstation": "Stacja Duck",
+    "ps1": "PlayStation",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementacja obrazu CD w pamięci",
+    "cue-parser": "Analizator obrazu CUE",
+    "playlist-parser": "Parser wielodyskowy M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wstępne ładowanie powoduje zmianę magazynu kopii zapasowych, a nie modelu dysku"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation może przenosić dane obrazu dysku do pamięci RAM, aby uniknąć wybudzania pamięci i poszukiwania opóźnień podczas odtwarzania. `src/util/cd_image_memory.cpp` nadal prezentuje obraz płyty CD poprzez ten sam logiczny interfejs, co źródła oparte na plikach. Odczyty gości pozostają podzielone na sektory i ścieżki; wstępne ładowanie jest przydatne tylko wtedy, gdy reprezentacja w pamięci dokładnie zachowuje spis treści i każdą obsługiwaną formę sektora."
+    },
+    {
+      "type": "heading",
+      "text": "Metadane CUE definiują więcej niż tylko nazwę pliku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Arkusz CUE może opisywać wiele ścieżek danych i audio, punktów indeksowych, odstępów wstępnych i trybów sektorów. `cd_image_cue.cpp` analizuje tę strukturę, zanim ścieżka pamięci będzie mogła skopiować znaczącą treść. Rzadkie polecenia mają znaczenie, ponieważ prawidłowy obraz archiwalny może je wykonać, nawet jeśli zwykłe zrzuty jednościeżkowe tego nie robią. Spłaszczanie plików bez przeanalizowanego układu spowodowałoby przesunięcie adresów lub zwrócenie nieprawidłowych bajtów do emulowanego kontrolera CD."
+    },
+    {
+      "type": "heading",
+      "text": "Wielopłytowe listy odtwarzania znajdują się nad pojedynczymi obrazami"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` obsługuje listy odtwarzania, które porządkują wiele obrazów dla jednego tytułu. Zachowanie współdzielonej karty pamięci i przełączanie dysków zależy od utrzymania tego grupowania, podczas gdy każdy obraz elementu nadal potrzebuje własnych, prawidłowych ścieżek i sektorów. Wstępne ładowanie jednego członka nie pozwala na ciche łączenie dysków ani odrzucanie tożsamości playlisty. Dlatego w przypadku niepowodzenia wymiany należy zarejestrować zarówno M3U, jak i format każdego obrazu, do którego się odwołuje."
+    },
+    {
+      "type": "heading",
+      "text": "Koszt pamięci RAM skaluje się wraz z rozmiarem zawartości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Świadczenie z tytułu opóźnienia jest wypłacane z góry w drodze alokacji i kopiowania. Duże obrazy zwiększają obciążenie pamięci, a zdarzenie braku pamięci lub stronicowania może być poważniejsze niż problemy z pamięcią, których ta opcja miała uniknąć. Urządzenia z ograniczoną pamięcią RAM wymagają przewidywalnego powrotu do odczytu opartego na plikach. Testy porównawcze powinny obejmować czas wstępnego ładowania, pamięć rezydentną i dokładną scenę, w której wcześniej widoczne było opóźnienie przechowywania."
+    },
+    {
+      "type": "heading",
+      "text": "Raport dysku zawiera układ i stan wstępnego ładowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zapisz wersję DuckStation, format obrazu, sumy kontrolne, tekst CUE lub listy odtwarzania, ustawienia wstępnego ładowania i dostępną pamięć. Jeśli zawiedzie tylko tryb załadowania wstępnego, porównaj ten sam sektor logiczny za pomocą ścieżki opartej na pliku. Jeśli oba zawiodą, lepszym rozwiązaniem będzie parsowanie lub sam zrzut. Ten kontrolowany podział pozwala programistom badać „pamięć_obrazu_cd” bez mylenia jej z analizowaniem CHD, PBP, CCD, MDS lub podstawowym obrazem CD."
+    }
+  ]
+}

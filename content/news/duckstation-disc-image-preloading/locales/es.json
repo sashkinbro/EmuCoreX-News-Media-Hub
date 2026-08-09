@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "La precarga de imágenes de disco cambia la RAM por una latencia de lectura predecible",
+  "summary": "La ruta de la imagen de memoria de DuckStation carga datos de disco estructurados en la RAM al tiempo que preserva las pistas, los sectores y la semántica de las hojas de referencia.",
+  "heroAlt": "Gr?fico oficial de DuckStation sobre un fondo oscuro",
+  "searchKeywords": [
+    "Estación de pato",
+    "La precarga de imágenes de disco cambia la RAM por una latencia de lectura predecible",
+    "emulador de playstation"
+  ],
+  "categoryLabels": {
+    "duckstation": "Estación de pato",
+    "ps1": "Estación de juegos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementación de imagen de CD en memoria",
+    "cue-parser": "analizador de imágenes CUE",
+    "playlist-parser": "Analizador multidisco M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La precarga cambia la tienda de respaldo, no el modelo de disco"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation puede mover datos de imágenes de disco a la RAM para evitar reactivaciones del almacenamiento y buscar latencia durante la reproducción. `src/util/cd_image_memory.cpp` todavía presenta una imagen de CD a través de la misma interfaz lógica que las fuentes respaldadas por archivos. Las lecturas invitadas siguen abordadas por sectores y pistas; La precarga es útil sólo si la representación en memoria conserva exactamente la tabla de contenidos y la forma de cada sector admitido."
+    },
+    {
+      "type": "heading",
+      "text": "Los metadatos CUE definen más que un nombre de archivo."
+    },
+    {
+      "type": "paragraph",
+      "text": "Una hoja CUE puede describir múltiples pistas de datos y audio, puntos de índice, espacios previos y modos de sector. `cd_image_cue.cpp` analiza esa estructura antes de que la ruta de la memoria pueda copiar contenido significativo. Los comandos poco comunes son importantes porque una imagen de archivo válida puede ejecutarlos incluso cuando los volcados comunes de pista única no lo hacen. Acoplar archivos sin el diseño analizado cambiaría las direcciones o devolvería bytes incorrectos al controlador de CD emulado."
+    },
+    {
+      "type": "heading",
+      "text": "Las listas de reproducción de varios discos se ubican encima de imágenes individuales"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` maneja listas de reproducción que ordenan varias imágenes para un título. El comportamiento de la tarjeta de memoria compartida y el cambio de disco dependen del mantenimiento de esa agrupación, mientras que cada imagen miembro aún necesita sus propias pistas y sectores válidos. La precarga de un miembro no puede fusionar discos silenciosamente ni descartar la identidad de la lista de reproducción. Por lo tanto, un error de intercambio debería registrar tanto el M3U como el formato de cada imagen a la que se hace referencia."
+    },
+    {
+      "type": "heading",
+      "text": "El costo de la RAM aumenta con el tamaño del contenido"
+    },
+    {
+      "type": "paragraph",
+      "text": "El beneficio de latencia se paga por adelantado mediante asignación y copia. Las imágenes grandes aumentan la presión de la memoria, y un evento de falta de memoria o de paginación puede ser peor que el problema de almacenamiento que la opción debía evitar. Los dispositivos con RAM limitada necesitan un recurso predecible a la lectura respaldada por archivos. Los puntos de referencia deben incluir el tiempo de precarga, la memoria residente y la escena exacta donde la latencia del almacenamiento era visible anteriormente."
+    },
+    {
+      "type": "heading",
+      "text": "Un informe de disco incluye el diseño y el estado de precarga."
+    },
+    {
+      "type": "paragraph",
+      "text": "Registre la revisión de DuckStation, el formato de imagen, las sumas de verificación, el texto CUE o de la lista de reproducción, la configuración de precarga y la memoria disponible. Si solo falla el modo precargado, compare el mismo sector lógico a través de la ruta respaldada por el archivo. Si ambos fallan, el análisis o el volcado en sí son mejores candidatos. Esta división controlada permite a los desarrolladores investigar `cd_image_memory` sin confundirla con CHD, PBP, CCD, MDS o el análisis de imágenes de CD base."
+    }
+  ]
+}

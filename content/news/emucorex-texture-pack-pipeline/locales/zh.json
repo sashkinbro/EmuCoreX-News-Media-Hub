@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "从目录点击到验证安装：EmuCoreX 的纹理包流程",
+  "summary": "大型替换包不能只靠进度条。EmuCoreX 为每次传输分配持久标识，通过 HTTP 范围请求续传部分数据，核对声明的大小和 SHA-256 哈希，并且只在完整压缩包通过全部检查后才执行安装。",
+  "heroAlt": "一个存储在随 EmuCoreX 提供的 SDL 源代码中的纹理渲染示例",
+  "searchKeywords": [
+    "EmuCoreX 纹理包",
+    "纹理下载管理器",
+    "多部分下载",
+    "SHA-256 验证"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "纹理",
+    "downloads": "下载"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "弹性下载管理器提交",
+    "multipart-commit": "多部分下载支持提交",
+    "extraction-limit-commit": "纹理提取限制提交",
+    "download-manager-source": "TextureDownloadManager 源"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "队列条目会在创建它的屏幕上存活"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` 首先检查目录包是否声明与所选游戏序列号兼容。`TextureDownloadStore` 然后从包和序列号中导出一个32字符的密钥，在 `noBackupFilesDir/texture-downloads` 下写入任务状态，并将一个唯一命名的作业交给 Android `WorkManager`。关闭纹理目录不会使该作业匿名：排队、下载中、暂停、等待、验证、安装中、已完成、失败和已取消状态仍然可以在用户界面中访问。"
+    },
+    {
+      "type": "heading",
+      "text": "恢复是与服务器协商的，而不是假定的"
+    },
+    {
+      "type": "paragraph",
+      "text": "工人测量现有的部分文件，并在有可用偏移量时发送 HTTP `Range` 请求。只有在收到部分响应且该响应的 `Content-Range` 恰好从该字节开始后，它才会进行附加。如果服务器忽略范围，工人会删除旧的片段并从零重新开始；如果范围不一致，则会拒绝响应。连接仅为 HTTPS，重定向最多手动跟随八次，并且重定向可能不会将传输降级到 HTTP。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "旋转纹理示例来自存储在 EmuCoreX 中的 SDL 树。下载管道提供替换图像数据；渲染器仍然负责将已验证的内容转换为实时纹理。"
+    },
+    {
+      "type": "heading",
+      "text": "Progress 是从已经在磁盘上的字节计算得出的"
+    },
+    {
+      "type": "paragraph",
+      "text": "每个块都通过 `RandomAccessFile` 写入，而大约每 750 毫秒采样一次，采样数据会将下载的字节、平滑字节速率和估计剩余时间输入到 WorkManager 进度和前台通知中。暂停会取消唯一的工作者，但保留其负载。恢复会在安排替换工作之前重新读取部分长度。取消会标记任务，停止其工作者，并丢弃负载文件，这使得暂停和取消在存储语义上故意不同。"
+    },
+    {
+      "type": "heading",
+      "text": "多部分包装在组装被信任之前会经过两次验证"
+    },
+    {
+      "type": "paragraph",
+      "text": "7月27日的多部分更改允许一个目录条目列出多个`RemoteTexturePart`记录。每个部分都有自己的URL、字节数和SHA-256摘要。工作线程按顺序下载它们，在将它们复制到一个归档文件时检查每个部分的大小和摘要，同时计算组装流的摘要。最终字节数和整个归档的SHA-256也必须与目录匹配。不完整的列表、超大响应、更改的部分或损坏的最终归档都会在安装前终止流程。"
+    },
+    {
+      "type": "heading",
+      "text": "安装是一个具有明确后果的独立状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "只有在验证之后，任务才会进入 `INSTALLING` 并为选定的序列调用 `TexturePackRepository.installRemotePack()`。成功安装会更新 `RemoteContentInstallState`，启用 `AppPreferences` 中的纹理替换，移除临时负载，并标记任务为完成。网络异常则会将正在运行的作业移动到 `WAITING_NETWORK`，并向 WorkManager 请求指数退避重试；目录或完整性错误则被视为永久性失败，而不是无限重试。"
+    },
+    {
+      "type": "callout",
+      "text": "归档提取也是有限制的。7月28日的后续更新将纹理提取上限提高到12 GiB，以应对真正的大型包，但仍保留了一个有限的限制，以防压缩输入在没有控制的情况下膨胀。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "读取持久下载工作程序并存储"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "看看目录卡如何暴露队列控制"
+    }
+  ]
+}

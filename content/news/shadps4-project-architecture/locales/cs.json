@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Uvnitř shadPS4: nativní C++ a Vulkan přístup k emulaci PS4",
+  "summary": "Oficiální struktura projektu ukazuje, jak shadPS4 kombinuje nativní jádro C++, rozhraní platformy a grafickou cestu zaměřenou na Vulkan namísto toho, aby kompatibilitu považovala za jediný přepínač.",
+  "heroAlt": "Sn?mek hry zve?ejn?n? v ofici?ln?m repozit??i shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Uvnitř shadPS4",
+    "emulátor PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "official-readme": "shadPS4 jádro README",
+    "core-linker": "Implementace linkeru jádra",
+    "shader-pipeline": "Zdrojový strom rekompilátoru shaderu",
+    "video-core": "Zdrojový strom jádra videa"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cesta CPU začíná nativním spuštěním x86-64"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 4 a většina podporovaných desktopových hostitelů sdílejí x86-64 a shadPS4 README připisuje dřívější výzkum emulátoru, který pomohl týmu vyřešit nativní spouštění binárních souborů PS4. Tato volba se vyhýbá překladu každé instrukce hostovaného CPU na hostitelích x86-64, ale činí rozložení adresního prostoru, zpracování výjimek, stav vláken a importované systémové funkce součástí hranice kompatibility. `src/core/address_space.cpp`, `memory.cpp` a implementace vláken jádra jsou proto pro spuštění stejně důležité jako samotný vstupní bod."
+    },
+    {
+      "type": "heading",
+      "text": "ELF načítání, rozlišení symbolů a Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/loader/elf.cpp` analyzuje hostované objekty ELF, zatímco `src/core/linker.cpp` a `loader/symbols_resolver.cpp` spojují importované názvy s implementacemi. Aerolib pod `src/core/aerolib` poskytuje vrstvu pro registraci exportu, kterou používají náhrady knihoven na vysoké úrovni. Velký strom `src/core/libraries` pak poskytuje jádro, souborový systém, zvuk, uložená data, video-out a další API pro PS4. Titul může dosáhnout nativního kódu, ale přesto se okamžitě zastaví, když jedna importovaná služba chybí nebo vrací špatnou strukturu."
+    },
+    {
+      "type": "heading",
+      "text": "GCN instrukce se stanou strukturovanými IR, pak SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafický kompilátor je samostatný kanál pod `src/shader_recompiler`. Jeho frontend dekóduje instrukce AMD GCN, vytváří řídicí tok a překládá skalární, vektorové, interpolační a paměťové operace. Průchody střední reprezentace normalizují tento program před tím, než `backend/spirv` vyšle SPIR-V pro hostitele. To vysvětluje, proč poznámky k vydání pojmenovávají jednotlivé operační kódy, barycentrické souřadnice, sdílenou paměť a opravy exportu: každá je konkrétní chybějící chování v cestě shaderu host-hostitel."
+    },
+    {
+      "type": "heading",
+      "text": "video_core vlastní příkazy, mezipaměti a prostředky Vulkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kolem kompilátoru shaderu je umístěna vrstva `src/video_core`. Jeho vykreslovací modul Vulkan vytváří zařízení, kanály, obrázky a prezentační zdroje, zatímco mezipaměti textur a vyrovnávací paměti udržují paměť hosta koherentní s objekty GPU hostitele. Zde se setkávají zpracování příkazů PM4, dlaždice, reinterpretace obrazového formátu a zpětné čtení. Rozbitý snímek může vzniknout před vysíláním shaderu, během vyhledávání mezipaměti, při přechodu zdroje nebo při prezentaci, a proto samotný snímek obrazovky nemůže identifikovat odpovědnou komponentu."
+    },
+    {
+      "type": "heading",
+      "text": "Jádro spustitelného souboru a uživatelské rozhraní jsou samostatné produkty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oficiální README toto úložiště výslovně nazývá jádrem emulátoru a nasměruje běžné uživatele na samostatný QtLauncher. V základním repozitáři `src/main.cpp`, `emulator.cpp`, kód okna SDL a vrstvy `src/imgui` stále poskytují provádění příkazového řádku, překryvy, zdroje velkého obrazu a pohledy pro vývojáře. Udržování spouštěče Qt odděleného umožňuje správu jeho knihoven vyvíjet, aniž by se každá změna frontendu změnila na změnu emulace jádra."
+    },
+    {
+      "type": "heading",
+      "text": "Užitečná zpráva o architektuře pojmenovává hranici selhání"
+    },
+    {
+      "type": "paragraph",
+      "text": "Selhání spouštění kolem nevyřešeného exportu ukazuje na zavaděč, linker, Aerolib nebo knihovnu HLE. Chyba dekódování GCN patří k frontendu shaderu; Ověření Vulkan, poškození textury nebo zastaralá paměť GPU ukazuje na video_core a jeho mezipaměti. Vstup se dostává k hostovi přes `src/input`, zatímco protokolování hostitele a pomocní soubory souborů žijí pod `src/common`. Záznam přesného sestavení, posledního logového subsystému, rendereru a hostitelské platformy změní „hra nefunguje“ na zprávu zarovnanou se zdrojovým stromem."
+    }
+  ]
+}

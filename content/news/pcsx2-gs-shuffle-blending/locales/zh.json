@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-gs-shuffle-blending",
+  "locale": "zh",
+  "basedOnVersion": 9,
+  "localeVersion": 9,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 如何处理 GS 的 texture shuffle 与 blending",
+  "summary": "PCSX2 会识别 blending、texture shuffle 和 framebuffer 模式；如果缺少针对性处理，这些模式在现代图形 API 上会产生伪影。",
+  "heroAlt": "PCSX2 如何处理 GS 的 texture shuffle 与 blending",
+  "searchKeywords": [
+    "PCSX2",
+    "PCSX2 如何处理 GS 的 texture shuffle 与 blending",
+    "模拟器"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "ps2": "PlayStation 2",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "official-project-source": "项目官方来源",
+    "official-editorial-source": "官方技术或编辑来源"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Texture shuffle 揭示 GS 的内存技巧"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 2 游戏可以重新解释 framebuffer 通道和内存布局，用有限的 GS 资源组合出各种效果。PCSX2 改进了对反转像素、宽度并非 16 像素倍数的精灵、palette shuffle 以及带偏移的 shuffle 情况的检测。"
+    },
+    {
+      "type": "heading",
+      "text": "Blending 需要目标数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "许多阴影、光照和透明效果会读取已经渲染的值。现代 API 提供这种 feedback 时，在安全性和效率上各不相同。PCSX2 会依据后端能力选择 barrier、render pass 或 readback，同时保留游戏预期的 blending 方程。"
+    },
+    {
+      "type": "heading",
+      "text": "有针对性的 CRC 与模式知识"
+    },
+    {
+      "type": "paragraph",
+      "text": "渲染器为 Sand Grain 游戏使用的 palette shuffle 效果设置了 CRC，并通过 `TexIsFB` 改进 offset shuffle 检测。这些标识符只为已经确认的工作负载启用窄范围处理，而不是在全局强制开启昂贵的精确模式。"
+    },
+    {
+      "type": "heading",
+      "text": "不同后端，共同参照"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan、Direct3D 和 OpenGL 并不提供完全相同的 feedback 与排序能力。硬件渲染结果会与软件渲染器及原生分辨率截图比较，随后每个后端都实现主机 GPU 能够安全支持的等效方案。"
+    },
+    {
+      "type": "heading",
+      "text": "不牺牲性能的准确性"
+    },
+    {
+      "type": "paragraph",
+      "text": "目标是在硬件渲染器上正确还原效果，让用户继续使用升频和现代画面呈现。把更多 shuffle 与 blending 情况从手动 workaround 中移出，也能降低结果对旧单游戏配置的依赖。检测范围必须精确：宽泛的解决方案可能修复一个效果，却破坏其他位置的普通绘制。测试截图需要保持场景、内部分辨率和后端一致，并把软件输出当作参照而非永久替代。理解触发该情况的 GS 模式后，PCSX2 就能把修正限制在局部，同时保留画面其余部分的硬件性能。"
+    }
+  ]
+}

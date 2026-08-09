@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dlaczego tłumaczenie shaderów jest podstawową granicą kompatybilności shadPS4",
+  "summary": "Źródła rdzenia wideo dokumentują potok tłumaczeń, który musi konwertować programy GPU PS4 na shadery kompatybilne z hostami, zachowując jednocześnie pamięć i zachowanie numeryczne.",
+  "heroAlt": "Zrzut rozgrywki udost?pniony w oficjalnym repozytorium shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Dlaczego tłumaczenie shaderów jest podstawową granicą kompatybilności shadPS4",
+    "Emulator PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "shader-tree": "Drzewo źródłowe rekompilatora modułu cieniującego",
+    "gcn-decoder": "Dekoder instrukcji GCN",
+    "spirv-backend": "Punkt wejścia zaplecza SPIR-V"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dekodowanie rozpoczyna się od instrukcji AMD GCN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Programy graficzne PS4 są kodowane dla sprzętu AMD GCN, więc shadPS4 potrzebuje najpierw interfejsu na poziomie instrukcji, a nie kompilatora w języku źródłowym. `frontend/decode.cpp` i `frontend/opcodes.h` identyfikują operacje gościa; Pliki instrukcji i przepływu sterowania przekształcają gałęzie w strukturę, przez którą może przechodzić późniejszy kompilator. Awaria dekodowania jest konkretna: kod operacji, pole kodowania lub cel gałęzi nie zostały poprawnie przedstawione przed pojawieniem się Vulkana."
+    },
+    {
+      "type": "heading",
+      "text": "Operacje skalarne, wektorowe i pamięciowe wchodzą w reprezentację pośrednią"
+    },
+    {
+      "type": "paragraph",
+      "text": "Warstwa translacyjna jest podzielona ze względu na zachowanie: skalarna jednostka ALU i przepływ, wektorowa jednostka ALU i interpolacja, pamięć skalarna i wektorowa, eksport i operacje udostępniania danych. Te tłumacze emitują shadPS4 IR zamiast bezpośrednio pisać SPIR-V. Utrzymanie stabilnego IR pozwala na optymalizację i legalizację pomijając przyczyny związane z pamięcią współdzieloną, barierami, śledzeniem zasobów i przepływem kontroli bez duplikowania dekodera gościa w każdym zapleczu hosta."
+    },
+    {
+      "type": "heading",
+      "text": "Przepustki IR przygotowują kod dla backendu SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Drzewo „ir” zawiera bloki, instrukcje i przebiegi, które upraszczają lub przepisują operacje przed emisją hosta. Backend SPIR-V obsługuje następnie zachowanie liczb całkowitych, zmiennoprzecinkowych, obrazów, atomów, barier, kompozytów i podgrup w skupionych emiterach, takich jak `emit_spirv_image.cpp` i `emit_spirv_shared_memory.cpp`. Brakujące zachowanie GCN można zatem naprawić podczas dekodowania, translacji, przejścia IR lub końcowej emisji; to są różne etapy awarii."
+    },
+    {
+      "type": "heading",
+      "text": "Dane wyjściowe modułu cieniującego nadal zależą od stanu rdzenia wideo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Prawidłowo wyemitowany moduł SPIR-V może wygenerować błędny wynik, jeśli formaty obrazu, powiązania buforów, próbniki lub pamięć gościa są nieprawidłowe. `video_core` dostarcza te zasoby poprzez pamięć podręczną tekstur i buforów oraz konstruuje potoki Vulkan wokół modułu cieniującego. I odwrotnie, komunikat sprawdzający podczas tworzenia potoku może ujawnić nieprawidłowy interfejs utworzony przez kompilator. Debugowanie musi podążać za modułem cieniującym i jego powiązanym stanem."
+    },
+    {
+      "type": "heading",
+      "text": "Dzienniki i przechwytywania powinny zidentyfikować pierwszy zły etap"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przydatny raport rejestruje dokładną scenę, aktualizację tytułu, wersję shadPS4, procesor graficzny i sterownik. Zrzut ekranu potwierdza objaw; zrzut modułu cieniującego, dziennik kompilatora lub przechwycenie programu RenderDoc mogą pokazać, czy dekodowanie nie powiodło się, SPIR-V został odrzucony, zasób został zwolniony lub piksele uległy rozbieżności dopiero po późniejszym przejściu. Zmiana rozdzielczości, HDR, FSR i kilku opcji eksperymentalnych na raz niszczy to porównanie, więc linia bazowa powinna pozostać wąska."
+    }
+  ]
+}

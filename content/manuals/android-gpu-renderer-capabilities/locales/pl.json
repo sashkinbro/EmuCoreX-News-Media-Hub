@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dopasuj renderer do Android, GPU i sterownika",
+  "summary": "Zidentyfikuj prawdziwe SoC i GPU, odróżnij Adreno od Mali i innych rodzin, przetestuj wsparcie API i wybierz renderer na podstawie sterownika urządzenia zamiast nazw marketingowych.",
+  "heroAlt": "Układ Qualcomm Snapdragon sfotografowany na płytce drukowanej",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Wsparcie Vulkan",
+    "Wykrywanie SoC",
+    "Kompatybilność renderera"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "Kompatybilność"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Wskazówki dotyczące Android Vulkan",
+    "vulkan-profiles": "Profile Khronos Vulkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Model telefonu nie jest specyfikacją graficzną"
+    },
+    {
+      "type": "paragraph",
+      "text": "Producenci powtarzają nazwy produktów w różnych regionach i cicho zmieniają SoC między rewizjami. Dlatego decyzje dotyczące renderera zaczynają się od wykrytego chipu i GPU — Adreno w wielu urządzeniach Snapdragon, Mali lub Immortalis w wielu urządzeniach MediaTek/Exynos oraz inne rodziny na mniej popularnych platformach. Sama wersja Android nie określa rozszerzeń Vulkan, stabilności kompilatora ani zachowania pamięci dostarczanego przez sterownik producenta."
+    },
+    {
+      "type": "callout",
+      "text": "Użyj wykrytego dialogu procesora EmuCoreX jako pierwszej wskazówki, a następnie potwierdź za pomocą informacji o systemie. Nigdy nie instaluj pakietu sterownika Adreno na urządzeniu Mali/Immortalis."
+    },
+    {
+      "type": "heading",
+      "text": "Wymagania wstępne i czysta baza"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zapisz SoC, rodzinę GPU, build Android i wersję sterownika producenta przed testowaniem. Zacznij od sterownika systemowego i profilu Safe. Renderer może się uruchomić pomyślnie, a mimo to niepowodzenie może wystąpić później przy kompilacji shaderów, pobieraniu bufora ramki lub przy wysokim obciążeniu pamięci, więc jedno menu nie jest testem możliwości."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Wykryta rodzina SoC i GPU.",
+        "Numer builda Android i poziom poprawki bezpieczeństwa.",
+        "System driver z wyłączonym niestandardowym sterownikiem.",
+        "Jedna scena gry z dużą ilością shaderów i jedna z dużą ilością efektów.",
+        "Wystarczająca ilość wolnej pamięci dla logów i pamięci podręcznej shaderów."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Stwórz wybór renderera oparty na możliwościach"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Użyj „Pokaż wykryty procesor” i zweryfikuj zgłoszoną rodzinę względem zaufanych informacji systemowych urządzenia.",
+        "2. W przypadku Adreno rozpocznij od Vulkan, chyba że znany problem z urządzeniem lub grą wskazuje na OpenGL; w przypadku MediaTek/Mali rozpocznij od ścieżki OpenGL zalecanej przez EmuCoreX.",
+        "3. Uruchom pierwszy poziom na zimno dwa razy, aby oddzielić wstępną kompilację shaderów od powtarzających się błędów.",
+        "4. Przetestuj drugi poziom pod kątem mieszania, bufora ramki i zachowania pamięci, a następnie uruchom go wystarczająco długo, aby przekroczyć rampę termiczną urządzenia.",
+        "5. Przechowuj renderer dla konkretnej gry tylko w przypadku wykazanej wyjątkowej sytuacji i utrzymuj globalny wybór zgodny z rodziną GPU."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zweryfikuj wynik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kompatybilna ścieżka kończy przejścia ciężkie w shaderach bez utraty sterownika, renderuje efekty poprawnie i pozostaje stabilna po rozgrzaniu pamięci podręcznej. Obserwuj błędy sterownika urządzenia w logach, zamiast traktować każdą czarną klatkę jako słaby GPU. Jeśli renderowanie programowe jest poprawne, dowody wskazują na API sprzętowe lub jego ustawienia."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Rodzina GPU odpowiada rodzinie pakietu renderer/sterownik.",
+        "Dwa uruchomienia na zimno i jedno na ciepło zakończone.",
+        "Brak powtarzających się błędów kompilatora shaderów lub utraty urządzenia.",
+        "Scena bogata w efekty odpowiada strukturze renderer-a programowego.",
+        "Globalny wybór pozostaje użyteczny w kilku grach."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Przywracanie i odzyskiwanie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wróć do sterownika systemowego i domyślnego renderera, gdy identyfikacja jest niepewna. Usuń nadpisania dla poszczególnych gier przed porównaniem urządzeń. Jeśli aktualizacja systemu Android zmienia zachowanie sterownika, powtórz analizę bazową zamiast przenosić wnioski z poprzedniej kompilacji."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Wyłącz niestandardowe sterowniki.",
+        "Przywróć zalecanego renderera specyficznego dla rodziny.",
+        "Zresetuj profil dla dotkniętej gry.",
+        "Uruchom ponownie po pętli utraty urządzenia Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Typowe wzorce awarii"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Nieprawidłowa rodzina pakietu: natychmiastowa awaria ładowania lub awaria przed renderowaniem.",
+        "Działa tylko do momentu skompilowania shaderów: problem z kompilatorem/rozszerzeniami, a nie z wydajnością surową.",
+        "Renderer dobry na jednym regionalnym urządzeniu, zły na innym: nazwa produktu ukrywa inny SoC.",
+        "Menu działa, rozgrywka zawodzi: pokrycie testowe było zbyt płytkie."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Zwięzły zapis sprzętu sprawia, że porady społeczności są użyteczne: urządzenie, budowa SoC, GPU, Android, sterownik, renderer, numer seryjny gry i scena. Bez tego łańcucha rekomendacje rozpadają się na folklor marki telefonu. Z nim wyjątki renderera można powtarzać i bezpiecznie cofać."
+    },
+    {
+      "type": "link",
+      "text": "Przejrzyj wskazówki Vulkan dotyczące Android",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

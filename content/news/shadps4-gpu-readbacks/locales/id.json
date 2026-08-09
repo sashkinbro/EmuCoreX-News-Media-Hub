@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Pembacaan ulang GPU menghubungkan kembali gambar host shadPS4 dengan memori yang terlihat oleh tamu",
+  "summary": "Readback mentransfer data yang dimodifikasi GPU ke sisi CPU ketika perangkat lunak PS4 mengharapkan memori bersama, menukar kecepatan demi ketepatan beban kerja yang memerlukannya.",
+  "heroAlt": "Cuplikan gameplay yang didistribusikan di repositori resmi shadPS4",
+  "searchKeywords": [
+    "bayanganPS4",
+    "Pembacaan ulang GPU menghubungkan kembali gambar host shadPS4 dengan memori yang terlihat oleh tamu",
+    "Emulator PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "bayanganPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Sumber cache buffer video",
+    "page-manager": "Manajer halaman memori video",
+    "readback-notes": "Catatan teknis pembacaan kembali",
+    "module-viewer": "Implementasi Penampil Modul"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Penulisan GPU tidak secara otomatis terlihat sebagai memori CPU tamu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perangkat lunak PS4 dapat memperlakukan wilayah memori sebagai dibagikan bahkan setelah perintah GPU mengubah data terkait. Di host, data tersebut mungkin ada dalam buffer atau gambar Vulkan, bukan dalam byte yang terlihat oleh CPU yang kemudian dibaca oleh tamu. Pembacaan kembali menyalin hasil yang dimodifikasi ke sisi CPU pada titik yang memerlukan koherensi. Tanpanya, game dapat menggunakan simpul, penghitung, atau hasil lain yang sudah usang sementara tampilan GPU tampak valid."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache melacak wilayah alih-alih menyalin semuanya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pohon `src/video_core/buffer_cache` yang dipelihara memisahkan objek buffer, definisi wilayah, manajer wilayah, pelacakan memori, dan penanganan kesalahan. Organisasi itu ada karena menyalin semua memori video setelah setiap perintah akan memakan biaya yang sangat mahal. Cache harus mengidentifikasi rentang mana yang tumpang tindih, sisi mana yang mengubahnya, dan kapan akses tamu memerlukan sinkronisasi. `page_manager` berpartisipasi pada batas memori yang lebih luas tempat bertemunya halaman tamu dan sumber daya GPU yang dipetakan."
+    },
+    {
+      "type": "heading",
+      "text": "Kebenaran memiliki biaya sinkronisasi yang terukur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembacaan kembali dapat terhenti hingga pekerjaan GPU host selesai, lalu mentransfer data melintasi batas yang biasanya tetap asinkron. Terlalu sedikit pembacaan balik akan meninggalkan memori basi; terlalu banyak dapat mengurangi kecepatan bingkai dan menyebabkan kegagapan. Catatan teknik resmi v0.10 mendokumentasikan pengorbanan ini dan menghubungkan jalur eksperimental dengan pengurangan ledakan titik dan kemajuan dalam judul menggunakan hasil bersama GPU-ke-CPU. Bukti tersebut menjelaskan suatu mekanisme, bukan rekomendasi pengaturan universal."
+    },
+    {
+      "type": "heading",
+      "text": "Penampil Modul menjawab pertanyaan debug yang berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penampil Modul di bawah `src/core/devtools/widget/module_list.cpp` memperlihatkan modul yang dapat dijalankan dan statusnya. Itu tidak melakukan transfer memori, tetapi membantu pengembang mengidentifikasi komponen tamu mana yang aktif ketika jalur yang bergantung pada readback gagal. Memasangkan status modul dengan log buffer-cache lebih informatif daripada mengasumsikan setiap ledakan geometri adalah milik kompiler shader."
+    },
+    {
+      "type": "heading",
+      "text": "Perbandingan terkontrol mengisolasi perilaku readback"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengujian mempertahankan penyimpanan, adegan, penyaji, resolusi, dan revisi yang sama, lalu hanya mengubah opsi baca kembali yang relevan. Catat frame pertama yang rusak, dampak frametime, dan log lengkap. Jika korupsi hilang sementara kinerja menurun pada peristiwa yang sama, hal ini mendukung ketergantungan koherensi. Jika tidak ada perubahan, interpretasi tekstur, pemrosesan perintah, terjemahan shader, atau perilaku driver tetap menjadi kandidat yang lebih kuat."
+    }
+  ]
+}

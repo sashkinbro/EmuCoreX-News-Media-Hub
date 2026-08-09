@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Por que a tradução de shader é uma fronteira central de compatibilidade do shadPS4",
+  "summary": "As fontes do núcleo de vídeo documentam um pipeline de tradução que deve converter programas de GPU do PS4 em shaders compatíveis com host, preservando a memória e o comportamento numérico.",
+  "heroAlt": "Captura de jogo distribu?da no reposit?rio oficial do shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Por que a tradução de shader é uma fronteira central de compatibilidade do shadPS4",
+    "Emulador de PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "shader-tree": "Árvore de origem do recompilador de shader",
+    "gcn-decoder": "Decodificador de instrução GCN",
+    "spirv-backend": "Ponto de entrada de back-end SPIR-V"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A decodificação começa com instruções AMD GCN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Os programas gráficos do PS4 são codificados para hardware AMD GCN, então o shadPS4 primeiro precisa de um frontend de nível de instrução em vez de um compilador de linguagem de origem. `frontend/decode.cpp` e `frontend/opcodes.h` identificam operações de convidados; arquivos de instrução e fluxo de controle transformam ramificações em uma estrutura que o compilador posterior pode percorrer. Uma falha de decodificação é concreta: um opcode, campo de codificação ou alvo de ramificação não foi representado corretamente antes de Vulkan entrar em cena."
+    },
+    {
+      "type": "heading",
+      "text": "Operações escalares, vetoriais e de memória entram em uma representação intermediária"
+    },
+    {
+      "type": "paragraph",
+      "text": "A camada de tradução é dividida por comportamento: ALU escalar e fluxo, ALU vetorial e interpolação, memória escalar e vetorial, exportações e operações de compartilhamento de dados. Esses tradutores emitem shadPS4 IR em vez de escrever SPIR-V diretamente. Manter um IR estável permite que a otimização e a legalização passem pela memória compartilhada, barreiras, rastreamento de recursos e fluxo de controle sem duplicar o decodificador convidado em cada back-end do host."
+    },
+    {
+      "type": "heading",
+      "text": "Os passes IR preparam o código para o back-end do SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "A árvore `ir` contém blocos, instruções e passes que simplificam ou reescrevem operações antes da emissão do host. O backend SPIR-V então lida com comportamento inteiro, ponto flutuante, imagem, atômico, barreira, composto e subgrupo em emissores focados como `emit_spirv_image.cpp` e `emit_spirv_shared_memory.cpp`. Um comportamento GCN ausente pode, portanto, ser corrigido na decodificação, tradução, passagem IR ou emissão final; esses são diferentes estágios de falha."
+    },
+    {
+      "type": "heading",
+      "text": "A saída do shader ainda depende do estado video_core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um módulo SPIR-V emitido corretamente pode renderizar o resultado errado se os formatos de imagem, ligações de buffer, amostradores ou memória convidada estiverem errados. `video_core` fornece esses recursos por meio de seus caches de textura e buffer e constrói pipelines Vulkan em torno do shader. Por outro lado, uma mensagem de validação na criação do pipeline pode revelar uma interface inválida produzida pelo compilador. A depuração deve seguir o shader e seu estado vinculado juntos."
+    },
+    {
+      "type": "heading",
+      "text": "Logs e capturas devem identificar o primeiro estágio ruim"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um relatório útil registra a cena exata, atualização do título, revisão do shadPS4, GPU e driver. Uma captura de tela estabelece o sintoma; um despejo de shader, log do compilador ou captura RenderDoc pode mostrar se a decodificação falhou, o SPIR-V foi rejeitado, um recurso foi desvinculado ou os pixels divergiram somente após uma passagem posterior. Alterar a resolução, HDR, FSR e várias opções experimentais de uma só vez destrói essa comparação, portanto a linha de base deve permanecer estreita."
+    }
+  ]
+}

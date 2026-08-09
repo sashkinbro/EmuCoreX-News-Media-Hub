@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "ja",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreVの内部: SDLActivity、Composeのオーバーレイ、およびVita3Kアダプタレイヤー",
+  "summary": "EmuCoreVはデスクトップウィンドウをAndroidテーマでラップしません。その起動パスはVitaストレージを準備し、小さなアダプターを通じてVita3K派生のフロントエンドを初期化し、SDLにレンダリングサーフェスを提供し、そして実行中のセッションの周りにAndroidネイティブのコントロールとメニューを取り付けます。",
+  "heroAlt": "公式青色のEmuCoreVランチャーエンブレムが暗い背景の中央に配置されている",
+  "searchKeywords": [
+    "EmuCoreV アーキテクチャ",
+    "Vita3K Android",
+    "SDLActivity Compose オーバーレイ",
+    "ネイティブライブラリブリッジ"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "建築",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "ランタイムおよび設定の安定化コミット",
+    "vita3k-core-sync": "Vita3K由来のコア同期コミット",
+    "native-loader-source": "ネイティブライブラリローダーのソース",
+    "adapter-source": "JNIアダプターソース"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoaderは、初期化されたフロントエンドを1つ確立します"
+    },
+    {
+      "type": "paragraph",
+      "text": "カタログの更新やゲームの起動がコアに何かを要求する前に、`NativeLibraryLoader.ensureLoaded()`はSDLにアプリケーションコンテキストを渡し、`Vita3K`ライブラリを読み込みます。同期化されたセクション内で、`EmulatorStorage.prepareRuntime()`を呼び出し、デフォルトの`VitaCoreConfigRepository`値を保存し、`NativeLib.prepareFrontend()`を呼び出し、`NativeLib.isInitialized()`を確認します。初期化がまだ必要な場合にのみ、解決されたランタイムおよびVitaのストレージルートを`NativeLib.init()`に渡します。2つの揮発性フラグは、同時にAndroid画面がネイティブフロントエンドを2回読み込んだり初期化したりするのを防ぎます。"
+    },
+    {
+      "type": "heading",
+      "text": "4機能アダプターは、パッケージ専用のブリッジを小さく保ちます"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` は明示的に EmuCoreV アダプタ層としてマークされています。これは `com.sbro.emucorev.core.NativeLib` が期待する JNI の名前をエクスポートし、それらを Vita3K 派生の実装に転送します: フロントエンドの準備、ランタイムと Vita パスでの初期化、初期化のクエリ、およびアプリケーションリストの更新。上流向けの関数は `org.vita3k.emulator.NativeLib` に残されており、EmuCoreV は自身の Android パッケージを使用するためだけにそれらの初期化ロジックを複製しません。"
+    },
+    {
+      "type": "heading",
+      "text": "実行中のゲームは、監視可能なAndroid状態を持つSDLActivity内で動作します"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator`は`SDLActivity`を拡張し、`Vita3K`をそのネイティブライブラリとして指定します。`EmuSurface`を作成し、`InputOverlay`を所有し、Android入力デバイスを監視し、現在のゲームIDをComposeとして観測可能な状態として公開します。`getArguments()`は、実効のゲームごとのGPUドライバを同期した後、起動インテントをVita3Kのコマンドライン引数に変換します。新しい起動インテントは別のネイティブセッションを積み重ねようとはせず、タイトルを記録し、ネイティブのシャットダウン後に制御されたプロセス再起動をトリガーします。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "公式のDパッドラスターは、EmuCoreVのAndroid入力レイヤーの一要素です。`InputOverlay`はこのUI状態をネイティブの軸、ボタン、および前面または背面のタッチ呼び出しに変換します。"
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurfaceはオーバーレイの所有権を報告し、ジェスチャーを予約します"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface`はSDLの`SDLSurface`を置き換えるのではなくサブクラス化します。その`surfaceCreated()`および`surfaceDestroyed()`のコールバックは、SDLのライフサイクル作業の前後にネイティブの`setSurfaceStatus()`フックを呼び出し、レンダラーにサーフェスの所有権を表示します。`GestureDetector`はダブルタップを監視し、`Emulator`にオーバーレイメニューボタンを表示させますが、その後コントロールをSDLに戻します。その詳細は、タッチ専用ユーザーにAndroidメニューへの戻るルートを提供しつつ、ゲーム入力を保持します。"
+    },
+    {
+      "type": "heading",
+      "text": "7月のランタイム作業は、ストレージ、入力、レンダリング、テストを一緒に変更しました"
+    },
+    {
+      "type": "paragraph",
+      "text": "2026年7月29日のランタイム安定性コミット（`d06e1575`）は、`native_lib_bridge.cpp`、`runtime_bridge.cpp`、Vita3Kの`native_bootstrap.cpp`、レンダラーバッチング、`EmulatorStorage`、SDLアクティビティ、Composeエミュレーションメニュー、および設定リポジトリを1つのレビュー済みユニットで変更しました。また、`AtomicTextFile`、`FrameLimit`、`ControllerAttachmentState`、`ImmersiveMode`、およびそれらの契約に焦点を当てたテストも導入しました。以前の5月21日のコア同期（`811a7cd6`）は、Vita3Kスレッド、メモリ、GXM、ダイアログオーバーレイ、レンダラー、およびAndroidブートストラップコードを更新しました。これらを合わせると、EmuCoreVが意図的にコアを適応させる箇所と、ネイティブのアップストリーム動作を追跡し続ける箇所が示されています。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose はアプリケーションのナビゲーションとゲーム内の Android オーバーレイを所有しています。",
+        "SDLは、ネイティブフロントエンドが期待するアクティビティおよびサーフェス契約を所有しています。",
+        "アダプターは、限られたセットのJNIブートストラップ呼び出しに対してpackage-nameの翻訳を所有しています。",
+        "Vita3K由来のコアは、エミュレートされたカーネル、メモリ、GXM、レンダラー、モジュール、およびゲーム実行を所有しています。"
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "保護されたネイティブ初期化パスを読み取る"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "EmuCoreVからVita3KへのJNIアダプターを点検する"
+    }
+  ]
+}

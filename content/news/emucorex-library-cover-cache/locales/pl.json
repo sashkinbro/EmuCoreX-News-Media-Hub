@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dlaczego EmuCoreX traktuje okładki jako odzyskiwalne dane biblioteki",
+  "summary": "Okładka gry wygląda dekoracyjnie, ale przestarzałe ścieżki, niepełne pobrania i powtarzające się błędy mogą sprawić, że biblioteka Android wydaje się zawodna. EmuCoreX izoluje pobraną grafikę, weryfikuje każdy zapisany w pamięci podręcznej obraz i naprawia widoczną listę, nie ingerując w niestandardowe okładki użytkownika.",
+  "heroAlt": "Okładka Final Fantasy X na PS2 pobrana z domyślnego źródła grafiki używanego przez EmuCoreX",
+  "searchKeywords": [
+    "EmuCoreX pamięć podręczna okładki",
+    "grafika biblioteki PS2",
+    "RepozytoriumOkładek",
+    "Pamięć podręczna obrazów Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Biblioteka",
+    "reliability": "Niezawodność"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Zatwierdzenie niezawodności pamięci podręcznej okładki",
+    "cover-repository-source": "Źródło CoverArtRepository",
+    "cover-policy-source": "Źródło CoverCachePolicy",
+    "home-view-model-source": "Źródło synchronizacji okładki HomeViewModel"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dwa obszary magazynowe wyznaczają granicę między sztuką jednorazowego użytku a osobistą"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` automatycznie przechowuje pobrane okładki PS2 w `cacheDir/game-covers` i zdalne tymczasowe obrazy w `cacheDir/remote-image-cache`. Grafika wybrana przez użytkownika jest celowo poza tymi katalogami w trwałej pamięci aplikacji. Ten podział daje działaniu ustawień precyzyjną obietnicę: `clearCache()` usuwa pobrane okładki, podczas gdy `clearAllTemporaryImageCaches()` usuwa także tymczasowe obrazy zdalne, ale żadna z tych operacji nie powinna usuwać okładki wybranej przez gracza."
+    },
+    {
+      "type": "heading",
+      "text": "Nazwa pliku nie jest akceptowana jako dowód, że obraz przetrwał"
+    },
+    {
+      "type": "paragraph",
+      "text": "Każde wyszukiwanie przekazuje pliki kandydatów przez `isUsableCoverFile()`. Repozytorium wymaga regularnego, niepustego pliku i prosi `BitmapFactory` o zdekodowanie tylko jego granic; zarówno szerokość, jak i wysokość muszą być dodatnie. Odpowiedź o zerowej liczbie bajtów lub przerwane zdjęcie nie może więc podszywać się pod trafienie w pamięci podręcznej. Nieprawidłowe kandydatury są usuwane, zanim repozytorium wybierze między wariantami JPG i PNG, w tym osobnym nazewnictwem `_3d` używanym przez trójwymiarowy styl okładki."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "Ten sam serial Final Fantasy X jest dostępny w kolekcji 3D źródła. EmuCoreX nadaje temu stylowi odrębną nazwę pamięci podręcznej `_3d`, więc zmiana prezentacji nie myli go z domyślną okładką."
+    },
+    {
+      "type": "heading",
+      "text": "Normalizacja szeregu sprawia, że jedna tożsamość gry adresuje jedno wpisanie do pamięci podręcznej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przed zbudowaniem adresu URL lub nazwy pliku, repozytorium normalizuje numery seryjne takie jak `SLUS-20312` do tożsamości składającej się z czterech dużych liter i pięciu cyfr. Akceptuje warianty znaków interpunkcyjnych, najpierw próbuje formy kanonicznej, a w razie potrzeby może ponowić próbę używając formy zwartej bez myślnika. Skonfigurowane źródło okładki może dostarczać oddzielne domyślne i bazowe adresy URL 3D; w przeciwnym razie używane są wbudowane źródła. Udana odpowiedź jest najpierw kopiowana do pliku tymczasowego, dekodowana, a dopiero potem zmieniana nazwa na plik w pamięci podręcznej, dzięki czemu czytelnicy nigdy nie zobaczą półnapisanego pliku końcowego."
+    },
+    {
+      "type": "heading",
+      "text": "Znane braki są buforowane, ale nie na zawsze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Błąd HTTP 404 tworzy mały znacznik `.miss` obok oczekiwanej okładki. Przez siedem dni kolejne skanowanie może pominąć to samo żądanie zamiast wielokrotnie pytać serwer o grafikę, która nie istnieje. Znacznik znika po pojawieniu się prawidłowego obrazu, a jego ograniczony czas życia pozwala, aby później kolekcja okładek z wyższego poziomu mogła zdobyć ten numer seryjny. Inne awarie sieci nie stają się trwałym dowodem na to, że okładka nie istnieje."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel naprawia przestarzałe wiersze przy ograniczonej współbieżności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Podczas `syncMissingCovers()`, `HomeViewModel` najpierw usuwa tylko ścieżki wskazujące do zarządzanego cache okładek i które nie prowadzą już do użytecznych plików. Publikuje tę naprawioną listę, a następnie przetwarza gry bez lokalnej okładki lub z okładką HTTP poprzez semafor ograniczający liczbę jednoczesnych zadań do trzech. Każde udane pobranie zastępuje odpowiadającą grę według ścieżki i ponownie publikuje widoczny stan. Jeśli maszyna wirtualna jest aktywna, prace związane z okładkami są odkładane zamiast konkurować z emulacją, a odświeżony zrzut biblioteki jest zapisywany po synchronizacji."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` kanonizuje zarówno kandydata, jak i katalog główny pamięci podręcznej przed usunięciem. URI treści i adresy URL HTTP są odrzucane natychmiast, a plik musi być potomkiem zarządzanego katalogu głównego. Zapobiega to sytuacji, w której nieprawidłowa wartość biblioteki rozszerza operację czyszczenia pamięci podręcznej."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Sprawdź walidację okładki, pobieranie i czyszczenie"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Śledź synchronizację brakującej okładki w bibliotece"
+    }
+  ]
+}

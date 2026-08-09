@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "ja",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreX が PS2 セッションを Compose、SurfaceView、およびネイティブ PCSX2 コードの間で分割する方法",
+  "summary": "EmuCoreXから起動されたPS2ゲームは、最初のフレームが画面に表示される前に、いくつかの意図的に狭い境界を越えます。Androidアプリケーション、JNI契約、レンダリングサーフェス、セッション状態、そしてARM64リコンパイラは、それぞれその経路の異なる部分を所有しています。",
+  "heroAlt": "ダークブルーの背景にある公式EmuCoreX Androidテレビバナー",
+  "searchKeywords": [
+    "EmuCoreX アーキテクチャ",
+    "ネイティブアプリ JNI",
+    "エミュレーション画面 SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "建築",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "ARM64 ランタイムおよび Android テレビ実装コミット",
+    "jit-cache-lifecycle": "ARM64 JIT キャッシュライフサイクルコミット",
+    "native-app-source": "ネイティブアプリのソース",
+    "emulation-screen-source": "エミュレーション画面のソース"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Androidプロセスは、ネイティブコアを選択して準備します"
+    },
+    {
+      "type": "paragraph",
+      "text": "境界は`NativeApp`で始まります。これはKotlinオブジェクトで、`AndroidNativeCoreSelector`を通じてページサイズ互換のコアライブラリを選択し、`System.loadLibrary`でロードし、ネイティブコアおよび補助ネイティブツールが利用可能かどうかを記録します。次に`initializeOnce()`はエミュレータのデータルートを準備し、バンドルされたリソースをコピーし、パッチアーカイブを検証し、Android CA信頼バンドルをエクスポートし、ネイティブクラッシュログのパスを設定し、最後にJNI `initialize(dataRoot, sdkInt)`エントリポイントを呼び出します。その順序は重要です。C++側はAndroidのストレージや証明書がどこにあるかを推測する必要がないからです。"
+    },
+    {
+      "type": "heading",
+      "text": "ゲーム画面はComposeのキャンバスではなく、実際のSurfaceViewです"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` は `AndroidView` を通じて不透明な Android `SurfaceView` を埋め込みます。その `SurfaceHolder.Callback` は `surfaceCreated`、サイズ変更、および破棄を `EmulatorBridge` に転送し、それがネイティブレンダラーに到達します。Compose はその表面上にタッチコントロール、パフォーマンス情報、実績、および一時停止インターフェースを描画します。これらのレイヤーを分離しておくことで、レンダラーは低レベルの Android `Surface` を所有しながら、オーバーレイは Compose の状態、アニメーション、アクセシビリティ、適応レイアウトを保持できます。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "公式のEmuCoreXアプリケーションアートワークはAndroidシェルを表しており、エミュレートされたフレーム自体はComposeオーバーレイの下のネイティブサーフェスによって提供されます。"
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModelはセッションコーディネーターです"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel`はエミュレーターではありません。それはエミュレーターに向けたAndroidの状態を調整します：`PerGameSettingsRepository`、`CheatRepository`、`MemoryCardRepository`、互換性データ、プレイヤープロファイル、プレイ時間の同期、および`AndroidGamePerformance`。`StateFlow<EmulationUiState>`はUIに情報を供給し、ライフサイクルおよびトランスポートのミューテックスが開始、停止、一時停止、再開、シャットダウンの作業を直列化します。揮発性フィールドは現在のパス、シリアル、CRC、カバー、およびタッチレイアウトプロファイルを保持しているため、遅延したコールバックが誤って次のゲームを操作することはありません。"
+    },
+    {
+      "type": "heading",
+      "text": "JNIは操作を公開し、第二のユーザーインターフェースではありません"
+    },
+    {
+      "type": "paragraph",
+      "text": "`NativeApp`契約には、サーフェス、コントローラーの圧力、レンダラーの選択、バッチ設定、セーブステート、メモリーカード、RetroAchievements、GSダンプ、JITプロファイラー、ハングトレース、VMトランスポートの明示的な呼び出しが含まれています。Kotlinは、それらの操作が合法であるタイミングや表示方法を決定し、C++はPCSX2由来の状態に対してそれらを実行します。例えば、Composeレイヤーは、ネイティブのRetroAchievementsクライアントがハードコアセッションがアクティブであることを報告した場合に早送りやチートを非表示にし、同じブリッジを通じてフレームリミッターを強制し、状態を安全な値にパッチすることができます。"
+    },
+    {
+      "type": "heading",
+      "text": "7月22日の2つのコミットは、分割が1つのシステムとしてテストされる理由を示している"
+    },
+    {
+      "type": "paragraph",
+      "text": "2026年7月22日のコミット`0a16b80d`は境界の両側に触れました：`MainActivity`、`TvUiPolicy`、ストレージピッカー、`EmulationViewModel`、ARM64 EE/IOP/VUリコンパイラ、仮想メモリ、GSテクスチャ置換、およびレンダラーコード。その日の後半に、コミット`f0e19666`はEE、IOP、VIF、およびmicroVU全体のJITキャッシュ寿命を厳密化し、`JitProfiler`を拡張しました。これらの変更は有用なアーキテクチャのスナップショットです：Androidライフサイクルの修正にはネイティブ実行メモリの管理が必要な場合があり、ネイティブ修正でもそれを安全に開始、監視、停止するAndroidパスが必要です。"
+    },
+    {
+      "type": "callout",
+      "text": "このリポジトリはEmuCoreXを初期開発段階のPS2エミュレータスタックとして説明しています。責任の分離により障害の特定は容易になりますが、互換性がゲーム、デバイス、GPUドライバ、またはレンダラーに依存しないわけではありません。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "NativeApp JNI コントラクトを読む"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "SurfaceViewとComposeのオーバーレイ統合を点検する"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Warum EmuCoreX Coverart als wiederherstellbare Bibliotheksdaten behandelt",
+  "summary": "Ein Spielecover wirkt dekorativ, aber veraltete Pfade, teilweise Downloads und wiederholte Aussetzer können eine Android-Bibliothek unzuverlässig erscheinen lassen. EmuCoreX isoliert heruntergeladene Grafiken, überprüft jedes zwischengespeicherte Bild und repariert die sichtbare Liste, ohne die eigenen Cover eines Benutzers zu verändern.",
+  "heroAlt": "Final Fantasy X PS2-Cover, abgerufen von der Standard-Kunstquelle, die von EmuCoreX verwendet wird",
+  "searchKeywords": [
+    "EmuCoreX Zwischenspeicher abdecken",
+    "PS2-Bibliothekskunst",
+    "CoverArtVerzeichnis",
+    "Android Bildcache"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Bibliothek",
+    "reliability": "Zuverlässigkeit"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Cover-Cache Zuverlässigkeit Commit",
+    "cover-repository-source": "CoverArtRepository-Quelle",
+    "cover-policy-source": "CoverCachePolicy Quelle",
+    "home-view-model-source": "HomeViewModel-Abdeckungs-Synchronisierungsquelle"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zwei Speicherbereiche ziehen eine Linie zwischen wegwerfbarer und persönlicher Kunst"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` speichert automatisch heruntergeladene PS2-Cover unter `cacheDir/game-covers` und temporäre entfernte Bilder unter `cacheDir/remote-image-cache`. Vom Benutzer ausgewählte Grafiken befinden sich absichtlich außerhalb dieser Verzeichnisse im persistenten Anwendungs-Speicher. Diese Aufteilung gibt der Einstellungsaktion ein genaues Versprechen: `clearCache()` entfernt heruntergeladene Cover, während `clearAllTemporaryImageCaches()` auch temporäre entfernte Bilder entfernt, aber keine der beiden Aktionen sollte ein vom Spieler ausgewähltes Cover löschen."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Dateiname wird nicht als Nachweis akzeptiert, dass ein Bild überlebt hat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jede Suche leitet Kandidatendateien durch `isUsableCoverFile()`. Das Repository erfordert eine reguläre, nicht-leere Datei und fordert `BitmapFactory` auf, nur deren Grenzen zu dekodieren; sowohl Breite als auch Höhe müssen positiv sein. Eine Null-Byte-Antwort oder ein unterbrochenes Bild kann daher nicht als Cache-Treffer getarnt werden. Ungültige Kandidaten werden gelöscht, bevor das Repository zwischen JPG- und PNG-Varianten wählt, einschließlich der separaten `_3d`-Benennung, die vom dreidimensionalen Cover-Stil verwendet wird."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "Die gleiche Final Fantasy X-Seriennummer ist in der 3D-Sammlung der Quelle verfügbar. EmuCoreX gibt diesem Stil einen eindeutigen `_3d`-Cache-Namen, sodass ein Wechsel der Darstellung ihn nicht mit dem Standardcover verwechselt."
+    },
+    {
+      "type": "heading",
+      "text": "Serielle Normalisierung lässt eine Spielidentität eine Cache-Eintragung adressieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bevor eine URL oder ein Dateiname erstellt wird, normalisiert das Repository Serien wie `SLUS-20312` zu einer Großbuchstaben-Vier-Buchstaben- und Fünf-Ziffern-Identität. Es akzeptiert Varianten mit Satzzeichen, versucht zuerst die kanonische Form und kann eine kompakte Form ohne Bindestrich erneut versuchen. Die konfigurierte Cover-Quelle kann separate Standard- und 3D-Basis-URLs bereitstellen; andernfalls werden die eingebauten Quellen verwendet. Eine erfolgreiche Antwort wird zuerst in eine temporäre Datei kopiert, decodiert und erst dann im Cache umbenannt, sodass Leser niemals eine halb geschriebene Enddatei sehen."
+    },
+    {
+      "type": "heading",
+      "text": "Bekannte Fehlschläge werden zwischengespeichert, aber nicht für immer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein HTTP 404 erstellt einen kleinen `.miss`-Marker neben dem erwarteten Cover. Für sieben Tage kann ein weiterer Scan dieselbe Anfrage überspringen, anstatt den Server wiederholt nach nicht vorhandenem Artwork zu fragen. Der Marker verschwindet, sobald ein gültiges Bild eintrifft, und seine begrenzte Lebensdauer lässt Raum dafür, dass die übergeordnete Cover-Sammlung diese Seriennummer später erhält. Andere Netzwerkfehler werden nicht zu permanentem Beweis dafür, dass ein Cover nicht existiert."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel repariert veraltete Zeilen unter begrenzter Gleichzeitigkeit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Während `syncMissingCovers()` löscht `HomeViewModel` zunächst nur Pfade, die auf den verwalteten Cover-Cache zeigen und nicht mehr auf verwendbare Dateien auflösen. Es veröffentlicht diese reparierte Liste und verarbeitet dann Spiele ohne lokales Cover oder mit einem HTTP-Cover durch ein auf drei gleichzeitige Aufträge begrenztes Semaphore. Jeder erfolgreiche Download ersetzt das passende Spiel nach Pfad und veröffentlicht den sichtbaren Zustand erneut. Wenn eine VM aktiv ist, wird die Cover-Arbeit aufgeschoben, anstatt mit der Emulation zu konkurrieren, und der aktualisierte Bibliothekssnapshot wird nach der Synchronisation gespeichert."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` kanonisiert sowohl den Kandidaten als auch die Cache-Wurzel vor der Löschung. Inhalts-URIs und HTTP-URLs werden sofort abgelehnt, und eine Datei muss ein Nachkomme der verwalteten Wurzel sein. Dies verhindert, dass ein fehlerhafter Bibliothekswert eine Cache-Löschoperation erweitert."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Überprüfen Sie die Abdeckungsvalidierung, den Download und die Bereinigung"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Folgen Sie der fehlenden Abdeck-Synchronisation in der Bibliothek"
+    }
+  ]
+}

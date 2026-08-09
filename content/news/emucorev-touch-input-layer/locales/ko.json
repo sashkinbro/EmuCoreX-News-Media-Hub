@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreV가 유리 화면을 비타 컨트롤로 바꾸는 방법",
+  "summary": "EmuCoreV의 터치 레이어는 단순한 페인트된 버튼 이상입니다. 레이아웃 데이터는 정규화되어 저장되며, 벡터 컨트롤은 외형을 히트 지오메트리와 분리하고, 모션 센서는 아날로그 축을 구동할 수 있으며, 최종 상태는 컴팩트한 JNI 입력 계약을 통과합니다.",
+  "heroAlt": "공식 EmuCoreV 얼굴 버튼 그래픽이 비타 다이아몬드 배열로 배치됨",
+  "searchKeywords": [
+    "EmuCoreV 터치 컨트롤",
+    "벡터터치컨트롤",
+    "비타 자이로스코프 입력",
+    "입력오버레이 JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "입력",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "입력 제어 구현 커밋",
+    "touch-spacing-commit": "터치 간격 정밀화 커밋",
+    "vector-controls-source": "VectorTouchControls 소스",
+    "layout-repository-source": "터치 레이아웃 저장소 소스"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "저장된 레이아웃은 정규화된 캔버스를 설명합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository`는 각 컨트롤을 ID와 정규화된 `x`, `y`, `width`, `height` 값, 가시성 플래그, 아날로그 모드로 저장합니다. 로딩은 방어적으로 이루어집니다: 캔버스의 0.035에서 0.5 사이로 크기가 제한되고, 위치는 조정되어 크기 변경된 요소가 오른쪽이나 아래쪽 가장자리를 벗어나지 않도록 합니다. 왼쪽과 오른쪽 스틱은 가시 스틱으로 작동할 수도 있고 터치 영역으로 작동할 수도 있으며, 이름이 지정된 ID는 숄더, D-패드 방향, 페이스 버튼, Select, Start, Vita 터치 표면을 포함합니다."
+    },
+    {
+      "type": "heading",
+      "text": "벡터 렌더링은 히트 대상은 이동하지 않고 스타일을 변경합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "7월 29일 입력 작업에서는 큰 `VectorTouchControls.kt` 구현이 추가되었고, 환경 설정에서 명시적인 계약을 체결했습니다: 시각적 스타일은 절대로 컨트롤 기하를 결정하지 않으며, 누르기 애니메이션은 절대로 입력 전송을 결정하지 않습니다. 플레이어는 Classic, Legacy, Modern, Arcade, 또는 Minimal 처리를 선택할 수 있고, 그 다음 Grow, Shrink, Spring, 또는 Glow 피드백을 독립적으로 선택할 수 있습니다. Compose는 같은 상호작용 영역 주변에서 스케일과 글로우를 애니메이션화하기 때문에, 화장용 프리셋이 버튼이 손가락을 받는 위치를 몰래 바꿀 수 없습니다."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "공식 조이스틱 범위와 눌린 스틱 래스터는 기존 아날로그 컨트롤을 형성합니다. 벡터 스타일은 그 표현을 다시 그릴 수 있지만, 논리 축과 그 고유 매핑은 변하지 않습니다."
+    },
+    {
+      "type": "heading",
+      "text": "터치, 스틱, 버튼이 InputOverlay에서 모인다"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay`는 컴팩트한 네이티브 경계를 소유합니다. 이것은 가상 컨트롤러를 부착하거나 분리하고, 서명된 축 값을 보내고, 버튼 상태를 설정하며, 터치가 전면 패널을 대상으로 하는지 후면 패널을 대상으로 하는지를 표시합니다. `EmulationOverlay`는 컨트롤을 구성하고 제스처를 이러한 호출로 변환합니다. 이는 Android 측에서 포인터 처리와 편집 모드 시각화를 유지하는 동시에 Vita3K에서 파생된 코어가 이해하지 못하는 Compose 이벤트나 화면 좌표 대신 컨트롤러 모양의 상태를 받도록 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "모션 입력은 아날로그 축에 도달하기 전에 필터링됩니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput`는 하드웨어 자이로스코프를 통해 조준을 지원하고 게임 회전 벡터를 통해 조향을 지원합니다. 디스플레이 회전을 고려하고, 활성화 시 조향을 중앙으로 맞추며, 구성 가능한 민감도, 스무딩, 축 반전 및 작은 데드존을 적용한 후 거의 동일한 샘플을 보내는 것을 방지합니다. 조준은 오른쪽 스틱을 목표로 하고, 조향은 왼쪽 스틱 X를 목표로 합니다. 모드를 시작하면 먼저 이전 센서 구독을 중지하며, 중지 시에는 게임이 이전 기울기를 유지할 수 없도록 중립 값을 보냅니다."
+    },
+    {
+      "type": "heading",
+      "text": "햅틱은 지연에 민감한 버튼 경로에서 제외됩니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics`는 시스템 진동기와 진폭 능력을 한 번 확인한 후, 전용 데몬 실행기를 통해 진동을 전달합니다. 부드럽고, 선명하며, 강하고, 시스템 중심의 프리셋이 각각의 누름 및 해제 펄스를 형성합니다. 진동기가 없으면, 해당 레이어는 뷰 햅틱 피드백으로 대체됩니다. 중요한 순서는 아키텍처적입니다: Android의 진동기 서비스에 대한 느린 바인더 호출이 에뮬레이터 코어에 도달해야 하는 버튼 상태를 지연시키도록 허용되지 않습니다."
+    },
+    {
+      "type": "callout",
+      "text": "커밋 `4f01d13e`는 벡터 컨트롤, 오버레이 동작, 자이로스코프 입력, 햅틱, 설정 및 계약 테스트를 함께 변경했습니다. 이전 `db7965b5` 간격 작업은 디자인의 나머지 절반을 제공합니다: 컨트롤은 컷아웃과 화면 가장자리 주변에서 접근 가능해야 하며 올바르게 보여야 합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "벡터 제어 스타일과 누름 효과를 탐색하세요"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "정규화된 레이아웃 지속성을 검사"
+    }
+  ]
+}

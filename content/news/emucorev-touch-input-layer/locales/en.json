@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "How EmuCoreV turns a glass screen into Vita controls",
+  "summary": "EmuCoreV's touch layer is more than painted buttons. Layout data is normalized and persisted, vector controls keep appearance separate from hit geometry, motion sensors can drive analog axes, and the final state crosses a compact JNI input contract.",
+  "heroAlt": "Official EmuCoreV face-button graphics arranged in the Vita diamond layout",
+  "searchKeywords": ["EmuCoreV touch controls", "VectorTouchControls", "Vita gyroscope input", "InputOverlay JNI"],
+  "categoryLabels": {"emucorev": "EmuCoreV", "input": "Input", "android": "Android"},
+  "sourceLabels": {
+    "input-controls-commit": "Input controls implementation commit",
+    "touch-spacing-commit": "Touch spacing refinement commit",
+    "vector-controls-source": "VectorTouchControls source",
+    "layout-repository-source": "Touch layout repository source"
+  },
+  "blocks": [
+    {"type": "heading", "text": "The saved layout describes a normalized canvas"},
+    {"type": "paragraph", "text": "`TouchControlLayoutRepository` stores each control as an ID plus normalized `x`, `y`, `width`, and `height` values, a visibility flag, and an analog mode. Loading is defensive: dimensions are clamped between 0.035 and 0.5 of the canvas, then positions are constrained so the resized element cannot end outside the right or bottom edge. The left and right sticks may behave as visible sticks or as touch areas, while named IDs cover shoulders, D-pad directions, face buttons, Select, Start, and the Vita touch surface."},
+    {"type": "heading", "text": "Vector rendering changes style without moving the hit target"},
+    {"type": "paragraph", "text": "The July 29 input work added the large `VectorTouchControls.kt` implementation and made an explicit contract in preferences: visual style never determines control geometry, and press animation never determines input dispatch. Players can choose Classic, Legacy, Modern, Arcade, or Minimal treatments, then independently choose Grow, Shrink, Spring, or Glow feedback. Compose animates scale and glow around the same interaction region, so a cosmetic preset cannot silently change where a button accepts a finger."},
+    {"type": "image", "assetId": "emucorev-touch-input-layer-analog-control", "text": "The official joystick range and pressed-stick rasters form the legacy analog control. Vector styles can redraw its presentation, but the logical axis and its native mapping remain unchanged."},
+    {"type": "heading", "text": "Touch, sticks, and buttons converge at InputOverlay"},
+    {"type": "paragraph", "text": "`core/vita/overlay/InputOverlay` owns the compact native boundary. It attaches or detaches a virtual controller, sends signed axis values, sets button states, and marks whether touch targets the front or rear panel. `EmulationOverlay` composes the controls and translates gestures into those calls. This keeps pointer handling and edit-mode visuals on the Android side while the Vita3K-derived core receives controller-shaped state instead of Compose events or screen coordinates it does not understand."},
+    {"type": "heading", "text": "Motion input is filtered before it reaches an analog axis"},
+    {"type": "paragraph", "text": "`AndroidGyroscopeInput` supports aim through the hardware gyroscope and steering through the game-rotation vector. It accounts for display rotation, centers steering when activated, applies configurable sensitivity, smoothing, axis inversion, and a small deadzone, then avoids sending nearly identical samples. Aim targets the right stick; steering targets left-stick X. Starting a mode first stops the previous sensor subscription, and stopping sends a neutral value so the game cannot retain an old tilt."},
+    {"type": "heading", "text": "Haptics stay off the latency-sensitive button path"},
+    {"type": "paragraph", "text": "`AndroidTouchHaptics` resolves the system vibrator and amplitude capability once, then dispatches vibration through a dedicated daemon executor. Soft, crisp, strong, and system-oriented presets shape separate press and release pulses. If no vibrator is available, the layer falls back to view haptic feedback. The important ordering is architectural: a slow binder call to Android's vibrator service is not allowed to delay the button state that must reach the emulator core."},
+    {"type": "callout", "text": "Commit `4f01d13e` changed vector controls, overlay behavior, gyroscope input, haptics, settings, and contract tests together. The earlier `db7965b5` spacing work provides the other half of the design: controls must remain reachable around cutouts and screen edges as well as look correct."},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt", "label": "Explore the vector control styles and press effects"},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt", "label": "Inspect normalized layout persistence"}
+  ]
+}

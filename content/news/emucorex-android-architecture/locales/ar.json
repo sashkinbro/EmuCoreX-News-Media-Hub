@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "ar",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "كيف يقوم EmuCoreX بتقسيم جلسة PS2 بين Compose و SurfaceView والكود الأصلي PCSX2",
+  "summary": "لعبة PS2 التي تم إطلاقها من EmuCoreX تعبر عدة حدود ضيقة عمدًا قبل أن يصل الإطار الأول إلى العرض. تطبيق Android، عقدة JNI، سطح العرض، حالة الجلسة، وإعادة مترجمات ARM64 كل منها يمتلك جزءًا مختلفًا من هذا المسار.",
+  "heroAlt": "لافتة تلفزيونية رسمية EmuCoreX Android على خلفية زرقاء داكنة",
+  "searchKeywords": [
+    "هندسة EmuCoreX",
+    "تطبيق أصلي JNI",
+    "شاشة المحاكاة SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "العمارة",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "تثبيت تنفيذ وقت التشغيل ARM64 و Android للتلفاز",
+    "jit-cache-lifecycle": "ARM64 دورة حياة ذاكرة التخزين المؤقت JIT الالتزام",
+    "native-app-source": "مصدر التطبيق الأصلي",
+    "emulation-screen-source": "مصدر شاشة المحاكاة"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "تختار عملية Android وتجهيز النواة الأصلية"
+    },
+    {
+      "type": "paragraph",
+      "text": "يبدأ الحد في `NativeApp`، وهو كائن Kotlin يختار مكتبة أساسية متوافقة مع حجم الصفحة عبر `AndroidNativeCoreSelector`، ويقوم بتحميلها باستخدام `System.loadLibrary`، ويسجل ما إذا كانت النواة الأصلية والأدوات الأصلية المساعدة متاحة. ثم يقوم `initializeOnce()` بتحضير جذر بيانات المحاكي، ونسخ الموارد المضمنة، والتحقق من أرشيف التصحيح، وتصدير حزمة الثقة CA الخاصة بـ Android، وتكوين مسار سجل التعطل الأصلي، وأخيرًا يستدعي نقطة الدخول JNI `initialize(dataRoot, sdkInt)`. هذا الترتيب مهم: طرف C++ لا يحتاج أبدًا إلى التخمين حول مكان تخزين Android أو الشهادات."
+    },
+    {
+      "type": "heading",
+      "text": "إطار اللعبة هو SurfaceView حقيقي، وليس لوحة Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "يقوم `EmulationScreen` بتضمين `SurfaceView` غير شفاف خاص بـ Android عبر `AndroidView`. يقوم `SurfaceHolder.Callback` بإرسال `surfaceCreated` وتغييرات الحجم والتدمير إلى `EmulatorBridge`، والتي بدورها تصل إلى المُرَسِّم الأصلي. يرسم Compose عناصر التحكم باللمس، ومعلومات الأداء، والإنجازات، وواجهة الإيقاف المؤقت فوق تلك السطح. الحفاظ على هذه الطبقات منفصلة يسمح للمُرَسِّم بامتلاك Android `Surface` منخفض المستوى بينما يحفظ التراكب حالة Compose والرسوم المتحركة وسهولة الوصول والتخطيط التكيفي."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "تمثل الأعمال الفنية الرسمية لتطبيق EmuCoreX غلاف Android؛ الإطار المحاكى نفسه يتم توفيره بواسطة السطح الأصلي تحت تراكب Compose."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel هو منسق الجلسة"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` ليس المحاكي. إنه ينسق حالة Android المتعلقة بالمحاكي: `PerGameSettingsRepository`، `CheatRepository`، `MemoryCardRepository`، بيانات التوافق، ملفات تعريف اللاعبين، تزامن وقت اللعب، و `AndroidGamePerformance`. تغذي `StateFlow<EmulationUiState>` واجهة المستخدم، بينما تقوم أقفال دورة الحياة والنقل بتسلسل عمليات البدء والإيقاف المؤقت والاستئناف وإيقاف التشغيل. تحتفظ الحقول المتقلبة بالمسار الحالي، الرقم التسلسلي، CRC، الغلاف، وملف تعريف تخطيط اللمس بحيث لا يمكن لاستدعاء متأخر أن يعمل عن طريق الخطأ على اللعبة التالية."
+    },
+    {
+      "type": "heading",
+      "text": "JNI يكشف العمليات، وليس واجهة مستخدم ثانية"
+    },
+    {
+      "type": "paragraph",
+      "text": "عقد `NativeApp` يحتوي على استدعاءات صريحة للأسطح، ضغط وحدة التحكم، اختيار المعالج الرسومي، الإعدادات المجمعة، حفظ الحالات، بطاقات الذاكرة، إنجازات الريترو، تفريغ GS، ملف تعريف JIT، تتبع التوقفات، ونقل VM. Kotlin يقرر متى تكون هذه الإجراءات قانونية وكيف تظهر؛ C++ ينفذها على الحالة المستمدة من PCSX2. على سبيل المثال، يمكن لطبقة Compose إخفاء التقديم السريع والغش عندما يبلغ عميل إنجازات الريترو الأصلي عن جلسة هاردكور نشطة، ثم يفرض محدد الإطارات ويعيد حالة الباتش إلى القيم الآمنة عبر نفس الجسر."
+    },
+    {
+      "type": "heading",
+      "text": "توضح عمليتا الالتزام في 22 يوليو سبب اختبار الانقسام كنظام واحد"
+    },
+    {
+      "type": "paragraph",
+      "text": "التزام `0a16b80d` في 22 يوليو 2026 أثر على كلا جانبي الحدود: `MainActivity`، `TvUiPolicy`، مختارو التخزين، `EmulationViewModel`، ARM64 معيدو تجميع EE/IOP/VU، الذاكرة الافتراضية، استبدال نسيج GS، وكود المرسّم. في وقت لاحق من ذلك اليوم، شدّد الالتزام `f0e19666` أوقات حياة ذاكرة التخزين المؤقت JIT عبر EE، IOP، VIF، وmicroVU وامتد `JitProfiler`. هذه التغييرات تمثل لمحة معمارية مفيدة: قد يتطلب إصلاح دورة حياة Android انضباط ذاكرة تنفيذية أصلية، وما زال الإصلاح الأصلي يحتاج إلى مسار Android يبدأ، يراقب، ويوقفه بأمان."
+    },
+    {
+      "type": "callout",
+      "text": "يصف المستودع EmuCoreX بأنه مجموعة محاكاة لـ PS2 في مرحلة التطوير المبكر. الفصل بين المسؤوليات يجعل من السهل تحديد مكان الأعطال، لكنه لا يجعل التوافق مستقلاً عن اللعبة أو الجهاز أو برنامج تشغيل GPU أو المُرسم."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "اقرأ عقد NativeApp JNI"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "تفقد تكامل التراكب لـ SurfaceView و Compose"
+    }
+  ]
+}

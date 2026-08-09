@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "셰이더 변환이 핵심 shadPS4 호환성 개척지인 이유",
+  "summary": "비디오 코어 소스는 메모리와 수치 동작을 유지하면서 PS4 GPU 프로그램을 호스트 호환 셰이더로 변환해야 하는 변환 파이프라인을 문서화합니다.",
+  "heroAlt": "공식 shadPS4 저장소에서 배포된 게임 화면",
+  "searchKeywords": [
+    "shadPS4",
+    "셰이더 변환이 핵심 shadPS4 호환성 개척지인 이유",
+    "플레이스테이션 4 에뮬레이터"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "플레이스테이션 4",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "shader-tree": "셰이더 리컴파일러 소스 트리",
+    "gcn-decoder": "GCN 명령어 디코더",
+    "spirv-backend": "SPIR-V 백엔드 진입점"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "디코딩은 AMD GCN 지침으로 시작됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "PS4 그래픽 프로그램은 AMD GCN 하드웨어용으로 인코딩되므로 shadPS4에는 먼저 소스 언어 컴파일러가 아닌 명령 수준 프런트엔드가 필요합니다. 'frontend/decode.cpp' 및 'frontend/opcodes.h'는 게스트 작업을 식별합니다. 명령 및 제어 흐름 파일은 분기를 이후 컴파일러가 통과할 수 있는 구조로 전환합니다. 디코드 실패는 구체적입니다. Vulkan이 그림을 입력하기 전에 opcode, 인코딩 필드 또는 분기 대상이 올바르게 표시되지 않았습니다."
+    },
+    {
+      "type": "heading",
+      "text": "스칼라, 벡터 및 메모리 연산은 중간 표현을 입력합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "변환 레이어는 스칼라 ALU 및 흐름, 벡터 ALU 및 보간, 스칼라 및 벡터 메모리, 내보내기 및 데이터 공유 작업 등 동작별로 구분됩니다. 이러한 변환기는 SPIR-V를 직접 작성하는 대신 shadPS4 IR을 방출합니다. 안정적인 IR을 유지하면 모든 호스트 백엔드에서 게스트 디코더를 복제하지 않고도 최적화 및 합법화를 통해 공유 메모리, 장벽, 리소스 추적 및 제어 흐름에 대한 이유를 전달할 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "IR은 SPIR-V 백엔드용 코드 준비를 통과합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "'ir' 트리에는 호스트 방출 전에 작업을 단순화하거나 다시 작성하는 블록, 지침 및 패스가 포함되어 있습니다. 그런 다음 SPIR-V 백엔드는 'emit_spirv_image.cpp' 및 'emit_spirv_shared_memory.cpp'와 같은 집중 이미터에서 정수, 부동 소수점, 이미지, 원자, 장벽, 복합 및 하위 그룹 동작을 처리합니다. 따라서 누락된 GCN 동작은 디코딩, 변환, IR 통과 또는 최종 방출에서 수정될 수 있습니다. 그것은 서로 다른 실패 단계입니다."
+    },
+    {
+      "type": "heading",
+      "text": "셰이더 출력은 여전히 video_core 상태에 따라 달라집니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "올바르게 생성된 SPIR-V 모듈은 이미지 형식, 버퍼 바인딩, 샘플러 또는 게스트 메모리가 잘못된 경우 잘못된 결과를 렌더링할 수 있습니다. 'video_core'는 텍스처와 버퍼 캐시를 통해 이러한 리소스를 공급하고 셰이더 주위에 Vulkan 파이프라인을 구성합니다. 반대로, 파이프라인 생성 시 유효성 검사 메시지는 컴파일러에서 생성된 잘못된 인터페이스를 드러낼 수 있습니다. 디버깅은 셰이더와 해당 바인딩 상태를 함께 따라야 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "로그와 캡처를 통해 첫 번째 불량 단계를 식별해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "유용한 보고서에는 정확한 장면, 타이틀 업데이트, shadPS4 개정판, GPU 및 드라이버가 기록되어 있습니다. 스크린샷을 통해 증상을 확인할 수 있습니다. 셰이더 덤프, 컴파일러 로그 또는 RenderDoc 캡처는 디코딩 실패, SPIR-V 거부, 리소스 바인딩 해제 또는 이후 통과 후에만 픽셀이 분기되었는지 여부를 표시할 수 있습니다. 해상도, HDR, FSR 및 여러 실험 옵션을 한 번에 변경하면 비교가 파괴되므로 기준선은 좁은 상태로 유지되어야 합니다."
+    }
+  ]
+}

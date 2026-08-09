@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Pourquoi la traduction des shaders est une frontière essentielle de la compatibilité shadPS4",
+  "summary": "Les sources vidéo principales documentent un pipeline de traduction qui doit convertir les programmes GPU PS4 en shaders compatibles avec l'hôte tout en préservant la mémoire et le comportement numérique.",
+  "heroAlt": "Capture de jeu distribu?e dans le d?p?t officiel de shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Pourquoi la traduction des shaders est une frontière essentielle de la compatibilité shadPS4",
+    "Émulateur PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "shader-tree": "Arborescence des sources du recompilateur de shader",
+    "gcn-decoder": "Décodeur d'instructions GCN",
+    "spirv-backend": "Point d’entrée back-end SPIR-V"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le décodage commence par les instructions AMD GCN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les programmes graphiques PS4 sont codés pour le matériel AMD GCN, donc shadPS4 a d'abord besoin d'une interface au niveau des instructions plutôt que d'un compilateur en langage source. `frontend/decode.cpp` et `frontend/opcodes.h` identifient les opérations invitées ; les fichiers d'instructions et de flux de contrôle transforment les branches en une structure que le compilateur ultérieur peut parcourir. Un échec de décodage est concret : un opcode, un champ d'encodage ou une cible de branche n'était pas représenté correctement avant que Vulkan n'entre en scène."
+    },
+    {
+      "type": "heading",
+      "text": "Les opérations scalaires, vectorielles et mémoire entrent dans une représentation intermédiaire"
+    },
+    {
+      "type": "paragraph",
+      "text": "La couche de traduction est divisée par comportement : ALU scalaire et flux, ALU vectorielle et interpolation, mémoire scalaire et vectorielle, exportations et opérations de partage de données. Ces traducteurs émettent shadPS4 IR au lieu d'écrire directement SPIR-V. Le maintien d'un IR stable permet à l'optimisation et à la légalisation de passer outre la raison concernant la mémoire partagée, les barrières, le suivi des ressources et le flux de contrôle sans dupliquer le décodeur invité dans chaque backend hôte."
+    },
+    {
+      "type": "heading",
+      "text": "Les passes IR préparent le code pour le backend SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'arborescence `ir` contient des blocs, des instructions et des passes qui simplifient ou réécrivent les opérations avant l'émission de l'hôte. Le backend SPIR-V gère ensuite le comportement des entiers, des virgules flottantes, des images, des atomes, des barrières, des composites et des sous-groupes dans les émetteurs ciblés tels que `emit_spirv_image.cpp` et `emit_spirv_shared_memory.cpp`. Un comportement GCN manquant peut donc être corrigé lors du décodage, de la traduction, d'un passage IR ou de l'émission finale ; ce sont différentes étapes d’échec."
+    },
+    {
+      "type": "heading",
+      "text": "La sortie du shader dépend toujours de l'état de video_core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un module SPIR-V correctement émis peut afficher un résultat erroné si les formats d'image, les liaisons de tampon, les échantillonneurs ou la mémoire invité sont incorrects. `video_core` fournit ces ressources via ses caches de textures et de tampons et construit des pipelines Vulkan autour du shader. A l'inverse, un message de validation lors de la création du pipeline peut révéler une interface non valide produite par le compilateur. Le débogage doit suivre ensemble le shader et son état lié."
+    },
+    {
+      "type": "heading",
+      "text": "Les journaux et les captures doivent identifier la première mauvaise étape"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un rapport utile enregistre la scène exacte, la mise à jour du titre, la révision shadPS4, le GPU et le pilote. Une capture d'écran établit le symptôme ; un vidage de shader, un journal du compilateur ou une capture RenderDoc peut indiquer si le décodage a échoué, si SPIR-V a été rejeté, si une ressource n'était pas liée ou si les pixels ont divergé seulement après une passe ultérieure. Changer la résolution, le HDR, le FSR et plusieurs options expérimentales à la fois détruit cette comparaison, la ligne de base doit donc rester étroite."
+    }
+  ]
+}

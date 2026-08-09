@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Las lecturas de GPU reconectan las imágenes del host de shadPS4 con la memoria visible para los invitados",
+  "summary": "Las relecturas transfieren datos modificados por la GPU al lado de la CPU cuando el software de PS4 espera memoria compartida, intercambiando velocidad por corrección en cargas de trabajo que la necesitan.",
+  "heroAlt": "Captura de juego distribuida en el repositorio oficial de shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Las lecturas de GPU reconectan las imágenes del host de shadPS4 con la memoria visible para los invitados",
+    "emulador de playstation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "Estación de juegos 4",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Fuente de caché del búfer de vídeo",
+    "page-manager": "Administrador de páginas de memoria de video",
+    "readback-notes": "Leer notas de ingeniería",
+    "module-viewer": "Implementación del visor de módulos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Las escrituras de GPU no son visibles automáticamente como memoria de CPU invitada"
+    },
+    {
+      "type": "paragraph",
+      "text": "El software de PS4 puede tratar una región de memoria como compartida incluso después de que los comandos de la GPU hayan modificado los datos correspondientes. En el host, esos datos pueden existir en un búfer o imagen de Vulkan en lugar de en los bytes visibles de la CPU que el invitado lee más tarde. Una lectura repetida copia el resultado modificado hacia el lado de la CPU en el punto en el que se requiere coherencia. Sin él, el juego puede consumir vértices obsoletos, contadores u otros resultados mientras la vista de GPU parece válida."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache rastrea regiones en lugar de copiar todo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El árbol `src/video_core/buffer_cache` mantenido separa los objetos del búfer, las definiciones de región, un administrador de región, el seguimiento de la memoria y el manejo de fallas. Esa organización existe porque copiar toda la memoria de video después de cada comando sería prohibitivamente costoso. El caché tiene que identificar qué rangos se superponen, de qué lado los cambió y cuándo un acceso de invitado necesita sincronización. `page_manager` participa en el límite de memoria más amplio donde se encuentran las páginas invitadas asignadas y los recursos de GPU."
+    },
+    {
+      "type": "heading",
+      "text": "La corrección tiene un coste de sincronización medible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una lectura puede detenerse hasta que finaliza el trabajo de la GPU del host y luego transferir datos a través de un límite que normalmente permanece asíncrono. Muy pocas relecturas dejan recuerdos obsoletos; demasiados pueden reducir la velocidad de fotogramas e introducir tartamudeo. Las notas de ingeniería oficiales v0.10 documentaron esta compensación y conectaron el camino experimental con explosiones de vértices reducidas y progreso en títulos que utilizan resultados compartidos de GPU a CPU. Esa evidencia describe un mecanismo, no una recomendación de ámbito universal."
+    },
+    {
+      "type": "heading",
+      "text": "Module Viewer responde a una pregunta de depuración diferente"
+    },
+    {
+      "type": "paragraph",
+      "text": "El Visor de módulos en `src/core/devtools/widget/module_list.cpp` expone los módulos ejecutables cargados y su estado. No realiza la transferencia de memoria, pero ayuda al desarrollador a identificar qué componente invitado está activo cuando falla una ruta dependiente de la lectura. Emparejar el estado del módulo con los registros de caché del búfer es más informativo que asumir que cada explosión de geometría pertenece al compilador de sombreadores."
+    },
+    {
+      "type": "heading",
+      "text": "Una comparación controlada aísla el comportamiento de lectura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las pruebas mantienen el mismo guardado, escena, renderizado, resolución y revisión, luego cambian solo la opción de lectura relevante. Registre el primer fotograma corrupto, el impacto en el tiempo de fotograma y el registro completo. Si la corrupción desaparece mientras el rendimiento cae en el mismo evento, eso respalda una dependencia de coherencia. Si nada cambia, la interpretación de texturas, el procesamiento de comandos, la traducción de sombreadores o el comportamiento del conductor siguen siendo candidatos más fuertes."
+    }
+  ]
+}

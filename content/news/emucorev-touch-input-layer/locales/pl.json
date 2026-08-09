@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Jak EmuCoreV zmienia szklany ekran w sterowanie Vitą",
+  "summary": "Warstwa dotykowa EmuCoreV to więcej niż pomalowane przyciski. Dane układu są normalizowane i przechowywane, kontrolki wektorowe oddzielają wygląd od geometrii trafień, czujniki ruchu mogą sterować osiami analogowymi, a ostateczny stan przechodzi przez zwarty kontrakt wejściowy JNI.",
+  "heroAlt": "Oficjalna grafika przycisków twarzy EmuCoreV ułożona w diamentowym układzie Vita",
+  "searchKeywords": [
+    "sterowanie dotykowe EmuCoreV",
+    "KontrolkiDotykoweWektora",
+    "Wejście żyroskopu Vita",
+    "NakładkaWejściowa JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "Wejście",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "Komit implementacji kontroli wejściowych",
+    "touch-spacing-commit": "Komisja udoskonalająca odstępy dotyku",
+    "vector-controls-source": "Źródło VectorTouchControls",
+    "layout-repository-source": "Źródło repozytorium układu dotykowego"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zapisany układ opisuje znormalizowane płótno"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` przechowuje każdy kontroler jako identyfikator oraz znormalizowane wartości `x`, `y`, `width` i `height`, flagę widoczności oraz tryb analogowy. Ładowanie jest defensywne: wymiary są ograniczone do przedziału od 0,035 do 0,5 płótna, a następnie pozycje są ograniczone tak, aby zmieniony rozmiar elementu nie kończył się poza prawym lub dolnym brzegiem. Lewy i prawy drążek mogą działać jako widoczne drążki lub jako obszary dotykowe, podczas gdy nazwane identyfikatory obejmują przyciski barkowe, kierunki D-pada, przyciski frontowe, Select, Start oraz powierzchnię dotykową Vity."
+    },
+    {
+      "type": "heading",
+      "text": "Renderowanie wektorowe zmienia styl bez przesuwania trafionego celu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Praca wprowadzona 29 lipca dodała dużą implementację `VectorTouchControls.kt` i ustanowiła wyraźny kontrakt w preferencjach: styl wizualny nigdy nie determinuje geometrii kontroli, a animacja naciśnięcia nigdy nie determinuje rozdzielania wejścia. Gracze mogą wybierać spośród opcji Classic, Legacy, Modern, Arcade lub Minimal, a następnie niezależnie wybierać sprzężenie zwrotne Grow, Shrink, Spring lub Glow. Compose animuje skalę i blask wokół tego samego obszaru interakcji, więc kosmetyczny preset nie może cicho zmieniać miejsca, w którym przycisk przyjmuje dotyk palca."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "Oficjalny zakres joysticka i rastry naciśniętego drążka tworzą tradycyjne analogowe sterowanie. Style wektorowe mogą przerysować jego prezentację, ale logiczna oś i jej natywne mapowanie pozostają niezmienione."
+    },
+    {
+      "type": "heading",
+      "text": "Dotyk, drążki i przyciski łączą się w InputOverlay"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay` posiada kompaktową natywną granicę. Podłącza lub odłącza wirtualny kontroler, wysyła podpisane wartości osi, ustawia stany przycisków i oznacza, czy dotyk celuje w panel przedni czy tylny. `EmulationOverlay` komponuje sterowanie i tłumaczy gesty na te wywołania. Pozwala to na utrzymanie obsługi wskaźnika i wizualizacji w trybie edycji po stronie Android, podczas gdy rdzeń pochodzący od Vita3K otrzymuje stan w kształcie kontrolera zamiast zdarzeń Compose lub współrzędnych ekranu, których nie rozumie."
+    },
+    {
+      "type": "heading",
+      "text": "Wejście ruchu jest filtrowane zanim dotrze do osi analogowej"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput` wspiera celowanie przez sprzętowy żyroskop oraz sterowanie przez wektor obrotu gry. Uwzględnia rotację wyświetlacza, centruje sterowanie po aktywacji, stosuje konfigurowalną czułość, wygładzanie, odwrócenie osi oraz małą strefę martwą, a następnie unika wysyłania prawie identycznych próbek. Celowanie jest skierowane na prawy drążek; sterowanie na oś X lewego drążka. Rozpoczęcie trybu najpierw zatrzymuje poprzednią subskrypcję sensora, a zatrzymanie wysyła wartość neutralną, aby gra nie mogła zachować starego nachylenia."
+    },
+    {
+      "type": "heading",
+      "text": "Haptics pozostają wyłączone na wrażliwej na opóźnienia ścieżce przycisku"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` rozwiązuje systemowy wibrator i możliwości amplitudy raz, a następnie wysyła wibracje przez dedykowanego demona wykonawczego. Miękkie, wyraźne, mocne i zorientowane na system ustawienia wstępne kształtują oddzielnie impulsy nacisku i zwolnienia. Jeśli wibrator nie jest dostępny, warstwa wraca do sprzężenia zwrotnego dotykowego widoku. Ważna kolejność jest architektoniczna: wolne wywołanie bindera do usługi wibratora Android nie może opóźniać stanu przycisku, który musi dotrzeć do rdzenia emulatora."
+    },
+    {
+      "type": "callout",
+      "text": "Komit `4f01d13e` zmienił sterowanie wektorowe, zachowanie nakładki, wejście z żyroskopu, haptykę, ustawienia oraz testy kontraktowe razem. Wcześniejsza praca `db7965b5` nad odstępami dostarcza drugą połowę projektu: sterowanie musi pozostać osiągalne wokół wycięć i krawędzi ekranu, a także wyglądać poprawnie."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "Odkryj style sterowania wektorowego i efekty nacisku"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "Sprawdź zachowanie znormalizowanego układu"
+    }
+  ]
+}

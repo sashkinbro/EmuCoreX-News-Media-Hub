@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Associez le moteur de rendu au Android GPU et au pilote",
+  "summary": "Identifiez le vrai SoC et GPU, distinguez Adreno de Mali et des autres familles, testez la prise en charge de l'API et choisissez un moteur de rendu en fonction du pilote de l'appareil plutôt que des noms marketing.",
+  "heroAlt": "Une puce Qualcomm Snapdragon photographiée sur une carte électronique",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Prise en charge de Vulkan",
+    "Détection de SoC",
+    "Compatibilité du moteur de rendu"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "Compatibilité"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Guide Android Vulkan",
+    "vulkan-profiles": "Profils Khronos Vulkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le modèle de téléphone n'est pas la spécification graphique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les fabricants réutilisent les noms de produits selon les régions et changent silencieusement les SoC entre les révisions. Les décisions sur le moteur de rendu commencent donc par la puce détectée et le GPU — Adreno sur de nombreux appareils Snapdragon, Mali ou Immortalis sur de nombreux appareils MediaTek/Exynos, et d'autres familles sur des plateformes moins courantes. La seule version Android n'indique pas les extensions Vulkan, la stabilité du compilateur ni le comportement de la mémoire fourni par le pilote du fournisseur."
+    },
+    {
+      "type": "callout",
+      "text": "Utilisez la boîte de dialogue du processeur détecté de EmuCoreX comme premier indice, puis confirmez avec les informations système. N'installez jamais un package pilote Adreno sur un appareil Mali/Immortalis."
+    },
+    {
+      "type": "heading",
+      "text": "Prérequis et base propre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enregistrez SoC, la famille GPU, la version Android et le pilote fournisseur avant les tests. Commencez avec le pilote système et le profil Safe. Un moteur de rendu peut se lancer avec succès mais échouer plus tard lors de la compilation des shaders, de la récupération du tampon de trame ou sous pression mémoire, donc un seul écran de menu n'est pas un test de capacités."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Famille SoC et GPU détectée.",
+        "Numéro de build de Android et niveau de correctif de sécurité.",
+        "Base System driver avec pilote personnalisé désactivé.",
+        "Une scène de jeu riche en shaders et une autre riche en effets.",
+        "Assez d'espace libre pour les journaux et les caches de shaders."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Construire un choix de moteur de rendu basé sur les capacités"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Utilisez Afficher le processeur détecté et vérifiez la famille signalée par rapport aux informations système fiables de l'appareil.",
+        "2. Sur Adreno, commencez avec Vulkan sauf si un problème connu du dispositif ou du jeu indique OpenGL ; sur MediaTek/Mali, commencez avec le chemin OpenGL recommandé par EmuCoreX.",
+        "3. Démarrez à froid la première scène deux fois pour séparer la compilation initiale des shaders des erreurs récurrentes.",
+        "4. Testez la deuxième scène pour le mélange, le framebuffer et le comportement de la mémoire, puis exécutez suffisamment longtemps pour franchir la montée en température de l’appareil.",
+        "5. Stockez un moteur par jeu uniquement pour une exception démontrée et maintenez le choix global aligné avec la famille GPU."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vérifiez le résultat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un chemin compatible complète les transitions lourdes en shaders sans perte de pilote, rend les effets correctement et reste stable après que le cache est chaud. Surveillez les erreurs du pilote de l'appareil dans les journaux plutôt que de considérer chaque écran noir comme un GPU faible. Si le rendu logiciel est correct, les preuves pointent vers l'API matérielle ou ses paramètres."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La famille GPU correspond à la famille du package moteur/pilote.",
+        "Deux démarrages à froid et un démarrage à chaud terminés.",
+        "Aucune erreur récurrente du compilateur de shaders ou perte de l'appareil.",
+        "La scène riche en effets correspond à la structure du moteur logiciel.",
+        "Le choix global reste utilisable sur plusieurs jeux."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rétablissement et récupération"
+    },
+    {
+      "type": "paragraph",
+      "text": "Revenez au pilote système et au moteur par défaut chaque fois que l’identification est incertaine. Supprimez les substitutions par jeu avant de comparer les appareils. Si une mise à jour système Android change le comportement du pilote, répétez la ligne de base plutôt que de transporter les conclusions de la version précédente."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Désactivez les pilotes personnalisés.",
+        "Restaurez le moteur recommandé spécifique à la famille.",
+        "Réinitialisez le profil affecté par jeu.",
+        "Redémarrez après une boucle de perte d’appareil Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modèles courants d’échec"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Mauvaise famille de package : échec de chargement immédiat ou crash avant le rendu.",
+        "Fonctionne seulement jusqu’à la compilation des shaders : problème de compilateur/extension plutôt que performance brute.",
+        "Moteur bon sur un appareil régional, mauvais sur un autre : le nom du produit cache un SoC différent.",
+        "Le menu fonctionne, le gameplay échoue : la couverture du test était trop superficielle."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Un enregistrement matériel concis rend les conseils de la communauté utiles : appareil, SoC, version GPU, Android, pilote, moteur de rendu, numéro de série du jeu et scène. Sans cette chaîne, les recommandations se réduisent au folklore des marques de téléphones. Avec elle, les exceptions du moteur de rendu peuvent être reproduites et annulées en toute sécurité."
+    },
+    {
+      "type": "link",
+      "text": "Examiner les conseils Vulkan de Android",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

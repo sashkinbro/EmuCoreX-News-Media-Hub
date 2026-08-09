@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "en",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "How EmuCoreX splits a PS2 session between Compose, SurfaceView, and native PCSX2 code",
+  "summary": "A PS2 game launched from EmuCoreX crosses several deliberately narrow boundaries before the first frame reaches the display. The Android application, JNI contract, rendering surface, session state, and ARM64 recompilers each own a different part of that path.",
+  "heroAlt": "Official EmuCoreX Android TV banner on a dark blue background",
+  "searchKeywords": ["EmuCoreX architecture", "NativeApp JNI", "EmulationScreen SurfaceView", "ARM64 PCSX2 Android"],
+  "categoryLabels": {"emucorex": "EmuCoreX", "architecture": "Architecture", "android": "Android"},
+  "sourceLabels": {
+    "android-runtime-hardening": "ARM64 runtime and Android TV implementation commit",
+    "jit-cache-lifecycle": "ARM64 JIT cache lifecycle commit",
+    "native-app-source": "NativeApp source",
+    "emulation-screen-source": "EmulationScreen source"
+  },
+  "blocks": [
+    {"type": "heading", "text": "The Android process chooses and prepares the native core"},
+    {"type": "paragraph", "text": "The boundary begins in `NativeApp`, a Kotlin object that selects a page-size-compatible core library through `AndroidNativeCoreSelector`, loads it with `System.loadLibrary`, and records whether the native core and auxiliary native tools are available. `initializeOnce()` then prepares the emulator data root, copies bundled resources, verifies the patch archive, exports the Android CA trust bundle, configures a native crash-log path, and finally calls the JNI `initialize(dataRoot, sdkInt)` entry point. That order is important: the C++ side never has to guess where Android storage or certificates live."},
+    {"type": "heading", "text": "The game frame is a real SurfaceView, not a Compose canvas"},
+    {"type": "paragraph", "text": "`EmulationScreen` embeds an opaque Android `SurfaceView` through `AndroidView`. Its `SurfaceHolder.Callback` forwards `surfaceCreated`, size changes, and destruction to `EmulatorBridge`, which in turn reaches the native renderer. Compose draws the touch controls, performance information, achievements, and pause interface above that surface. Keeping those layers separate lets the renderer own a low-level Android `Surface` while the overlay keeps Compose state, animation, accessibility, and adaptive layout."},
+    {"type": "image", "assetId": "emucorex-android-architecture-android-shell", "text": "The official EmuCoreX application artwork represents the Android shell; the emulated frame itself is supplied by the native surface below the Compose overlay."},
+    {"type": "heading", "text": "EmulationViewModel is the session coordinator"},
+    {"type": "paragraph", "text": "`EmulationViewModel` is not the emulator. It coordinates Android-facing state around the emulator: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, compatibility data, player profiles, play-time synchronization, and `AndroidGamePerformance`. A `StateFlow<EmulationUiState>` feeds the UI, while lifecycle and transport mutexes serialize start, pause, resume, and shutdown work. Volatile fields retain the current path, serial, CRC, cover, and touch-layout profile so that a late callback cannot accidentally operate on the next game."},
+    {"type": "heading", "text": "JNI exposes operations, not a second user interface"},
+    {"type": "paragraph", "text": "The `NativeApp` contract contains explicit calls for surfaces, controller pressure, renderer selection, batched settings, save states, memory cards, RetroAchievements, GS dumps, the JIT profiler, hang traces, and VM transport. Kotlin decides when those actions are legal and how they appear; C++ executes them against PCSX2-derived state. For example, the Compose layer can hide fast-forward and cheats when the native RetroAchievements client reports an active hardcore session, then force the frame limiter and patch state back to safe values through the same bridge."},
+    {"type": "heading", "text": "Two July 22 commits show why the split is tested as one system"},
+    {"type": "paragraph", "text": "Commit `0a16b80d` on July 22, 2026 touched both sides of the boundary: `MainActivity`, `TvUiPolicy`, storage pickers, `EmulationViewModel`, ARM64 EE/IOP/VU recompilers, virtual memory, GS texture replacement, and renderer code. Later that day, commit `f0e19666` tightened JIT cache lifetimes across EE, IOP, VIF, and microVU and extended `JitProfiler`. Those changes are a useful architectural snapshot: an Android lifecycle fix can require native executable-memory discipline, and a native fix still needs an Android path that starts, observes, and stops it safely."},
+    {"type": "callout", "text": "The repository describes EmuCoreX as an early-development PS2 emulator stack. The separation of responsibilities makes failures easier to locate, but it does not make compatibility independent of the game, device, GPU driver, or renderer."},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt", "label": "Read the NativeApp JNI contract"},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt", "label": "Inspect the SurfaceView and Compose overlay integration"}
+  ]
+}

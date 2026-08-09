@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "GPU-Readbacks verbinden die Host-Images von shadPS4 wieder mit dem für Gäste sichtbaren Speicher",
+  "summary": "Rücklesevorgänge übertragen GPU-modifizierte Daten auf die CPU-Seite, wenn die PS4-Software gemeinsam genutzten Speicher erwartet, und tauschen Geschwindigkeit gegen Korrektheit bei Arbeitslasten aus, die dies benötigen.",
+  "heroAlt": "Gameplay-Screenshot aus dem offiziellen shadPS4-Repository",
+  "searchKeywords": [
+    "shadPS4",
+    "GPU-Readbacks verbinden die Host-Images von shadPS4 wieder mit dem für Gäste sichtbaren Speicher",
+    "PlayStation 4-Emulator"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Videopuffer-Cache-Quelle",
+    "page-manager": "Videospeicher-Seitenmanager",
+    "readback-notes": "Lesen Sie technische Hinweise zurück",
+    "module-viewer": "Implementierung des Modul-Viewers"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "GPU-Schreibvorgänge sind nicht automatisch als Gast-CPU-Speicher sichtbar"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS4-Software kann einen Speicherbereich auch dann als gemeinsam genutzt behandeln, wenn GPU-Befehle die entsprechenden Daten geändert haben. Auf dem Host sind diese Daten möglicherweise in einem Vulkan-Puffer oder -Image vorhanden und nicht in den für die CPU sichtbaren Bytes, die der Gast später liest. Ein Rücklesevorgang kopiert das geänderte Ergebnis an der Stelle, an der Kohärenz erforderlich ist, auf die CPU-Seite. Ohne sie kann das Spiel veraltete Vertices, Zähler oder andere Ergebnisse verbrauchen, während die GPU-Ansicht gültig aussah."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache verfolgt Regionen, anstatt alles zu kopieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der gepflegte Baum „src/video_core/buffer_cache“ trennt Pufferobjekte, Regionsdefinitionen, einen Regionsmanager, Speicherverfolgung und Fehlerbehandlung. Diese Organisation existiert, weil das Kopieren des gesamten Videospeichers nach jedem Befehl unerschwinglich teuer wäre. Der Cache muss erkennen, welche Bereiche sich überschneiden, welche Seite sie geändert hat und wann ein Gastzugriff synchronisiert werden muss. „page_manager“ ist an der breiteren Speichergrenze beteiligt, an der zugeordnete Gastseiten und GPU-Ressourcen aufeinandertreffen."
+    },
+    {
+      "type": "heading",
+      "text": "Korrektheit verursacht messbare Synchronisierungskosten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Rücklesevorgang kann anhalten, bis die Arbeit der Host-GPU abgeschlossen ist, und dann Daten über eine Grenze übertragen, die normalerweise asynchron bleibt. Zu wenige Rücklesevorgänge hinterlassen veraltetes Gedächtnis; Zu viele können die Bildrate verringern und zu Rucklern führen. Die offiziellen technischen Hinweise zu Version 0.10 dokumentierten diesen Kompromiss und verknüpften den experimentellen Weg mit reduzierten Scheitelpunktexplosionen und Fortschritten in Titeln unter Verwendung gemeinsamer GPU-zu-CPU-Ergebnisse. Diese Beweise beschreiben einen Mechanismus und keine universelle Einstellungsempfehlung."
+    },
+    {
+      "type": "heading",
+      "text": "Module Viewer beantwortet eine andere Debugging-Frage"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Modul-Viewer unter „src/core/devtools/widget/module_list.cpp“ zeigt geladene ausführbare Module und ihren Status an. Die Speicherübertragung wird nicht durchgeführt, aber es hilft einem Entwickler zu identifizieren, welche Gastkomponente aktiv ist, wenn ein von der Rücklesung abhängiger Pfad fehlschlägt. Das Koppeln des Modulstatus mit Puffer-Cache-Protokollen ist aussagekräftiger als die Annahme, dass jede Geometrieexplosion zum Shader-Compiler gehört."
+    },
+    {
+      "type": "heading",
+      "text": "Ein kontrollierter Vergleich isoliert das Rückleseverhalten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Beim Testen werden Speicherung, Szene, Renderer, Auflösung und Revision beibehalten und dann nur die relevante Rückleseoption geändert. Zeichnen Sie den ersten beschädigten Frame, die Frametime-Auswirkungen und das vollständige Protokoll auf. Wenn die Korruption verschwindet, während gleichzeitig die Leistung abnimmt, spricht das für eine Kohärenzabhängigkeit. Wenn sich nichts ändert, bleiben Texturinterpretation, Befehlsverarbeitung, Shader-Übersetzung oder Treiberverhalten stärkere Kandidaten."
+    }
+  ]
+}

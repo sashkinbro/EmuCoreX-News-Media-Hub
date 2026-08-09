@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "ShadPS4'ün İçinde: PS4 emülasyonuna yerel bir C++ ve Vulkan yaklaşımı",
+  "summary": "Resmi proje yapısı, shadPS4'ün uyumluluğu tek bir anahtar olarak ele almak yerine yerel C++ çekirdeğini, platform ön uçlarını ve Vulkan odaklı grafik yolunu nasıl birleştirdiğini gösteriyor.",
+  "heroAlt": "Resm? shadPS4 deposunda da??t?lan oyun g?r?nt?s?",
+  "searchKeywords": [
+    "gölgePS4",
+    "ShadPS4'ün içinde",
+    "PlayStation 4 emülatörü"
+  ],
+  "categoryLabels": {
+    "shadps4": "gölgePS4",
+    "ps4": "PlayStation4",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "official-readme": "shadPS4 core README",
+    "core-linker": "Çekirdek bağlayıcı uygulaması",
+    "shader-pipeline": "Gölgelendirici yeniden derleyici kaynak ağacı",
+    "video-core": "Video çekirdek kaynak ağacı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU yolu yerel x86-64 yürütmeyle başlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 4 ve desteklenen masaüstü bilgisayarların çoğu x86-64'ü paylaşıyor ve shadPS4 README, ekibin PS4 ikili dosyalarının yerel yürütmesini çözmesine yardımcı olan önceki emülatör araştırmalarına itibar ediyor. Bu seçim, x86-64 ana bilgisayarlarındaki her konuk CPU talimatının çevrilmesini önler, ancak adres alanı düzenini, istisna yönetimini, iş parçacığı durumunu ve içe aktarılan sistem işlevlerini uyumluluk sınırının bir parçası haline getirir. Bu nedenle, \"src/core/address_space.cpp\", \"memory.cpp\" ve çekirdek iş parçacığı uygulaması, yürütme açısından giriş noktasının kendisi kadar önemlidir."
+    },
+    {
+      "type": "heading",
+      "text": "ELF yükleme, sembol çözünürlüğü ve Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "\"src/core/loader/elf.cpp\" konuk ELF nesnelerini ayrıştırırken, \"src/core/linker.cpp\" ve \"loader/symbols_resolver.cpp\" içe aktarılan adları uygulamalara bağlar. Aerolib, 'src/core/aerolib' altında, üst düzey kitaplık değiştirmeleri tarafından kullanılan dışa aktarma kayıt katmanını sağlar. Büyük \"src/core/libraries\" ağacı daha sonra çekirdek, dosya sistemi, ses, kayıtlı veriler, video çıkışı ve PS4'e yönelik diğer API'leri sağlar. Bir başlık yerel koda ulaşabilir ancak içe aktarılan bir hizmet eksik olduğunda veya yanlış yapıyı döndürdüğünde yine de hemen durabilir."
+    },
+    {
+      "type": "heading",
+      "text": "GCN talimatları yapılandırılmış IR'ye, ardından SPIR-V'ye dönüşür"
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafik derleyicisi \"src/shader_recompiler\" altında ayrı bir işlem hattıdır. Ön ucu AMD GCN talimatlarının kodunu çözer, kontrol akışını oluşturur ve skaler, vektör, enterpolasyon ve bellek işlemlerini çevirir. Ara temsil geçişleri, \"arka uç/spirv\" ana bilgisayar tarafından tüketilen SPIR-V'yi yaymadan önce bu programı normalleştirir. Bu, sürüm notlarının neden ayrı işlem kodlarını, barisentrik koordinatları, paylaşılan belleği ve dışa aktarma düzeltmelerini adlandırdığını açıklıyor: her biri konuktan ana bilgisayara gölgelendirici yolunda somut bir eksik davranıştır."
+    },
+    {
+      "type": "heading",
+      "text": "video_core komutların, önbelleklerin ve Vulkan kaynaklarının sahibidir"
+    },
+    {
+      "type": "paragraph",
+      "text": "'Src/video_core' katmanı gölgelendirici derleyicisinin etrafında bulunur. Vulkan oluşturucusu cihazlar, işlem hatları, görüntüler ve sunum kaynakları oluştururken, doku ve arabellek önbellekleri konuk belleğinin ana GPU nesneleriyle tutarlı olmasını sağlar. PM4 komut yönetimi, döşeme, görüntü formatının yeniden yorumlanması ve tekrarların tümü burada buluşuyor. Kırık bir çerçeve, gölgelendirici emisyonundan önce, önbellek arama sırasında, kaynak geçişinde veya sunum sırasında ortaya çıkabilir; bu nedenle ekran görüntüsü tek başına sorumlu bileşeni tanımlayamaz."
+    },
+    {
+      "type": "heading",
+      "text": "Çalıştırılabilir çekirdek ve kullanıcı ön uçları ayrı ürünlerdir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Resmi README, bu depoyu açıkça emülatör çekirdeği olarak adlandırır ve sıradan kullanıcıları ayrı QtLauncher'a yönlendirir. Çekirdek deponun içindeki \"src/main.cpp\", \"emulator.cpp\", SDL pencere kodu ve \"src/imgui\" katmanları hâlâ komut satırı yürütme, kaplamalar, Büyük Resim kaynakları ve geliştiriciye yönelik görünümler sağlar. Qt başlatıcısını ayrı tutmak, her ön uç değişikliğini bir çekirdek emülasyon değişikliğine dönüştürmeden kitaplık yönetiminin gelişmesine olanak tanır."
+    },
+    {
+      "type": "heading",
+      "text": "Yararlı bir mimari raporu başarısız sınırın adını verir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Çözülmemiş bir dışa aktarma etrafındaki önyükleme hatası, yükleyiciye, bağlayıcıya, Aerolib'e veya bir HLE kitaplığına işaret eder. GCN kod çözme hatası, gölgelendirici ön ucunun yakınına aittir; Vulkan doğrulaması, doku bozulması veya eski GPU belleği video_core'a ve önbelleklerine işaret ediyor. Giriş, konuğa 'src/input' yoluyla ulaşırken, ana bilgisayar günlüğü ve dosya yardımcıları 'src/common' altında yaşar. Yapının, son günlük alt sisteminin, oluşturucunun ve ana bilgisayar platformunun tam olarak kaydedilmesi, \"oyun çalışmıyor\" ifadesini kaynak ağaçla uyumlu bir rapora dönüştürür."
+    }
+  ]
+}

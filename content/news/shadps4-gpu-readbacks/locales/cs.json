@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zpětné čtení GPU znovu propojí hostitelské obrazy shadPS4 s pamětí viditelnou pro hosty",
+  "summary": "Zpětná čtení přenášejí data upravená GPU na stranu CPU, když software PS4 očekává sdílenou paměť, rychlost obchodování pro správnost v pracovních zátěžích, které to potřebují.",
+  "heroAlt": "Sn?mek hry zve?ejn?n? v ofici?ln?m repozit??i shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Zpětné čtení GPU znovu propojí hostitelské obrazy shadPS4 s pamětí viditelnou pro hosty",
+    "emulátor PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Zdroj mezipaměti videa",
+    "page-manager": "Správce stránek video paměti",
+    "readback-notes": "Readback inženýrské poznámky",
+    "module-viewer": "Implementace modulu Prohlížeč"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zápisy GPU nejsou automaticky viditelné jako paměť hostovaného CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Software PS4 může považovat oblast paměti za sdílenou i poté, co příkazy GPU upravily odpovídající data. Na hostiteli mohou tato data existovat ve vyrovnávací paměti nebo obrazu Vulkan spíše než v bajtech viditelných CPU, které host později čte. Zpětné čtení zkopíruje upravený výsledek směrem ke straně CPU v bodě, kde je vyžadována koherence. Bez něj může hra spotřebovávat zastaralé vrcholy, čítače nebo jiné výsledky, zatímco zobrazení GPU vypadalo jako platné."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache sleduje regiony místo toho, aby vše kopíroval"
+    },
+    {
+      "type": "paragraph",
+      "text": "Udržovaný strom `src/video_core/buffer_cache` odděluje objekty vyrovnávací paměti, definice oblastí, správce oblastí, sledování paměti a zpracování chyb. Tato organizace existuje, protože kopírování veškeré video paměti po každém příkazu by bylo neúměrně drahé. Mezipaměť musí identifikovat, které rozsahy se překrývají, která strana je změnila a kdy přístup hosta potřebuje synchronizaci. `page_manager` se účastní na širší hranici paměti, kde se setkávají mapované stránky hosta a zdroje GPU."
+    },
+    {
+      "type": "heading",
+      "text": "Správnost má měřitelné náklady na synchronizaci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zpětné čtení se může zastavit, dokud práce hostitelského GPU neskončí, a poté přenést data přes hranici, která normálně zůstává asynchronní. Příliš málo zpětných čtení zanechává zastaralou paměť; příliš mnoho může snížit snímkovou frekvenci a způsobit koktání. Oficiální technické poznámky k verzi 0.10 dokumentovaly tento kompromis a propojily experimentální cestu se sníženými explozemi vrcholů a pokrokem v titulech pomocí sdílených výsledků mezi GPU a CPU. Tyto důkazy popisují mechanismus, nikoli univerzální doporučení pro nastavení."
+    },
+    {
+      "type": "heading",
+      "text": "Module Viewer odpovídá na jinou otázku ladění"
+    },
+    {
+      "type": "paragraph",
+      "text": "Prohlížeč modulů pod `src/core/devtools/widget/module_list.cpp` odhaluje načtené spustitelné moduly a jejich stav. Neprovádí přenos paměti, ale pomáhá vývojáři identifikovat, která komponenta hosta je aktivní, když selže cesta závislá na zpětném čtení. Spárování stavu modulu s protokoly mezipaměti je informativnější než předpoklad, že každá exploze geometrie patří kompilátoru shaderu."
+    },
+    {
+      "type": "heading",
+      "text": "Řízené srovnání izoluje chování při zpětném čtení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testování zachovává stejné uložení, scénu, renderer, rozlišení a revizi, poté změní pouze příslušnou možnost zpětného čtení. Zaznamenejte první poškozený snímek, dopad snímku a kompletní protokol. Pokud korupce zmizí při poklesu výkonu při stejné události, podporuje to závislost na koherenci. Pokud se nic nezmění, interpretace textur, zpracování příkazů, překlad shaderů nebo chování ovladače zůstávají silnějšími kandidáty."
+    }
+  ]
+}

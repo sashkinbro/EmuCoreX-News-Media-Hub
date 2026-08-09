@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreV bir cam ekranı Vita kontrollerine nasıl dönüştürüyor",
+  "summary": "EmuCoreV'in dokunma katmanı sadece boyalı düğmelerden ibaret değildir. Düzen verileri normalize edilir ve saklanır, vektör kontrolleri görünümü yakalama geometrisinden ayrı tutar, hareket sensörleri analog eksenleri çalıştırabilir ve nihai durum, kompakt bir JNI giriş sözleşmesini geçer.",
+  "heroAlt": "Resmî EmuCoreV yüz düğmesi grafikleri Vita elmas düzeninde yerleştirilmiş",
+  "searchKeywords": [
+    "EmuCoreV dokunmatik kontroller",
+    "VektörDokunmatikKontroller",
+    "Vita jiroskop girdisi",
+    "InputOverlay JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "Girdi",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "Girdi kontrolleri uygulama komiti",
+    "touch-spacing-commit": "Dokunma aralığı iyileştirme taahhüdü",
+    "vector-controls-source": "VectorTouchControls kaynağı",
+    "layout-repository-source": "Dokunmatik düzen deposu kaynağı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kaydedilen düzen, normalleştirilmiş bir tuvali tanımlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` her kontrolü bir ID ve normalleştirilmiş `x`, `y`, `width` ve `height` değerleri, bir görünürlük bayrağı ve bir analog mod olarak depolar. Yükleme savunmacıdır: boyutlar 0,035 ile tuvalin 0,5'i arasında sınırlandırılır, ardından yeniden boyutlandırılmış öğenin sağ veya alt kenarın dışına çıkmaması için konumlar kısıtlanır. Sol ve sağ çubuklar görünür çubuk olarak veya dokunmatik alan olarak davranabilirken, isimlendirilmiş ID'ler omuzlar, D-pad yönleri, ön yüz düğmeleri, Select, Start ve Vita dokunmatik yüzeyini kapsar."
+    },
+    {
+      "type": "heading",
+      "text": "Vektör rendering, hedefi hareket ettirmeden stili değiştirir"
+    },
+    {
+      "type": "paragraph",
+      "text": "29 Temmuz tarihli giriş çalışması, büyük `VectorTouchControls.kt` uygulamasını ekledi ve tercihlerde açık bir sözleşme yaptı: görsel stil asla kontrol geometrisini belirlemez ve basın animasyonu asla giriş dağıtımını belirlemez. Oyuncular Klasik, Miras, Modern, Arcade veya Minimal işlemleri seçebilir, ardından bağımsız olarak Büyüme, Küçülme, Yaylanma veya Parlama geri bildirimini seçebilir. Compose, aynı etkileşim bölgesi etrafında ölçek ve parlamayı canlandırır, bu yüzden kozmetik bir ön ayar, bir düğmenin parmağı kabul ettiği yeri sessizce değiştiremez."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "Resmî joystick aralığı ve basılmış çubuk rasterleri, geleneksel analog kontrolü oluşturur. Vektör stilleri sunumunu yeniden çizebilir, ancak mantıksal eksen ve onun yerel eşlemesi değişmeden kalır."
+    },
+    {
+      "type": "heading",
+      "text": "Dokunma, çubuklar ve düğmeler InputOverlay’de birleşiyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay`, kompakt yerel sınırın sahibidir. Sanal bir kontrolcü bağlar veya çıkarır, imzalı eksen değerlerini gönderir, düğme durumlarını ayarlar ve dokunmanın ön veya arka paneli hedefleyip hedeflemediğini işaretler. `EmulationOverlay` kontrolleri oluşturur ve hareketleri bu çağrılara çevirir. Bu, işaretçi işlemesini ve düzenleme modu görsellerini Android tarafında tutarken, Vita3K türetilmiş çekirdek, anlamadığı Compose olayları veya ekran koordinatları yerine kontrolcü şeklindeki durumu almasını sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "Hareket girişi, analog eksene ulaşmadan önce filtrelenir"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput`, donanım jiroskopu aracılığıyla nişan almayı ve oyun-dönüş vektörü ile yönlendirmeyi destekler. Ekran dönüşünü hesaba katar, etkinleştirildiğinde yönlendirmeyi merkeze alır, yapılandırılabilir hassasiyet, yumuşatma, eksen ters çevirme ve küçük bir ölü bölge uygular, ardından neredeyse aynı örnekleri göndermekten kaçınır. Nişan sağ çubuğa yöneliktir; yönlendirme sol çubuk X’e yöneliktir. Bir moda başlamak, önceki sensör aboneliğini durdurur ve durdurmak, oyun eski bir eğimi tutamayacağı için nötr bir değer gönderir."
+    },
+    {
+      "type": "heading",
+      "text": "Haptikler gecikmeye duyarlı buton yolunda kapalı kalır"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics`, sistem titreşim motorunu ve genlik yeteneğini bir kez çözer, ardından titreşimi özel bir daemon yürütücüsü aracılığıyla iletir. Yumuşak, net, güçlü ve sistem odaklı ön ayarlar, ayrı basma ve bırakma darbelerini şekillendirir. Eğer hiç titreşim motoru yoksa, katman görüntüsel dokunsal geri bildirimle yedeklenir. Önemli sıralama mimariseldir: Android'in titreşim servisine yapılan yavaş bir binder çağrısı, emülatör çekirdeğine ulaşması gereken düğme durumunu geciktiremez."
+    },
+    {
+      "type": "callout",
+      "text": "`4f01d13e` taahhüdü, vektör kontrollerini, üst üste binme davranışını, jiroskop girdisini, dokunsal geri bildirimi, ayarları ve sözleşme testlerini birlikte değiştirdi. Önceki `db7965b5` boşluk çalışması tasarımın diğer yarısını sağlıyor: kontroller, kesiklerin ve ekran kenarlarının etrafında ulaşılabilir kalmalı ve doğru görünmelidir."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "Vektör kontrol stillerini ve basma efektlerini keşfedin"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "Normalleştirilmiş düzen kalıcılığını denetle"
+    }
+  ]
+}

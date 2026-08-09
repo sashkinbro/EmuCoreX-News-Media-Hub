@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Inside shadPS4: ein nativer C++- und Vulkan-Ansatz für die PS4-Emulation",
+  "summary": "Die offizielle Projektstruktur zeigt, wie shadPS4 einen nativen C++-Kern, Plattform-Frontends und einen Vulkan-fokussierten Grafikpfad kombiniert, anstatt die Kompatibilität als einen einzigen Schalter zu behandeln.",
+  "heroAlt": "Gameplay-Screenshot aus dem offiziellen shadPS4-Repository",
+  "searchKeywords": [
+    "shadPS4",
+    "Inside shadPS4",
+    "PlayStation 4-Emulator"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "official-readme": "shadPS4 core README",
+    "core-linker": "Core-Linker-Implementierung",
+    "shader-pipeline": "Shader-Recompiler-Quellbaum",
+    "video-core": "Videokern-Quellbaum"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der CPU-Pfad beginnt mit der nativen x86-64-Ausführung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die PlayStation 4 und die meisten unterstützten Desktop-Hosts nutzen x86-64 gemeinsam, und in der shadPS4-README-Datei wird frühere Emulatorforschung als Hilfe für das Team bei der Lösung der nativen Ausführung von PS4-Binärdateien anerkannt. Diese Wahl vermeidet die Übersetzung aller Gast-CPU-Anweisungen auf x86-64-Hosts, macht aber das Adressraumlayout, die Ausnahmebehandlung, den Thread-Status und importierte Systemfunktionen zu einem Teil der Kompatibilitätsgrenze. „src/core/address_space.cpp“, „memory.cpp“ und die Kernel-Thread-Implementierung sind daher für die Ausführung genauso wichtig wie der Einstiegspunkt selbst."
+    },
+    {
+      "type": "heading",
+      "text": "ELF-Laden, Symbolauflösung und Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "„src/core/loader/elf.cpp“ analysiert Gast-ELF-Objekte, während „src/core/linker.cpp“ und „loader/symbols_resolver.cpp“ importierte Namen mit Implementierungen verbinden. Aerolib stellt unter „src/core/aerolib“ die Exportregistrierungsschicht bereit, die von Bibliotheksersetzungen auf hoher Ebene verwendet wird. Der große „src/core/libraries“-Baum stellt dann Kernel, Dateisystem, Audio, Speicherdaten, Videoausgang und andere PS4-bezogene APIs bereit. Ein Titel kann nativen Code erreichen und dennoch sofort angehalten werden, wenn ein importierter Dienst fehlt oder die falsche Struktur zurückgibt."
+    },
+    {
+      "type": "heading",
+      "text": "GCN-Anweisungen werden zu strukturiertem IR und dann zu SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Grafik-Compiler ist eine separate Pipeline unter „src/shader_recompiler“. Sein Frontend dekodiert AMD-GCN-Anweisungen, erstellt den Kontrollfluss und übersetzt Skalar-, Vektor-, Interpolations- und Speicheroperationen. Die Zwischendarstellungsdurchläufe normalisieren das Programm, bevor „backend/spirv“ das Host-verbrauchbare SPIR-V ausgibt. Dies erklärt, warum in den Versionshinweisen einzelne Opcodes, Schwerpunktkoordinaten, gemeinsam genutzter Speicher und Exportkorrekturen genannt werden: Bei jedem handelt es sich um ein konkretes fehlendes Verhalten im Shader-Pfad vom Gast zum Host."
+    },
+    {
+      "type": "heading",
+      "text": "video_core besitzt Befehle, Caches und Vulkan-Ressourcen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Ebene „src/video_core“ befindet sich um den Shader-Compiler. Sein Vulkan-Renderer erstellt Geräte, Pipelines, Bilder und Präsentationsressourcen, während Textur- und Puffercaches dafür sorgen, dass der Gastspeicher mit den Host-GPU-Objekten kohärent bleibt. PM4-Befehlsverarbeitung, Kacheln, Bildformat-Neuinterpretation und Rücklesungen treffen hier aufeinander. Ein defekter Frame kann vor der Shader-Emission, während der Cache-Suche, bei einem Ressourcenübergang oder bei der Präsentation entstehen, weshalb ein Screenshot allein die verantwortliche Komponente nicht identifizieren kann."
+    },
+    {
+      "type": "heading",
+      "text": "Die ausführbare Kerndatei und die Benutzer-Frontends sind separate Produkte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die offizielle README-Datei nennt dieses Repository ausdrücklich den Emulatorkern und verweist normale Benutzer auf den separaten QtLauncher. Im Kern-Repository bieten „src/main.cpp“, „emulator.cpp“, SDL-Fenstercode und die „src/imgui“-Ebenen weiterhin Befehlszeilenausführung, Overlays, Big Picture-Ressourcen und entwicklerorientierte Ansichten. Durch die separate Aufbewahrung des Qt-Launchers kann die Bibliotheksverwaltung weiterentwickelt werden, ohne dass jede Frontend-Änderung zu einer Kernemulationsänderung wird."
+    },
+    {
+      "type": "heading",
+      "text": "Ein nützlicher Architekturbericht benennt die fehlerhafte Grenze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Startfehler bei einem ungelösten Export weist auf den Loader, Linker, Aerolib oder eine HLE-Bibliothek hin. Ein GCN-Dekodierungsfehler gehört in die Nähe des Shader-Frontends; Vulkan-Validierung, Texturbeschädigung oder veralteter GPU-Speicher deuten auf video_core und seine Caches hin. Eingaben erreichen den Gast über „src/input“, während Host-Protokollierung und Dateihilfsprogramme unter „src/common“ gespeichert sind. Durch die Aufzeichnung des genauen Builds, des letzten Protokollsubsystems, des Renderers und der Host-Plattform wird „Das Spiel funktioniert nicht“ in einen Bericht umgewandelt, der am Quellbaum ausgerichtet ist."
+    }
+  ]
+}

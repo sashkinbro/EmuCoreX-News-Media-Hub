@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-custom-gpu-driver-safe-test",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "安装、测试和回滚自定义 Android GPU 驱动程序",
+  "summary": "仅在受支持的 Adreno 硬件上使用自定义 AdrenoTools 兼容驱动程序，记录系统驱动程序基线，验证软件包，测试一个变量，并保留即时回滚路径。",
+  "heroAlt": "Mesa 3D 齿轮标志，代表开源 Turnip Vulkan 驱动堆栈",
+  "searchKeywords": [
+    "自定义 GPU 驱动程序",
+    "Turnip",
+    "AdrenoTools",
+    "Mesa Android",
+    "驱动回滚"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "drivers": "驱动程序"
+  },
+  "sourceLabels": {
+    "adrenotools": "AdrenoTools 框架",
+    "mesa-freedreno": "Mesa Freedreno/Turnip 文档"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "自定义驱动程序是一项实验，而不是升级按钮"
+    },
+    {
+      "type": "paragraph",
+      "text": "AdrenoTools 允许应用在不替换 Android 系统分区的情况下加载用户空间 Vulkan 驱动。Turnip 软件包可能会修复或暴露不同 Adreno 世代上的问题，但并非通用方案：面向错误 GPU 世代、不同 Android ABI 或不兼容 Vulkan 要求的软件包，可能在显示第一帧之前就崩溃。Mali 和 Immortalis 设备不使用 Turnip 软件包。"
+    },
+    {
+      "type": "callout",
+      "text": "仅当 EmuCoreX 识别受支持的 Qualcomm Adreno GPU 并且驱动程序软件包记录了该代时才继续操作。在可复现问题证明测试合理之前，保持系统驱动程序选择状态。"
+    },
+    {
+      "type": "heading",
+      "text": "前提条件和干净的基线"
+    },
+    {
+      "type": "paragraph",
+      "text": "备份每个游戏的设置，并在确切失败场景中记录系统驱动程序结果。从可追溯的维护者处获取软件包，保持其存档完整并记录其文件名、发布页面和 SHA-256。不要为了应用级比较而安装 Magisk 模块或系统范围的驱动替换。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "确认 Adreno GPU 型号和 Android ABI。",
+        "带截图或计时记录的系统驱动基线。",
+        "可追溯的 AdrenoTools 格式驱动存档。",
+        "记录的 SHA-256 和源页面。",
+        "在失败后重新打开设置并选择 System driver 的方法。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "针对系统基线测试一个软件包"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. 从其文档来源下载软件包，计算 SHA-256，并将原始归档保存在 emulator-data 文件夹之外。",
+        "2. 在 EmuCoreX 驱动程序设置中导入软件包，并确认其标签/生成与检测到的 Adreno GPU 相匹配。",
+        "3. 仅在应用支持每个游戏驱动选择时，为测试游戏选择它；否则在启动前记录全局范围。",
+        "4. 冷启动已知场景两次，然后测试一个已在系统驱动上运行过的第二个游戏。",
+        "5. 如果软件包在正确性或稳定性上获胜且没有回退，保留证据和确切哈希；否则立即选择 System driver。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "验证结果"
+    },
+    {
+      "type": "paragraph",
+      "text": "驱动必须在没有设备丢失循环的情况下加载，编译着色器，渲染目标效果，并在热启动会话中保持稳定。仅在帧间隔、耗电或其他标题回退时的更高峰值帧率是不够的。日志应标识所选驱动，以便将来报告可复现。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "软件包目标与 GPU 生成匹配。",
+        "驱动身份在设置或日志中可见。",
+        "目标故障在两次冷启动中得到改善。",
+        "已知良好比较游戏没有回退。",
+        "系统驱动回滚可在不删除用户数据的情况下工作。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "回滚与恢复"
+    },
+    {
+      "type": "paragraph",
+      "text": "选择 System driver，完全停止 EmuCoreX 并重新启动后再评估恢复。在系统路径可用前，仅在活跃驱动列表中移除实验包。如果应用无法访问设置，仅清除驱动选择偏好或通过应用恢复路径重置受影响的游戏配置文件——不要删除存储卡或整个数据文件夹。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "选择 System driver 并重启应用。",
+        "重置每个游戏的驱动覆盖。",
+        "将失败的归档连同其哈希和结果记录隔离。",
+        "在重复 Vulkan 设备丢失错误后重启 Android。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "常见失败模式"
+    },
+    {
+      "type": "list",
+      "items": [
+        "归档导入成功但无法加载：ABI 不正确、软件包布局或 GPU 生成错误。",
+        "一个游戏性能提高，另一个崩溃：保持软件包针对特定游戏，或拒绝它。",
+        "性能仅在冷却时提升：驱动改变了热行为，而非可持续能力。",
+        "没有回滚记录：实验性软件包之后将无法区分。"
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "保持一个小型驱动账本：软件包、源代码、哈希、GPU、Android 构建、测试游戏及结果。只有在重新运行相同基准后才替换已接受的软件包。这使得自定义驱动成为可逆工程工具，而不是一堆不断增长的匿名 ZIP 文件。"
+    },
+    {
+      "type": "link",
+      "text": "检查官方 libadrenotools 项目",
+      "url": "https://github.com/bylaws/libadrenotools"
+    }
+  ]
+}

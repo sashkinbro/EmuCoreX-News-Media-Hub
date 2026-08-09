@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "From catalog tap to verified install: EmuCoreX's texture-pack pipeline",
+  "summary": "Large replacement packs need more than a progress bar. EmuCoreX gives every transfer a persistent identity, resumes partial payloads with HTTP ranges, verifies declared sizes and SHA-256 hashes, and installs only after the complete archive passes those checks.",
+  "heroAlt": "A texture-rendering example stored in the SDL source included with EmuCoreX",
+  "searchKeywords": ["EmuCoreX texture packs", "TextureDownloadManager", "multipart download", "SHA-256 verification"],
+  "categoryLabels": {"emucorex": "EmuCoreX", "textures": "Textures", "downloads": "Downloads"},
+  "sourceLabels": {
+    "download-manager-commit": "Resilient download manager commit",
+    "multipart-commit": "Multipart download support commit",
+    "extraction-limit-commit": "Texture extraction limit commit",
+    "download-manager-source": "TextureDownloadManager source"
+  },
+  "blocks": [
+    {"type": "heading", "text": "A queue entry survives the screen that created it"},
+    {"type": "paragraph", "text": "`TextureDownloadManager.enqueue()` first checks that the catalog pack declares compatibility with the selected game serial. `TextureDownloadStore` then derives a 32-character key from the pack and serial, writes task state under `noBackupFilesDir/texture-downloads`, and hands a uniquely named job to Android `WorkManager`. Closing the texture catalog does not make that job anonymous: queued, downloading, paused, waiting, verifying, installing, completed, failed, and cancelled states remain available to the UI."},
+    {"type": "heading", "text": "Resume is negotiated with the server, not assumed"},
+    {"type": "paragraph", "text": "The worker measures the existing partial file and sends an HTTP `Range` request when an offset is available. It appends only after receiving a partial response whose `Content-Range` starts at exactly that byte. If the server ignores the range, the worker deletes the old fragment and restarts from zero; if the range is inconsistent, it rejects the response. Connections are HTTPS-only, redirects are followed manually for at most eight hops, and a redirect may not downgrade the transfer to HTTP."},
+    {"type": "image", "assetId": "emucorex-texture-pack-pipeline-rendered-texture", "text": "The rotating-texture example comes from the SDL tree carried in EmuCoreX. The download pipeline supplies replacement image data; the renderer remains responsible for turning verified content into live textures."},
+    {"type": "heading", "text": "Progress is computed from bytes that are already on disk"},
+    {"type": "paragraph", "text": "Each chunk is written through `RandomAccessFile`, while samples taken roughly every 750 milliseconds feed downloaded bytes, a smoothed byte rate, and an estimated remaining time into both WorkManager progress and a foreground notification. Pause cancels the unique worker but retains its payload. Resume re-reads the partial length before scheduling replacement work. Cancel marks the task, stops its worker, and discards payload files, which gives pause and cancel intentionally different storage semantics."},
+    {"type": "heading", "text": "Multipart packs are verified twice before assembly is trusted"},
+    {"type": "paragraph", "text": "The July 27 multipart change lets a catalog entry list several `RemoteTexturePart` records. Each part has its own URL, byte count, and SHA-256 digest. The worker downloads them in order, checks the size and digest of every part while copying them into one archive, and simultaneously computes a digest for the assembled stream. The final byte count and whole-pack SHA-256 must also match the catalog. An incomplete list, oversized response, altered part, or corrupt final archive ends the pipeline before installation."},
+    {"type": "heading", "text": "Installation is a separate state with explicit consequences"},
+    {"type": "paragraph", "text": "Only after verification does the task enter `INSTALLING` and call `TexturePackRepository.installRemotePack()` for the selected serial. A successful install updates `RemoteContentInstallState`, enables texture replacements in `AppPreferences`, removes temporary payloads, and marks the task complete. Network exceptions instead move a running job to `WAITING_NETWORK` and ask WorkManager for an exponential-backoff retry; catalog or integrity errors are treated as permanent failures rather than endless retries."},
+    {"type": "callout", "text": "Archive extraction is also bounded. The July 28 follow-up raised the texture extraction ceiling to 12 GiB for genuinely large packs, but retained a finite limit so compressed input cannot expand without control."},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt", "label": "Read the persistent download worker and store"},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt", "label": "See how catalog cards expose queue controls"}
+  ]
+}

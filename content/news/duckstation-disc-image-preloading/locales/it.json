@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Il precaricamento dell'immagine del disco scambia la RAM con una latenza di lettura prevedibile",
+  "summary": "Il percorso dell'immagine della memoria di DuckStation carica i dati strutturati del disco nella RAM preservando tracce, settori e semantica del cue-sheet.",
+  "heroAlt": "Grafica ufficiale di DuckStation su sfondo scuro",
+  "searchKeywords": [
+    "DuckStation",
+    "Il precaricamento dell'immagine del disco scambia la RAM con una latenza di lettura prevedibile",
+    "Emulatore PlayStation"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "ps1": "PlayStation",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementazione dell'immagine del CD in memoria",
+    "cue-parser": "Analizzatore di immagini CUE",
+    "playlist-parser": "Analizzatore multidisco M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il precaricamento modifica la memoria di supporto, non il modello del disco"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation può spostare i dati dell'immagine disco nella RAM per evitare riattivazioni dell'archiviazione e cercare latenza durante la riproduzione. `src/util/cd_image_memory.cpp` presenta ancora un'immagine CD attraverso la stessa interfaccia logica delle sorgenti supportate da file. Le letture guest rimangono indirizzate a settori e tracce; il precaricamento è utile solo se la rappresentazione in memoria preserva esattamente il sommario e ogni modulo di settore supportato."
+    },
+    {
+      "type": "heading",
+      "text": "I metadati CUE definiscono più di un nome file"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un foglio CUE può descrivere più tracce audio e dati, punti indice, pregap e modalità settore. `cd_image_cue.cpp` analizza quella struttura prima che il percorso della memoria possa copiare contenuti significativi. I comandi rari contano perché un'immagine di archivio valida può esercitarli anche quando i comuni dump a traccia singola non lo fanno. L'appiattimento dei file senza il layout analizzato sposterebbe gli indirizzi o restituirebbe byte errati al controller del CD emulato."
+    },
+    {
+      "type": "heading",
+      "text": "Le playlist multidisco si trovano sopra le singole immagini"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` gestisce le playlist che ordinano più immagini per un titolo. Il comportamento della scheda di memoria condivisa e il cambio del disco dipendono dal mantenimento di tale raggruppamento, mentre ogni immagine membro necessita ancora delle proprie tracce e settori validi. Precaricare un membro non può unire silenziosamente i dischi o eliminare l'identità della playlist. Un errore di scambio dovrebbe quindi registrare sia l'M3U che il formato di ogni immagine di riferimento."
+    },
+    {
+      "type": "heading",
+      "text": "Il costo della RAM varia in base alle dimensioni del contenuto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il beneficio di latenza viene pagato in anticipo tramite allocazione e copia. Le immagini di grandi dimensioni aumentano la pressione della memoria e un evento di memoria insufficiente o di paginazione può essere peggiore del problema di archiviazione che l'opzione avrebbe dovuto evitare. I dispositivi con RAM limitata necessitano di un fallback prevedibile alla lettura supportata da file. I parametri di riferimento dovrebbero includere il tempo di precaricamento, la memoria residente e la scena esatta in cui la latenza di archiviazione era precedentemente visibile."
+    },
+    {
+      "type": "heading",
+      "text": "Un rapporto sul disco include il layout e lo stato di precarico"
+    },
+    {
+      "type": "paragraph",
+      "text": "Registra la revisione della DuckStation, il formato dell'immagine, i checksum, il testo CUE o della playlist, l'impostazione del precarico e la memoria disponibile. Se solo la modalità precaricata fallisce, confrontare lo stesso settore logico attraverso il percorso supportato dal file. Se entrambi falliscono, l'analisi o il dump stesso sono un candidato più forte. Questa suddivisione controllata consente agli sviluppatori di analizzare `cd_image_memory` senza confonderlo con CHD, PBP, CCD, MDS o l'analisi di immagini CD di base."
+    }
+  ]
+}

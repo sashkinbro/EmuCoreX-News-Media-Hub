@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "uk",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Як EmuCoreX розподіляє сеанс PS2 між Compose, SurfaceView і нативним кодом PCSX2",
+  "summary": "Гра для PS2, запущена з EmuCoreX, перетинає кілька чітко визначених вузьких меж, перш ніж перший кадр з’явиться на екрані. Застосунок Android, контракт JNI, поверхня рендерингу, стан сеансу та перекомпілятори ARM64 відповідають за різні частини цього шляху.",
+  "heroAlt": "Офіційний банер EmuCoreX для Android TV на темно-синьому тлі",
+  "searchKeywords": [
+    "архітектура EmuCoreX",
+    "ВбудованийДодаток JNI",
+    "Емуляційний екран SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "Архітектура",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "Коміт реалізації ARM64 runtime та Android TV",
+    "jit-cache-lifecycle": "ARM64 JIT кеш життєвий цикл коміт",
+    "native-app-source": "Джерело NativeApp",
+    "emulation-screen-source": "Джерело емуляційного екрану"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Процес Android вибирає й готує нативне ядро"
+    },
+    {
+      "type": "paragraph",
+      "text": "Межа починається в `NativeApp` — об’єкті Kotlin, який через `AndroidNativeCoreSelector` вибирає бібліотеку ядра, сумісну з розміром сторінки пам’яті, завантажує її за допомогою `System.loadLibrary` і фіксує доступність ядра та допоміжних нативних інструментів. Потім `initializeOnce()` готує кореневий каталог даних емулятора, копіює вбудовані ресурси, перевіряє архів патчів, експортує набір довірених сертифікатів Android CA, задає шлях до журналу аварій нативного коду й лише після цього викликає точку входу JNI `initialize(dataRoot, sdkInt)`. Такий порядок важливий: стороні C++ не доводиться вгадувати, де Android зберігає дані чи сертифікати."
+    },
+    {
+      "type": "heading",
+      "text": "Ігровий кадр надходить зі справжнього SurfaceView, а не з полотна Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` вбудовує непрозорий Android `SurfaceView` через `AndroidView`. Його `SurfaceHolder.Callback` передає створення поверхні, зміну розміру та знищення через `surfaceCreated` і пов’язані виклики до `EmulatorBridge`, а звідти — нативному рендереру. Compose малює над поверхнею сенсорні елементи керування, показники продуктивності, досягнення й меню паузи. Поділ шарів дає рендереру пряме володіння низькорівневим Android `Surface`, тоді як накладка зберігає стан Compose, анімації, доступність та адаптивне компонування."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "Офіційна графіка EmuCoreX представляє оболонку Android; сам емульований кадр надходить із нативної поверхні під накладкою Compose."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel координує сеанс, але не емулює систему"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` не є емулятором. Він координує Android-стан навколо ядра: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, дані сумісності, профілі гравців, синхронізацію часу гри та `AndroidGamePerformance`. `StateFlow<EmulationUiState>` живить інтерфейс, а mutex-и життєвого циклу й транспорту послідовно виконують запуск, паузу, відновлення та завершення. Поля з модифікатором volatile зберігають поточний шлях, серійний номер, CRC, обкладинку й профіль сенсорного компонування, щоб запізнілий callback не застосувався до наступної гри."
+    },
+    {
+      "type": "heading",
+      "text": "JNI відкриває операції, а не дублює інтерфейс"
+    },
+    {
+      "type": "paragraph",
+      "text": "Контракт `NativeApp` містить окремі виклики для поверхонь, сили натискання контролера, вибору рендерера, пакетних налаштувань, станів збереження, карт пам’яті, RetroAchievements, дампів GS, JIT-профайлера, трасувань зависання та керування ВМ. Kotlin вирішує, коли ці дії дозволені та як вони відображаються; C++ виконує їх над станом, успадкованим від PCSX2. Наприклад, шар Compose може приховати прискорення й чіти, коли нативний клієнт RetroAchievements повідомляє про активний режим hardcore, а потім через той самий міст повернути обмежувач кадрів і стан патчів до безпечних значень."
+    },
+    {
+      "type": "heading",
+      "text": "Два коміти від 22 липня показують, чому весь ланцюжок тестують як одну систему"
+    },
+    {
+      "type": "paragraph",
+      "text": "Коміт `0a16b80d` від 22 липня 2026 року торкнувся обох боків межі: `MainActivity`, `TvUiPolicy`, засобів вибору сховища, `EmulationViewModel`, ARM64-перекомпіляторів EE/IOP/VU, віртуальної пам’яті, заміни текстур GS і коду рендерера. Пізніше того ж дня `f0e19666` посилив керування життєвим циклом JIT-кешів EE, IOP, VIF і microVU та розширив `JitProfiler`. Це показовий архітектурний зріз: виправлення життєвого циклу Android може вимагати дисципліни нативної виконуваної пам’яті, а нативне виправлення все одно потребує Android-шляху, який безпечно запускає, спостерігає й зупиняє його."
+    },
+    {
+      "type": "callout",
+      "text": "Репозиторій описує EmuCoreX як стек емулятора PS2 на ранньому етапі розробки. Розподіл відповідальності полегшує виявлення збоїв, але не робить сумісність незалежною від гри, пристрою, драйвера GPU або рендерера."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "Прочитати контракт JNI у NativeApp"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "Переглянути інтеграцію SurfaceView і накладки Compose"
+    }
+  ]
+}

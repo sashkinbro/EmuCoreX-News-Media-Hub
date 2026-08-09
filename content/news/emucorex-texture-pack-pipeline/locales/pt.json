@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Da sele??o no cat?logo ? instala??o verificada: o fluxo de pacotes de texturas do EmuCoreX",
+  "summary": "Pacotes de substitui??o grandes exigem mais do que uma barra de progresso. O EmuCoreX atribui um identificador persistente a cada download, retoma dados parciais com intervalos HTTP, verifica o tamanho declarado e o SHA-256 e s? instala depois que todo o arquivo passa pela valida??o.",
+  "heroAlt": "Um exemplo de renderização de textura armazenado na fonte SDL incluída com EmuCoreX",
+  "searchKeywords": [
+    "Pacotes de textura EmuCoreX",
+    "GerenciadorDeDownloadDeTextura",
+    "download em partes",
+    "verificação SHA-256"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "Texturas",
+    "downloads": "Downloads"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "Compromisso de gerente de download resiliente",
+    "multipart-commit": "Commit de suporte a download multipart",
+    "extraction-limit-commit": "Compromisso de limite de extração de textura",
+    "download-manager-source": "GerenciadorDeDownloadDeTextura fonte"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma entrada na fila sobrevive à tela que a criou"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` primeiro verifica se o pacote de catálogo declara compatibilidade com o número de série do jogo selecionado. `TextureDownloadStore` então deriva uma chave de 32 caracteres a partir do pacote e do número de série, grava o estado da tarefa em `noBackupFilesDir/texture-downloads` e entrega um trabalho com nome único para Android `WorkManager`. Fechar o catálogo de texturas não torna esse trabalho anônimo: os estados enfileirado, baixando, pausado, aguardando, verificando, instalando, concluído, falhou e cancelado permanecem disponíveis para a interface do usuário."
+    },
+    {
+      "type": "heading",
+      "text": "A retomada é negociada com o servidor, não presumida"
+    },
+    {
+      "type": "paragraph",
+      "text": "O trabalhador mede o arquivo parcial existente e envia uma solicitação HTTP `Range` quando um deslocamento está disponível. Ele só adiciona depois de receber uma resposta parcial cujo `Content-Range` começa exatamente nesse byte. Se o servidor ignorar o intervalo, o trabalhador exclui o fragmento antigo e reinicia do zero; se o intervalo for inconsistente, rejeita a resposta. As conexões são apenas HTTPS, redirecionamentos são seguidos manualmente por no máximo oito saltos, e um redirecionamento não pode rebaixar a transferência para HTTP."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "O exemplo de textura rotativa vem da árvore SDL contida em EmuCoreX. O pipeline de download fornece dados de imagem de substituição; o renderizador continua responsável por transformar o conteúdo verificado em texturas ativas."
+    },
+    {
+      "type": "heading",
+      "text": "Progress é calculado a partir de bytes que já estão no disco"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada bloco é escrito através do `RandomAccessFile`, enquanto amostras coletadas aproximadamente a cada 750 milissegundos alimentam bytes baixados, uma taxa de bytes suavizada e um tempo restante estimado tanto no progresso do WorkManager quanto em uma notificação em primeiro plano. Pausar cancela o trabalhador único, mas mantém sua carga útil. Retomar relê o comprimento parcial antes de agendar trabalho de substituição. Cancelar marca a tarefa, interrompe seu trabalhador e descarta os arquivos de carga útil, o que dá a pausa e o cancelamento semânticas de armazenamento intencionalmente diferentes."
+    },
+    {
+      "type": "heading",
+      "text": "Pacotes multipartes são verificados duas vezes antes que a montagem seja confiável"
+    },
+    {
+      "type": "paragraph",
+      "text": "A alteração multipart de 27 de julho permite que uma entrada de catálogo liste vários registros `RemoteTexturePart`. Cada parte possui seu próprio URL, contagem de bytes e digest SHA-256. O trabalhador os baixa em ordem, verifica o tamanho e o digest de cada parte enquanto as copia para um único arquivo, e simultaneamente calcula um digest para o fluxo montado. A contagem final de bytes e o SHA-256 de todo o pacote também devem corresponder ao catálogo. Uma lista incompleta, resposta acima do tamanho esperado, parte alterada ou arquivo final corrompido encerra o processo antes da instalação."
+    },
+    {
+      "type": "heading",
+      "text": "A instalação é um estado separado com consequências explícitas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Só após a verificação a tarefa entra em `INSTALLING` e chama `TexturePackRepository.installRemotePack()` para o número de série selecionado. Uma instalação bem-sucedida atualiza `RemoteContentInstallState`, habilita substituições de textura em `AppPreferences`, remove cargas temporárias e marca a tarefa como concluída. Exceções de rede, em vez disso, movem um trabalho em execução para `WAITING_NETWORK` e solicitam a WorkManager uma nova tentativa com retardo exponencial; erros de catálogo ou de integridade são tratados como falhas permanentes, em vez de tentativas incessantes."
+    },
+    {
+      "type": "callout",
+      "text": "A extração de arquivos também é limitada. O acompanhamento de 28 de julho aumentou o teto de extração de texturas para 12 GiB para pacotes realmente grandes, mas manteve um limite finito para que a entrada comprimida não possa se expandir sem controle."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "Leia o trabalhador de download persistente e armazene"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "Veja como os cartões de catálogo expõem os controles da fila"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-gpu-timing-model",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Why Azahar models the 3DS GPU interrupt queue",
+  "summary": "The experimental timing path aims to replace broad delay workarounds with interrupt and queue behavior closer to the original hardware.",
+  "heroAlt": "Why Azahar models the 3DS GPU interrupt queue — official Azahar visual",
+  "searchKeywords": [
+    "Azahar",
+    "Why Azahar models the 3DS GPU interrupt queue",
+    "Nintendo 3DS emulator"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "3ds": "Nintendo 3DS",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "gpu-timing-pr": "GPU interrupt queue and timing implementation",
+    "gpu-timing-followup": "GPU timing follow-up"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The model targets GPU interrupts and queued work"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar PR #2095 introduces GPU interrupt-queue and timing behavior intended to mirror when the 3DS GPU completes work and signals the CPU. This is narrower than delaying the render thread by an arbitrary amount. The emulator has to order queued GPU operations and expose completion at a guest-visible time, because games can wait on those events before advancing logic, loading a save or submitting the next frame."
+    },
+    {
+      "type": "heading",
+      "text": "A timing correction can unlock one title and regress another"
+    },
+    {
+      "type": "paragraph",
+      "text": "The project linked this path with Luigi’s Mansion 2: Dark Moon progressing without the older delay workaround and with a Super Mario 3D Land save-loading problem. Those examples are test cases, not proof that one timing value fits the entire library. Titles submit different workloads and wait in different ways, so an inaccurate queue can manifest as a hang, missing render, pacing problem or a race that appears only on some hosts."
+    },
+    {
+      "type": "heading",
+      "text": "Experimental and disabled by default is a deliberate boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "The official engineering discussion keeps simulated GPU timing behind a graphics setting because its accuracy and cost still need broad evidence. That allows users to compare behavior without silently changing every installation. PR #2145 is part of the same development line and provides supporting context for the evolving model. A workaround that improves a popular game should remain opt-in until regressions and performance are characterized."
+    },
+    {
+      "type": "heading",
+      "text": "Frame rate alone cannot validate an interrupt model"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correct test records the exact scene, save, Azahar revision, renderer and host. Run once with simulated timings disabled and once enabled, changing no other option. Compare whether guest progress changes, when the log reports queue completion, frame pacing and CPU/GPU utilization. A higher average frame rate with incorrect event order is not a success; stable guest behavior is the primary signal."
+    },
+    {
+      "type": "heading",
+      "text": "Reports should describe the first divergent event"
+    },
+    {
+      "type": "paragraph",
+      "text": "“Playable now” loses the evidence developers need. A useful report says which transition previously hung, which graphics or save operation precedes it, whether audio and input continue, and what the two logs show around the divergence. If the option only changes performance, include frametime data. If it changes correctness, preserve the smallest reproducible state so later timing changes can be checked against the same workload."
+    }
+  ]
+}

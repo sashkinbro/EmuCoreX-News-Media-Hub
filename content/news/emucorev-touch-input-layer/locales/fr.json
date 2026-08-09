@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Comment EmuCoreV transforme un écran en verre en contrôles Vita",
+  "summary": "La couche tactile de EmuCoreV est plus que des boutons peints. Les données de disposition sont normalisées et conservées, les contrôles vectoriels maintiennent l'apparence séparée de la géométrie de détection, les capteurs de mouvement peuvent piloter des axes analogiques, et l'état final traverse un contrat d'entrée JNI compact.",
+  "heroAlt": "Graphiques officiels des boutons faciaux EmuCoreV disposés selon la disposition en losange de la Vita",
+  "searchKeywords": [
+    "commandes tactiles EmuCoreV",
+    "ContrôlesVectorielsTactiles",
+    "Entrée gyroscope Vita",
+    "InputOverlay JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "Entrée",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "Validation de la mise en œuvre des contrôles d'entrée",
+    "touch-spacing-commit": "Validation de l'affinement de l'espacement tactile",
+    "vector-controls-source": "Source de VectorTouchControls",
+    "layout-repository-source": "Source du dépôt de disposition tactile"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La mise en page enregistrée décrit une toile normalisée"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` stocke chaque contrôle sous forme d'un ID plus les valeurs normalisées `x`, `y`, `width` et `height`, un drapeau de visibilité et un mode analogique. Le chargement est défensif : les dimensions sont limitées entre 0,035 et 0,5 du canevas, puis les positions sont contraintes afin que l'élément redimensionné ne puisse pas se retrouver en dehors du bord droit ou inférieur. Les sticks gauche et droit peuvent se comporter comme des sticks visibles ou comme des zones tactiles, tandis que les IDs nommés couvrent les épaules, les directions de la croix directionnelle, les boutons frontaux, Select, Start et la surface tactile de la Vita."
+    },
+    {
+      "type": "heading",
+      "text": "Le rendu vectoriel change de style sans déplacer la cible touchée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le travail d'entrée du 29 juillet a ajouté la grande implémentation `VectorTouchControls.kt` et a établi un contrat explicite dans les préférences : le style visuel ne détermine jamais la géométrie du contrôle, et l'animation de pression ne détermine jamais la distribution des entrées. Les joueurs peuvent choisir les traitements Classique, Héritage, Moderne, Arcade ou Minimal, puis choisir indépendamment un retour de type Agrandir, Rétrécir, Ressort ou Lueur. Compose anime l'échelle et la lueur autour de la même zone d'interaction, donc un préréglage cosmétique ne peut pas changer silencieusement l'endroit où un bouton accepte un doigt."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "La plage officielle du joystick et les grilles des boutons enfoncés forment le contrôle analogique hérité. Les styles vectoriels peuvent redessiner sa présentation, mais l'axe logique et son mappage natif restent inchangés."
+    },
+    {
+      "type": "heading",
+      "text": "Le toucher, les bâtons et les boutons convergent dans InputOverlay"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay` possède la frontière native compacte. Il attache ou détache un contrôleur virtuel, envoie des valeurs d'axe signées, définit l'état des boutons et indique si le toucher cible le panneau avant ou arrière. `EmulationOverlay` compose les contrôles et traduit les gestes en ces appels. Cela maintient la gestion du pointeur et les éléments visuels du mode édition du côté de Android tandis que le noyau dérivé de Vita3K reçoit l'état en forme de contrôleur au lieu des événements Compose ou des coordonnées d'écran qu'il ne comprend pas."
+    },
+    {
+      "type": "heading",
+      "text": "L'entrée de mouvement est filtrée avant d'atteindre un axe analogique"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput` prend en charge la visée grâce au gyroscope matériel et la direction via le vecteur de rotation du jeu. Il tient compte de la rotation de l'écran, recentre la direction lorsqu'elle est activée, applique une sensibilité configurable, un lissage, une inversion des axes et une petite zone morte, puis évite d'envoyer des échantillons presque identiques. La visée cible le stick droit ; la direction cible l'axe X du stick gauche. Le démarrage d'un mode arrête d'abord l'abonnement au capteur précédent, et l'arrêt envoie une valeur neutre afin que le jeu ne conserve pas une ancienne inclinaison."
+    },
+    {
+      "type": "heading",
+      "text": "Les haptiques restent hors du chemin du bouton sensible à la latence"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` résout une fois le vibreur du système et la capacité d'amplitude, puis envoie des vibrations via un exécuteur daemon dédié. Des préréglages doux, nets, puissants et orientés système façonnent des impulsions distinctes pour l'appui et le relâchement. Si aucun vibreur n'est disponible, la couche revient au retour haptique de la vue. L'ordre est important sur le plan architectural : un appel binder lent au service de vibreur de Android ne doit pas retarder l'état du bouton qui doit atteindre le cœur de l'émulateur."
+    },
+    {
+      "type": "callout",
+      "text": "Le commit `4f01d13e` a modifié les contrôles vectoriels, le comportement des superpositions, l'entrée du gyroscope, les retours haptiques, les paramètres et les tests de contrat ensemble. Le précédent travail sur l'espacement `db7965b5` fournit l'autre moitié du design : les contrôles doivent rester accessibles autour des découpes et des bords de l'écran tout en ayant un aspect correct."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "Explorez les styles de contrôle vectoriel et les effets de pression"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "Inspecter la persistance de la disposition normalisée"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Cocokkan renderer dengan Android GPU dan driver",
+  "summary": "Identifikasi SoC dan GPU yang sebenarnya, bedakan Adreno dari Mali dan keluarga lainnya, uji dukungan API, dan pilih renderer berdasarkan driver perangkat, bukan berdasarkan nama pemasaran.",
+  "heroAlt": "Chipset Qualcomm Snapdragon yang difoto di papan sirkuit",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Dukungan Vulkan",
+    "Deteksi SoC",
+    "Kompatibilitas renderer"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "Kompatibilitas"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Panduan Android Vulkan",
+    "vulkan-profiles": "Profil Khronos Vulkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Model ponsel bukanlah spesifikasi grafis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para produsen menggunakan kembali nama produk di berbagai wilayah dan diam-diam mengubah SoC di antara revisi. Oleh karena itu, keputusan renderer dimulai dengan chip dan GPU yang terdeteksi—Adreno pada banyak perangkat Snapdragon, Mali atau Immortalis pada banyak perangkat MediaTek/Exynos, dan keluarga lainnya pada platform yang kurang umum. Versi Android saja tidak menjelaskan ekstensi Vulkan, stabilitas compiler, atau perilaku memori yang disediakan oleh driver vendor."
+    },
+    {
+      "type": "callout",
+      "text": "Gunakan dialog prosesor yang terdeteksi dari EmuCoreX sebagai petunjuk pertama, kemudian konfirmasi dengan informasi sistem. Jangan pernah memasang paket driver Adreno pada perangkat Mali/Immortalis."
+    },
+    {
+      "type": "heading",
+      "text": "Prasyarat dan baseline bersih"
+    },
+    {
+      "type": "paragraph",
+      "text": "Catat SoC, keluarga GPU, build Android dan versi driver vendor sebelum pengujian. Mulai dengan driver sistem dan profil Safe. Sebuah renderer dapat diluncurkan dengan sukses namun masih gagal kemudian dalam kompilasi shader, pengambilan framebuffer, atau tekanan memori, sehingga satu layar menu bukanlah tes kapabilitas."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Keluarga SoC dan GPU yang terdeteksi.",
+        "Nomor build Android dan level patch keamanan.",
+        "Baseline System driver dengan driver kustom dinonaktifkan.",
+        "Satu adegan permainan dengan shader berat dan satu adegan efek berat.",
+        "Ruang penyimpanan yang cukup untuk log dan cache shader."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Bangun pilihan renderer yang didukung kapabilitas"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Gunakan Tampilkan prosesor yang terdeteksi dan verifikasi keluarga yang dilaporkan terhadap informasi sistem tepercaya perangkat.",
+        "2. Pada Adreno, mulailah dengan Vulkan kecuali ada masalah perangkat atau game yang diketahui mengarah ke OpenGL; pada MediaTek/Mali, mulailah dengan jalur OpenGL yang disarankan oleh EmuCoreX.",
+        "3. Cold-start adegan pertama dua kali untuk memisahkan kompilasi shader awal dari kesalahan yang berulang.",
+        "4. Uji adegan kedua untuk perilaku blending, framebuffer, dan memori, lalu jalankan cukup lama untuk melewati peningkatan suhu perangkat.",
+        "5. Simpan renderer per-game hanya untuk pengecualian yang terbukti dan pertahankan pilihan global sesuai dengan keluarga GPU."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi hasilnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalur yang kompatibel menyelesaikan transisi berat shader tanpa kehilangan driver, merender efek dengan benar, dan tetap stabil setelah cache menjadi hangat. Perhatikan kesalahan perangkat-driver di log alih-alih menganggap setiap frame hitam sebagai GPU yang lemah. Jika rendering perangkat lunak benar, bukti mengarah ke API perangkat keras atau pengaturannya."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Keluarga GPU sesuai dengan paket renderer/driver.",
+        "Dua cold-start dan satu warm-start selesai.",
+        "Tidak ada kesalahan compiler shader berulang atau kehilangan perangkat.",
+        "Adegan dengan efek berat sesuai dengan struktur renderer perangkat lunak.",
+        "Pilihan global tetap dapat digunakan di beberapa game."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rollback dan pemulihan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kembali ke driver sistem dan renderer default setiap kali identifikasi tidak pasti. Hapus override per-game sebelum membandingkan perangkat. Jika pembaruan sistem Android mengubah perilaku driver, ulangi baseline daripada membawa kesimpulan dari build sebelumnya."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Nonaktifkan driver kustom.",
+        "Pulihkan renderer spesifik keluarga yang direkomendasikan.",
+        "Reset profil per-game yang terkena.",
+        "Reboot setelah loop kehilangan perangkat Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Pola kegagalan umum"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Keluarga paket salah: gagal muat segera atau crash sebelum rendering.",
+        "Berfungsi hanya sampai shader dikompilasi: masalah compiler/ekstensi bukan kinerja mentah.",
+        "Renderer baik di satu perangkat regional, buruk di perangkat lain: nama produk menyembunyikan SoC yang berbeda.",
+        "Menu berfungsi, gameplay gagal: cakupan pengujian terlalu dangkal."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Catatan perangkat keras yang ringkas membuat saran komunitas menjadi berguna: perangkat, SoC, GPU, build Android, driver, renderer, serial game, dan adegan. Tanpa rantai itu, rekomendasi akan runtuh menjadi cerita rakyat merek ponsel. Dengan itu, pengecualian renderer dapat diulang dan dikembalikan dengan aman."
+    },
+    {
+      "type": "link",
+      "text": "Tinjau panduan Vulkan dari Android",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

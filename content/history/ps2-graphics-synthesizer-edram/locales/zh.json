@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "ps2-graphics-synthesizer-edram",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "定义 PS2 图像的 Graphics Synthesizer：4 MB",
+  "summary": "索尼的固定功能图形芯片将一个小型嵌入式帧缓冲与巨大的本地带宽配对，使填充率充足，同时纹理存储和传输需要严格管理。",
+  "searchKeywords": [
+    "PlayStation 2",
+    "Graphics Synthesizer",
+    "GS",
+    "嵌入式DRAM",
+    "补货率",
+    "帧缓冲",
+    "PS2 图形"
+  ],
+  "categoryLabels": {
+    "ps2-history": "PS2 历史",
+    "hardware": "硬件"
+  },
+  "sourceLabels": {
+    "date-ee-paper": "PlayStation 2的CPU",
+    "sony-ee-gs-integration": "Emotion Engine 和 Graphics Synthesizer 变成一颗芯片",
+    "copetti-ps2-architecture": "PlayStation 2 架构：实用分析",
+    "pcsx2-gs-emulation": "Graphics Synthesizer、GPU和双核"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "围绕本地带宽构建的渲染器"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 2 的 Graphics Synthesizer 采用了与其那个时代的 PC 图形处理器不同的路线。它在像素流水线旁放置了 4 MB 的多端口嵌入式 DRAM，并通过 1024 位的内部接口连接它们。即使在 2000 年，这种容量看起来也很有限，但本地连接为帧缓冲区的读写、深度测试和混合提供了卓越的带宽。索尼优化了芯片，以便快速移动像素，而不是在渲染器旁存储大量纹理库。"
+    },
+    {
+      "type": "heading",
+      "text": "十六个像素引擎，固定功能"
+    },
+    {
+      "type": "paragraph",
+      "text": "GS 包含十六个并行像素处理器，并按通过 GIF 到达的数据包描述的图元进行光栅化。它处理纹理查找、雾效、α 测试、深度测试、混合以及写入本地内存，但它不是可编程着色器处理器。几何和光照通常在 Emotion Engine 的矢量单元上准备。这个分工使图形处理路径明确：VU 代码生成顶点和绘制状态；GS 将生成的流转换为像素。"
+    },
+    {
+      "type": "heading",
+      "text": "为什么 4 MB 可能有效"
+    },
+    {
+      "type": "paragraph",
+      "text": "一个 640×448 32 位帧缓冲区消耗的内存超过一兆字节，还不包括深度、后缓冲区或纹理，因此开发者很少将 GS 内存视为永久存储。他们选择紧凑的像素格式，将屏幕划分为适合效果的缓冲区，重复使用不再需要内容的区域，并从控制台的 32 MB 主内存中流式传输纹理数据。局部帧缓冲区的行为更像一个高速工作集，而不是仓库。"
+    },
+    {
+      "type": "heading",
+      "text": "隐藏在转账中的成本"
+    },
+    {
+      "type": "paragraph",
+      "text": "GS 内的带宽并没有抹去供应给它的较窄路径。纹理上传会争夺传输时间，同步可能会使在忙碌时表现出色的流水线停滞。引擎将纹理组织成页面，对状态更改进行批处理，并在消耗它们的绘制之前安排上传。看似简单的选择——帧缓冲格式、纹理宽度、mip 布局或何时复制表面——都可能决定一个效果是舒适适配还是扰乱整个帧。"
+    },
+    {
+      "type": "callout",
+      "text": "GS 并不仅仅是“只有 4 MB 的显存”。它是一个故意设计的小型、极快的本地工作区，其有用性依赖于从主机的其余部分持续传输数据。"
+    },
+    {
+      "type": "heading",
+      "text": "效果源于巧妙的重复使用"
+    },
+    {
+      "type": "paragraph",
+      "text": "在没有可编程像素着色器的情况下，团队通过纹理通道、alpha 混合、目标读取以及缓冲区角色之间的传输来组合效果。高填充率鼓励了过度绘制、粒子效果、分层透明度以及类似后期处理的技巧，而内存限制则鼓励使用半分辨率表面和精心打包的格式。不同的工作室得出了截然不同的视觉特征，因为他们的引擎在图像质量、通道、纹理细节和内存驻留之间做出了不同的权衡。"
+    },
+    {
+      "type": "heading",
+      "text": "为什么 GS 仿真看起来简单实际上很难"
+    },
+    {
+      "type": "paragraph",
+      "text": "现代 GPU 可编程，并且对内存的优化方式非常不同，因此模拟器无法将每个 GS 操作映射到明显的主机等效操作。游戏可能会将同一局部内存区域重新解释为帧缓冲区，然后再作为纹理，依赖不寻常的通道混排，或组合在 GS 上成本低廉但在主机 API 上代价高昂的混合模式。硬件渲染器可以识别并翻译这些模式；软件渲染仍然是一个重要的准确性参考，因为它可以更直接地再现原始顺序。"
+    },
+    {
+      "type": "heading",
+      "text": "一个变成身份的约束"
+    },
+    {
+      "type": "paragraph",
+      "text": "Graphics Synthesizer 的设计解释了 PS2 为什么既有丰富效果的声誉，也有一些游戏中可见的反复出现的纹理妥协。它的小型 eDRAM 与其巨大的本地带宽密不可分。开发者并没有用一个好的规格去弥补一个坏的规格；他们是围绕这种组合来构建渲染器的。保持这种关系对于理解该主机的外观至关重要——也对于在二十年后设计的硬件上准确重现它同样重要。"
+    }
+  ],
+  "heroAlt": "PlayStation 2 Graphics Synthesizer 芯片的特写照片"
+}

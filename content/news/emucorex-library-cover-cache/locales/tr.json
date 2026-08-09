@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreX neden kapak resimlerini kurtarılabilir kütüphane verisi olarak değerlendiriyor",
+  "summary": "Bir oyun kapağı dekoratif görünür, ancak bayat yollar, kısmi indirmeler ve tekrarlanan kaçırmalar, bir Android kütüphanesini güvenilmez hissettirebilir. EmuCoreX indirilen görselleri izole eder, her önbelleğe alınmış resmi doğrular ve kullanıcının özel kapaklarına dokunmadan görünen listeyi onarır.",
+  "heroAlt": "Final Fantasy X PS2 kapağı, EmuCoreX tarafından kullanılan varsayılan sanat kaynağından alındı",
+  "searchKeywords": [
+    "EmuCoreX kapak önbelleği",
+    "PS2 kütüphanesi sanat çalışması",
+    "KapakSanatıDeposu",
+    "Android görüntü önbelleği"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Kütüphane",
+    "reliability": "Güvenilirlik"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Örtü-önbellek güvenilirlik taahhüdü",
+    "cover-repository-source": "KapakSanatıDeposu kaynağı",
+    "cover-policy-source": "CoverCachePolicy kaynağı",
+    "home-view-model-source": "HomeViewModel kapak senkronizasyon kaynağı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "İki depolama alanı, tek kullanımlık ve kişisel sanat eserleri arasında bir çizgi çizer"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository`, otomatik olarak indirilen PS2 kapaklarını `cacheDir/game-covers` altında ve uzak geçici resimleri `cacheDir/remote-image-cache` altında tutar. Kullanıcı tarafından seçilen görseller kasıtlı olarak bu köklerin dışında, kalıcı uygulama depolamasında yer alır. Bu ayrım, ayarlar eylemine kesin bir vaatte bulunur: `clearCache()`, indirilen kapakları kaldırır, `clearAllTemporaryImageCaches()` ise geçici uzak resimleri de kaldırır, ancak hiçbir işlem oyuncu tarafından seçilen bir kapağı silmemelidir."
+    },
+    {
+      "type": "heading",
+      "text": "Bir dosya adı, bir görüntünün hayatta kaldığının kanıtı olarak kabul edilmez"
+    },
+    {
+      "type": "paragraph",
+      "text": "Her arama, aday dosyaları `isUsableCoverFile()` üzerinden geçirir. Depo, düzenli, boş olmayan bir dosya gerektirir ve `BitmapFactory`'den yalnızca sınırlarını çözmesini ister; hem genişlik hem de yükseklik pozitif olmalıdır. Bu nedenle sıfır baytlık bir yanıt veya kesintiye uğramış bir görüntü, önbellek vuruşu gibi davranamaz. Geçersiz adaylar, depo JPG ve PNG varyantları arasında seçim yapmadan önce silinir; üç boyutlu kapak stilinde kullanılan ayrı `_3d` adlandırması da dahil."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "Aynı Final Fantasy X serisi, kaynağın 3D koleksiyonunda mevcuttur. EmuCoreX, bu stile farklı bir `_3d` önbellek adı veriyor, bu yüzden sunum değiştirildiğinde varsayılan kapakla karışmıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Seri normalizasyon bir oyun kimliği adresinin bir önbellek girdisini ele almasını sağlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir URL veya dosya adı oluşturmadan önce, depo `SLUS-20312` gibi seri numaralarını büyük harfli dört harfli ve beş rakamlı bir kimliğe normalleştirir. Noktalama işareti varyantlarını kabul eder, önce kanonik formu dener ve tire olmadan kompakt bir formu tekrar deneyebilir. Yapılandırılmış kapak kaynağı ayrı varsayılan ve 3D temel URL’ler sağlayabilir; aksi takdirde yerleşik kaynaklar kullanılır. Başarılı bir yanıt önce geçici bir dosyaya kopyalanır, çözülür ve ancak bundan sonra önbelleğe yeniden adlandırılır, böylece okuyucular asla yarım yazılmış bir nihai dosya görmez."
+    },
+    {
+      "type": "heading",
+      "text": "Bilinen kaçırmalar önbelleğe alınır, ancak sonsuza kadar değil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir HTTP 404, beklenen kapak yanında küçük bir `.miss` işareti oluşturur. Yedi gün boyunca, başka bir tarama aynı isteği atlayabilir; bu, sunucudan mevcut olmayan görselleri tekrar tekrar istemek yerine yapılır. Geçerli bir görüntü geldiğinde işaret kaybolur ve sınırlı ömrü, üst akıştaki kapak koleksiyonunun daha sonra o seri numarasını elde etmesine yer bırakır. Diğer ağ hataları, bir kapağın var olmadığına dair kalıcı bir kanıt haline gelmez."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel sınırlı eşzamanlılık altında eski satırları onarır"
+    },
+    {
+      "type": "paragraph",
+      "text": "`syncMissingCovers()` sırasında, `HomeViewModel` önce yalnızca yönetilen kapak önbelleğine işaret eden ve artık kullanılabilir dosyalara çözülmeyen yolları temizler. Bu onarılmış listeyi yayınlar, ardından yerel kapağı olmayan veya HTTP kapağı olan oyunları, üç eşzamanlı iş ile sınırlı bir semafor aracılığıyla işler. Her başarılı indirme, eşleşen oyunu yol bazında değiştirir ve görünür durumu yeniden yayınlar. Eğer bir VM aktifse, kapak çalışması emülasyonla yarışmak yerine ertelenir ve senkronizasyondan sonra güncellenmiş kütüphane anlık görüntüsü kaydedilir."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy`, silme işleminden önce hem aday hem de önbellek kökünü kanonikleştirir. İçerik URI'leri ve HTTP URL'leri hemen reddedilir ve bir dosyanın yönetilen kökün bir alt öğesi olması gerekir. Bu, hatalı bir kütüphane değerinin bir önbellek temizleme işlemini genişletmesini engeller."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Kapak doğrulamasını, indirmeyi ve temizlemeyi denetle"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Kütüphanede eksik kapak eşitlemesini takip edin"
+    }
+  ]
+}

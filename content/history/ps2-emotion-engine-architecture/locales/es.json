@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "ps2-emotion-engine-architecture",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dentro del Emotion Engine: por qué el código de PS2 tuvo que pensar en paralelo",
+  "summary": "El chip central del PlayStation 2 no era simplemente una CPU MIPS rápida: su núcleo R5900, dos unidades vectoriales, decodificador de imágenes y red DMA recompensaban a los programas construidos como canales de datos cooperativos.",
+  "searchKeywords": [
+    "PlayStation 2",
+    "Emotion Engine",
+    "R5900",
+    "VU0",
+    "VU1",
+    "DMA",
+    "arquitectura PS2"
+  ],
+  "categoryLabels": {
+    "ps2-history": "Historia de PS2",
+    "hardware": "Hardware"
+  },
+  "sourceLabels": {
+    "sony-ee-announcement": "CPU de 128 bits Emotion Engine para la próxima generación de PlayStation",
+    "toshiba-ee-manufacturing": "Toshiba y Sony Computer Entertainment van a fabricar Emotion Engine",
+    "date-ee-paper": "CPU para PlayStation 2",
+    "ps2-linux-handbook": "El Manual del Kit PlayStation 2 Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Más que el eslogan de los «128 bits»"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sony presentó el Emotion Engine en marzo de 1999 como el procesador en el corazón de su próxima consola. El número principal era 128 bits, pero esa etiqueta describía más las operaciones enteras amplias de SIMD y las rutas de datos de la máquina que una CPU convencional de propósito general de 128 bits. En su centro se encontraba un R5900 derivado de MIPS de 64 bits funcionando a aproximadamente 294 MHz, rodeado de hardware diseñado para mover y transformar flujos de geometría, animación y video sin pedirle a ese núcleo que realice cada operación por sí mismo."
+    },
+    {
+      "type": "heading",
+      "text": "Una CPU rodeada de especialistas"
+    },
+    {
+      "type": "paragraph",
+      "text": "El chip combinaba el R5900, dos unidades vectoriales de punto flotante, una Unidad de Procesamiento de Imágenes MPEG-2 y un controlador DMA de diez canales. El VU0 podía operar junto a la CPU o como coprocesador; el VU1 tenía sus propias memorias locales y estaba diseñado para ejecutar microprogramas de geometría antes de enviar paquetes de dibujo hacia el Graphics Synthesizer. Esta disposición ofrecía a los desarrolladores un rendimiento aritmético sustancial, pero solo cuando el trabajo se dividía deliberadamente entre las unidades."
+    },
+    {
+      "type": "heading",
+      "text": "La memoria scratchpad y el almacenamiento local cambiaron el trabajo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los programadores de PS2 no podían tratar la memoria como un único espacio plano y uniformemente rápida. El Emotion Engine tenía 32 MB de RDRAM externa, una pequeña memoria scratchpad, cachés de CPU y memorias separadas de instrucción y datos dentro de cada unidad vectorial. Por lo tanto, un renderizador rápido organizaba lotes compactos: la CPU preparaba el estado, DMA transfería un paquete, una unidad vectorial transformaba vértices en su almacenamiento local, y el siguiente lote se preparaba mientras el anterior avanzaba. La disposición, alineación y tamaño de la transferencia se convirtieron en parte del diseño del algoritmo en lugar de una pasada de optimización posterior."
+    },
+    {
+      "type": "heading",
+      "text": "DMA era la coreografía del sistema"
+    },
+    {
+      "type": "paragraph",
+      "text": "El controlador DMA vinculaba la memoria principal con la interfaz vectorial, el decodificador de imágenes, la interfaz gráfica y otros dispositivos. Sus etiquetas de cadena podían describir secuencias de transferencias, lo que permitía a la máquina seguir moviendo paquetes mientras la CPU manejaba el juego o construía trabajos posteriores. Por lo tanto, las célebres demostraciones PS2 eran tanto demostraciones de planificación como aritmética: el rendimiento aparecía cuando la computación y el movimiento se superponían, y desaparecía cuando una unidad esperaba a otra o un paquete llegaba en un formato incorrecto."
+    },
+    {
+      "type": "callout",
+      "text": "El modelo de programación práctico PS2 era una canalización: preparar, transferir, transformar y dibujar, luego superponer esas etapas para que ningún procesador permaneciera inactivo."
+    },
+    {
+      "type": "heading",
+      "text": "Potencia con una curva de aprendizaje pronunciada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esta flexibilidad hacía que la consola fuera difícil de dominar. El código de propósito general podía permanecer en el R5900, pero los motores gráficos ambiciosos necesitaban microcódigo vectorial, cadenas explícitas de DMA y una sincronización cuidadosa. Un título que ignoraba el VU1 podía dejar sin usar gran parte del rendimiento de geometría previsto de la máquina; un título que lo adoptaba también adquiría herramientas específicas de la plataforma y problemas de depuración. Los estudios construyeron gradualmente motores, perfiles y visualizadores de paquetes que convirtieron este hardware inusual en un objetivo de producción repetible."
+    },
+    {
+      "type": "heading",
+      "text": "Por qué los emuladores revelan el diseño original"
+    },
+    {
+      "type": "paragraph",
+      "text": "La emulación precisa debe preservar las relaciones de las que dependía el software nativo: el comportamiento de la instrucción R5900, la ejecución de la unidad vectorial, el ordenamiento DMA, las interrupciones y la comunicación con el Procesador de E/S y GS. Ejecutar cada bloque rápidamente no es suficiente si cambia su temporización visible. Por eso los emuladores PS2 contienen varios recompiladores y planificadores especializados en lugar de traducir un simple bucle de CPU, y por eso las correcciones a un caso límite oscuro de DMA o vectorial pueden desbloquear un juego que de otro modo parece no estar relacionado."
+    },
+    {
+      "type": "heading",
+      "text": "Una máquina cuyo carácter surgió de la coordinación"
+    },
+    {
+      "type": "paragraph",
+      "text": "El Emotion Engine se ganó su lugar en la historia de las consolas no porque una sola especificación definiera la generación, sino porque fomentó un estilo distintivo de ingeniería. Los equipos aprendieron a expresar animación, física y geometría como flujos compartidos entre procesadores diferentes. El mejor software del PS2 hacía que esos límites desaparecieran para el jugador, sin embargo, el ritmo paralelo del hardware sigue siendo visible para los desarrolladores, conservacionistas y autores de emuladores que reconstruyen cómo se ensamblaba cada cuadro."
+    }
+  ],
+  "heroAlt": "Fotografía en primer plano de una placa base PlayStation 2"
+}

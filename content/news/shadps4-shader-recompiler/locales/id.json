@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mengapa terjemahan shader adalah batasan kompatibilitas inti shadPS4",
+  "summary": "Sumber inti video mendokumentasikan alur terjemahan yang harus mengubah program GPU PS4 menjadi shader yang kompatibel dengan host sambil menjaga memori dan perilaku numerik.",
+  "heroAlt": "Cuplikan gameplay yang didistribusikan di repositori resmi shadPS4",
+  "searchKeywords": [
+    "bayanganPS4",
+    "Mengapa terjemahan shader adalah batasan kompatibilitas inti shadPS4",
+    "Emulator PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "bayanganPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "shader-tree": "Pohon sumber kompiler ulang shader",
+    "gcn-decoder": "Dekoder instruksi GCN",
+    "spirv-backend": "Titik masuk backend SPIR-V"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dekode dimulai dengan instruksi AMD GCN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Program grafis PS4 dikodekan untuk perangkat keras AMD GCN, jadi shadPS4 pertama-tama memerlukan frontend tingkat instruksi daripada kompiler bahasa sumber. `frontend/decode.cpp` dan `frontend/opcodes.h` mengidentifikasi operasi tamu; file instruksi dan aliran kontrol mengubah cabang menjadi struktur yang dapat dilalui oleh kompiler selanjutnya. Kegagalan dekode bersifat nyata: opcode, bidang pengkodean, atau target cabang tidak direpresentasikan dengan benar sebelum Vulkan masuk ke dalam gambar."
+    },
+    {
+      "type": "heading",
+      "text": "Operasi skalar, vektor, dan memori memasuki representasi perantara"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lapisan terjemahan dibagi berdasarkan perilaku: ALU dan aliran skalar, ALU vektor dan interpolasi, memori skalar dan vektor, ekspor dan operasi berbagi data. Penerjemah tersebut memancarkan shadPS4 IR alih-alih menulis SPIR-V secara langsung. Mempertahankan IR yang stabil memungkinkan pengoptimalan dan legalisasi melewati alasan tentang memori bersama, hambatan, pelacakan sumber daya, dan aliran kontrol tanpa menduplikasi dekoder tamu di setiap backend host."
+    },
+    {
+      "type": "heading",
+      "text": "Tiket IR menyiapkan kode untuk backend SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pohon `ir` berisi blok, instruksi, dan lintasan yang menyederhanakan atau menulis ulang operasi sebelum emisi host. Backend SPIR-V kemudian menangani perilaku bilangan bulat, titik-mengambang, gambar, atom, penghalang, komposit, dan subgrup dalam emitor terfokus seperti `emit_spirv_image.cpp` dan `emit_spirv_shared_memory.cpp`. Oleh karena itu, perilaku GCN yang hilang dapat diperbaiki dalam dekode, terjemahan, izin IR, atau emisi akhir; itu adalah tahapan kegagalan yang berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Output shader masih bergantung pada status video_core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Modul SPIR-V yang dipancarkan dengan benar dapat memberikan hasil yang salah jika format gambar, pengikatan buffer, sampler, atau memori tamu salah. `video_core` memasok sumber daya tersebut melalui cache tekstur dan buffernya serta membangun saluran pipa Vulkan di sekitar shader. Sebaliknya, pesan validasi pada pembuatan alur dapat mengungkapkan antarmuka tidak valid yang dihasilkan oleh kompiler. Debugging harus mengikuti shader dan status terikatnya secara bersamaan."
+    },
+    {
+      "type": "heading",
+      "text": "Pencatatan dan pengambilan harus mengidentifikasi tahap buruk pertama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Laporan yang berguna mencatat adegan persisnya, pembaruan judul, revisi shadPS4, GPU dan driver. Tangkapan layar menunjukkan gejalanya; shader dump, log kompiler, atau tangkapan RenderDoc dapat menunjukkan apakah dekode gagal, SPIR-V ditolak, sumber daya tidak terikat, atau piksel hanya menyimpang setelah lintasan berikutnya. Mengubah resolusi, HDR, FSR, dan beberapa opsi eksperimental sekaligus menghancurkan perbandingan tersebut, sehingga garis dasarnya harus tetap sempit."
+    }
+  ]
+}

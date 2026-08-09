@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Asocia el renderizador con los Android GPU y el controlador",
+  "summary": "Identifica los reales SoC y GPU, distingue Adreno de Mali y otras familias, prueba el soporte de la API y elige un renderizador según el controlador del dispositivo en lugar de los nombres de marketing.",
+  "heroAlt": "Un chipset Qualcomm Snapdragon fotografiado en una placa de circuito",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Soporte de Vulkan",
+    "Detección de SoC",
+    "Compatibilidad de renderizador"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "Compatibilidad"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Guía Android Vulkan",
+    "vulkan-profiles": "Perfiles Vulkan de Khronos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El modelo de teléfono no es la especificación gráfica"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los fabricantes reutilizan nombres de productos en distintas regiones y cambian silenciosamente SoC entre revisiones. Por lo tanto, las decisiones sobre el renderizador comienzan con el chip detectado y GPU: Adreno en muchos dispositivos Snapdragon, Mali o Immortalis en muchos dispositivos MediaTek/Exynos, y otras familias en plataformas menos comunes. La versión Android por sí sola no indica las extensiones Vulkan, la estabilidad del compilador ni el comportamiento de memoria provisto por el controlador del proveedor."
+    },
+    {
+      "type": "callout",
+      "text": "Usa el diálogo de procesador detectado de EmuCoreX como primera pista, luego confirma con la información del sistema. Nunca instales un paquete de controlador Adreno en un dispositivo Mali/Immortalis."
+    },
+    {
+      "type": "heading",
+      "text": "Requisitos previos y una línea base limpia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Registra la familia SoC, GPU, la compilación Android y la versión del controlador del proveedor antes de las pruebas. Comienza con el controlador del sistema y el perfil Safe. Un renderizador puede iniciarse exitosamente pero fallar después en la compilación de shaders, la obtención de framebuffer o bajo presión de memoria, por lo que una sola pantalla de menú no es una prueba de capacidad."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Familia SoC y GPU detectada.",
+        "Número de compilación y nivel de parche de seguridad Android.",
+        "Línea base System driver con controlador personalizado desactivado.",
+        "Una escena de juego con muchos shaders y una escena con muchos efectos.",
+        "Suficiente espacio libre para registros y cachés de shaders."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Construye una elección de renderizador respaldada por capacidades"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Usa Mostrar procesador detectado y verifica la familia reportada con la información confiable del sistema del dispositivo.",
+        "2. En Adreno, comienza con Vulkan a menos que un problema conocido de dispositivo o juego apunte a OpenGL; en MediaTek/Mali, comienza por el camino OpenGL recomendado por EmuCoreX.",
+        "3. Iniciar en frío la primera escena dos veces para separar la compilación inicial del shader de los fallos recurrentes.",
+        "4. Prueba la segunda escena para detectar mezcla, framebuffer y comportamiento de memoria, y luego ejecuta el tiempo suficiente para cruzar la rampa térmica del dispositivo.",
+        "5. Almacenar un renderizador por juego solo para una excepción demostrada y mantener la elección global alineada con la familia GPU."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verifica el resultado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un camino compatible completa transiciones con muchos shaders sin pérdida de driver, renderiza los efectos correctamente y permanece estable una vez que la caché está caliente. Observa errores de controladores de dispositivo en los registros en lugar de tratar cada fotograma negro como un GPU débil. Si el renderizado por software es correcto, la evidencia apunta a la API de hardware o a sus configuraciones."
+    },
+    {
+      "type": "list",
+      "items": [
+        "GPU familia coincide con la familia de paquetes de renderizador/controladores.",
+        "Dos arranques en frío y uno en caliente completados.",
+        "No hay error recurrente en el compilador de shaders ni en la pérdida de dispositivo.",
+        "La escena con muchos efectos coincide con la estructura del renderizador por software.",
+        "La opción global sigue siendo utilizable en varios juegos."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Retroceso y recuperación"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vuelve al controlador del sistema y al renderizador por defecto siempre que la identificación sea incierta. Elimina las anulaciones por juego antes de comparar dispositivos. Si una actualización Android del sistema cambia el comportamiento del controlador, repite la línea base en lugar de llevar conclusiones de la versión anterior."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Desactiva los controladores personalizados.",
+        "Restaura el renderizador recomendado para cada familia.",
+        "Reinicia el perfil afectado por partida.",
+        "Reinicia tras un bucle de pérdida de dispositivo Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Patrones de fallo comunes"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Familia de paquetes incorrecta: fallo inmediato de carga o fallo antes de renderizar.",
+        "Funciona solo hasta que los shaders compilen: problema del compilador/extensión en lugar de rendimiento puro.",
+        "Renderizador bueno en un dispositivo regional, malo en otro: el nombre del producto oculta un SoC diferente.",
+        "El menú funciona, la jugabilidad falla: la cobertura de las pruebas era demasiado superficial."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Un registro de hardware conciso hace que los consejos de la comunidad sean útiles: dispositivo, SoC, construcción GPU, Android, controlador, renderizador, serie del juego y escena. Sin esa cadena, las recomendaciones se convierten en folklore de marcas de teléfonos. Con ella, las excepciones del renderizador se pueden repetir y revertir de manera segura."
+    },
+    {
+      "type": "link",
+      "text": "Revisar la guía Vulkan del Android",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-gpu-renderer-capabilities",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Abbina il renderer agli Android GPU e al driver",
+  "summary": "Identifica i veri SoC e GPU, distingue Adreno da Mali e da altre famiglie, testa il supporto API e scegli un renderer basato sul driver del dispositivo piuttosto che sui nomi di marketing.",
+  "heroAlt": "Un chipset Qualcomm Snapdragon fotografato su una scheda circuitale",
+  "searchKeywords": [
+    "Android GPU",
+    "Adreno Mali",
+    "Supporto Vulkan",
+    "Rilevamento SoC",
+    "Compatibilità del renderer"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "compatibility": "Compatibilità"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Linee guida Android Vulkan",
+    "vulkan-profiles": "Profili Khronos Vulkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il modello del telefono non è la specifica grafica"
+    },
+    {
+      "type": "paragraph",
+      "text": "I produttori riutilizzano i nomi dei prodotti tra le regioni e modificano silenziosamente gli SoC tra le revisioni. Le decisioni sul renderer iniziano quindi con il chip rilevato e lo GPU—Adreno su molti dispositivi Snapdragon, Mali o Immortalis su molti dispositivi MediaTek/Exynos, e altre famiglie su piattaforme meno comuni. La versione Android da sola non indica le estensioni Vulkan, la stabilità del compilatore o il comportamento della memoria forniti dal driver del produttore."
+    },
+    {
+      "type": "callout",
+      "text": "Usa la finestra di dialogo del processore rilevato da EmuCoreX come primo indizio, poi conferma con le informazioni di sistema. Non installare mai un pacchetto driver Adreno su un dispositivo Mali/Immortalis."
+    },
+    {
+      "type": "heading",
+      "text": "Prerequisiti e una baseline pulita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Registra SoC, famiglia GPU, build Android e versione driver del produttore prima del testing. Inizia con il driver di sistema e il profilo Safe. Un renderer può avviarsi con successo ma fallire successivamente nella compilazione degli shader, nel recupero del framebuffer o sotto pressione di memoria, quindi una schermata di menu non è un test di capacità."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Rilevata famiglia SoC e GPU.",
+        "Numero di build Android e livello della patch di sicurezza.",
+        "Baseline System driver con driver personalizzato disabilitato.",
+        "Una scena di gioco con molti shader e una scena con molti effetti.",
+        "Spazio libero sufficiente per log e cache degli shader."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Costruire una scelta di renderer basata sulle capacità"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Usa Mostra processore rilevato e verifica la famiglia riportata rispetto alle informazioni di sistema attendibili del dispositivo.",
+        "2. Su Adreno, iniziare con Vulkan a meno che un problema noto del dispositivo o del gioco non indichi OpenGL; su MediaTek/Mali, iniziare con il percorso OpenGL raccomandato da EmuCoreX.",
+        "3. Avviare a freddo la prima scena due volte per separare la compilazione iniziale degli shader dai difetti ricorrenti.",
+        "4. Testare la seconda scena per il comportamento di blending, framebuffer e memoria, quindi eseguire abbastanza a lungo da superare il ramp termico del dispositivo.",
+        "5. Memorizzare un renderer per gioco solo per un'eccezione dimostrata e mantenere la scelta globale allineata con la famiglia GPU."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verificare il risultato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un percorso compatibile completa transizioni pesanti di shader senza perdita del driver, rende correttamente gli effetti e rimane stabile dopo il riscaldamento della cache. Controllare gli errori del driver del dispositivo nei log invece di considerare ogni frame nero come un debole GPU. Se il rendering software è corretto, le evidenze indicano l'API hardware o le sue impostazioni."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La famiglia GPU corrisponde alla famiglia del pacchetto renderer/driver.",
+        "Due avvii a freddo e un avvio a caldo completati.",
+        "Nessun errore ricorrente del compilatore di shader o perdita del dispositivo.",
+        "La scena pesante di effetti corrisponde alla struttura del renderer software.",
+        "La scelta globale rimane utilizzabile su più giochi."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rollback e recupero"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tornare al driver di sistema e al renderer predefinito ogni volta che l'identificazione è incerta. Rimuovere le sovrascritture per gioco prima di confrontare i dispositivi. Se un aggiornamento di sistema Android cambia il comportamento del driver, ripetere il baseline invece di portare conclusioni dal build precedente."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Disabilitare i driver personalizzati.",
+        "Ripristinare il renderer raccomandato specifico per la famiglia.",
+        "Reimpostare il profilo per gioco interessato.",
+        "Riavviare dopo un loop di perdita dispositivo Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Schemi di guasto comuni"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Famiglia pacchetto sbagliata: fallimento immediato del caricamento o crash prima del rendering.",
+        "Funziona solo fino a quando gli shader vengono compilati: problema del compilatore/estensione piuttosto che prestazioni grezze.",
+        "Renderer buono su un dispositivo regionale, cattivo su un altro: il nome del prodotto nasconde un diverso SoC.",
+        "Il menu funziona, il gameplay fallisce: la copertura del test era troppo superficiale."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Un record hardware conciso rende utile il consiglio della comunità: dispositivo, SoC, build Android, GPU, driver, renderer, seriale del gioco e scena. Senza quella catena, le raccomandazioni si riducono a folklore sui marchi di telefoni. Con essa, le eccezioni del renderer possono essere ripetute e annullate in sicurezza."
+    },
+    {
+      "type": "link",
+      "text": "Rivedi le indicazioni Vulkan di Android",
+      "url": "https://developer.android.com/ndk/guides/graphics/getting-started"
+    }
+  ]
+}

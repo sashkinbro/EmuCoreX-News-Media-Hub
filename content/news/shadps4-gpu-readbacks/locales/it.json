@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "I readback della GPU ricollegano le immagini host di shadPS4 con la memoria visibile agli ospiti",
+  "summary": "I readback trasferiscono i dati modificati dalla GPU al lato CPU quando il software PS4 si aspetta memoria condivisa, scambiando la velocità con la correttezza nei carichi di lavoro che la richiedono.",
+  "heroAlt": "Schermata di gioco distribuita nel repository ufficiale di shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "I readback della GPU ricollegano le immagini host di shadPS4 con la memoria visibile agli ospiti",
+    "Emulatore PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Sorgente della cache del buffer video",
+    "page-manager": "Gestore pagine memoria video",
+    "readback-notes": "Note tecniche di rilettura",
+    "module-viewer": "Implementazione del visualizzatore del modulo"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le scritture GPU non sono automaticamente visibili come memoria della CPU guest"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il software PS4 può considerare una regione di memoria come condivisa anche dopo che i comandi GPU hanno modificato i dati corrispondenti. Sull'host, tali dati potrebbero esistere in un buffer o un'immagine Vulkan anziché nei byte visibili alla CPU che il guest leggerà successivamente. Una rilettura copia il risultato modificato verso il lato CPU nel punto in cui è richiesta la coerenza del punto. Senza di essa, il gioco può consumare vertici, contatori o altri risultati obsoleti mentre la visualizzazione GPU sembrava valida."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache tiene traccia delle regioni invece di copiare tutto"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'albero mantenuto `src/video_core/buffer_cache` separa oggetti buffer, definizioni di regione, un gestore di regione, tracciamento della memoria e gestione degli errori. Questa organizzazione esiste perché copiare tutta la memoria video dopo ogni comando sarebbe proibitivamente costoso. La cache deve identificare quali intervalli si sovrappongono, da quale parte li sono stati modificati e quando un accesso ospite necessita di sincronizzazione. `page_manager` partecipa al confine di memoria più ampio dove si incontrano le pagine guest mappate e le risorse GPU."
+    },
+    {
+      "type": "heading",
+      "text": "La correttezza ha un costo di sincronizzazione misurabile"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una rilettura può bloccarsi fino al termine del lavoro della GPU host, quindi trasferire i dati attraverso un confine che normalmente rimane asincrono. Troppe poche riletture lasciano una memoria stantia; troppi possono ridurre il frame rate e introdurre balbuzie. Le note tecniche ufficiali della versione 0.10 documentavano questo compromesso e collegavano il percorso sperimentale con una riduzione delle esplosioni di vertici e progressi nei titoli utilizzando risultati condivisi da GPU a CPU. Tali prove descrivono un meccanismo, non una raccomandazione di contesto universale."
+    },
+    {
+      "type": "heading",
+      "text": "Module Viewer risponde a una diversa domanda di debug"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il visualizzatore moduli in `src/core/devtools/widget/module_list.cpp` espone i moduli eseguibili caricati e il loro stato. Non esegue il trasferimento di memoria, ma aiuta lo sviluppatore a identificare quale componente guest è attivo quando un percorso dipendente dalla rilettura fallisce. L'associazione dello stato del modulo con i log della cache buffer è più informativa rispetto al presupposto che ogni esplosione della geometria appartenga al compilatore dello shader."
+    },
+    {
+      "type": "heading",
+      "text": "Un confronto controllato isola il comportamento di rilettura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il test mantiene lo stesso salvataggio, scena, renderer, risoluzione e revisione, quindi modifica solo l'opzione di rilettura pertinente. Registra il primo frame corrotto, l'impatto del frametime e il registro completo. Se il danneggiamento scompare mentre le prestazioni diminuiscono nello stesso evento, ciò supporta una dipendenza di coerenza. Se non cambia nulla, l'interpretazione delle texture, l'elaborazione dei comandi, la traduzione degli shader o il comportamento dei driver rimangono candidati più validi."
+    }
+  ]
+}

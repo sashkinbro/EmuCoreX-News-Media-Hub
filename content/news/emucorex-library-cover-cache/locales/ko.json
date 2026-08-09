@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "왜 EmuCoreX가 표지 이미지를 복구 가능한 라이브러리 데이터로 취급하는가",
+  "summary": "게임 표지는 장식용으로 보이지만, 오래된 경로, 부분 다운로드, 반복되는 누락은 Android 라이브러리를 신뢰할 수 없게 만들 수 있습니다. EmuCoreX는 다운로드한 아트워크를 분리하고, 모든 캐시된 이미지를 검증하며, 사용자의 맞춤 커버는 건드리지 않고 표시된 목록을 복구합니다.",
+  "heroAlt": "Final Fantasy X PS2 커버는 EmuCoreX에서 사용하는 기본 아트워크 소스에서 가져왔습니다",
+  "searchKeywords": [
+    "EmuCoreX 캐시 덮개",
+    "PS2 라이브러리 아트워크",
+    "커버아트 저장소",
+    "Android 이미지 캐시"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "도서관",
+    "reliability": "신뢰성"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "커버-캐시 신뢰성 커밋",
+    "cover-repository-source": "커버아트 저장소 소스",
+    "cover-policy-source": "CoverCachePolicy 소스",
+    "home-view-model-source": "HomeViewModel 커버 동기화 소스"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "두 개의 보관 공간이 일회용 예술 작품과 개인 예술 작품 사이에 경계를 그린다"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository`는 자동으로 다운로드된 PS2 커버를 `cacheDir/game-covers` 아래에, 원격 임시 이미지를 `cacheDir/remote-image-cache` 아래에 보관합니다. 사용자가 선택한 아트워크는 영구 애플리케이션 저장소의 이러한 루트 외부에 의도적으로 위치합니다. 이러한 분리는 설정 작업에 명확한 약속을 제공합니다: `clearCache()`는 다운로드된 커버를 제거하고, `clearAllTemporaryImageCaches()`는 임시 원격 이미지도 제거하지만, 두 작업 모두 플레이어가 선택한 커버를 삭제해서는 안 됩니다."
+    },
+    {
+      "type": "heading",
+      "text": "파일 이름은 이미지가 보존되었다는 증거로 인정되지 않습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "모든 조회는 후보 파일을 `isUsableCoverFile()`를 통해 통과시킵니다. 저장소는 일반적이고 비어 있지 않은 파일을 요구하며, `BitmapFactory`에 그 경계만 디코딩하도록 요청합니다; 너비와 높이 모두 양수여야 합니다. 따라서 0바이트 응답이나 중단된 이미지는 캐시 적중으로 가장할 수 없습니다. 저장소가 JPG와 PNG 변형 중에서 선택하기 전에 유효하지 않은 후보는 삭제되며, 여기에는 삼차원 커버 스타일에 사용되는 별도의 `_3d` 명명도 포함됩니다."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "같은 파이널 판타지 X 시리즈가 소스의 3D 컬렉션에서 이용 가능합니다. EmuCoreX은 그 스타일에 독특한 `_3d` 캐시 이름을 부여하므로, 프레젠테이션을 전환해도 기본 표지와 혼동되지 않습니다."
+    },
+    {
+      "type": "heading",
+      "text": "직렬 정규화는 하나의 게임 아이덴티티가 하나의 캐시 항목을 주소로 지정하게 한다"
+    },
+    {
+      "type": "paragraph",
+      "text": "URL이나 파일 이름을 만들기 전에, 저장소는 `SLUS-20312`와 같은 일련번호를 대문자 4자와 5자리 숫자 식별자로 정규화합니다. 구두점 변형을 허용하며, 먼저 정규 형태를 시도하고, 하이픈 없이 압축 형태를 다시 시도할 수도 있습니다. 구성된 표지 소스는 기본 URL과 3D 기본 URL을 별도로 제공할 수 있으며, 그렇지 않으면 내장 소스가 사용됩니다. 성공적인 응답은 먼저 임시 파일에 복사되고 디코딩된 후 캐시에 이름이 변경되므로, 사용자는 절반만 작성된 최종 파일을 볼 수 없습니다."
+    },
+    {
+      "type": "heading",
+      "text": "알려진 누락은 캐시에 저장되지만 영구적이지는 않습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "HTTP 404는 예상되는 커버 옆에 작은 `.miss` 표식을 만듭니다. 7일 동안, 다른 스캔은 존재하지 않는 아트워크를 서버에 반복적으로 요청하는 대신 동일한 요청을 건너뛸 수 있습니다. 유효한 이미지가 도착하면 표식은 사라지며, 그 유한한 수명은 상위 커버 수집이 나중에 해당 시리얼을 얻을 여지를 남깁니다. 다른 네트워크 실패는 커버가 존재하지 않는다는 영구적인 증거가 되지 않습니다."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel은 제한된 동시성 하에서 오래된 행을 수리합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "`syncMissingCovers()` 동안, `HomeViewModel`는 먼저 관리되는 커버 캐시에 내부를 가리키는 경로 중 더 이상 사용 가능한 파일로 해결되지 않는 경로만 정리합니다. 그런 다음 해당 수리된 목록을 게시하고, 로컬 커버가 없거나 HTTP 커버가 있는 게임을 3개의 동시 작업으로 제한된 세마포어를 통해 처리합니다. 각 성공적인 다운로드는 해당 경로의 게임을 교체하고, 가시 상태를 다시 게시합니다. VM이 활성화되어 있는 경우에는 에뮬레이션과 경쟁하는 대신 커버 작업이 연기되며, 동기화 후 갱신된 라이브러리 스냅샷이 저장됩니다."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy`는 삭제 전에 후보와 캐시 루트를 모두 정규화합니다. 콘텐츠 URI와 HTTP URL은 즉시 거부되며, 파일은 관리되는 루트의 하위에 있어야 합니다. 이는 잘못된 라이브러리 값이 캐시 삭제 작업을 확대하는 것을 방지합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "커버 검증, 다운로드 및 정리 확인"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "라이브러리에서 누락된 커버 동기화를 따르세요"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Durch das Vorladen des Disc-Images wird RAM gegen eine vorhersehbare Leselatenz eingetauscht",
+  "summary": "Der Speicherbildpfad von DuckStation lädt strukturierte Disc-Daten in den RAM und behält dabei Titel, Sektoren und Cue-Sheet-Semantik bei.",
+  "heroAlt": "Offizielle DuckStation-Grafik auf dunklem Hintergrund",
+  "searchKeywords": [
+    "DuckStation",
+    "Durch das Vorladen des Disc-Images wird RAM gegen eine vorhersehbare Leselatenz eingetauscht",
+    "PlayStation-Emulator"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "ps1": "PlayStation",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementierung eines speicherinternen CD-Images",
+    "cue-parser": "CUE-Bildparser",
+    "playlist-parser": "M3U-Multi-Disc-Parser"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Durch das Vorladen wird der Sicherungsspeicher geändert, nicht das Disc-Modell"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation kann Disc-Image-Daten in den RAM verschieben, um Speicheraktivierungen zu vermeiden und Latenz während der Wiedergabe zu vermeiden. „src/util/cd_image_memory.cpp“ präsentiert weiterhin ein CD-Image über dieselbe logische Schnittstelle wie dateigestützte Quellen. Gastlesevorgänge bleiben nach Sektoren und Spuren adressiert; Das Vorladen ist nur dann sinnvoll, wenn die In-Memory-Darstellung das Inhaltsverzeichnis und jede unterstützte Sektorform genau beibehält."
+    },
+    {
+      "type": "heading",
+      "text": "CUE-Metadaten definieren mehr als einen Dateinamen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein CUE-Sheet kann mehrere Daten- und Audiospuren, Indexpunkte, Pregaps und Sektormodi beschreiben. „cd_image_cue.cpp“ analysiert diese Struktur, bevor der Speicherpfad sinnvolle Inhalte kopieren kann. Seltene Befehle sind wichtig, da ein gültiges Archiv-Image sie möglicherweise auch dann ausführt, wenn dies bei herkömmlichen Single-Track-Dumps nicht der Fall ist. Das Reduzieren von Dateien ohne das analysierte Layout würde Adressen verschieben oder die falschen Bytes an den emulierten CD-Controller zurückgeben."
+    },
+    {
+      "type": "heading",
+      "text": "Über den einzelnen Bildern befinden sich Multi-Disc-Playlists"
+    },
+    {
+      "type": "paragraph",
+      "text": "„cd_image_m3u.cpp“ verarbeitet Wiedergabelisten, die mehrere Bilder für einen Titel bestellen. Das Verhalten gemeinsam genutzter Speicherkarten und der Disc-Wechsel hängen von der Beibehaltung dieser Gruppierung ab, während jedes Mitgliedsbild weiterhin seine eigenen gültigen Spuren und Sektoren benötigt. Durch das Vorabladen eines Mitglieds können Discs nicht stillschweigend zusammengeführt oder die Identität der Wiedergabeliste gelöscht werden. Bei einem Swap-Fehler sollten daher sowohl die M3U als auch das Format jedes referenzierten Bildes aufgezeichnet werden."
+    },
+    {
+      "type": "heading",
+      "text": "Die RAM-Kosten skalieren mit der Inhaltsgröße"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Latenzvorteil wird im Voraus durch Zuweisung und Kopieren bezahlt. Große Bilder erhöhen die Speicherbelastung, und ein Speichermangel oder ein Paging-Ereignis kann schlimmer sein als der Speicherproblem, den die Option vermeiden sollte. Geräte mit begrenztem RAM benötigen einen vorhersehbaren Fallback auf dateigestütztes Lesen. Benchmarks sollten die Vorladezeit, den residenten Speicher und die genaue Szene umfassen, in der die Speicherlatenz zuvor sichtbar war."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Disc-Bericht enthält das Layout und den Vorladestatus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zeichnen Sie die DuckStation-Revision, das Bildformat, die Prüfsummen, den CUE- oder Playlist-Text, die Vorladeeinstellung und den verfügbaren Speicher auf. Wenn nur der vorinstallierte Modus fehlschlägt, vergleichen Sie denselben logischen Sektor über den dateigestützten Pfad. Wenn beides fehlschlägt, ist das Parsen oder der Speicherauszug selbst ein besserer Kandidat. Durch diese kontrollierte Aufteilung können Entwickler „cd_image_memory“ untersuchen, ohne es mit CHD, PBP, CCD, MDS oder der Basis-CD-Image-Analyse zu verwechseln."
+    }
+  ]
+}

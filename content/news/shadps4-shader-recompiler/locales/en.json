@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Why shader translation is a core shadPS4 compatibility frontier",
+  "summary": "The video-core sources document a translation pipeline that must convert PS4 GPU programs into host-compatible shaders while preserving memory and numeric behavior.",
+  "heroAlt": "Gameplay screenshot distributed in the official shadPS4 repository",
+  "searchKeywords": [
+    "shadPS4",
+    "Why shader translation is a core shadPS4 compatibility frontier",
+    "PlayStation 4 emulator"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "shader-tree": "Shader recompiler source tree",
+    "gcn-decoder": "GCN instruction decoder",
+    "spirv-backend": "SPIR-V backend entry point"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Decode begins with AMD GCN instructions"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS4 graphics programs are encoded for AMD GCN hardware, so shadPS4 first needs an instruction-level frontend rather than a source-language compiler. `frontend/decode.cpp` and `frontend/opcodes.h` identify guest operations; instruction and control-flow files turn branches into a structure the later compiler can traverse. A decode failure is concrete: an opcode, encoding field or branch target was not represented correctly before Vulkan entered the picture."
+    },
+    {
+      "type": "heading",
+      "text": "Scalar, vector and memory operations enter an intermediate representation"
+    },
+    {
+      "type": "paragraph",
+      "text": "The translation layer is split by behavior: scalar ALU and flow, vector ALU and interpolation, scalar and vector memory, exports and data-share operations. Those translators emit shadPS4 IR instead of writing SPIR-V directly. Keeping a stable IR lets optimization and legalization passes reason about shared memory, barriers, resource tracking and control flow without duplicating the guest decoder in every host backend."
+    },
+    {
+      "type": "heading",
+      "text": "IR passes prepare code for the SPIR-V backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "The `ir` tree contains blocks, instructions and passes that simplify or rewrite operations before host emission. The SPIR-V backend then handles integer, floating-point, image, atomic, barrier, composite and subgroup behavior in focused emitters such as `emit_spirv_image.cpp` and `emit_spirv_shared_memory.cpp`. A missing GCN behavior may therefore be fixed in decode, translation, an IR pass or final emission; those are different failure stages."
+    },
+    {
+      "type": "heading",
+      "text": "Shader output still depends on video_core state"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correctly emitted SPIR-V module can render the wrong result if image formats, buffer bindings, samplers or guest memory are wrong. `video_core` supplies those resources through its texture and buffer caches and constructs Vulkan pipelines around the shader. Conversely, a validation message at pipeline creation can reveal an invalid interface produced by the compiler. Debugging has to follow the shader and its bound state together."
+    },
+    {
+      "type": "heading",
+      "text": "Logs and captures should identify the first bad stage"
+    },
+    {
+      "type": "paragraph",
+      "text": "A useful report records the exact scene, title update, shadPS4 revision, GPU and driver. A screenshot establishes the symptom; a shader dump, compiler log or RenderDoc capture can show whether decode failed, SPIR-V was rejected, a resource was unbound or pixels diverged only after a later pass. Changing resolution, HDR, FSR and several experimental options at once destroys that comparison, so the baseline should stay narrow."
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "zh",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "在 EmuCoreV 内：SDLActivity、Compose 覆盖层，以及一个 Vita3K 适配层",
+  "summary": "EmuCoreV 并不会将桌面窗口包裹在 Android 主题中。它的启动路径准备 Vita 存储，通过一个小型适配器初始化一个派生自 Vita3K 的前端，为 SDL 提供渲染表面，然后在运行的会话周围附加 Android 原生控件和菜单。",
+  "heroAlt": "官方蓝色 EmuCoreV 启动器徽章置于深色背景中央",
+  "searchKeywords": [
+    "EmuCoreV 架构",
+    "Vita3K Android",
+    "SDLActivity Compose 覆盖",
+    "本地库桥"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "建筑学",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "运行时和设置稳定性提交",
+    "vita3k-core-sync": "Vita3K 派生的核心同步提交",
+    "native-loader-source": "本地库加载器源码",
+    "adapter-source": "JNI 适配器源"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoader 建立了一个已初始化的前端"
+    },
+    {
+      "type": "paragraph",
+      "text": "在目录刷新或游戏启动向核心请求任何内容之前，`NativeLibraryLoader.ensureLoaded()` 会向 SDL 提供应用上下文并加载 `Vita3K` 库。在同步区块内，它调用 `EmulatorStorage.prepareRuntime()`，保存默认的 `VitaCoreConfigRepository` 值，调用 `NativeLib.prepareFrontend()`，并检查 `NativeLib.isInitialized()`。只有在仍需要初始化时，它才会将已解析的运行时和 Vita 存储根传递给 `NativeLib.init()`。这两个易失性标志防止并发的 Android 屏幕加载或初始化本地前端两次。"
+    },
+    {
+      "type": "heading",
+      "text": "一个四功能适配器保持封装专用桥接器小巧"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` 明确标记为 EmuCoreV 适配器层。它导出 `com.sbro.emucorev.core.NativeLib` 期望的 JNI 名称，并将它们转发到源自 Vita3K 的实现中：准备前端、使用运行时和 Vita 路径初始化、查询初始化以及刷新应用列表。面向上游的函数仍然属于 `org.vita3k.emulator.NativeLib`；EmuCoreV 并不重复它们的初始化逻辑，仅为了使用自己的 Android 包。"
+    },
+    {
+      "type": "heading",
+      "text": "运行中的游戏位于带有可观察 Android 状态的 SDLActivity 中"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator` 扩展了 `SDLActivity`，并将 `Vita3K` 命名为其本地库。它创建了一个 `EmuSurface`，拥有 `InputOverlay`，监控 Android 输入设备，并将当前游戏 ID 作为 Compose 可观察状态公开。`getArguments()` 在同步每个游戏的有效 GPU 驱动后，将启动意图转换为 Vita3K 命令行参数。新的启动意图不会尝试叠加另一个本地会话；它会记录标题并在本地关闭后触发受控进程重生。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "官方 D 键光栅是 EmuCoreV 的 Android 输入层的一个元素。`InputOverlay` 将此 UI 状态转换为本地轴、按钮和前后触控调用。"
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface 报告覆盖层的所有权并保留手势"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface` 子类化 SDL 的 `SDLSurface`，而不是替换它。它的 `surfaceCreated()` 和 `surfaceDestroyed()` 回调在 SDL 生命周期工作之前或之后调用原生 `setSurfaceStatus()` 钩子，使表面所有权对渲染器可见。`GestureDetector` 会观察双击，并要求 `Emulator` 显示覆盖菜单按钮，但随后将控制权返回给 SDL。这个细节在仍然为仅触摸用户提供返回 Android 菜单的途径的同时，保留了游戏输入。"
+    },
+    {
+      "type": "heading",
+      "text": "七月的运行时工作同时改变了存储、输入、渲染和测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "2026年7月29日的运行时稳定性提交（`d06e1575`）在一个审查过的单元中更改了`native_lib_bridge.cpp`、`runtime_bridge.cpp`、Vita3K的`native_bootstrap.cpp`、渲染器批处理、`EmulatorStorage`、SDL活动、Compose模拟菜单和设置库。它还引入了`AtomicTextFile`、`FrameLimit`、`ControllerAttachmentState`、`ImmersiveMode`，以及针对这些合约的重点测试。早先的5月21日核心同步（`811a7cd6`）更新了Vita3K线程、内存、GXM、对话覆盖、渲染器和Android引导代码。它们共同展示了EmuCoreV在哪些地方有意调整核心，以及它在哪些地方继续跟踪原生上游行为。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose 拥有应用程序导航和游戏内 Android 覆盖层。",
+        "SDL 拥有本地前端所期望的活动和表面合同。",
+        "该适配器拥有针对一小部分 JNI 引导调用的 package-name 翻译。",
+        "Vita3K衍生的核心拥有模拟的内核、内存、GXM、渲染器、模块和游戏执行。"
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "读取受保护的本地初始化路径"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "检查 EmuCoreV 到 Vita3K 的 JNI 适配器"
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-custom-gpu-driver-safe-test",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Instale, teste e reverta um driver personalizado Android GPU",
+  "summary": "Use drivers compatíveis com AdrenoTools personalizados apenas em hardware Adreno suportado, registre uma linha de base do driver do sistema, verifique o pacote, teste uma variável e mantenha um caminho de reversão imediato.",
+  "heroAlt": "Logo Mesa de engrenagens 3D representando a pilha de drivers de código aberto Turnip Vulkan",
+  "searchKeywords": [
+    "driver personalizado GPU",
+    "Turnip",
+    "AdrenoTools",
+    "Mesa Android",
+    "reversão de driver"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "drivers": "Drivers"
+  },
+  "sourceLabels": {
+    "adrenotools": "framework AdrenoTools",
+    "mesa-freedreno": "documentação Freedreno/Turnip Mesa"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um driver personalizado é um experimento, não um botão de atualização"
+    },
+    {
+      "type": "paragraph",
+      "text": "O AdrenoTools permite que um aplicativo carregue um driver Vulkan no espaço do usuário sem substituir a partição do sistema Android. Os pacotes Turnip podem corrigir ou revelar comportamentos diferentes entre gerações Adreno, mas não são universais: um pacote criado para a geração de GPU errada, outra ABI do Android ou requisitos Vulkan incompatíveis pode falhar antes de exibir o primeiro quadro. Dispositivos Mali e Immortalis não usam pacotes Turnip."
+    },
+    {
+      "type": "callout",
+      "text": "Prossiga apenas quando EmuCoreX identificar um Adreno GPU Qualcomm suportado e o pacote de driver documentar essa geração. Mantenha o driver do sistema selecionado até que um problema reproduzível justifique o teste."
+    },
+    {
+      "type": "heading",
+      "text": "Pré-requisitos e uma linha de base limpa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Faça backup das configurações por jogo e registre o resultado do driver do sistema na cena exata que falha. Obtenha o pacote de um mantenedor rastreável, mantenha seu arquivo intacto e registre seu nome de arquivo, página de lançamento e SHA-256. Não instale módulos Magisk ou substituições de driver no nível do sistema para comparação em nível de aplicativo."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Modelo Adreno GPU confirmado e ABI Android.",
+        "Linha de base do driver do sistema com capturas de tela ou anotações de tempo.",
+        "Arquivo de driver rastreável no formato AdrenoTools.",
+        "SHA-256 registrado e página de origem.",
+        "Uma maneira de reabrir as configurações e escolher System driver após a falha."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Teste um pacote em relação à linha de base do sistema"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Baixe o pacote da sua fonte documentada, calcule SHA-256 e mantenha o arquivo original fora da pasta emulator-data.",
+        "2. Nas configurações do driver EmuCoreX, importe o pacote e confirme que seu rótulo/geração corresponde ao Adreno GPU detectado.",
+        "3. Selecione-o apenas para o jogo de teste, caso o app suporte escolha de driver por jogo; caso contrário, observe o escopo global antes de iniciar.",
+        "4. Inicie a cena conhecida fria duas vezes, depois teste um segundo jogo que já funcionou no driver do sistema.",
+        "5. Se o pacote for melhor em correção ou estabilidade sem regressões, mantenha a evidência e o hash exato; caso contrário, selecione System driver imediatamente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verifique o resultado"
+    },
+    {
+      "type": "paragraph",
+      "text": "O driver deve carregar sem um loop de perda de dispositivo, compilar shaders, renderizar o efeito alvo e permanecer estável durante uma sessão quente. Um pico de taxa de quadros maior é insuficiente quando há variação nos quadros, consumo de bateria ou outro título apresenta regressão. Logs devem identificar o driver selecionado para que um relatório futuro possa ser reproduzido."
+    },
+    {
+      "type": "list",
+      "items": [
+        "O pacote alvo corresponde à geração GPU.",
+        "A identidade do driver é visível nas configurações ou nos logs.",
+        "O erro alvo melhora em duas execuções frias.",
+        "O jogo de comparação conhecido não regrediu.",
+        "O rollback do driver do sistema funciona sem apagar os dados do usuário."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rollback e recuperação"
+    },
+    {
+      "type": "paragraph",
+      "text": "Selecione System driver, pare completamente EmuCoreX e reinicie antes de julgar a recuperação. Remova o pacote experimental da lista de drivers ativos apenas depois que o caminho do sistema funcionar. Se o app não puder acessar as configurações, limpe apenas a preferência de seleção de driver ou redefina o perfil do jogo afetado pelo caminho de recuperação do app—não apague cartões de memória nem toda a pasta de dados."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Selecione System driver e reinicie o app.",
+        "Redefina a sobreposição de driver por jogo.",
+        "Coloque o arquivo que falhou em quarentena com seu hash e anotações de resultado.",
+        "Reinicie Android após erros repetidos de perda de dispositivo Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Padrões comuns de falha"
+    },
+    {
+      "type": "list",
+      "items": [
+        "O arquivo é importado, mas não carrega: ABI incorreto, layout do pacote ou geração GPU.",
+        "Um jogo melhora, outro trava: mantenha o pacote específico para o jogo ou rejeite-o.",
+        "O desempenho sobe apenas enquanto está frio: o driver mudou o comportamento térmico, não a capacidade sustentável.",
+        "Sem registro de reversão: pacotes experimentais se tornam impossíveis de distinguir depois."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Mantenha um pequeno livro-razão de drivers: pacote, fonte, hash, GPU, Android compilação, jogos testados e resultado. Substitua um pacote aceito apenas após rodar novamente a mesma base de referência. Isso transforma drivers personalizados em ferramentas de engenharia reversível, ao invés de um monte crescente de arquivos ZIP anônimos."
+    },
+    {
+      "type": "link",
+      "text": "Inspecione o projeto oficial libadrenotools",
+      "url": "https://github.com/bylaws/libadrenotools"
+    }
+  ]
+}

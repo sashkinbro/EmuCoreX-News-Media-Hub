@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "カタログのタップから検証済みインストールまで：EmuCoreXのテクスチャパック処理",
+  "summary": "大容量の置換パックには進捗バーだけでは不十分です。EmuCoreXは各転送に永続的な識別子を与え、HTTP Rangeで部分データを再開し、公称サイズとSHA-256ハッシュを検証します。完全なアーカイブがすべての確認を通過した後にだけインストールします。",
+  "heroAlt": "EmuCoreX に付属する SDL ソースに保存されたテクスチャレンダリングの例",
+  "searchKeywords": [
+    "EmuCoreX テクスチャパック",
+    "テクスチャダウンロードマネージャ",
+    "マルチパートダウンロード",
+    "SHA-256 の確認"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "テクスチャ",
+    "downloads": "ダウンロード"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "レジリエントなダウンロードマネージャーのコミット",
+    "multipart-commit": "マルチパートダウンロードサポートのコミット",
+    "extraction-limit-commit": "テクスチャ抽出制限コミット",
+    "download-manager-source": "TextureDownloadManager のソース"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "キューのエントリはそれを作成した画面よりも長く存在する"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` はまず、カタログパックが選択されたゲームシリアルとの互換性を宣言していることを確認します。次に `TextureDownloadStore` はパックとシリアルから32文字のキーを導出し、`noBackupFilesDir/texture-downloads` の下にタスク状態を書き込み、Android `WorkManager` にユニークな名前のジョブを渡します。テクスチャカタログを閉じても、そのジョブが匿名になるわけではありません。キュー、ダウンロード中、一時停止、待機中、検証中、インストール中、完了、失敗、キャンセル状態は UI で引き続き利用可能です。"
+    },
+    {
+      "type": "heading",
+      "text": "再開はサーバーと交渉され、推定されるものではない"
+    },
+    {
+      "type": "paragraph",
+      "text": "作業者は既存の部分ファイルを測定し、オフセットが利用可能な場合に HTTP `Range` リクエストを送信します。作業者は、そのバイトで正確に始まる `Content-Range` を含む部分的な応答を受け取った後にのみ追記します。サーバーが範囲を無視した場合、作業者は古い断片を削除してゼロから再開します。範囲が不一致の場合、応答を拒否します。接続は HTTPS のみで、リダイレクトは最大8回まで手動で追跡されます。また、リダイレクトによって転送が HTTP にダウングレードされることはありません。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "回転テクスチャの例は、EmuCoreX に含まれる SDL ツリーから来ています。ダウンロードパイプラインは置き換え用の画像データを提供します。レンダラーは、検証済みコンテンツをライブテクスチャに変換する責任を引き続き負います。"
+    },
+    {
+      "type": "heading",
+      "text": "Progress は、すでにディスク上にあるバイトから計算されます"
+    },
+    {
+      "type": "paragraph",
+      "text": "各チャンクは`RandomAccessFile`を通じて書き込まれ、約750ミリ秒ごとに取得されるサンプルは、ダウンロードされたバイト数、平滑化されたバイトレート、および推定残り時間をWorkManagerの進行状況とフォアグラウンド通知の両方に送ります。一時停止はユニークなワーカーをキャンセルしますが、そのペイロードは保持します。再開は置き換え作業をスケジュールする前に部分的な長さを再読み込みします。キャンセルはタスクにマークを付け、ワーカーを停止し、ペイロードファイルを破棄します。これにより、一時停止とキャンセルは意図的に異なるストレージのセマンティクスを持ちます。"
+    },
+    {
+      "type": "heading",
+      "text": "複数パーツのパックは、組み立てが信頼される前に2回確認されます"
+    },
+    {
+      "type": "paragraph",
+      "text": "7月27日のマルチパート変更では、カタログ項目が複数の`RemoteTexturePart`レコードをリストできるようになります。各パートにはそれぞれのURL、バイト数、およびSHA-256ダイジェストがあります。ワーカーはそれらを順にダウンロードし、各パートのサイズとダイジェストを確認しながら1つのアーカイブにコピーし、同時に組み立てたストリームのダイジェストを計算します。最終的なバイト数と全体パックSHA-256もカタログと一致する必要があります。不完全なリスト、サイズ超過のレスポンス、変更されたパート、または破損した最終アーカイブは、インストール前にパイプラインを終了させます。"
+    },
+    {
+      "type": "heading",
+      "text": "インストールは、明確な結果を伴う別の状態です"
+    },
+    {
+      "type": "paragraph",
+      "text": "検証後にのみ、タスクは`INSTALLING`に入り、選択されたシリアルのために`TexturePackRepository.installRemotePack()`を呼び出します。インストールが成功すると、`RemoteContentInstallState`が更新され、`AppPreferences`でテクスチャの置換が有効になり、一時的なペイロードが削除され、タスクが完了としてマークされます。一方、ネットワーク例外は実行中のジョブを`WAITING_NETWORK`に移動させ、WorkManagerに指数バックオフ再試行を求めます。カタログや整合性のエラーは無限リトライではなく、恒久的な失敗として扱われます。"
+    },
+    {
+      "type": "callout",
+      "text": "アーカイブの抽出にも制限があります。7月28日のフォローアップでは、本当に大きなパックに対してテクスチャ抽出の上限を12 GiBに引き上げましたが、圧縮入力が制御なしに拡張できないよう、有限の制限は維持されました。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "永続的なダウンロードワーカーとストアを読み取る"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "カタログカードがキューコントロールをどのように露出させるかを見てください"
+    }
+  ]
+}

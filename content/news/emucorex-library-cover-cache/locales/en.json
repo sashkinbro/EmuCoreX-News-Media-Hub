@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Why EmuCoreX treats cover art as recoverable library data",
+  "summary": "A game cover looks decorative, but stale paths, partial downloads, and repeated misses can make an Android library feel unreliable. EmuCoreX isolates downloaded artwork, validates every cached image, and repairs the visible list without touching a user's custom covers.",
+  "heroAlt": "Final Fantasy X PS2 cover fetched from the default artwork source used by EmuCoreX",
+  "searchKeywords": ["EmuCoreX cover cache", "PS2 library artwork", "CoverArtRepository", "Android image cache"],
+  "categoryLabels": {"emucorex": "EmuCoreX", "library": "Library", "reliability": "Reliability"},
+  "sourceLabels": {
+    "cover-cache-reliability": "Cover-cache reliability commit",
+    "cover-repository-source": "CoverArtRepository source",
+    "cover-policy-source": "CoverCachePolicy source",
+    "home-view-model-source": "HomeViewModel cover synchronization source"
+  },
+  "blocks": [
+    {"type": "heading", "text": "Two storage areas draw a line between disposable and personal artwork"},
+    {"type": "paragraph", "text": "`CoverArtRepository` keeps automatically downloaded PS2 covers under `cacheDir/game-covers` and remote temporary images under `cacheDir/remote-image-cache`. User-selected artwork is deliberately outside those roots in persistent application storage. That split gives the settings action a precise promise: `clearCache()` removes downloaded covers, while `clearAllTemporaryImageCaches()` also removes temporary remote images, but neither operation should erase a cover chosen by the player."},
+    {"type": "heading", "text": "A filename is not accepted as proof that an image survived"},
+    {"type": "paragraph", "text": "Every lookup passes candidate files through `isUsableCoverFile()`. The repository requires a regular, non-empty file and asks `BitmapFactory` to decode only its bounds; both width and height must be positive. A zero-byte response or interrupted image therefore cannot masquerade as a cache hit. Invalid candidates are deleted before the repository chooses between JPG and PNG variants, including the separate `_3d` naming used by the three-dimensional cover style."},
+    {"type": "image", "assetId": "emucorex-library-cover-cache-cover-3d", "text": "The same Final Fantasy X serial is available in the source's 3D collection. EmuCoreX gives that style a distinct `_3d` cache name, so switching presentation does not confuse it with the default cover."},
+    {"type": "heading", "text": "Serial normalization makes one game identity address one cache entry"},
+    {"type": "paragraph", "text": "Before building a URL or filename, the repository normalizes serials such as `SLUS-20312` into an uppercase four-letter and five-digit identity. It accepts punctuation variants, tries the canonical form first, and can retry a compact form without the hyphen. The configured cover source may provide separate default and 3D base URLs; otherwise the built-in sources are used. A successful response is first copied into a temporary file, decoded, and only then renamed into the cache, so readers never observe a half-written final file."},
+    {"type": "heading", "text": "Known misses are cached, but not forever"},
+    {"type": "paragraph", "text": "An HTTP 404 creates a small `.miss` marker beside the expected cover. For seven days, another scan can skip the same request instead of repeatedly asking the server for artwork that is not present. The marker disappears after a valid image arrives, and its finite lifetime leaves room for the upstream cover collection to gain that serial later. Other network failures do not become permanent evidence that a cover does not exist."},
+    {"type": "heading", "text": "HomeViewModel repairs stale rows under bounded concurrency"},
+    {"type": "paragraph", "text": "During `syncMissingCovers()`, `HomeViewModel` first clears only paths that point inside the managed cover cache and no longer resolve to usable files. It publishes that repaired list, then processes games with no local cover or an HTTP cover through a semaphore limited to three concurrent jobs. Each successful download replaces the matching game by path and republishes visible state. If a VM is active, cover work is deferred instead of competing with emulation, and the refreshed library snapshot is saved after synchronization."},
+    {"type": "callout", "text": "`CoverCachePolicy` canonicalizes both the candidate and cache root before deletion. Content URIs and HTTP URLs are rejected immediately, and a file must be a descendant of the managed root. This prevents a malformed library value from widening a cache-clear operation."},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt", "label": "Inspect cover validation, download, and cleanup"},
+    {"type": "link", "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt", "label": "Follow missing-cover synchronization in the library"}
+  ]
+}

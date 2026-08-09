@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Warum die Shader-Übersetzung eine zentrale Grenze der ShadPS4-Kompatibilität darstellt",
+  "summary": "Die Video-Core-Quellen dokumentieren eine Übersetzungspipeline, die PS4-GPU-Programme in hostkompatible Shader konvertieren und dabei Speicher und numerisches Verhalten bewahren muss.",
+  "heroAlt": "Gameplay-Screenshot aus dem offiziellen shadPS4-Repository",
+  "searchKeywords": [
+    "shadPS4",
+    "Warum die Shader-Übersetzung eine zentrale Grenze der ShadPS4-Kompatibilität darstellt",
+    "PlayStation 4-Emulator"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "shader-tree": "Shader-Recompiler-Quellbaum",
+    "gcn-decoder": "GCN-Befehlsdecoder",
+    "spirv-backend": "SPIR-V-Backend-Einstiegspunkt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die Dekodierung beginnt mit AMD GCN-Anweisungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS4-Grafikprogramme sind für AMD GCN-Hardware codiert, daher benötigt shadPS4 zunächst ein Frontend auf Befehlsebene und keinen Quellsprachen-Compiler. „frontend/decode.cpp“ und „frontend/opcodes.h“ identifizieren Gastvorgänge; Anweisungs- und Kontrollflussdateien verwandeln Zweige in eine Struktur, die der spätere Compiler durchlaufen kann. Ein Dekodierungsfehler ist konkret: Ein Opcode, ein Codierungsfeld oder ein Verzweigungsziel wurde nicht korrekt dargestellt, bevor Vulkan ins Spiel kam."
+    },
+    {
+      "type": "heading",
+      "text": "Skalar-, Vektor- und Speicheroperationen gehen in eine Zwischendarstellung ein"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Übersetzungsschicht ist nach Verhalten unterteilt: Skalare ALU und Fluss, Vektor-ALU und Interpolation, Skalar- und Vektorspeicher, Exporte und Datenfreigabeoperationen. Diese Übersetzer geben shadPS4 IR aus, anstatt SPIR-V direkt zu schreiben. Die Aufrechterhaltung einer stabilen IR ermöglicht die Optimierung und Legalisierung von Überlegungen zu gemeinsam genutztem Speicher, Barrieren, Ressourcenverfolgung und Kontrollfluss, ohne dass der Gastdecoder in jedem Host-Backend dupliziert wird."
+    },
+    {
+      "type": "heading",
+      "text": "IR übergibt den Vorbereitungscode für das SPIR-V-Backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der „ir“-Baum enthält Blöcke, Anweisungen und Durchgänge, die Vorgänge vor der Host-Emission vereinfachen oder neu schreiben. Das SPIR-V-Backend verarbeitet dann das Ganzzahl-, Gleitkomma-, Bild-, Atom-, Barriere-, Verbund- und Untergruppenverhalten in fokussierten Emittern wie „emit_spirv_image.cpp“ und „emit_spirv_shared_memory.cpp“. Ein fehlendes GCN-Verhalten kann daher bei der Dekodierung, Übersetzung, einem IR-Durchgang oder der endgültigen Emission behoben werden; Das sind verschiedene Fehlerstadien."
+    },
+    {
+      "type": "heading",
+      "text": "Die Shader-Ausgabe hängt weiterhin vom video_core-Status ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein korrekt ausgegebenes SPIR-V-Modul kann das falsche Ergebnis liefern, wenn Bildformate, Pufferbindungen, Sampler oder Gastspeicher falsch sind. „video_core“ stellt diese Ressourcen über seine Textur- und Puffer-Caches bereit und baut Vulkan-Pipelines um den Shader herum auf. Umgekehrt kann eine Validierungsmeldung bei der Pipelineerstellung eine vom Compiler erzeugte ungültige Schnittstelle aufdecken. Beim Debuggen müssen der Shader und sein gebundener Zustand gemeinsam verfolgt werden."
+    },
+    {
+      "type": "heading",
+      "text": "Protokolle und Erfassungen sollten die erste fehlerhafte Phase identifizieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein nützlicher Bericht zeichnet die genaue Szene, Titelaktualisierung, ShadPS4-Revision, GPU und Treiber auf. Ein Screenshot stellt das Symptom fest; Ein Shader-Dump, ein Compiler-Protokoll oder eine RenderDoc-Erfassung kann zeigen, ob die Dekodierung fehlgeschlagen ist, SPIR-V abgelehnt wurde, eine Ressource ungebunden war oder Pixel erst nach einem späteren Durchgang auseinander gingen. Das gleichzeitige Ändern von Auflösung, HDR, FSR und mehreren experimentellen Optionen macht diesen Vergleich zunichte, sodass die Basislinie eng bleiben sollte."
+    }
+  ]
+}

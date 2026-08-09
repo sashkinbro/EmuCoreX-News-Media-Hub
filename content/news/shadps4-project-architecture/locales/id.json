@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-project-architecture",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Di dalam shadPS4: pendekatan asli C++ dan Vulkan untuk emulasi PS4",
+  "summary": "Struktur proyek resmi menunjukkan bagaimana shadPS4 menggabungkan inti C++ asli, antarmuka platform, dan jalur grafis yang berfokus pada Vulkan alih-alih memperlakukan kompatibilitas sebagai satu saklar.",
+  "heroAlt": "Cuplikan gameplay yang didistribusikan di repositori resmi shadPS4",
+  "searchKeywords": [
+    "bayanganPS4",
+    "Di dalam bayanganPS4",
+    "Emulator PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "bayanganPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "official-readme": "README inti shadPS4",
+    "core-linker": "Implementasi tautan inti",
+    "shader-pipeline": "Pohon sumber kompiler ulang shader",
+    "video-core": "Pohon sumber inti video"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jalur CPU dimulai dengan eksekusi x86-64 asli"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 4 dan host desktop yang paling didukung berbagi x86-64, dan README shadPS4 memuji penelitian emulator sebelumnya dengan membantu tim memecahkan eksekusi asli binari PS4. Pilihan tersebut menghindari penerjemahan setiap instruksi CPU tamu pada host x86-64, namun menjadikan tata letak ruang alamat, penanganan pengecualian, status thread, dan fungsi sistem yang diimpor sebagai bagian dari batas kompatibilitas. Oleh karena itu, `src/core/address_space.cpp`, `memory.cpp` dan implementasi thread kernel sama pentingnya dengan eksekusi seperti titik masuk itu sendiri."
+    },
+    {
+      "type": "heading",
+      "text": "Pemuatan ELF, resolusi simbol dan Aerolib"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/loader/elf.cpp` mem-parsing objek ELF tamu, sementara `src/core/linker.cpp` dan `loader/symbols_resolver.cpp` menghubungkan nama yang diimpor dengan implementasi. Aerolib, di bawah `src/core/aerolib`, menyediakan lapisan registrasi ekspor yang digunakan oleh pengganti perpustakaan tingkat tinggi. Pohon `src/core/libraries` yang besar kemudian memasok kernel, sistem file, audio, savedata, video-out, dan API lain yang terhubung ke PS4. Judul dapat mencapai kode asli namun tetap langsung berhenti ketika salah satu layanan yang diimpor tidak ada atau mengembalikan struktur yang salah."
+    },
+    {
+      "type": "heading",
+      "text": "Instruksi GCN menjadi IR terstruktur, kemudian SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kompiler grafis adalah pipeline terpisah di bawah `src/shader_recompiler`. Bagian depannya menerjemahkan instruksi AMD GCN, menyusun aliran kontrol, dan menerjemahkan operasi skalar, vektor, interpolasi, dan memori. Jalur representasi perantara menormalkan program tersebut sebelum `backend/spirv` memancarkan SPIR-V yang dapat dikonsumsi oleh host. Hal ini menjelaskan mengapa catatan rilis menyebutkan masing-masing opcode, koordinat barycentric, memori bersama, dan perbaikan ekspor: masing-masing merupakan perilaku nyata yang hilang dalam jalur shader tamu-ke-host."
+    },
+    {
+      "type": "heading",
+      "text": "video_core memiliki perintah, cache, dan sumber daya Vulkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lapisan `src/video_core` berada di sekitar kompiler shader. Perender Vulkan-nya menciptakan perangkat, saluran pipa, gambar, dan sumber daya presentasi, sementara cache tekstur dan buffer menjaga memori tamu tetap koheren dengan objek GPU host. Penanganan perintah PM4, ubin, interpretasi ulang format gambar, dan pembacaan ulang semuanya bertemu di sini. Bingkai yang rusak dapat terjadi sebelum emisi shader, selama pencarian cache, saat transisi sumber daya, atau saat presentasi, itulah sebabnya tangkapan layar saja tidak dapat mengidentifikasi komponen yang bertanggung jawab."
+    },
+    {
+      "type": "heading",
+      "text": "Inti yang dapat dieksekusi dan antarmuka pengguna adalah produk terpisah"
+    },
+    {
+      "type": "paragraph",
+      "text": "README resmi secara eksplisit menyebut repositori ini sebagai inti emulator dan mengarahkan pengguna biasa ke QtLauncher terpisah. Di dalam repositori inti, `src/main.cpp`, `emulator.cpp`, kode jendela SDL dan lapisan `src/imgui` masih menyediakan eksekusi baris perintah, overlay, sumber daya Gambaran Besar, dan tampilan yang menghadap pengembang. Memisahkan peluncur Qt memungkinkan manajemen perpustakaannya berkembang tanpa mengubah setiap perubahan frontend menjadi perubahan emulasi inti."
+    },
+    {
+      "type": "heading",
+      "text": "Laporan arsitektur yang berguna menyebutkan batas yang gagal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kegagalan booting di sekitar ekspor yang belum terselesaikan mengarah ke loader, linker, Aerolib, atau pustaka HLE. Kesalahan dekode GCN terjadi di dekat frontend shader; Validasi Vulkan, kerusakan tekstur, atau memori GPU yang basi mengarah ke video_core dan cache-nya. Input mencapai tamu melalui `src/input`, sementara logging host dan pembantu file berada di bawah `src/common`. Mencatat build yang tepat, subsistem log terakhir, renderer, dan platform host mengubah “game tidak berfungsi” menjadi laporan yang selaras dengan pohon sumber."
+    }
+  ]
+}

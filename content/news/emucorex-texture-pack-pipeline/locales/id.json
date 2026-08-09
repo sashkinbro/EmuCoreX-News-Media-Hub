@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dari pilihan katalog ke pemasangan terverifikasi: alur paket tekstur EmuCoreX",
+  "summary": "Paket pengganti berukuran besar memerlukan lebih dari bilah kemajuan. EmuCoreX memberi setiap unduhan pengenal tetap, melanjutkan data parsial dengan rentang HTTP, memeriksa ukuran yang dinyatakan dan SHA-256, lalu memasang paket hanya setelah seluruh arsip lolos verifikasi.",
+  "heroAlt": "Contoh rendering tekstur yang disimpan dalam sumber SDL yang disertakan dengan EmuCoreX",
+  "searchKeywords": [
+    "paket tekstur EmuCoreX",
+    "ManajerUnduhTekstur",
+    "unduhan multipart",
+    "verifikasi SHA-256"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "Tekstur",
+    "downloads": "Unduhan"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "Komit manajer unduhan yang tangguh",
+    "multipart-commit": "Komit dukungan unduhan multipart",
+    "extraction-limit-commit": "Komit batas ekstraksi tekstur",
+    "download-manager-source": "PengelolaUnduhanTekstur sumber"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Entri antrean bertahan di layar yang membuatnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` pertama memeriksa bahwa paket katalog menyatakan kompatibilitas dengan serial game yang dipilih. `TextureDownloadStore` kemudian menghasilkan kunci 32 karakter dari paket dan serial, menulis status tugas di bawah `noBackupFilesDir/texture-downloads`, dan menyerahkan pekerjaan dengan nama unik ke Android `WorkManager`. Menutup katalog tekstur tidak membuat pekerjaan tersebut anonim: status antrean, mengunduh, dijeda, menunggu, memverifikasi, menginstal, selesai, gagal, dan dibatalkan tetap tersedia untuk UI."
+    },
+    {
+      "type": "heading",
+      "text": "Resume dinegosiasikan dengan server, bukan diasumsikan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pekerja mengukur file parsial yang ada dan mengirim permintaan HTTP `Range` ketika offset tersedia. Dia menambahkan hanya setelah menerima respons parsial yang `Content-Range`-nya dimulai tepat pada byte itu. Jika server mengabaikan rentang, pekerja menghapus fragmen lama dan memulai ulang dari nol; jika rentang tidak konsisten, pekerja menolak respons tersebut. Koneksi hanya HTTPS, pengalihan diikuti secara manual hingga maksimal delapan kali, dan pengalihan tidak boleh menurunkan transfer ke HTTP."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "Contoh tekstur-berputar berasal dari pohon SDL yang dibawa di EmuCoreX. Jalur unduhan menyediakan data gambar pengganti; perender tetap bertanggung jawab untuk mengubah konten yang diverifikasi menjadi tekstur langsung."
+    },
+    {
+      "type": "heading",
+      "text": "Progress dihitung dari byte yang sudah ada di disk"
+    },
+    {
+      "type": "paragraph",
+      "text": "Setiap potongan ditulis melalui `RandomAccessFile`, sementara sampel yang diambil kira-kira setiap 750 milidetik memberi umpan byte yang diunduh, laju byte yang dihaluskan, dan estimasi waktu tersisa ke dalam kemajuan WorkManager serta notifikasi latar depan. Jeda membatalkan pekerja unik tetapi mempertahankan payload-nya. Lanjut membaca ulang panjang parsial sebelum menjadwalkan pekerjaan pengganti. Batal menandai tugas, menghentikan pekerjanya, dan membuang file payload, yang memberi jeda dan batal semantik penyimpanan yang sengaja berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Paket multipart diverifikasi dua kali sebelum perakitan dipercaya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan multipermulaan 27 Juli memungkinkan entri katalog mencantumkan beberapa rekaman `RemoteTexturePart`. Setiap bagian memiliki URL, jumlah byte, dan digest SHA-256 sendiri. Pekerja mengunduhnya secara berurutan, memeriksa ukuran dan digest setiap bagian saat menyalinnya ke dalam satu arsip, dan secara bersamaan menghitung digest untuk aliran yang dirakit. Jumlah byte akhir dan SHA-256 seluruh paket juga harus sesuai dengan katalog. Daftar yang tidak lengkap, respons yang melebihi ukuran, bagian yang diubah, atau arsip akhir yang rusak akan menghentikan jalur sebelum instalasi."
+    },
+    {
+      "type": "heading",
+      "text": "Instalasi adalah keadaan terpisah dengan konsekuensi yang jelas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hanya setelah verifikasi, tugas masuk ke `INSTALLING` dan memanggil `TexturePackRepository.installRemotePack()` untuk serial yang dipilih. Instalasi yang berhasil memperbarui `RemoteContentInstallState`, mengaktifkan penggantian tekstur di `AppPreferences`, menghapus muatan sementara, dan menandai tugas sebagai selesai. Pengecualian jaringan sebaliknya memindahkan pekerjaan yang sedang berjalan ke `WAITING_NETWORK` dan meminta WorkManager untuk mencoba ulang dengan penundaan eksponensial; kesalahan katalog atau integritas diperlakukan sebagai kegagalan permanen daripada percobaan tak terbatas."
+    },
+    {
+      "type": "callout",
+      "text": "Ekstraksi arsip juga dibatasi. Tindak lanjut pada 28 Juli meningkatkan batas ekstraksi tekstur menjadi 12 GiB untuk paket yang benar-benar besar, tetapi mempertahankan batas tertentu sehingga input yang dikompresi tidak dapat berkembang tanpa kontrol."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "Baca pekerja unduhan yang persisten dan simpan"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "Lihat bagaimana kartu katalog menampilkan kontrol antrean"
+    }
+  ]
+}

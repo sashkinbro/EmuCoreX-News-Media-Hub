@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "id",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Di dalam EmuCoreV: SDLActivity, overlay Compose, dan lapisan adaptor Vita3K",
+  "summary": "EmuCoreV tidak membungkus jendela desktop dalam tema Android. Jalur peluncurannya menyiapkan penyimpanan Vita, menginisialisasi frontend yang diturunkan dari Vita3K melalui adapter kecil, memberikan permukaan render ke SDL, dan kemudian menempelkan kontrol dan menu asli Android di sekitar sesi yang sedang berjalan.",
+  "heroAlt": "Lambang peluncur resmi biru EmuCoreV berada di tengah pada latar belakang gelap",
+  "searchKeywords": [
+    "arsitektur EmuCoreV",
+    "Vita3K Android",
+    "SDLActivity Compose lapisan",
+    "jembatan_perpustakaan_asli"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "Arsitektur",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "Komit stabilisasi runtime dan pengaturan",
+    "vita3k-core-sync": "Komit sinkronisasi inti turunan Vita3K",
+    "native-loader-source": "Sumber pemuat pustaka asli",
+    "adapter-source": "sumber adaptor JNI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoader menetapkan satu frontend yang diinisialisasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebelum penyegaran katalog atau peluncuran game meminta apapun dari inti, `NativeLibraryLoader.ensureLoaded()` memberikan konteks aplikasi kepada SDL dan memuat perpustakaan `Vita3K`. Di dalam bagian yang disinkronkan, ia memanggil `EmulatorStorage.prepareRuntime()`, menyimpan nilai default `VitaCoreConfigRepository`, memanggil `NativeLib.prepareFrontend()`, dan memeriksa `NativeLib.isInitialized()`. Hanya ketika inisialisasi masih diperlukan, ia menyerahkan runtime yang telah diselesaikan dan root penyimpanan Vita ke `NativeLib.init()`. Dua flag volatile mencegah layar Android yang bersamaan memuat atau menginisialisasi frontend native dua kali."
+    },
+    {
+      "type": "heading",
+      "text": "Adaptor empat fungsi menjaga jembatan khusus paket tetap kecil"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` secara eksplisit ditandai sebagai lapisan adaptor EmuCoreV. Ini mengekspor nama JNI yang diharapkan oleh `com.sbro.emucorev.core.NativeLib` dan meneruskannya ke implementasi yang diturunkan dari Vita3K: menyiapkan frontend, menginisialisasi dengan jalur runtime dan Vita, melakukan query inisialisasi, dan menyegarkan daftar aplikasi. Fungsi-fungsi yang menghadap ke hulu tetap berada di bawah `org.vita3k.emulator.NativeLib`; EmuCoreV tidak menggandakan logika inisialisasinya hanya untuk menggunakan paket Android-nya sendiri."
+    },
+    {
+      "type": "heading",
+      "text": "Game yang sedang berjalan berada dalam SDLActivity dengan status Android yang dapat diamati"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator` memperluas `SDLActivity` dan menetapkan `Vita3K` sebagai pustaka asli (native) nya. Ini membuat `EmuSurface`, memiliki `InputOverlay`, mengawasi perangkat input Android, dan mengekspos ID game saat ini sebagai status yang dapat diamati Compose. `getArguments()` mengubah intent peluncuran menjadi argumen baris perintah Vita3K setelah menyinkronkan driver GPU per-game yang efektif. Intent peluncuran baru tidak berusaha menumpuk sesi native lain; ia mencatat judul dan memicu kebangkitan proses terkontrol setelah native dimatikan."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "Raster D-pad resmi adalah salah satu elemen dari lapisan input Android EmuCoreV. `InputOverlay` mengubah status UI ini menjadi panggilan sumbu, tombol, dan sentuhan depan-atau-belakang asli."
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface melaporkan kepemilikan dan menyimpan gerakan untuk overlay"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface` merupakan subclass dari SDL `SDLSurface` alih-alih menggantikannya. Callback `surfaceCreated()` dan `surfaceDestroyed()` memanggil hook `setSurfaceStatus()` native sebelum atau sesudah pekerjaan lifecycle SDL, membuat kepemilikan permukaan terlihat oleh renderer. `GestureDetector` mengamati ketukan ganda dan meminta `Emulator` untuk menampilkan tombol menu overlay, tetapi kemudian mengembalikan kontrol ke SDL. Detail itu menjaga input permainan sambil tetap memberi pengguna yang hanya menggunakan sentuhan jalan kembali ke menu Android."
+    },
+    {
+      "type": "heading",
+      "text": "Pekerjaan runtime Juli mengubah penyimpanan, input, rendering, dan pengujian secara bersamaan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Commit stabilitas-runtime pada 29 Juli 2026 (`d06e1575`) mengubah `native_lib_bridge.cpp`, `runtime_bridge.cpp`, Vita3K's `native_bootstrap.cpp`, renderer batching, `EmulatorStorage`, aktivitas SDL, menu emulasi Compose, dan repositori pengaturan dalam satu unit yang ditinjau. Ini juga memperkenalkan `AtomicTextFile`, `FrameLimit`, `ControllerAttachmentState`, `ImmersiveMode`, dan tes fokus untuk kontrak-kontrak tersebut. Sinkronisasi inti sebelumnya pada 21 Mei (`811a7cd6`) memperbarui thread Vita3K, memori, GXM, dialog-overlay, renderer, dan kode bootstrap Android. Bersama-sama, mereka menunjukkan di mana EmuCoreV sengaja menyesuaikan inti dan di mana ia terus mengikuti perilaku native upstream."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose memiliki navigasi aplikasi dan overlay Android dalam game.",
+        "SDL memiliki kontrak aktivitas dan permukaan yang diharapkan oleh frontend asli.",
+        "Adaptor memiliki terjemahan package-name untuk satu set kecil panggilan bootstrap JNI.",
+        "Inti yang berasal dari Vita3K memiliki kernel, memori, GXM, renderer, modul, dan eksekusi permainan yang diemulasikan."
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "Baca jalur inisialisasi asli yang dijaga"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "Periksa adaptor EmuCoreV-ke-Vita3K JNI"
+    }
+  ]
+}

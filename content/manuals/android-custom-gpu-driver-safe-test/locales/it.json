@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "id": "android-custom-gpu-driver-safe-test",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Installa, testa e effettua il rollback di un driver Android personalizzato GPU",
+  "summary": "Usa solo driver compatibili con AdrenoTools personalizzati su hardware Adreno supportato, registra una baseline del driver di sistema, verifica il pacchetto, testa una variabile e mantieni un percorso immediato di rollback.",
+  "heroAlt": "Logo Mesa 3D a ingranaggi che rappresenta lo stack di driver open-source Turnip Vulkan",
+  "searchKeywords": [
+    "driver GPU personalizzato",
+    "Turnip",
+    "AdrenoTools",
+    "Mesa Android",
+    "rollback del driver"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "gpu": "GPU",
+    "drivers": "Driver"
+  },
+  "sourceLabels": {
+    "adrenotools": "framework AdrenoTools",
+    "mesa-freedreno": "Documentazione Mesa Freedreno/Turnip"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un driver personalizzato è un esperimento, non un pulsante di aggiornamento"
+    },
+    {
+      "type": "paragraph",
+      "text": "AdrenoTools consente a un’app di caricare un driver Vulkan nello spazio utente senza sostituire la partizione di sistema di Android. I pacchetti Turnip possono correggere o mettere in evidenza comportamenti diversi tra le generazioni Adreno, ma non sono universali: un pacchetto creato per una generazione GPU errata, una ABI Android diversa o requisiti Vulkan incompatibili può bloccarsi prima del primo fotogramma. I dispositivi Mali e Immortalis non usano pacchetti Turnip."
+    },
+    {
+      "type": "callout",
+      "text": "Procedi solo quando EmuCoreX identifica un Qualcomm Adreno GPU supportato e il pacchetto del driver documenta quella generazione. Mantieni selezionato il driver di sistema fino a quando un problema riproducibile giustifica il test."
+    },
+    {
+      "type": "heading",
+      "text": "Prerequisiti e una baseline pulita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esegui il backup delle impostazioni per gioco e registra il risultato del driver di sistema nella scena esatta che fallisce. Ottieni il pacchetto da un manutentore tracciabile, conserva intatto il suo archivio e registra il nome del file, la pagina di rilascio e SHA-256. Non installare moduli Magisk o sostituzioni di driver a livello di sistema per un confronto a livello di app."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Modello Adreno GPU confermato e ABI Android.",
+        "Baseline del driver di sistema con screenshot o note sui tempi.",
+        "Archivio driver in formato AdrenoTools tracciabile.",
+        "Registrazione di SHA-256 e pagina di origine.",
+        "Un modo per riaprire le impostazioni e scegliere System driver dopo un fallimento."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Testa un pacchetto rispetto alla baseline del sistema"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Scaricare il pacchetto dalla sua fonte documentata, calcolare SHA-256 e conservare l'archivio originale al di fuori della cartella dei dati dell'emulatore.",
+        "2. Nelle impostazioni del driver EmuCoreX, importare il pacchetto e confermare che la sua etichetta/generazione corrisponda a Adreno GPU rilevati.",
+        "3. Selezionarlo solo per il gioco di prova se l'app supporta la scelta del driver per singolo gioco; altrimenti annotare l'ambito globale prima di avviare.",
+        "4. Avviare a freddo la scena conosciuta due volte, quindi testare un secondo gioco che ha già funzionato sul driver di sistema.",
+        "5. Se il pacchetto risulta migliore per correttezza o stabilità senza regressioni, conservare le evidenze e l'hash esatto; altrimenti selezionare immediatamente System driver."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verificare il risultato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il driver deve caricarsi senza un loop di perdita del dispositivo, compilare gli shader, renderizzare l'effetto target e rimanere stabile durante una sessione calda. Un frame rate massimo più alto non è sufficiente se il pacing dei frame, il consumo della batteria o un altro titolo regredisce. I log devono identificare il driver selezionato in modo da poter riprodurre un futuro report."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Il target del pacchetto corrisponde alla generazione GPU.",
+        "L'identità del driver è visibile nelle impostazioni o nei log.",
+        "Il difetto target migliora in due avvii a freddo.",
+        "Il gioco di confronto noto come buono non regredisce.",
+        "Il rollback del driver di sistema funziona senza cancellare i dati dell'utente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rollback e recupero"
+    },
+    {
+      "type": "paragraph",
+      "text": "Selezionare System driver, fermare completamente EmuCoreX e rilanciare prima di giudicare il recupero. Rimuovere il pacchetto sperimentale dalla lista dei driver attivi solo dopo che il percorso di sistema funziona. Se l'app non riesce ad accedere alle impostazioni, cancellare solo la preferenza di selezione del driver o resettare il profilo del gioco interessato tramite il percorso di recupero dell'app—non cancellare le memory card o l'intera cartella dati."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Selezionare System driver e riavviare l'app.",
+        "Resettare l'override del driver per singolo gioco.",
+        "Mettere in quarantena l'archivio fallito con il suo hash e le note sul risultato.",
+        "Riavviare Android dopo ripetuti errori di perdita del dispositivo di Vulkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Schemi comuni di fallimento"
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'archivio viene importato ma non può essere caricato: ABI sbagliato, layout del pacchetto o generazione GPU.",
+        "Un gioco migliora, un altro si blocca: mantieni il pacchetto specifico per il gioco o rifiutalo.",
+        "Le prestazioni aumentano solo mentre è fresco: il driver ha modificato il comportamento termico, non una capacità sostenibile.",
+        "Nessun record di rollback: i pacchetti sperimentali diventano impossibili da distinguere in seguito."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Mantieni un piccolo registro dei driver: pacchetto, sorgente, hash, GPU, Android build, giochi testati e risultato. Sostituisci un pacchetto accettato solo dopo aver eseguito nuovamente la stessa baseline. Questo rende i driver personalizzati strumenti di ingegneria reversibile invece di una pila crescente di file ZIP anonimi."
+    },
+    {
+      "type": "link",
+      "text": "Ispeziona il progetto ufficiale libadrenotools",
+      "url": "https://github.com/bylaws/libadrenotools"
+    }
+  ]
+}

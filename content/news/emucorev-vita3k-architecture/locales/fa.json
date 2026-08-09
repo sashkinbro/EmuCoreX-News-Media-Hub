@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "fa",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "داخل EmuCoreV: پوشش‌های SDLActivity و Compose، و یک لایه آداپتور Vita3K",
+  "summary": "EmuCoreV یک پنجره دسکتاپ را در قالب Android نمی‌پیچد. مسیر راه‌اندازی آن حافظه Vita را آماده می‌کند، یک رابط کاربری مشتق شده از Vita3K را از طریق یک مبدل کوچک مقداردهی اولیه می‌کند، سطح رندرینگ را به SDL می‌دهد و سپس کنترل‌ها و منوهای مخصوص Android را در اطراف جلسه در حال اجرا نصب می‌کند.",
+  "heroAlt": "نماد رسمی لانچر آبی EmuCoreV در مرکز یک پس‌زمینه تاریک",
+  "searchKeywords": [
+    "معماری EmuCoreV",
+    "Vita3K Android",
+    "SDLActivity Compose پوشش",
+    "پل_کتابخانه_محلی"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "معماری",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "کامیت تثبیت اجرا و تنظیمات",
+    "vita3k-core-sync": "تأیید همگام‌سازی هسته مشتق‌شده از Vita3K",
+    "native-loader-source": "منبع بارگذار کتابخانه بومی",
+    "adapter-source": "منبع آداپتور JNI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoader یک رابط کاربری اولیه شده ایجاد می‌کند"
+    },
+    {
+      "type": "paragraph",
+      "text": "قبل از اینکه تازه‌سازی فهرست یا راه‌اندازی بازی چیزی از هسته بخواهد، `NativeLibraryLoader.ensureLoaded()` زمینه برنامه را به SDL می‌دهد و کتابخانه `Vita3K` را بارگذاری می‌کند. در داخل بخش‌های همگام‌سازی شده، `EmulatorStorage.prepareRuntime()` را فراخوانی می‌کند، مقادیر پیش‌فرض `VitaCoreConfigRepository` را ذخیره می‌کند، `NativeLib.prepareFrontend()` را اجرا می‌کند و `NativeLib.isInitialized()` را بررسی می‌کند. تنها زمانی که مقداردهی اولیه هنوز مورد نیاز است، ریشه‌های ذخیره‌سازی زمان اجرا و ویتا را که حل شده‌اند به `NativeLib.init()` منتقل می‌کند. دو پرچم فرّار مانع از آن می‌شوند که صفحات Android همزمان دوبار بارگزاری یا مقداردهی اولیه بخش جلویی بومی شوند."
+    },
+    {
+      "type": "heading",
+      "text": "یک مبدل چهارکاره پل مخصوص بسته را کوچک نگه می‌دارد"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` به‌طور صریح به عنوان لایه آداپتور EmuCoreV علامت‌گذاری شده است. این لایه نام‌های JNI مورد انتظار `com.sbro.emucorev.core.NativeLib` را صادر می‌کند و آنها را به پیاده‌سازی‌های مشتق‌شده از Vita3K هدایت می‌کند: آماده‌سازی رابط کاربری، مقداردهی اولیه با مسیرهای زمان اجرا و ویتا، پرس‌وجوی مقداردهی اولیه، و تازه‌سازی فهرست برنامه‌ها. توابع رو به بالادست تحت `org.vita3k.emulator.NativeLib` باقی می‌مانند؛ EmuCoreV منطق مقداردهی اولیه آنها را فقط برای استفاده از بسته Android خود تکرار نمی‌کند."
+    },
+    {
+      "type": "heading",
+      "text": "بازی در حال اجرا درون SDLActivity و همراه با وضعیت قابل مشاهدهٔ Android قرار دارد"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator`، `SDLActivity` را گسترش می‌دهد و `Vita3K` را به‌عنوان کتابخانه بومی خود نام‌گذاری می‌کند. این یک `EmuSurface` ایجاد می‌کند، مالک `InputOverlay` است، دستگاه‌های ورودی Android را نظارت می‌کند و شناسه بازی فعلی را به‌عنوان وضعیت قابل مشاهده توسط Compose نمایش می‌دهد. `getArguments()` قصد راه‌اندازی را به آرگومان‌های خط فرمان Vita3K تبدیل می‌کند پس از همگام‌سازی درایور GPU مؤثر برای هر بازی. یک قصد راه‌اندازی جدید تلاش نمی‌کند جلسه بومی دیگری را انباشته کند؛ بلکه عنوان را ثبت می‌کند و پس از خاموشی بومی، باززایی کنترل‌شده فرآیند را فعال می‌کند."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "رستر D-pad رسمی یکی از عناصر لایه ورودی Android در EmuCoreV است. `InputOverlay` این وضعیت رابط کاربری را به تماس‌های محور، دکمه و لمسی جلو یا عقب بومی تبدیل می‌کند."
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface گزارش مالکیت می‌دهد و ژست‌ها را برای پوشش رزرو می‌کند"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface` زیرکلاس SDL را به جای جایگزینی `SDLSurface` انجام می‌دهد. فراخوانی‌های `surfaceCreated()` و `surfaceDestroyed()` آن قبل یا بعد از کار چرخه عمر SDL هوک بومی `setSurfaceStatus()` را فرا می‌خوانند، و مالکیت سطح را برای رندرکننده قابل مشاهده می‌کنند. یک `GestureDetector` تپ‌های دوگانه را مشاهده می‌کند و از `Emulator` می‌خواهد دکمه منوی پوشش را آشکار کند، اما سپس کنترل را به SDL بازمی‌گرداند. این جزئیات ورودی بازی را حفظ می‌کند در حالی که هنوز به یک کاربر فقط لمسی مسیر بازگشت به منوی Android را می‌دهد."
+    },
+    {
+      "type": "heading",
+      "text": "کار زمان اجرا در ماه ژوئیه ذخیره‌سازی، ورودی، رندرینگ و تست‌ها را با هم تغییر داد"
+    },
+    {
+      "type": "paragraph",
+      "text": "تعهد ثبات زمان اجرا در 29 ژوئیه 2026 (`d06e1575`) `native_lib_bridge.cpp`، `runtime_bridge.cpp`، Vita3K `native_bootstrap.cpp`، دسته‌بندی رندرر، `EmulatorStorage`، فعالیت SDL، منوهای شبیه‌سازی Compose، و مخازن تنظیمات را در یک واحد بازبینی‌شده تغییر داد. همچنین `AtomicTextFile`، `FrameLimit`، `ControllerAttachmentState`، `ImmersiveMode` و تست‌های متمرکز برای آن قراردادها را معرفی کرد. همگام‌سازی اصلی پیشین در 21 مه (`811a7cd6`) کد رشته‌های Vita3K، حافظه، GXM، پوشش-دیالوگ، رندرر، و بوت‌استرپ Android را به‌روز کرد. با هم نشان می‌دهند که EmuCoreV هدفمندانه هسته را تطبیق می‌دهد و کجا به دنبال رفتار بومی بالادستی ادامه می‌دهد."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose مالک ناوبری برنامه و پوشش داخلی بازی Android است.",
+        "SDL مالک فعالیت و قرارداد سطحی مورد انتظار از فرانت‌اند بومی است.",
+        "مبدل مالک ترجمه package-name برای مجموعه کوچکی از فراخوانی‌های bootstrap JNI است.",
+        "هسته مشتق شده از Vita3K دارای کرنل شبیه‌سازی‌شده، حافظه، GXM، رندرر، ماژول‌ها و اجرای بازی است."
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "مسیر مقداردهی اولیه بومی محافظت‌شده را بخوانید"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "آداپتور EmuCoreV به Vita3K JNI را بررسی کنید"
+    }
+  ]
+}

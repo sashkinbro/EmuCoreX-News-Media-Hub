@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-texture-pack-pipeline",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Od v?b?ru v katalogu k ov??en? instalaci: zpracov?n? bal??k? textur v EmuCoreX",
+  "summary": "Velk? bal??ky n?hradn?ch textur pot?ebuj? v?c ne? ukazatel pr?b?hu. EmuCoreX p?id?l? ka?d?mu stahov?n? trval? identifik?tor, obnovuje ne?pln? data pomoc? rozsah? HTTP, ov??uje uvedenou velikost a SHA-256 a instaluje a? po ?sp??n? kontrole cel?ho archivu.",
+  "heroAlt": "Příklad vykreslování textury uložený ve zdroji SDL zahrnutém se EmuCoreX",
+  "searchKeywords": [
+    "Balíčky textur EmuCoreX",
+    "SprávceStahováníTextur",
+    "vícedílné stahování",
+    "Ověření SHA-256"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "textures": "Textury",
+    "downloads": "Stažení"
+  },
+  "sourceLabels": {
+    "download-manager-commit": "Odolný správce stahování commit",
+    "multipart-commit": "Potvrzení podpory stahování po částech",
+    "extraction-limit-commit": "Omezení extrakce textury potvrzeno",
+    "download-manager-source": "Správce stahování textur zdroj"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Záznam fronty přežije obrazovku, která jej vytvořila"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TextureDownloadManager.enqueue()` nejprve kontroluje, zda balíček katalogu uvádí kompatibilitu s vybraným herním sériovým číslem. `TextureDownloadStore` poté odvodí 32-znakový klíč z balíčku a sériového čísla, zapíše stav úkolu pod `noBackupFilesDir/texture-downloads` a předá unikátně pojmenovanou úlohu Android `WorkManager`. Uzavření katalogu textur tuto úlohu nedělá anonymní: stavy fronty, stahování, pozastaveno, čekání, ověřování, instalace, dokončeno, selhání a zrušeno zůstávají k dispozici uživatelskému rozhraní."
+    },
+    {
+      "type": "heading",
+      "text": "Obnovení se vyjednává se serverem, nepředpokládá se"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pracovník měří existující částečný soubor a pošle požadavek HTTP `Range`, když je k dispozici offset. Připojuje pouze po obdržení částečné odpovědi, jejíž `Content-Range` začíná přesně na tomto bajtu. Pokud server rozsah ignoruje, pracovník starý fragment smaže a restartuje od nuly; pokud je rozsah nekonzistentní, odpověď odmítne. Připojení jsou pouze HTTPS, přesměrování jsou sledována ručně maximálně osm kroků a přesměrování nesmí snížit přenos na HTTP."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-texture-pack-pipeline-rendered-texture",
+      "text": "Příklad rotující textury pochází ze stromu SDL uloženého v EmuCoreX. Stahovací pipeline zajišťuje dodání náhradních obrazových dat; renderer zůstává odpovědný za převod ověřeného obsahu na živé textury."
+    },
+    {
+      "type": "heading",
+      "text": "Progress je vypočítáván z bajtů, které jsou již na disku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Každý blok je zapisován přes `RandomAccessFile`, zatímco vzorky odebírané přibližně každých 750 milisekund poskytují stažené bajty, vyhlazenou rychlost bajtů a odhadovaný zbývající čas jak do postupu WorkManager, tak do hlášení na popředí. Pozastavení zruší unikátního pracovníka, ale zachová jeho obsah. Obnovení znovu načte částečnou délku před naplánováním nahrazující práce. Zrušení označí úkol, zastaví jeho pracovníka a odstraní soubory s obsahem, což dává pozastavení a zrušení záměrně odlišnou sémantiku ukládání."
+    },
+    {
+      "type": "heading",
+      "text": "Balíčky s více díly jsou ověřovány dvakrát, než je důvěra v jejich sestavení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vícedílná změna z 27. července umožňuje položce katalogu uvést několik záznamů `RemoteTexturePart`. Každá část má svou vlastní URL, počet bytů a digest SHA-256. Pracovník je stahuje v pořadí, kontroluje velikost a digest každé části při jejich kopírování do jednoho archivu a současně vypočítává digest pro sestavený proud. Konečný počet bytů a celý balíček SHA-256 musí rovněž odpovídat katalogu. Neúplný seznam, příliš rozsáhlá odpověď, změněná část nebo poškozený konečný archiv zastaví pipeline před instalací."
+    },
+    {
+      "type": "heading",
+      "text": "Instalace je samostatný stav s explicitními důsledky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Teprve po ověření úloha vstoupí do `INSTALLING` a zavolá `TexturePackRepository.installRemotePack()` pro vybraný sériový číslo. Úspěšná instalace aktualizuje `RemoteContentInstallState`, povolí nahrazování textur v `AppPreferences`, odstraní dočasné payloady a označí úlohu jako dokončenou. Výjimky v síti místo toho přesunou běžící úlohu do `WAITING_NETWORK` a požádají WorkManager o opakování s exponenciálním zpomalením; chyby katalogu nebo integrity jsou považovány za trvalé selhání, nikoli za nekonečné opakování."
+    },
+    {
+      "type": "callout",
+      "text": "Extrahování archivů je také omezené. Následná aktualizace z 28. července zvýšila strop pro extrahování textur na 12 GiB pro skutečně velké balíčky, ale zachovala konečný limit, takže komprimovaný vstup se nemůže neomezeně rozšířit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/TextureDownloadManager.kt",
+      "label": "Přečtěte si trvalého stahovacího pracovníka a úložiště"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/textures/TextureOnlineCatalogSection.kt",
+      "label": "Podívejte se, jak katalogové karty odhalují ovládací prvky fronty"
+    }
+  ]
+}

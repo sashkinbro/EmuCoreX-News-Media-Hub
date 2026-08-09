@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Le préchargement de l'image disque échange la RAM contre une latence de lecture prévisible",
+  "summary": "Le chemin de l'image mémoire de DuckStation charge les données structurées du disque dans la RAM tout en préservant la sémantique des pistes, des secteurs et des feuilles de repère.",
+  "heroAlt": "Visuel officiel de DuckStation sur fond sombre",
+  "searchKeywords": [
+    "CanardStation",
+    "Le préchargement de l'image disque échange la RAM contre une latence de lecture prévisible",
+    "Émulateur PlayStation"
+  ],
+  "categoryLabels": {
+    "duckstation": "CanardStation",
+    "ps1": "PlayStation",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "memory-image": "Implémentation d'images de CD en mémoire",
+    "cue-parser": "Analyseur d'images CUE",
+    "playlist-parser": "Analyseur multidisque M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le préchargement modifie le magasin de sauvegarde, pas le modèle de disque"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation peut déplacer les données d'image disque vers la RAM pour éviter les réveils de stockage et rechercher la latence pendant la lecture. `src/util/cd_image_memory.cpp` présente toujours une image de CD via la même interface logique que les sources sauvegardées sur des fichiers. Les lectures d'invités restent abordées par secteurs et pistes ; le préchargement n'est utile que si la représentation en mémoire préserve exactement la table des matières et chaque forme de secteur prise en charge."
+    },
+    {
+      "type": "heading",
+      "text": "Les métadonnées CUE définissent plus qu'un nom de fichier"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une feuille CUE peut décrire plusieurs pistes de données et audio, des points d'index, des pré-espaces et des modes de secteur. `cd_image_cue.cpp` analyse cette structure avant que le chemin mémoire puisse copier un contenu significatif. Les commandes rares sont importantes car une image d'archive valide peut les exécuter même lorsque les vidages à piste unique courants ne le font pas. L'aplatissement des fichiers sans la mise en page analysée décalerait les adresses ou renverrait les mauvais octets au contrôleur de CD émulé."
+    },
+    {
+      "type": "heading",
+      "text": "Les listes de lecture multidisques se trouvent au-dessus des images individuelles"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` gère les listes de lecture qui commandent plusieurs images pour un titre. Le comportement de la carte mémoire partagée et la commutation de disque dépendent du maintien de ce regroupement, tandis que chaque image membre a toujours besoin de ses propres pistes et secteurs valides. Le préchargement d'un membre ne peut pas fusionner silencieusement des disques ni supprimer l'identité d'une liste de lecture. Un échec de swap devrait donc enregistrer à la fois le M3U et le format de chaque image référencée."
+    },
+    {
+      "type": "heading",
+      "text": "Le coût de la RAM évolue avec la taille du contenu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le bénéfice de latence est payé d’avance via l’allocation et la copie. Les images volumineuses augmentent la pression sur la mémoire, et un événement de mémoire insuffisante ou de pagination peut être pire que le problème de stockage que l'option était censée éviter. Les appareils dotés de RAM limitée ont besoin d’un recours prévisible à la lecture sauvegardée sur fichier. Les références doivent inclure le temps de préchargement, la mémoire résidente et la scène exacte où la latence de stockage était auparavant visible."
+    },
+    {
+      "type": "heading",
+      "text": "Un rapport de disque inclut la disposition et l'état de préchargement"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enregistrez la révision de DuckStation, le format d'image, les sommes de contrôle, le texte du CUE ou de la liste de lecture, les paramètres de préchargement et la mémoire disponible. Si seul le mode préchargé échoue, comparez le même secteur logique via le chemin sauvegardé par le fichier. Si les deux échouent, l’analyse ou le dump lui-même est un candidat plus fort. Cette division contrôlée permet aux développeurs d'étudier `cd_image_memory` sans la confondre avec l'analyse CHD, PBP, CCD, MDS ou l'analyse d'image CD de base."
+    }
+  ]
+}

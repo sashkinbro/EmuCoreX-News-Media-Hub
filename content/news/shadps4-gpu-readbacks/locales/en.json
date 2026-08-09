@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "GPU readbacks reconnect shadPS4’s host images with guest-visible memory",
+  "summary": "Readbacks transfer GPU-modified data to the CPU side when PS4 software expects shared memory, trading speed for correctness in workloads that need it.",
+  "heroAlt": "Gameplay screenshot distributed in the official shadPS4 repository",
+  "searchKeywords": [
+    "shadPS4",
+    "GPU readbacks reconnect shadPS4’s host images with guest-visible memory",
+    "PlayStation 4 emulator"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Video buffer cache source",
+    "page-manager": "Video memory page manager",
+    "readback-notes": "Readback engineering notes",
+    "module-viewer": "Module Viewer implementation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "GPU writes are not automatically visible as guest CPU memory"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS4 software can treat a memory region as shared even after GPU commands have modified the corresponding data. On the host, that data may exist in a Vulkan buffer or image rather than in the CPU-visible bytes the guest later reads. A readback copies the modified result toward the CPU side at the point coherence is required. Without it, the game can consume stale vertices, counters or other results while the GPU view looked valid."
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache tracks regions instead of copying everything"
+    },
+    {
+      "type": "paragraph",
+      "text": "The maintained `src/video_core/buffer_cache` tree separates buffer objects, region definitions, a region manager, memory tracking and fault handling. That organization exists because copying all video memory after every command would be prohibitively expensive. The cache has to identify which ranges overlap, which side changed them and when a guest access needs synchronization. `page_manager` participates at the wider memory boundary where mapped guest pages and GPU resources meet."
+    },
+    {
+      "type": "heading",
+      "text": "Correctness has a measurable synchronization cost"
+    },
+    {
+      "type": "paragraph",
+      "text": "A readback can stall until host GPU work finishes, then transfer data across a boundary that normally stays asynchronous. Too few readbacks leave stale memory; too many can cut frame rate and introduce stutter. The official v0.10 engineering notes documented this tradeoff and connected the experimental path with reduced vertex explosions and progress in titles using GPU-to-CPU shared results. That evidence describes a mechanism, not a universal setting recommendation."
+    },
+    {
+      "type": "heading",
+      "text": "Module Viewer answers a different debugging question"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Module Viewer under `src/core/devtools/widget/module_list.cpp` exposes loaded executable modules and their state. It does not perform the memory transfer, but it helps a developer identify which guest component is active when a readback-dependent path fails. Pairing module state with buffer-cache logs is more informative than assuming every geometry explosion belongs to the shader compiler."
+    },
+    {
+      "type": "heading",
+      "text": "A controlled comparison isolates readback behavior"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testing keeps the same save, scene, renderer, resolution and revision, then changes only the relevant readback option. Record the first corrupt frame, frametime impact and complete log. If corruption disappears while performance drops at the same event, that supports a coherence dependency. If nothing changes, texture interpretation, command processing, shader translation or driver behavior remain stronger candidates."
+    }
+  ]
+}

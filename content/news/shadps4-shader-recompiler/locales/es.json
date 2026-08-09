@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Por qué la traducción de sombreadores es una frontera central de compatibilidad con shadPS4",
+  "summary": "Las fuentes del núcleo de video documentan un proceso de traducción que debe convertir los programas de GPU de PS4 en sombreadores compatibles con el host y al mismo tiempo preservar la memoria y el comportamiento numérico.",
+  "heroAlt": "Captura de juego distribuida en el repositorio oficial de shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Por qué la traducción de sombreadores es una frontera central de compatibilidad con shadPS4",
+    "emulador de playstation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "Estación de juegos 4",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "shader-tree": "Árbol de origen del recompilador de sombreadores",
+    "gcn-decoder": "Decodificador de instrucciones GCN",
+    "spirv-backend": "Punto de entrada del backend SPIR-V"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La decodificación comienza con las instrucciones AMD GCN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los programas de gráficos de PS4 están codificados para el hardware AMD GCN, por lo que shadPS4 primero necesita una interfaz de nivel de instrucción en lugar de un compilador del idioma fuente. `frontend/decode.cpp` y `frontend/opcodes.h` identifican operaciones invitadas; Los archivos de instrucciones y flujo de control convierten las ramas en una estructura que el compilador posterior puede atravesar. Una falla de decodificación es concreta: un código de operación, un campo de codificación o un destino de rama no se representaba correctamente antes de que Vulkan entrara en escena."
+    },
+    {
+      "type": "heading",
+      "text": "Las operaciones escalares, vectoriales y de memoria entran en una representación intermedia"
+    },
+    {
+      "type": "paragraph",
+      "text": "La capa de traducción está dividida por comportamiento: ALU escalar y flujo, ALU vectorial e interpolación, memoria escalar y vectorial, exportaciones y operaciones de intercambio de datos. Esos traductores emiten shadPS4 IR en lugar de escribir SPIR-V directamente. Mantener un IR estable permite que la optimización y la legalización pasen por alto la memoria compartida, las barreras, el seguimiento de recursos y el flujo de control sin duplicar el decodificador invitado en cada backend del host."
+    },
+    {
+      "type": "heading",
+      "text": "Los pases IR preparan el código para el backend de SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "El árbol `ir` contiene bloques, instrucciones y pases que simplifican o reescriben las operaciones antes de la emisión del host. Luego, el backend de SPIR-V maneja el comportamiento de números enteros, de punto flotante, de imágenes, atómicos, de barrera, compuestos y de subgrupos en emisores enfocados como `emit_spirv_image.cpp` y `emit_spirv_shared_memory.cpp`. Por lo tanto, un comportamiento GCN faltante puede corregirse en la decodificación, la traducción, un pase IR o la emisión final; esas son diferentes etapas de falla."
+    },
+    {
+      "type": "heading",
+      "text": "La salida del sombreador aún depende del estado del video_core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un módulo SPIR-V emitido correctamente puede generar un resultado incorrecto si los formatos de imagen, enlaces de búfer, muestreadores o memoria invitada son incorrectos. `video_core` suministra esos recursos a través de sus cachés de textura y búfer y construye tuberías Vulkan alrededor del sombreador. Por el contrario, un mensaje de validación durante la creación de la canalización puede revelar una interfaz no válida producida por el compilador. La depuración debe seguir el sombreador y su estado vinculado."
+    },
+    {
+      "type": "heading",
+      "text": "Los registros y capturas deben identificar la primera etapa defectuosa."
+    },
+    {
+      "type": "paragraph",
+      "text": "Un informe útil registra la escena exacta, la actualización del título, la revisión de shadPS4, la GPU y el controlador. Una captura de pantalla establece el síntoma; un volcado de sombreado, un registro del compilador o una captura de RenderDoc pueden mostrar si la decodificación falló, se rechazó SPIR-V, un recurso se desató o los píxeles divergieron solo después de un paso posterior. Cambiar la resolución, HDR, FSR y varias opciones experimentales a la vez destruye esa comparación, por lo que la línea de base debería permanecer estrecha."
+    }
+  ]
+}

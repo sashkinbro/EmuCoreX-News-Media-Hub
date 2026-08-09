@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "hi",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreV के अंदर: SDLActivity, Compose ओवरले और एक Vita3K एडेप्टर लेयर",
+  "summary": "EmuCoreV किसी डेस्कटॉप विंडो को Android थीम में नहीं लपेटता है। इसका लॉन्च पाथ Vita स्टोरेज को तैयार करता है, एक छोटे एडाप्टर के माध्यम से Vita3K-व्युत्पन्न फ्रंटेंड को इनिशियलाइज करता है, SDL को रेंडरिंग सतह प्रदान करता है, और फिर चल रहे सेशन के चारों ओर Android-नेटिव कंट्रोल और मेनू संलग्न करता है।",
+  "heroAlt": "अधिकारिक नीला EmuCoreV लॉन्चर प्रतीक अंधेरे पृष्ठभूमि पर केंद्रित",
+  "searchKeywords": [
+    "EmuCoreV आर्किटेक्चर",
+    "Vita3K Android",
+    "SDLActivity Compose ओवरले",
+    "नेटिव_लाइब_ब्रिज"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "वास्तुकला",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "रनटाइम और सेटिंग्स स्थिरीकरण कमिट",
+    "vita3k-core-sync": "Vita3K-व्युत्पन्न कोर समकालिकता कमिट",
+    "native-loader-source": "मूल पुस्तकालय लोडर स्रोत",
+    "adapter-source": "JNI एडाप्टर स्रोत"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "नेेटिवलाइब्रेरी लोडर एक इनिशियलाइज्ड फ्रंटएंड स्थापित करता है"
+    },
+    {
+      "type": "paragraph",
+      "text": "किसी कैटलॉग रिफ्रेश या गेम लॉन्च से कोर से कुछ मांगने से पहले, `NativeLibraryLoader.ensureLoaded()` SDL को एप्लिकेशन संदर्भ देता है और `Vita3K` लाइब्रेरी को लोड करता है। सिंक्रोनाइज़्ड सेक्शन के अंदर यह `EmulatorStorage.prepareRuntime()` को कॉल करता है, डिफ़ॉल्ट `VitaCoreConfigRepository` मानों को स्थायी बनाता है, `NativeLib.prepareFrontend()` को इनवोक करता है, और `NativeLib.isInitialized()` की जांच करता है। केवल जब इनिशियलाइजेशन अभी भी आवश्यक होता है, यह हल किए गए रनटाइम और वीटा स्टोरेज रूट्स को `NativeLib.init()` को पास करता है। दो अस्थिर फ्लैग यह रोकते हैं कि सहवर्ती Android स्क्रीन डबल लोड या नेटिव फ्रंटएंड को दो बार इनिशियलाइज करें।"
+    },
+    {
+      "type": "heading",
+      "text": "एक चार-फंक्शन वाला एडेप्टर पैकेज-विशिष्ट ब्रिज को छोटा रखता है"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` को स्पष्ट रूप से EmuCoreV एडेप्टर लेयर के रूप में चिह्नित किया गया है। यह `com.sbro.emucorev.core.NativeLib` द्वारा अपेक्षित JNI नामों को एक्सपोर्ट करता है और उन्हें Vita3K-व्युत्पन्न कार्यान्वयन में फॉरवर्ड करता है: फ्रंटेंड तैयार करें, रनटाइम और विटा पाथ्स के साथ इनिशियलाइज़ करें, इनिशियलाइज़ेशन को क्वेरी करें, और एप्लिकेशन सूची को रीफ्रेश करें। अपस्ट्रीम-फेसिंग फ़ंक्शन `org.vita3k.emulator.NativeLib` के अंतर्गत बने रहते हैं; EmuCoreV केवल अपने Android पैकेज का उपयोग करने के लिए उनका इनिशियलाइज़ेशन लॉजिक डुप्लिकेट नहीं करता।"
+    },
+    {
+      "type": "heading",
+      "text": "चलता हुआ गेम प्रेक्षणीय Android स्थिति के साथ SDLActivity में रहता है"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator`, `SDLActivity` का विस्तार करता है और `Vita3K` को अपनी मूल लाइब्रेरी के रूप में नामित करता है। यह एक `EmuSurface` बनाता है, `InputOverlay` का मालिक होता है, Android इनपुट डिवाइसों को देखता है, और वर्तमान गेम आईडी को Compose-प्रेक्षित स्थिति के रूप में उजागर करता है। `getArguments()` प्रभावी प्रति-गेम GPU ड्राइवर को समन्वयित करने के बाद लॉन्च इरादा को Vita3K कमांड-लाइन आर्गुमेंट्स में बदलता है। एक नया लॉन्च इरादा किसी अन्य मूल सत्र को स्टैक करने का प्रयास नहीं करता; यह शीर्षक को रिकॉर्ड करता है और मूल शटडाउन के बाद नियंत्रित प्रक्रिया पुनर्जन्म को ट्रिगर करता है।"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "अधिकृत D-पैड रास्टर EmuCoreV की Android इनपुट लेयर का एक तत्व है। `InputOverlay` इस UI स्थिति को मूल अक्ष, बटन, और फ्रंट-या-रियर टच कॉल में बदलता है।"
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface ओवरले के लिए स्वामित्व और रिज़र्व जेस्चर की रिपोर्ट करता है"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface`, SDL का `SDLSurface` सबक्लास करता है बजाय इसके कि उसे बदलें। इसके `surfaceCreated()` और `surfaceDestroyed()` कॉलबैक, SDL लाइफसाइकल कार्य से पहले या बाद में नेटिव `setSurfaceStatus()` हुक को कॉल करते हैं, जिससे रेंडरर को सतह की स्वामित्व दिखाई देती है। एक `GestureDetector` डबल टैप का अवलोकन करता है और `Emulator` से ओवरले मेनू बटन को प्रकट करने के लिए कहता है, लेकिन फिर SDL को नियंत्रण वापस कर देता है। वह विवरण गेम इनपुट को संरक्षित करता है जबकि केवल टच उपयोगकर्ता को Android मेनू में वापस जाने का मार्ग भी देता है।"
+    },
+    {
+      "type": "heading",
+      "text": "जुलाई रनटाइम कार्य ने स्टोरेज, इनपुट, रेंडरिंग, और परीक्षणों को एक साथ बदल दिया"
+    },
+    {
+      "type": "paragraph",
+      "text": "29 जुलाई, 2026 के रनटाइम-स्थिरता कमिट (`d06e1575`) ने `native_lib_bridge.cpp`, `runtime_bridge.cpp`, Vita3K के `native_bootstrap.cpp`, रेंडरर बैचिंग, `EmulatorStorage`, SDL गतिविधि, Compose इम्यूलेशन मेनू और सेटिंग्स रिपॉजिटरीज़ को एक समीक्षा किए गए यूनिट में बदल दिया। इसने `AtomicTextFile`, `FrameLimit`, `ControllerAttachmentState`, `ImmersiveMode` और उन कॉन्ट्रैक्ट्स के लिए फोकस किए गए टेस्ट भी पेश किए। पहले 21 मई के कोर सिंक्रोनाइजेशन (`811a7cd6`) ने Vita3K थ्रेड, मेमोरी, GXM, डायलॉग-ओवरले, रेंडरर और Android बूटस्ट्रैप कोड को अपडेट किया। मिलकर ये दिखाते हैं कि EmuCoreV जानबूझकर कोर को कैसे एडैप्ट करता है और कहां यह मूल अपस्ट्रीम व्यवहार को ट्रैक करना जारी रखता है।"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose एप्लिकेशन नेविगेशन और इन-गेम Android ओवरले का मालिक है।",
+        "SDL उस गतिविधि और सतह अनुबंध का मालिक है जिसकी अपेक्षा मूल फ्रंटएंड द्वारा की जाती है।",
+        "एडाप्टर के पास JNI बूटस्ट्रैप कॉल्स के एक छोटे सेट के लिए पैकेज-नाम अनुवाद होता है।",
+        "Vita3K-व्युत्पन्न कोर में अनुकरण किए गए कर्नेल, मेमोरी, GXM, रेंडरर, मॉड्यूल और गेम निष्पादन शामिल हैं।"
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "सुरक्षित मूल आरंभिक पथ पढ़ें"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "EmuCoreV-से-Vita3K JNI एडेप्टर का निरीक्षण करें"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "fa",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "چگونه EmuCoreX یک جلسه PS2 را بین Compose، SurfaceView و کد بومی PCSX2 تقسیم می‌کند",
+  "summary": "یک بازی PS2 که از EmuCoreX راه‌اندازی می‌شود، چندین مرز عمداً باریک را قبل از رسیدن اولین فریم به نمایشگر عبور می‌کند. برنامه Android، قرارداد JNI، سطح رندر، وضعیت جلسه، و کامپایلرهای دوباره ARM64 هر کدام بخشی متفاوت از آن مسیر را در اختیار دارند.",
+  "heroAlt": "بنر رسمی تلویزیون EmuCoreX Android روی پس‌زمینه آبی تیره",
+  "searchKeywords": [
+    "معماری EmuCoreX",
+    "اپلیکیشن بومی JNI",
+    "صفحه شبیه‌سازی SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "معماری",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "کامیت اجرای زمان اجرا ARM64 و اجرای تلویزیون Android",
+    "jit-cache-lifecycle": "چرخه حیات کش JIT ARM64 کامیت",
+    "native-app-source": "منبع برنامه بومی",
+    "emulation-screen-source": "منبع صفحه شبیه‌سازی"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "فرآیند Android هسته بومی را انتخاب و آماده می‌کند"
+    },
+    {
+      "type": "paragraph",
+      "text": "مرز در `NativeApp` آغاز می‌شود، یک شیء Kotlin که یک کتابخانه هسته سازگار با اندازه صفحه را از طریق `AndroidNativeCoreSelector` انتخاب می‌کند، آن را با `System.loadLibrary` بارگذاری می‌کند و ثبت می‌کند که آیا هسته بومی و ابزارهای کمکی بومی در دسترس هستند یا خیر. سپس `initializeOnce()` ریشه داده‌های شبیه‌ساز را آماده می‌کند، منابع همراه را کپی می‌کند، آرشیو پچ را بررسی می‌کند، بسته اعتماد CA را صادر می‌کند Android، مسیر لاگ برخورد بومی را پیکربندی می‌کند و در نهایت نقطه ورود JNI `initialize(dataRoot, sdkInt)` را فرا می‌خواند. این ترتیب مهم است: طرف C++ هرگز نیازی ندارد حدس بزند که ذخیره‌سازی یا گواهینامه‌های Android در کجا قرار دارند."
+    },
+    {
+      "type": "heading",
+      "text": "قاب بازی یک SurfaceView واقعی است، نه بوم Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` یک `SurfaceView` مات Android را از طریق `AndroidView` جاسازی می‌کند. `SurfaceHolder.Callback` آن تغییرات `surfaceCreated`، اندازه و تخریب را به `EmulatorBridge` منتقل می‌کند، که به نوبه خود به رندرر بومی می‌رسد. Compose کنترل‌های لمسی، اطلاعات عملکرد، دستاوردها و رابط مکث را بالای آن سطح رسم می‌کند. جدا نگه داشتن این لایه‌ها به رندرر اجازه می‌دهد که یک `Surface` سطح پایین Android را در اختیار داشته باشد، در حالی که لایه پوششی وضعیت، انیمیشن، دسترسی‌پذیری و طرح‌بندی تطبیقی Compose را حفظ می‌کند."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "اثر هنری برنامه رسمی EmuCoreX نمایانگر پوسته Android است؛ قاب شبیه‌سازی‌شده خود توسط سطح بومی زیر پوشش Compose تأمین می‌شود."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel هماهنگ‌کننده جلسه است"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` شبیه‌ساز نیست. این برنامه وضعیت مواجه با Android را در اطراف شبیه‌ساز هماهنگ می‌کند: `PerGameSettingsRepository`، `CheatRepository`، `MemoryCardRepository`، داده‌های سازگاری، پروفایل‌های بازیکن، همگام‌سازی زمان بازی و `AndroidGamePerformance`. یک `StateFlow<EmulationUiState>` رابط کاربری را تأمین می‌کند، در حالی که mutex‌های چرخه حیات و انتقال شروع، توقف، ادامه و خاموش کردن کار را سریال می‌کنند. فیلدهای ناپایدار مسیر فعلی، سریال، CRC، کاور و پروفایل لمسی را حفظ می‌کنند تا یک callback دیرهنگام نتواند ناخواسته روی بازی بعدی عملیات انجام دهد."
+    },
+    {
+      "type": "heading",
+      "text": "JNI عملیات را افشا می‌کند، نه یک رابط کاربری دوم"
+    },
+    {
+      "type": "paragraph",
+      "text": "قرارداد `NativeApp` شامل فراخوانی‌های صریح برای سطوح، فشار کنترلر، انتخاب رندرر، تنظیمات دسته‌ای، ذخیره وضعیت‌ها، کارت‌های حافظه، RetroAchievements، تخلیه‌های GS، پروفایلر JIT، ردگیری هنگ‌ها و انتقال VM می‌باشد. Kotlin تصمیم می‌گیرد که این اقدامات چه زمانی قانونی هستند و چگونه ظاهر می‌شوند؛ C++ آن‌ها را بر اساس وضعیت استخراج شده از PCSX2 اجرا می‌کند. به عنوان مثال، لایه Compose می‌تواند جلوه‌ی جلو بردن سریع و تقلب‌ها را هنگام گزارش جلسه‌ی سخت‌گیرانه فعال توسط کلاینت RetroAchievements بومی پنهان کند، سپس محدودکننده‌ی فریم و وضعیت وصله را از طریق همان پل به مقادیر ایمن بازگرداند."
+    },
+    {
+      "type": "heading",
+      "text": "دو تعهد ۲۲ ژوئیه نشان می‌دهد که چرا تقسیم‌بندی به‌عنوان یک سیستم آزمایش می‌شود"
+    },
+    {
+      "type": "paragraph",
+      "text": "تعهد `0a16b80d` در ۲۲ ژوئیه ۲۰۲۶ هر دو طرف مرز را تحت تأثیر قرار داد: `MainActivity`، `TvUiPolicy`، انتخاب‌کننده‌های حافظه، `EmulationViewModel`، ARM64 بازکامپایلرهای EE/IOP/VU، حافظه مجازی، جایگزینی بافت GS و کد رندرر. بعد از آن روز، تعهد `f0e19666` طول عمر کش JIT را در EE، IOP، VIF و microVU محکم کرد و `JitProfiler` را گسترش داد. این تغییرات یک نمای معماری مفید هستند: یک اصلاح چرخه عمر Android می‌تواند نیازمند رعایت منظم حافظه اجرایی بومی باشد، و یک اصلاح بومی همچنان نیاز به مسیری Android دارد که آن را به طور ایمن شروع، مشاهده و متوقف کند."
+    },
+    {
+      "type": "callout",
+      "text": "مخزن EmuCoreX را به عنوان یک پشته شبیه‌ساز PS2 در اوایل توسعه توصیف می‌کند. جداسازی مسئولیت‌ها باعث می‌شود که پیدا کردن خطاها آسان‌تر شود، اما باعث نمی‌شود سازگاری از بازی، دستگاه، درایور GPU یا رندر مستقل باشد."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "قرارداد برنامه بومی JNI را بخوانید"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "بازرسی ادغام پوشش SurfaceView و Compose"
+    }
+  ]
+}

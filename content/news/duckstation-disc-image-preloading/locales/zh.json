@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "光盘映像预加载以 RAM 换取可预测的读取延迟",
+  "summary": "DuckStation 的内存映像路径将结构化光盘数据加载到 RAM 中，同时保留轨道、扇区和提示表语义。",
+  "heroAlt": "深色背景上的 DuckStation 官方图像",
+  "searchKeywords": [
+    "鸭站",
+    "光盘映像预加载以 RAM 换取可预测的读取延迟",
+    "PlayStation模拟器"
+  ],
+  "categoryLabels": {
+    "duckstation": "鸭站",
+    "ps1": "游戏机",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "memory-image": "内存中 CD 映像实现",
+    "cue-parser": "CUE图像解析器",
+    "playlist-parser": "M3U多盘解析器"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "预加载会更改后备存储，而不是光盘型号"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation 可以将光盘映像数据移动到 RAM 中，以避免存储唤醒和播放过程中的寻道延迟。 `src/util/cd_image_memory.cpp` 仍然通过与文件支持源相同的逻辑接口来呈现 CD 映像。来宾读取仍按扇区和磁道寻址；仅当内存中表示准确保留目录和每个支持的扇区形式时，预加载才有用。"
+    },
+    {
+      "type": "heading",
+      "text": "CUE 元数据定义的不仅仅是文件名"
+    },
+    {
+      "type": "paragraph",
+      "text": "CUE 表可以描述多个数据和音轨、索引点、前置间隙和扇区模式。 `cd_image_cue.cpp` 在内存路径复制有意义的内容之前解析该结构。罕见的命令很重要，因为即使常见的单轨转储不会，有效的存档映像也可以执行它们。在没有解析布局的情况下拼合文件会移位地址或将错误的字节返回到模拟的 CD 控制器。"
+    },
+    {
+      "type": "heading",
+      "text": "多光盘播放列表位于各个图像上方"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` 处理为一个标题订购多个图像的播放列表。共享存储卡行为和光盘切换取决于维护该分组，而每个成员映像仍然需要其自己的有效磁道和扇区。预加载一个成员无法静默合并光盘或丢弃播放列表标识。因此，交换失败应该记录 M3U 和每个引用图像的格式。"
+    },
+    {
+      "type": "heading",
+      "text": "RAM 成本随内容大小而变化"
+    },
+    {
+      "type": "paragraph",
+      "text": "延迟收益是通过分配和复制预先支付的。大图像会增加内存压力，并且内存不足或分页事件可能比该选项旨在避免的存储故障更糟糕。 RAM 有限的设备需要可预测的回退到文件支持的读取。基准应包括预加载时间、驻留内存以及之前可见存储延迟的确切场景。"
+    },
+    {
+      "type": "heading",
+      "text": "光盘报告包括布局和预加载状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "记录 DuckStation 版本、图像格式、校验和、CUE 或播放列表文本、预加载设置和可用内存。如果只有预加载模式失败，则通过文件备份路径比较相同的逻辑扇区。如果两者都失败，则解析或转储本身是更强有力的候选者。这种受控的分割让开发人员可以研究“cd_image_memory”，而不会将其与 CHD、PBP、CCD、MDS 或基本 CD 图像解析混淆。"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Disc-image preloading trades RAM for predictable read latency",
+  "summary": "DuckStation’s memory image path loads structured disc data into RAM while preserving tracks, sectors and cue-sheet semantics.",
+  "heroAlt": "Official DuckStation graphic on a dark background",
+  "searchKeywords": [
+    "DuckStation",
+    "Disc-image preloading trades RAM for predictable read latency",
+    "PlayStation emulator"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "ps1": "PlayStation",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "memory-image": "In-memory CD image implementation",
+    "cue-parser": "CUE image parser",
+    "playlist-parser": "M3U multi-disc parser"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Preloading changes the backing store, not the disc model"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation can move disc-image data into RAM to avoid storage wake-ups and seek latency during play. `src/util/cd_image_memory.cpp` still presents a CD image through the same logical interface as file-backed sources. Guest reads remain addressed by sectors and tracks; preloading is useful only if the in-memory representation preserves the table of contents and every supported sector form exactly."
+    },
+    {
+      "type": "heading",
+      "text": "CUE metadata defines more than a filename"
+    },
+    {
+      "type": "paragraph",
+      "text": "A CUE sheet can describe multiple data and audio tracks, index points, pregaps and sector modes. `cd_image_cue.cpp` parses that structure before the memory path can copy meaningful content. Rare commands matter because a valid archival image may exercise them even when common single-track dumps do not. Flattening files without the parsed layout would shift addresses or return the wrong bytes to the emulated CD controller."
+    },
+    {
+      "type": "heading",
+      "text": "Multi-disc playlists sit above individual images"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` handles playlists that order multiple images for one title. Shared memory-card behavior and disc switching depend on maintaining that grouping, while each member image still needs its own valid tracks and sectors. Preloading one member cannot silently merge discs or discard playlist identity. A swap failure should therefore record both the M3U and the format of every referenced image."
+    },
+    {
+      "type": "heading",
+      "text": "RAM cost scales with content size"
+    },
+    {
+      "type": "paragraph",
+      "text": "The latency benefit is paid up front through allocation and copying. Large images increase memory pressure, and an out-of-memory or paging event can be worse than the storage hitch the option was meant to avoid. Devices with limited RAM need a predictable fallback to file-backed reading. Benchmarks should include preload time, resident memory and the exact scene where storage latency was previously visible."
+    },
+    {
+      "type": "heading",
+      "text": "A disc report includes layout and preload state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Record the DuckStation revision, image format, checksums, CUE or playlist text, preload setting and available memory. If only preloaded mode fails, compare the same logical sector through the file-backed path. If both fail, parsing or the dump itself is a stronger candidate. This controlled split lets developers investigate `cd_image_memory` without confusing it with CHD, PBP, CCD, MDS or base CD-image parsing."
+    }
+  ]
+}

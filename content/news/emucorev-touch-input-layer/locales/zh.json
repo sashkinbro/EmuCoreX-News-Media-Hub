@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreV 如何将玻璃屏幕变成 Vita 控件",
+  "summary": "EmuCoreV 的触控层不仅仅是绘制的按钮。布局数据是标准化并持久化的，矢量控件保持外观与碰撞几何的分离，运动传感器可以驱动模拟轴，最终状态符合紧凑的 JNI 输入契约。",
+  "heroAlt": "官方 EmuCoreV 面部按钮图形排列在 Vita 菱形布局中",
+  "searchKeywords": [
+    "EmuCoreV 触控操作",
+    "矢量触控控制",
+    "Vita 陀螺仪输入",
+    "输入覆盖 JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "输入",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "输入控件实现提交",
+    "touch-spacing-commit": "触控间距优化提交",
+    "vector-controls-source": "VectorTouchControls 源代码",
+    "layout-repository-source": "触摸布局仓库源"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "已保存的布局描述了一个标准化的画布"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` 将每个控制项存储为一个 ID，加上归一化的 `x`、`y`、`width` 和 `height` 值，一个可见性标志，以及一个模拟模式。加载是防御性的：尺寸会被限制在画布的 0.035 到 0.5 之间，然后位置受到约束，以确保调整大小的元素不会超出右边或底部边缘。左右摇杆可以作为可见摇杆或触控区域使用，而命名的 ID 覆盖肩键、方向键、面板按钮、选择、开始以及 Vita 触摸表面。"
+    },
+    {
+      "type": "heading",
+      "text": "矢量渲染在不移动命中目标的情况下更改样式"
+    },
+    {
+      "type": "paragraph",
+      "text": "7月29日的输入工作增加了大型`VectorTouchControls.kt`实现，并在偏好设置中做了明确约定：视觉风格绝不决定控件几何形状，按压动画绝不决定输入分发。玩家可以选择经典、传统、现代、街机或极简处理方式，然后独立选择放大、缩小、弹跳或发光反馈。Compose在同一交互区域周围同时动画缩放和发光，因此化妆预设不能悄悄改变按钮接受手指的位置。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "官方摇杆范围和按下摇杆的光栅形成了传统的模拟控制。矢量风格可以重新绘制它的显示，但逻辑轴及其原生映射保持不变。"
+    },
+    {
+      "type": "heading",
+      "text": "触控、摇杆和按钮在 InputOverlay 汇聚"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay` 拥有紧凑的本地边界。它可以连接或断开虚拟控制器，发送签名的轴值，设置按钮状态，并标记触控目标是在前面板还是后面板。`EmulationOverlay` 负责组合控制，并将手势转换为这些调用。这使得指针处理和编辑模式的视觉效果保持在 Android 端，同时 Vita3K 派生的核心接收的是控制器形状的状态，而不是它无法理解的 Compose 事件或屏幕坐标。"
+    },
+    {
+      "type": "heading",
+      "text": "运动输入在到达模拟轴之前会被过滤"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput` 通过硬件陀螺仪支持瞄准，通过游戏旋转向量支持转向。它会考虑显示屏旋转，在激活时使转向居中，应用可配置的灵敏度、平滑处理、轴反向和一个小的死区，然后避免发送几乎相同的样本。瞄准目标是右摇杆；转向目标是左摇杆的 X 轴。启动一个模式首先会停止之前的传感器订阅，而停止时会发送一个中性值，以便游戏无法保留旧的倾斜数据。"
+    },
+    {
+      "type": "heading",
+      "text": "触觉保持在对延迟敏感的按钮路径之外"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` 一次性解决系统振动器和振幅能力，然后通过专用守护进程执行器分发振动。软、脆、强和面向系统的预设塑造了独立的按下和释放脉冲。如果没有振动器，该层将回退到视图触觉反馈。重要的顺序是架构性的：到 Android 振动器服务的慢绑定调用不允许延迟必须到达模拟器核心的按钮状态。"
+    },
+    {
+      "type": "callout",
+      "text": "提交 `4f01d13e` 同时更改了向量控件、叠加行为、陀螺仪输入、触觉反馈、设置和契约测试。之前的 `db7965b5` 间距工作提供了设计的另一半：控件必须在开口和屏幕边缘周围保持可触及，同时外观正确。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "探索矢量控制样式和按压效果"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "检查规范化布局持久性"
+    }
+  ]
+}

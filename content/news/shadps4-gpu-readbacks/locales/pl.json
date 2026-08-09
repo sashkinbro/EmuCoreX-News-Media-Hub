@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Odczyty GPU ponownie łączą obrazy hosta shadPS4 z pamięcią widoczną dla gości",
+  "summary": "Odczyty zwrotne przesyłają dane zmodyfikowane przez procesor graficzny na stronę procesora, gdy oprogramowanie PS4 oczekuje pamięci współdzielonej, zamieniając prędkość na poprawność w przypadku obciążeń, które jej potrzebują.",
+  "heroAlt": "Zrzut rozgrywki udost?pniony w oficjalnym repozytorium shadPS4",
+  "searchKeywords": [
+    "shadPS4",
+    "Odczyty GPU ponownie łączą obrazy hosta shadPS4 z pamięcią widoczną dla gości",
+    "Emulator PlayStation 4"
+  ],
+  "categoryLabels": {
+    "shadps4": "shadPS4",
+    "ps4": "PlayStation 4",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "buffer-cache": "Źródło pamięci podręcznej bufora wideo",
+    "page-manager": "Menedżer stron pamięci wideo",
+    "readback-notes": "Przeczytaj notatki inżynierskie",
+    "module-viewer": "Implementacja modułu Viewer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zapisy GPU nie są automatycznie widoczne jako pamięć procesora gościa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprogramowanie PS4 może traktować obszar pamięci jako współdzielony nawet wtedy, gdy polecenia GPU zmodyfikowały odpowiednie dane. Na hoście dane te mogą znajdować się w buforze lub obrazie Vulkan, a nie w bajtach widocznych dla procesora, które później odczytuje gość. Odczyt zwrotny kopiuje zmodyfikowany wynik w stronę procesora, gdy wymagana jest spójność punktowa. Bez tego gra może zużywać nieaktualne wierzchołki, liczniki lub inne wyniki, podczas gdy widok GPU wyglądał prawidłowo."
+    },
+    {
+      "type": "heading",
+      "text": "bufor_cache śledzi regiony zamiast kopiować wszystko"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utrzymywane drzewo `src/video_core/buffer_cache` oddziela obiekty buforów, definicje regionów, menedżera regionu, śledzenie pamięci i obsługę błędów. Organizacja ta istnieje, ponieważ kopiowanie całej pamięci wideo po każdym poleceniu byłoby zbyt kosztowne. Pamięć podręczna musi identyfikować, które zakresy nakładają się, która strona je zmieniła i kiedy dostęp gościa wymaga synchronizacji. `page_manager` uczestniczy w szerszej granicy pamięci, gdzie spotykają się zmapowane strony gości i zasoby GPU."
+    },
+    {
+      "type": "heading",
+      "text": "Poprawność ma wymierny koszt synchronizacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Odczyt zwrotny może zostać wstrzymany do czasu zakończenia pracy procesora graficznego hosta, a następnie przesłania danych przez granicę, która zwykle pozostaje asynchroniczna. Zbyt mało odczytów zwrotnych pozostawia nieaktualną pamięć; zbyt wiele może zmniejszyć liczbę klatek na sekundę i wprowadzić zacinanie się. Oficjalne notatki inżynieryjne wersji 0.10 udokumentowały ten kompromis i połączyły ścieżkę eksperymentalną ze zmniejszoną eksplozją wierzchołków i postępem w tytułach przy użyciu wspólnych wyników GPU-CPU. Dowody te opisują mechanizm, a nie uniwersalne zalecenie dotyczące ustawienia."
+    },
+    {
+      "type": "heading",
+      "text": "Przeglądarka modułów odpowiada na inne pytanie dotyczące debugowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przeglądarka modułów w `src/core/devtools/widget/module_list.cpp` udostępnia załadowane moduły wykonywalne i ich stan. Nie wykonuje transferu pamięci, ale pomaga programiście określić, który komponent gościa jest aktywny, gdy ścieżka zależna od odczytu nie powiedzie się. Parowanie stanu modułu z dziennikami pamięci podręcznej bufora dostarcza więcej informacji niż zakładanie, że każda eksplozja geometrii należy do kompilatora modułu cieniującego."
+    },
+    {
+      "type": "heading",
+      "text": "Kontrolowane porównanie izoluje zachowanie odczytu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testowanie zachowuje ten sam zapis, scenę, renderer, rozdzielczość i wersję, a następnie zmienia tylko odpowiednią opcję odczytu. Zapisz pierwszą uszkodzoną klatkę, wpływ czasu trwania ramki i pełny dziennik. Jeśli korupcja zniknie, a wydajność spadnie w tym samym zdarzeniu, wspiera to zależność spójności. Jeśli nic się nie zmieni, interpretacja tekstur, przetwarzanie poleceń, tłumaczenie modułów cieniujących lub zachowanie sterowników pozostaną silniejszymi kandydatami."
+    }
+  ]
+}

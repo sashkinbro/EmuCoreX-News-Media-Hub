@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-gpu-readbacks",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "GPU 读回将 shadPS4 的主机映像与来宾可见内存重新连接",
+  "summary": "当 PS4 软件需要共享内存时，读回会将 GPU 修改的数据传输到 CPU 端，以速度换取需要它的工作负载的正确性。",
+  "heroAlt": "由 shadPS4 官方仓库分发的游戏截图",
+  "searchKeywords": [
+    "沙德PS4",
+    "GPU 读回将 shadPS4 的主机映像与来宾可见内存重新连接",
+    "PlayStation 4 模拟器"
+  ],
+  "categoryLabels": {
+    "shadps4": "沙德PS4",
+    "ps4": "游戏机4",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "buffer-cache": "视频缓冲区缓存源",
+    "page-manager": "视频内存页管理器",
+    "readback-notes": "回读工程笔记",
+    "module-viewer": "模块查看器实施"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "GPU 写入不会自动显示为来宾 CPU 内存"
+    },
+    {
+      "type": "paragraph",
+      "text": "即使 GPU 命令修改了相应的数据，PS4 软件也可以将内存区域视为共享。在主机上，该数据可能存在于 Vulkan 缓冲区或图像中，而不是客户机稍后读取的 CPU 可见字节中。在需要一致性时，回读将修改后的结果复制到 CPU 端。如果没有它，游戏可能会消耗陈旧的顶点、计数器或其他结果，而 GPU 视图看起来有效。"
+    },
+    {
+      "type": "heading",
+      "text": "buffer_cache 跟踪区域而不是复制所有内容"
+    },
+    {
+      "type": "paragraph",
+      "text": "维护的“src/video_core/buffer_cache”树将缓冲区对象、区域定义、区域管理器、内存跟踪和故障处理分开。该组织之所以存在，是因为在每个命令之后复制所有视频内存的成本极高。缓存必须识别哪些范围重叠、哪一方更改了它们以及访客访问何时需要同步。 “page_manager”参与映射的来宾页面和 GPU 资源相遇的更广泛的内存边界。"
+    },
+    {
+      "type": "heading",
+      "text": "正确性具有可测量的同步成本"
+    },
+    {
+      "type": "paragraph",
+      "text": "读回可能会停止，直到主机 GPU 工作完成，然后跨通常保持异步的边界传输数据。回读太少会留下陈旧的记忆；太多会降低帧速率并导致卡顿。官方 v0.10 工程说明记录了这种权衡，并将实验路径与减少顶点爆炸和使用 GPU 到 CPU 共享结果的游戏进展联系起来。该证据描述了一种机制，而不是通用的设置建议。"
+    },
+    {
+      "type": "heading",
+      "text": "模块查看器回答了不同的调试问题"
+    },
+    {
+      "type": "paragraph",
+      "text": "`src/core/devtools/widget/module_list.cpp` 下的模块查看器公开加载的可执行模块及其状态。它不执行内存传输，但可以帮助开发人员在读回相关路径失败时识别哪个来宾组件处于活动状态。将模块状态与缓冲区缓存日志配对比假设每个几何爆炸都属于着色器编译器更能提供信息。"
+    },
+    {
+      "type": "heading",
+      "text": "受控比较隔离读回行为"
+    },
+    {
+      "type": "paragraph",
+      "text": "测试保持相同的保存、场景、渲染器、分辨率和版本，然后仅更改相关的读回选项。记录第一个损坏的帧、帧时间影响和完整日志。如果在同一事件中损坏消失而性能下降，则支持一致性依赖性。如果没有任何变化，纹理解释、命令处理、着色器转换或驱动程序行为仍然是更强大的候选者。"
+    }
+  ]
+}

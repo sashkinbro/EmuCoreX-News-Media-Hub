@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Pramuat gambar disk menukar RAM untuk latensi baca yang dapat diprediksi",
+  "summary": "Jalur gambar memori DuckStation memuat data disk terstruktur ke dalam RAM sambil mempertahankan semantik trek, sektor, dan lembar petunjuk.",
+  "heroAlt": "Grafis resmi DuckStation pada latar gelap",
+  "searchKeywords": [
+    "Stasiun Bebek",
+    "Pramuat gambar disk menukar RAM untuk latensi baca yang dapat diprediksi",
+    "emulator PlayStation"
+  ],
+  "categoryLabels": {
+    "duckstation": "Stasiun Bebek",
+    "ps1": "PlayStation",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementasi gambar CD dalam memori",
+    "cue-parser": "pengurai gambar Isyarat",
+    "playlist-parser": "Pengurai multi-cakram M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pramuat akan mengubah penyimpanan cadangan, bukan model disk"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation dapat memindahkan data gambar disk ke dalam RAM untuk menghindari bangunnya penyimpanan dan mencari latensi selama pemutaran. `src/util/cd_image_memory.cpp` masih menampilkan image CD melalui antarmuka logis yang sama dengan sumber yang didukung file. Pembacaan tamu tetap ditangani berdasarkan sektor dan jalur; pramuat hanya berguna jika representasi dalam memori mempertahankan daftar isi dan setiap sektor yang didukung dengan tepat."
+    },
+    {
+      "type": "heading",
+      "text": "Metadata CUE mendefinisikan lebih dari sekedar nama file"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lembar CUE dapat menjelaskan beberapa data dan trek audio, titik indeks, pregaps, dan mode sektor. `cd_image_cue.cpp` mem-parsing struktur tersebut sebelum jalur memori dapat menyalin konten yang bermakna. Perintah langka penting karena gambar arsip yang valid dapat menjalankannya bahkan ketika dump single-track pada umumnya tidak melakukannya. Meratakan file tanpa tata letak yang diurai akan menggeser alamat atau mengembalikan byte yang salah ke pengontrol CD yang ditiru."
+    },
+    {
+      "type": "heading",
+      "text": "Daftar putar multi-disk berada di atas gambar individual"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` menangani daftar putar yang mengurutkan banyak gambar untuk satu judul. Perilaku kartu memori bersama dan peralihan disk bergantung pada pemeliharaan pengelompokan tersebut, sementara setiap gambar anggota masih memerlukan trek dan sektor validnya sendiri. Pramuat satu anggota tidak dapat menggabungkan disk secara diam-diam atau membuang identitas daftar putar. Oleh karena itu, kegagalan pertukaran akan mencatat M3U dan format setiap gambar yang direferensikan."
+    },
+    {
+      "type": "heading",
+      "text": "Biaya RAM meningkat seiring dengan ukuran konten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Manfaat latensi dibayarkan di muka melalui alokasi dan penyalinan. Gambar berukuran besar meningkatkan tekanan memori, dan kejadian kehabisan memori atau paging bisa lebih buruk daripada hambatan penyimpanan yang ingin dihindari oleh opsi tersebut. Perangkat dengan RAM terbatas memerlukan penggantian yang dapat diprediksi ke pembacaan yang didukung file. Tolok ukur harus mencakup waktu pramuat, memori tetap, dan lokasi persis di mana latensi penyimpanan sebelumnya terlihat."
+    },
+    {
+      "type": "heading",
+      "text": "Laporan disk mencakup tata letak dan status pramuat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Catat revisi DuckStation, format gambar, checksum, teks CUE atau playlist, pengaturan pramuat, dan memori yang tersedia. Jika hanya mode pramuat yang gagal, bandingkan sektor logis yang sama melalui jalur yang didukung file. Jika keduanya gagal, parsing atau dump itu sendiri adalah kandidat yang lebih kuat. Pemisahan terkontrol ini memungkinkan pengembang menyelidiki `cd_image_memory` tanpa membingungkannya dengan CHD, PBP, CCD, MDS, atau penguraian gambar CD dasar."
+    }
+  ]
+}

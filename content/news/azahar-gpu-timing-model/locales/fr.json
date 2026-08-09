@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-gpu-timing-model",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Pourquoi Azahar modélise la file d'attente d'interruptions du GPU 3DS",
+  "summary": "Le chemin de synchronisation expérimental vise à remplacer les solutions de contournement à large délai par un comportement d'interruption et de file d'attente plus proche du matériel d'origine.",
+  "heroAlt": "Pourquoi Azahar modélise la file d'attente d'interruption du GPU 3DS - visuel officiel d'Azahar",
+  "searchKeywords": [
+    "Azhar",
+    "Pourquoi Azahar modélise la file d'attente d'interruptions du GPU 3DS",
+    "Émulateur Nintendo 3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azhar",
+    "3ds": "Nintendo 3DS",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "gpu-timing-pr": "Implémentation de la file d'attente d'interruption du GPU et du timing",
+    "gpu-timing-followup": "Suivi du timing GPU"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The model targets GPU interrupts and queued work"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar PR #2095 introduit un comportement de file d'attente d'interruption et de synchronisation du GPU destiné à refléter le moment où le GPU 3DS termine son travail et signale au CPU. C'est plus étroit que de retarder le thread de rendu d'une quantité arbitraire. L'émulateur doit ordonner les opérations GPU en file d'attente et exposer leur achèvement à un moment visible par l'invité, car les jeux peuvent attendre ces événements avant de faire avancer la logique, de charger une sauvegarde ou de soumettre l'image suivante."
+    },
+    {
+      "type": "heading",
+      "text": "Une correction de timing peut débloquer un titre et en faire régresser un autre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le projet a lié ce chemin à la progression de Luigi's Mansion 2: Dark Moon sans l'ancienne solution de contournement de retard et à un problème de chargement de sauvegarde de Super Mario 3D Land. Ces exemples sont des cas de test et non une preuve qu'une valeur de synchronisation correspond à l'ensemble de la bibliothèque. Les titres soumettent différentes charges de travail et attendent de différentes manières, de sorte qu'une file d'attente inexacte peut se manifester par un blocage, un rendu manquant, un problème de rythme ou une course qui n'apparaît que sur certains hôtes."
+    },
+    {
+      "type": "heading",
+      "text": "Expérimental et désactivé par défaut est une limite délibérée"
+    },
+    {
+      "type": "paragraph",
+      "text": "La discussion officielle sur l'ingénierie maintient la synchronisation GPU simulée derrière un paramètre graphique, car sa précision et son coût nécessitent encore de larges preuves. Cela permet aux utilisateurs de comparer les comportements sans modifier silencieusement chaque installation. Le PR #2145 fait partie de la même ligne de développement et fournit un contexte de support pour le modèle en évolution. Une solution de contournement qui améliore un jeu populaire doit rester optionnelle jusqu'à ce que les régressions et les performances soient caractérisées."
+    },
+    {
+      "type": "heading",
+      "text": "La fréquence d'images seule ne peut pas valider un modèle d'interruption"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un test correct enregistre la scène exacte, la sauvegarde, la révision Azahar, le moteur de rendu et l'hôte. Exécutez une fois avec les timings simulés désactivés et une fois activés, sans modifier aucune autre option. Comparez si la progression de l'invité change, lorsque le journal signale l'achèvement de la file d'attente, la cadence des images et l'utilisation du CPU/GPU. Une fréquence d'images moyenne plus élevée avec un ordre d'événements incorrect n'est pas un succès ; un comportement stable des invités est le signal principal."
+    },
+    {
+      "type": "heading",
+      "text": "Les rapports doivent décrire le premier événement divergent"
+    },
+    {
+      "type": "paragraph",
+      "text": "« Jouable maintenant » perd les preuves dont les développeurs ont besoin. Un rapport utile indique quelle transition s'est précédemment bloquée, quels graphiques ou quelle opération de sauvegarde la précède, si l'audio et l'entrée continuent, et ce que les deux journaux montrent autour de la divergence. Si l’option modifie uniquement les performances, incluez les données de durée d’image. Si l'exactitude change, conservez le plus petit état reproductible afin que les changements de timing ultérieurs puissent être vérifiés par rapport à la même charge de travail."
+    }
+  ]
+}

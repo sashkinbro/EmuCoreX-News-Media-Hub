@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "cs",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Uvnitř EmuCoreV: překryvy SDLActivity, Compose a vrstva adaptéru Vita3K",
+  "summary": "EmuCoreV neobaluje okno na ploše do motivu Android. Jeho spouštěcí cesta připravuje úložiště Vita, inicializuje frontend odvozený od Vita3K přes malý adaptér, poskytuje SDL vykreslovací plochu a poté připojuje nativní ovládací prvky a nabídky Android kolem běžící relace.",
+  "heroAlt": "Oficiální modré logo spouštěče EmuCoreV uprostřed tmavého pozadí",
+  "searchKeywords": [
+    "architektura EmuCoreV",
+    "Vita3K Android",
+    "SDLActivity Compose překryv",
+    "mostní_rozhraní_nativní_knihovny"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "Architektura",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "Commit stabilizace běhového prostředí a nastavení",
+    "vita3k-core-sync": "Jádrový synchronizační commit odvozený od Vita3K",
+    "native-loader-source": "Zdroj načítače nativní knihovny",
+    "adapter-source": "Zdroj adaptéru JNI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoader vytvoří jeden inicializovaný frontend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Než obnovení katalogu nebo spuštění hry požádá jádro o cokoliv, `NativeLibraryLoader.ensureLoaded()` poskytne SDL kontext aplikace a načte knihovnu `Vita3K`. Uvnitř synchronizovaných sekcí volá `EmulatorStorage.prepareRuntime()`, ukládá výchozí hodnoty `VitaCoreConfigRepository`, vyvolává `NativeLib.prepareFrontend()` a kontroluje `NativeLib.isInitialized()`. Teprve když je stále potřeba inicializace, předá vyřešené kořeny běhového prostředí a úložiště Vita do `NativeLib.init()`. Dvě volatilní značky zabraňují současnému načítání nebo inicializaci nativního frontend Android dvakrát."
+    },
+    {
+      "type": "heading",
+      "text": "Čtyřfunkční adaptér udržuje most specifický pro balíček malý"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` je výslovně označen jako vrstva adaptéru EmuCoreV. Exportuje názvy JNI očekávané `com.sbro.emucorev.core.NativeLib` a přesměrovává je na implementace odvozené z Vita3K: připravit frontend, inicializovat s cestami runtime a Vita, dotazovat inicializaci a aktualizovat seznam aplikací. Funkce směřující nahoru zůstávají pod `org.vita3k.emulator.NativeLib`; EmuCoreV nedupikuje jejich inicializační logiku jen proto, aby používala svůj vlastní balíček Android."
+    },
+    {
+      "type": "heading",
+      "text": "Spuštěná hra běží v SDLActivity s pozorovatelným stavem Androidu"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator` rozšiřuje `SDLActivity` a názývá `Vita3K` jako svou nativní knihovnu. Vytváří `EmuSurface`, vlastní `InputOverlay`, sleduje vstupní zařízení Android a zpřístupňuje aktuální ID hry jako stav pozorovatelný přes Compose. `getArguments()` převádí záměr spuštění na argumenty příkazového řádku Vita3K po synchronizaci účinného ovladače GPU pro každou hru. Nový záměr spuštění se nesnaží naskládat další nativní relaci; zaznamenává název a spouští kontrolované znovuzrození procesu po ukončení nativní relace."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "Oficiální rastr D-padu je jedním prvkem vstupní vrstvy Android zařízení EmuCoreV. `InputOverlay` převádí tento stav uživatelského rozhraní na nativní volání osy, tlačítka a dotyku vpředu nebo vzadu."
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface hlásí vlastnictví a vyhrazuje gesta pro překryv"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface` podtřídy SDL `SDLSurface` místo toho, aby ji nahrazovaly. Jeho zpětné volání `surfaceCreated()` a `surfaceDestroyed()` volají nativní háček `setSurfaceStatus()` před nebo po práci životního cyklu SDL, čímž je viditelné vlastnictví povrchu pro renderer. `GestureDetector` sleduje dvojité klepnutí a žádá `Emulator`, aby zobrazil tlačítko překryvného menu, ale poté vrací ovládání SDL. Tento detail zachovává herní vstup, přičemž stále poskytuje uživateli ovládajícímu pouze dotykovou obrazovku cestu zpět do menu Android."
+    },
+    {
+      "type": "heading",
+      "text": "Červencový runtime změnil úložiště, vstup, vykreslování a testy společně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Závazek stability během běhu ze dne 29. července 2026 (`d06e1575`) změnil `native_lib_bridge.cpp`, `runtime_bridge.cpp`, Vita3K `native_bootstrap.cpp`, dávkování rendereru, `EmulatorStorage`, aktivitu SDL, emulační menu Compose a úložiště nastavení v jedné recenzované jednotce. Také zavedl `AtomicTextFile`, `FrameLimit`, `ControllerAttachmentState`, `ImmersiveMode` a zaměřené testy pro tyto kontrakty. Předchozí synchronizace jádra ze dne 21. května (`811a7cd6`) aktualizovala vlákno Vita3K, paměť, GXM, překryv dialogu, renderer a zaváděcí kód Android. Společně ukazují, kde EmuCoreV úmyslně přizpůsobuje jádro a kde nadále sleduje nativní chování upstremu."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose vlastní navigaci aplikace a herní překryv Android.",
+        "SDL vlastní činnost a povrchovou smlouvu očekávanou nativním front-endem.",
+        "Adaptér vlastní překlad názvu balíčku pro malou sadu spouštěcích volání JNI.",
+        "Jádro odvozené od Vita3K vlastní emulované jádro, paměť, GXM, renderer, moduly a spuštění hry."
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "Přečtěte si chráněnou cestu nativní inicializace"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "Zkontrolujte adaptér EmuCoreV-to-Vita3K JNI"
+    }
+  ]
+}

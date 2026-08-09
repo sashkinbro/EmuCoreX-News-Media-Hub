@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "tr",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreX'in bir PS2 oturumunu Compose, SurfaceView ve yerel PCSX2 kodu arasında nasıl böldüğü",
+  "summary": "EmuCoreX’den başlatılan bir PS2 oyunu, ilk kare ekrana ulaşmadan önce birkaç kasıtlı dar sınırı aşar. Android uygulaması, JNI sözleşmesi, render yüzeyi, oturum durumu ve ARM64 yeniden derleyicileri, bu yolun her bir bölümüne farklı bir şekilde sahiptir.",
+  "heroAlt": "Koyu mavi bir arka planda Resmî EmuCoreX Android TV afişi",
+  "searchKeywords": [
+    "EmuCoreX mimarisi",
+    "YerelUygulama JNI",
+    "EmulationScreen SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "Mimari",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "ARM64 çalışma zamanı ve Android TV uygulama taahhüdü",
+    "jit-cache-lifecycle": "ARM64 JIT önbellek yaşam döngüsü onayı",
+    "native-app-source": "NativeApp kaynağı",
+    "emulation-screen-source": "Emülasyon Ekranı kaynağı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android süreci yerel çekirdeği seçer ve hazırlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sınır `NativeApp`'de başlar; bu, `AndroidNativeCoreSelector` ile sayfa boyutuna uygun bir çekirdek kitaplığı seçen, `System.loadLibrary` ile yükleyen ve yerel çekirdek ile yardımcı yerel araçların mevcut olup olmadığını kayıt altına alan bir Kotlin nesnesidir. `initializeOnce()` daha sonra öykünücü veri kökünü hazırlar, paketlenmiş kaynakları kopyalar, yama arşivini doğrular, Android CA güveni paketini dışa aktarır, yerel bir çökme günlüğü yolu yapılandırır ve sonunda JNI `initialize(dataRoot, sdkInt)` giriş noktasını çağırır. Bu sıra önemlidir: C++ tarafının Android depolama veya sertifikaların nerede olduğunu tahmin etmesi gerekmez."
+    },
+    {
+      "type": "heading",
+      "text": "??lenen oyun karesi Compose tuvalinden de?il, ger?ek bir SurfaceView ?zerinden gelir"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen`, `AndroidView` aracılığıyla opak bir Android `SurfaceView` yerleştirir. `SurfaceHolder.Callback`, boyut değişikliklerini, yok etmeyi ve `surfaceCreated`'i `EmulatorBridge`'e iletir; bu da kendi başına yerel render motoruna ulaşır. Compose, dokunmatik kontrolleri, performans bilgilerini, başarımları ve duraklatma arayüzünü bu yüzeyin üzerine çizer. Bu katmanları ayrı tutmak, renderer'ın düşük seviyeli bir Android `Surface`'e sahip olmasına izin verirken overlay'in Compose durumunu, animasyonu, erişilebilirliği ve uyarlanabilir düzeni korumasını sağlar."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "Resmî EmuCoreX uygulama görseli Android kabuğunu temsil eder; emüle edilen çerçeve ise Compose örtüsünün altındaki yerel yüzey tarafından sağlanır."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel oturum koordinatörüdür"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` emülatör değildir. Emülatör etrafındaki Android odaklı durumu koordine eder: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, uyumluluk verileri, oyuncu profilleri, oyun süresi senkronizasyonu ve `AndroidGamePerformance`. Bir `StateFlow<EmulationUiState>` kullanıcı arayüzünü beslerken, yaşam döngüsü ve taşıma mutex'leri başlatma, duraklatma, sürdürme ve kapatma işlerini sıraya koyar. Değişken alanlar, mevcut yolu, seri numarasını, CRC'yi, kapağı ve dokunmatik düzen profilini tutar, böylece geç bir geri çağırma yanlışlıkla sonraki oyun üzerinde işlem yapamaz."
+    },
+    {
+      "type": "heading",
+      "text": "JNI işlemleri ortaya çıkarır, ikinci bir kullanıcı arayüzü değil"
+    },
+    {
+      "type": "paragraph",
+      "text": "`NativeApp` sözleşmesi, yüzeyler, kontrolcü basıncı, renderer seçimi, toplu ayarlar, kayıt durumları, bellek kartları, RetroAchievements, GS dökümleri, JIT profili, asılma izleri ve VM taşımacılığı için açıkça çağrılar içermektedir. Kotlin bu eylemlerin ne zaman yasal olduğunu ve nasıl görüneceğini belirler; C++ bunları PCSX2 kaynaklı duruma karşı yürütür. Örneğin, Compose katmanı, yerel RetroAchievements istemcisi aktif bir hardcore oturum bildirirken hızlı ileri ve hileleri gizleyebilir, ardından aynı köprü üzerinden kare sınırlayıcıyı zorlayabilir ve durumu güvenli değerlere geri döndürebilir."
+    },
+    {
+      "type": "heading",
+      "text": "İki 22 Temmuz işlemi, bölünmenin neden bir sistem olarak test edildiğini gösteriyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "22 Temmuz 2026'da yapılan `0a16b80d` taahhüdü, sınırın her iki tarafını etkiledi: `MainActivity`, `TvUiPolicy`, depolama seçimcileri, `EmulationViewModel`, ARM64 EE/IOP/VU yeniden derleyicileri, sanal bellek, GS doku değiştirme ve render kodu. Aynı günün ilerleyen saatlerinde, `f0e19666` taahhüdü EE, IOP, VIF ve microVU genelinde JIT önbellek ömürlerini sıkılaştırdı ve `JitProfiler`'yi uzattı. Bu değişiklikler, faydalı bir mimari anlık görüntü niteliğindedir: bir Android yaşam döngüsü düzeltmesi, yerel yürütülebilir bellek disiplinini gerektirebilir ve bir yerel düzeltme yine de onu güvenli bir şekilde başlatan, gözlemleyen ve durduran bir Android yoluna ihtiyaç duyar."
+    },
+    {
+      "type": "callout",
+      "text": "Depo, EmuCoreX'i erken geliştirme aşamasında bir PS2 emülatör yığını olarak tanımlıyor. Sorumlulukların ayrımı, hataların bulunmasını kolaylaştırıyor, ancak uyumluluğu oyun, cihaz, GPU sürücüsü veya render ediciden bağımsız hale getirmiyor."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "NativeApp JNI sözleşmesini okuyun"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "SurfaceView ve Compose kaplama entegrasyonunu inceleyin"
+    }
+  ]
+}

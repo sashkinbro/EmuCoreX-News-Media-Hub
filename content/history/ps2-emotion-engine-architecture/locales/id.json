@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "id": "ps2-emotion-engine-architecture",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Di dalam Emotion Engine: mengapa kode PS2 harus berpikir secara paralel",
+  "summary": "Chip sentral PlayStation 2 tidak hanya sekadar CPU MIPS yang cepat: inti R5900-nya, dua unit vektor, dekoder gambar, dan jaringan DMA memberi penghargaan pada program yang dibangun sebagai jalur data yang saling bekerja sama.",
+  "searchKeywords": [
+    "PlayStation 2",
+    "Emotion Engine",
+    "R5900",
+    "VU0",
+    "VU1",
+    "DMA",
+    "arsitektur PS2"
+  ],
+  "categoryLabels": {
+    "ps2-history": "Sejarah PS2",
+    "hardware": "Perangkat Keras"
+  },
+  "sourceLabels": {
+    "sony-ee-announcement": "CPU 128-bit Emotion Engine untuk PlayStation generasi berikutnya",
+    "toshiba-ee-manufacturing": "Toshiba dan Sony Computer Entertainment untuk memproduksi Emotion Engine",
+    "date-ee-paper": "CPU untuk PlayStation 2",
+    "ps2-linux-handbook": "Buku Panduan Kit PlayStation 2 Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Lebih dari sekadar slogan '128-bit'"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sony memperkenalkan Emotion Engine pada Maret 1999 sebagai prosesor yang menjadi inti dari konsol berikutnya. Angka yang mencolok adalah 128 bit, tetapi label itu lebih menggambarkan operasi bilangan bulat SIMD yang lebar dan jalur data mesin daripada CPU serba guna 128-bit konvensional. Di pusatnya terdapat R5900 berbasis MIPS 64-bit yang berjalan sekitar 294 MHz, dikelilingi oleh perangkat keras yang dirancang untuk memindahkan dan mengubah aliran geometri, animasi, dan video tanpa meminta inti tersebut melakukan setiap operasi sendiri."
+    },
+    {
+      "type": "heading",
+      "text": "CPU yang dikelilingi oleh para spesialis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chip ini menggabungkan R5900, dua unit vektor titik mengambang, Unit Pemrosesan Gambar MPEG-2, dan pengontrol DMA sepuluh kanal. VU0 bisa beroperasi di samping CPU atau sebagai koprosesor; VU1 memiliki memori lokal sendiri dan ditempatkan untuk menjalankan mikropogram geometri sebelum mengirim paket gambar ke Graphics Synthesizer. Susunan ini memberikan pengembang throughput aritmatika yang substansial, tetapi hanya ketika pekerjaan dibagi dengan sengaja di antara unit-unit tersebut."
+    },
+    {
+      "type": "heading",
+      "text": "Scratchpad dan memori lokal mengubah pekerjaan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Programmer PS2 tidak dapat memperlakukan memori sebagai satu kumpulan datar yang seragam dan cepat. Emotion Engine memiliki 32 MB RDRAM eksternal, scratchpad kecil, cache CPU, dan memori instruksi serta data terpisah di dalam setiap unit vektor. Oleh karena itu, renderer yang cepat menyiapkan batch yang kompak: CPU menyiapkan status, DMA mentransfer paket, sebuah unit vektor mentransformasikan vertex di penyimpanan lokalnya, dan batch berikutnya disiapkan sementara batch sebelumnya bergerak ke tahap selanjutnya. Tata letak, perataan, dan ukuran transfer menjadi bagian dari desain algoritma, bukan optimisasi yang dilakukan kemudian."
+    },
+    {
+      "type": "heading",
+      "text": "DMA adalah koreografi sistem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengontrol DMA menghubungkan memori utama dengan antarmuka vektor, decoder gambar, antarmuka grafis, dan perangkat lainnya. Tag rantainya dapat menggambarkan urutan transfer, memungkinkan mesin terus memindahkan paket sementara CPU menangani permainan atau pekerjaan yang dibangun kemudian. Demo PS2 yang terkenal karena itu sama sekali merupakan demonstrasi penjadwalan seperti halnya aritmetika: kinerja muncul ketika perhitungan dan pemindahan tumpang tindih, dan menghilang ketika satu unit menunggu unit lain atau sebuah paket tiba dalam format yang salah."
+    },
+    {
+      "type": "callout",
+      "text": "Model pemrograman PS2 yang praktis adalah sebuah jalur: persiapkan, transfer, transformasikan, dan gambar—kemudian tumpangkan tahapan-tahapan itu sehingga tidak ada prosesor yang menganggur."
+    },
+    {
+      "type": "heading",
+      "text": "Kekuatan dengan kurva pembelajaran yang curam"
+    },
+    {
+      "type": "paragraph",
+      "text": "Fleksibilitas ini membuat konsol sulit untuk dikuasai. Kode serba guna bisa tetap dijalankan di R5900, tetapi mesin grafis ambisius membutuhkan mikrocode vektor, rantai DMA yang eksplisit, dan sinkronisasi yang hati-hati. Sebuah judul yang mengabaikan VU1 bisa meninggalkan banyak kinerja geometris yang dimaksudkan oleh mesin tidak terpakai; sebuah judul yang memanfaatkannya juga mendapatkan alat khusus platform dan masalah debugging. Studio secara bertahap membangun mesin, profiler, dan penampil paket yang mengubah perangkat keras yang tidak biasa ini menjadi target produksi yang dapat diulang."
+    },
+    {
+      "type": "heading",
+      "text": "Mengapa emulator mengekspos desain asli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulasi yang akurat harus mempertahankan hubungan yang diandalkan oleh perangkat lunak asli: perilaku instruksi R5900, eksekusi unit-vektor, urutan DMA, interupsi dan komunikasi dengan Processor I/O dan GS. Menjalankan setiap blok dengan cepat tidak cukup jika timing yang terlihat berubah. Itulah sebabnya emulator PS2 memuat beberapa recompiler dan penjadwal khusus alih-alih menerjemahkan satu loop CPU sederhana, dan mengapa perbaikan pada kasus tepi DMA atau vektor yang tidak jelas dapat membuka sebuah permainan yang sebaliknya tampak tidak terkait."
+    },
+    {
+      "type": "heading",
+      "text": "Sebuah mesin yang karakternya berasal dari koordinasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emotion Engine mendapatkan tempatnya dalam sejarah konsol bukan karena satu spesifikasi tunggal menentukan generasi, tetapi karena ia mendorong gaya rekayasa yang khas. Tim-tim belajar untuk mengekspresikan animasi, fisika, dan geometri sebagai aliran yang dibagi antara prosesor yang berbeda. Perangkat lunak PS2 terbaik membuat batas-batas itu menghilang bagi pemain, namun irama paralel perangkat keras tetap terlihat bagi pengembang, pelestari, dan penulis emulator yang merekonstruksi bagaimana setiap frame disusun."
+    }
+  ],
+  "heroAlt": "Foto close-up dari motherboard PlayStation 2"
+}

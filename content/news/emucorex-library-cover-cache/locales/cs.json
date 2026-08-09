@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Proč EmuCoreX považuje obalový obrázek za obnovitelná knihovní data",
+  "summary": "Obal hry vypadá dekorativně, ale zastaralé cesty, částečné stahování a opakující se chyby mohou způsobit, že knihovna Android působí nespolehlivě. EmuCoreX izoluje stažené obrázky, ověřuje každý uložený obrázek a opravuje viditelný seznam, aniž by zasahoval do vlastních obalů uživatele.",
+  "heroAlt": "Obal Final Fantasy X pro PS2 získán ze zdroje výchozího uměleckého díla používaného EmuCoreX",
+  "searchKeywords": [
+    "EmuCoreX krycí cache",
+    "Ilustrace knihovny PS2",
+    "RepozitářObalů",
+    "cache obrázků Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Knihovna",
+    "reliability": "Spolehlivost"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Závazek spolehlivosti krycí mezipaměti",
+    "cover-repository-source": "Zdroj CoverArtRepository",
+    "cover-policy-source": "Zdroj CoverCachePolicy",
+    "home-view-model-source": "Zdroj synchronizace krytu HomeViewModel"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dvě úložná místa vymezují hranici mezi jednorázovým a osobním uměním"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` automaticky stahuje obaly PS2 do `cacheDir/game-covers` a dočasné vzdálené obrázky do `cacheDir/remote-image-cache`. Uživatelem vybrané obrázky jsou záměrně mimo tyto složky v trvalém úložišti aplikace. Toto rozdělení dává akci nastavení přesný slib: `clearCache()` odstraní stažené obaly, zatímco `clearAllTemporaryImageCaches()` odstraní také dočasné vzdálené obrázky, ale žádná z těchto operací by neměla vymazat obal vybraný hráčem."
+    },
+    {
+      "type": "heading",
+      "text": "Název souboru není přijat jako důkaz toho, že obrázek přežil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Každé vyhledávání předává kandidátní soubory přes `isUsableCoverFile()`. Úložiště vyžaduje pravidelný, neprazdný soubor a žádá `BitmapFactory`, aby dekódoval pouze jeho hranice; jak šířka, tak výška musí být kladné. Odpověď o velikosti nula bajtů nebo přerušený obrázek proto nemůže předstírat úspěšné načtení z cache. Neplatní kandidáti jsou odstraněni, než úložiště vybere mezi variantami JPG a PNG, včetně samostatného pojmenování `_3d` používaného u trojrozměrného stylu obálky."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "Tentýž seriál Final Fantasy X je k dispozici ve 3D sbírce zdroje. EmuCoreX dává tomuto stylu odlišný název cache `_3d`, takže přepínání prezentace ho nesplete s výchozí obálkou."
+    },
+    {
+      "type": "heading",
+      "text": "Sériová normalizace způsobuje, že jedna herní identita adresuje jeden záznam v cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "Než se vytvoří URL nebo název souboru, repozitář normalizuje sériová čísla, jako je `SLUS-20312`, na identitu složenou ze čtyř velkých písmen a pěti číslic. Akceptuje varianty s interpunkcí, nejprve zkouší kanonickou formu a může zkusit znovu kompaktní formu bez pomlčky. Konfigurovaný zdroj obálky může poskytovat samostatné výchozí a 3D základní URL; jinak se používají vestavěné zdroje. Úspěšná odpověď je nejprve zkopírována do dočasného souboru, dekódována a teprve poté přejmenována do mezipaměti, takže čtenáři nikdy nevidí polovičně zapsaný konečný soubor."
+    },
+    {
+      "type": "heading",
+      "text": "Známé neúspěchy jsou ukládány do mezipaměti, ale ne navždy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chyba HTTP 404 vytvoří malý marker `.miss` vedle očekávaného obalu. Po dobu sedmi dnů může další sken přeskočit stejný požadavek místo toho, aby server opakovaně žádal o umělecké dílo, které není k dispozici. Marker zmizí po doručení platného obrázku a jeho omezená životnost umožňuje, aby upstream kolekce obalů později získala daný seriál. Jiné síťové chyby se nestávají trvalým důkazem, že obal neexistuje."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel opravuje zastaralé řádky při omezené souběžnosti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Během `syncMissingCovers()` `HomeViewModel` nejprve vymazává pouze cesty, které směřují do spravované cache obalů a už nevedou k použitelným souborům. Publikuje tento opravený seznam a poté zpracovává hry bez lokálního obalu nebo s obalem HTTP pomocí semaforu omezeného na tři současné úlohy. Každé úspěšné stažení nahradí odpovídající hru podle cesty a znovu publikuje viditelný stav. Pokud je aktivní VM, práce s obaly je odložena, místo aby soutěžila s emulací, a obnovená snapshot knihovny je uložena po synchronizaci."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` kanonizuje jak kandidáta, tak kořen mezipaměti před odstraněním. URI obsahu a URL HTTP jsou okamžitě odmítnuty a soubor musí být potomkem spravovaného kořene. To zabraňuje tomu, aby špatně formátovaná hodnota knihovny rozšířila operaci vymazání mezipaměti."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Zkontrolujte ověření krytu, stažení a vyčištění"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Sledujte synchronizaci chybějícího krytu v knihovně"
+    }
+  ]
+}

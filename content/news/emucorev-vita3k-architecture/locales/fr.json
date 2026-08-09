@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-vita3k-architecture",
+  "locale": "fr",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "À l'intérieur de EmuCoreV : superpositions SDLActivity, Compose, et une couche d'adaptateur Vita3K",
+  "summary": "EmuCoreV n'enveloppe pas une fenêtre de bureau dans un thème Android. Son chemin de lancement prépare le stockage Vita, initialise un frontend dérivé de Vita3K via un petit adaptateur, donne à SDL la surface de rendu, puis attache des contrôles et des menus natifs Android autour de la session en cours.",
+  "heroAlt": "Emblème officiel du lanceur EmuCoreV bleu centré sur un fond sombre",
+  "searchKeywords": [
+    "architecture EmuCoreV",
+    "Vita3K Android",
+    "SDLActivity Compose superposition",
+    "pont_lib_nat"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "architecture": "Architecture",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "runtime-stability": "Commit de stabilisation du runtime et des paramètres",
+    "vita3k-core-sync": "Engagement de synchronisation de base dérivé de Vita3K",
+    "native-loader-source": "Source du chargeur de bibliothèque native",
+    "adapter-source": "Adaptateur source JNI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "NativeLibraryLoader établit un frontend initialisé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avant qu'une actualisation de catalogue ou le lancement d'un jeu ne demande quoi que ce soit au noyau, `NativeLibraryLoader.ensureLoaded()` donne à SDL le contexte de l'application et charge la bibliothèque `Vita3K`. Dans les sections synchronisées, il appelle `EmulatorStorage.prepareRuntime()`, enregistre les valeurs par défaut `VitaCoreConfigRepository`, invoque `NativeLib.prepareFrontend()` et vérifie `NativeLib.isInitialized()`. Ce n'est que lorsque l'initialisation est encore nécessaire qu'il transmet les racines de runtime et de stockage Vita résolues à `NativeLib.init()`. Les deux drapeaux volatils empêchent le chargement simultané des écrans Android ou l'initialisation du front-end natif deux fois."
+    },
+    {
+      "type": "heading",
+      "text": "Un adaptateur à quatre fonctions maintient le pont spécifique au paquet petit"
+    },
+    {
+      "type": "paragraph",
+      "text": "`app/src/main/cpp/emucorev/src/native_lib_bridge.cpp` est explicitement marqué comme la couche adaptatrice EmuCoreV. Il exporte les noms JNI attendus par `com.sbro.emucorev.core.NativeLib` et les transmet aux implémentations dérivées de Vita3K : préparer le frontend, initialiser avec les chemins runtime et Vita, interroger l'initialisation et actualiser la liste des applications. Les fonctions orientées vers l'amont restent sous `org.vita3k.emulator.NativeLib` ; EmuCoreV ne duplique pas leur logique d'initialisation simplement pour utiliser son propre package Android."
+    },
+    {
+      "type": "heading",
+      "text": "Le jeu en cours d?ex?cution vit dans une SDLActivity avec un ?tat Android observable"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/Emulator` étend `SDLActivity` et nomme `Vita3K` comme sa bibliothèque native. Il crée un `EmuSurface`, possède le `InputOverlay`, surveille les périphériques d’entrée Android, et expose l'ID de jeu actuel comme état observable Compose. `getArguments()` convertit l’intention de lancement en arguments de ligne de commande Vita3K après avoir synchronisé le pilote GPU effectif par jeu. Une nouvelle intention de lancement n’essaie pas d’empiler une autre session native ; elle enregistre le titre et déclenche une renaissance contrôlée du processus après l’arrêt natif."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-vita3k-architecture-input-layer",
+      "text": "Le raster de D-pad officiel est un élément de la couche d'entrée Android de EmuCoreV. `InputOverlay` convertit cet état de l'interface utilisateur en appels d'axe natifs, de bouton et de toucher avant ou arrière."
+    },
+    {
+      "type": "heading",
+      "text": "EmuSurface rapporte la propriété et réserve les gestes pour la superposition"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmuSurface` sous-classe SDL de `SDLSurface` au lieu de le remplacer. Ses rappels `surfaceCreated()` et `surfaceDestroyed()` appellent le hook natif `setSurfaceStatus()` avant ou après le travail du cycle de vie SDL, rendant la propriété de la surface visible pour le moteur de rendu. Un `GestureDetector` observe les doubles tapotements et demande à `Emulator` de révéler le bouton du menu superposé, puis rend le contrôle à SDL. Ce détail préserve l'entrée de jeu tout en donnant à un utilisateur exclusivement tactile un moyen de revenir au menu Android."
+    },
+    {
+      "type": "heading",
+      "text": "Le travail d'exécution de juillet a modifié le stockage, l'entrée, le rendu et les tests ensemble"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le commit de stabilité d'exécution du 29 juillet 2026 (`d06e1575`) a modifié `native_lib_bridge.cpp`, `runtime_bridge.cpp`, Vita3K de `native_bootstrap.cpp`, le batching du renderer, `EmulatorStorage`, l'activité SDL, les menus d'émulation Compose et les dépôts de paramètres dans une unité examinée. Il a également introduit `AtomicTextFile`, `FrameLimit`, `ControllerAttachmentState`, `ImmersiveMode` et des tests ciblés pour ces contrats. Le précédent commit de synchronisation du noyau du 21 mai (`811a7cd6`) a mis à jour le thread Vita3K, la mémoire, GXM, l'overlay de dialogue, le renderer et le code bootstrap Android. Ensemble, ils montrent où EmuCoreV adapte intentionnellement le noyau et où il continue de suivre le comportement natif en amont."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compose possède la navigation de l'application et la superposition Android dans le jeu.",
+        "SDL possède l'activité et le contrat de surface attendus par le frontend natif.",
+        "L'adaptateur possède la traduction du nom du paquet pour un petit ensemble d'appels bootstrap JNI.",
+        "Le noyau dérivé de Vita3K possède un noyau émulé, la mémoire, GXM, le moteur de rendu, les modules et l'exécution du jeu."
+      ]
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/core/NativeLibraryLoader.kt",
+      "label": "Lisez le chemin d'initialisation natif protégé"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/cpp/emucorev/src/native_lib_bridge.cpp",
+      "label": "Inspectez l'adaptateur EmuCoreV-à-Vita3K JNI"
+    }
+  ]
+}

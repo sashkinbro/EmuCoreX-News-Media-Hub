@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Bagaimana EmuCoreV mengubah layar kaca menjadi kontrol Vita",
+  "summary": "Lapisan sentuh EmuCoreV lebih dari sekadar tombol yang dicat. Data tata letak dinormalisasi dan dipertahankan, kontrol vektor menjaga penampilan terpisah dari geometri sasaran, sensor gerak dapat menggerakkan sumbu analog, dan keadaan akhir melewati kontrak input JNI yang kompak.",
+  "heroAlt": "Grafis tombol muka resmi EmuCoreV disusun dalam tata letak berlian Vita",
+  "searchKeywords": [
+    "Kontrol sentuh EmuCoreV",
+    "KontrolSentuhVektor",
+    "Input giroskop Vita",
+    "InputOverlay JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "Masukan",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "Komit implementasi kontrol input",
+    "touch-spacing-commit": "Komit penyempurnaan jarak sentuh",
+    "vector-controls-source": "Sumber VectorTouchControls",
+    "layout-repository-source": "Sumber repositori tata letak sentuh"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tata letak yang disimpan menggambarkan kanvas yang ternormalisasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository` menyimpan setiap kontrol sebagai ID ditambah dengan nilai `x`, `y`, `width`, dan `height` yang dinormalisasi, sebuah bendera visibilitas, dan mode analog. Pemuatan dilakukan secara defensif: dimensi dijepit antara 0,035 dan 0,5 dari kanvas, kemudian posisi dibatasi sehingga elemen yang diubah ukurannya tidak bisa berakhir di luar tepi kanan atau bawah. Stik kiri dan kanan dapat berperilaku sebagai stik yang terlihat atau sebagai area sentuh, sementara ID yang diberi nama mencakup bahu, arah D-pad, tombol wajah, Select, Start, dan permukaan sentuh Vita."
+    },
+    {
+      "type": "heading",
+      "text": "Perenderan vektor mengubah gaya tanpa memindahkan target pukulan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pekerjaan input 29 Juli menambahkan implementasi besar `VectorTouchControls.kt` dan membuat kontrak eksplisit dalam preferensi: gaya visual tidak pernah menentukan geometri kontrol, dan animasi tekan tidak pernah menentukan pengiriman input. Pemain dapat memilih perlakuan Classic, Legacy, Modern, Arcade, atau Minimal, kemudian secara independen memilih umpan balik Grow, Shrink, Spring, atau Glow. Compose menganimasikan skala dan cahaya di sekitar wilayah interaksi yang sama, sehingga preset kosmetik tidak dapat diam-diam mengubah tempat tombol menerima jari."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "Rentang joystick resmi dan raster stik yang ditekan membentuk kontrol analog warisan. Gaya vektor dapat menggambar ulang tampilannya, tetapi sumbu logis dan pemetaan aslinya tetap tidak berubah."
+    },
+    {
+      "type": "heading",
+      "text": "Sentuhan, stik, dan tombol berkumpul di InputOverlay"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay` memiliki batas asli yang ringkas. Ini menghubungkan atau memutuskan pengontrol virtual, mengirimkan nilai sumbu yang ditandatangani, mengatur status tombol, dan menandai apakah sentuhan menargetkan panel depan atau belakang. `EmulationOverlay` menyusun kontrol dan menerjemahkan gerakan menjadi panggilan tersebut. Ini menjaga penanganan penunjuk dan visual mode edit di sisi Android sementara inti yang berasal dari Vita3K menerima status berbentuk pengontrol daripada acara Compose atau koordinat layar yang tidak dipahaminya."
+    },
+    {
+      "type": "heading",
+      "text": "Input gerakan disaring sebelum mencapai sumbu analog"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput` mendukung bidikan melalui giroskop perangkat keras dan kemudi melalui vektor rotasi permainan. Ini memperhitungkan rotasi tampilan, memusatkan kemudi saat diaktifkan, menerapkan sensitivitas yang dapat dikonfigurasi, pemulusan, pembalikan sumbu, dan zona mati kecil, kemudian menghindari pengiriman sampel yang hampir identik. Bidikan menargetkan stik kanan; kemudi menargetkan X pada stik kiri. Memulai mode pertama menghentikan langganan sensor sebelumnya, dan menghentikan mengirimkan nilai netral sehingga permainan tidak dapat mempertahankan kemiringan lama."
+    },
+    {
+      "type": "heading",
+      "text": "Haptik tetap mati pada jalur tombol yang sensitif terhadap latensi"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` menyelesaikan kemampuan vibrator dan amplitudo sistem sekali, kemudian mengirim getaran melalui eksekutor daemon khusus. Preset yang lembut, renyah, kuat, dan berorientasi sistem membentuk pulsa tekan dan lepaskan yang terpisah. Jika tidak ada vibrator yang tersedia, lapisan tersebut kembali menggunakan umpan balik haptik tampilan. Urutan yang penting bersifat arsitektural: panggilan binder lambat ke layanan vibrator Android tidak diperbolehkan menunda status tombol yang harus mencapai inti emulator."
+    },
+    {
+      "type": "callout",
+      "text": "Commit `4f01d13e` mengubah kontrol vektor, perilaku overlay, input giroskop, haptik, pengaturan, dan tes kontrak secara bersamaan. Pekerjaan spasi `db7965b5` sebelumnya menyediakan setengah desain yang lain: kontrol harus tetap dapat dijangkau di sekitar potongan dan tepi layar serta terlihat benar."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "Jelajahi gaya kontrol vektor dan efek tekan"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "Periksa persistensi tata letak yang dinormalisasi"
+    }
+  ]
+}

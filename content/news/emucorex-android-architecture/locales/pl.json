@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-android-architecture",
+  "locale": "pl",
+  "basedOnVersion": 2,
+  "localeVersion": 2,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Jak EmuCoreX dzieli sesję PS2 między Compose, SurfaceView i natywny kod PCSX2",
+  "summary": "Gra na PS2 uruchamiana z EmuCoreX przekracza kilka celowo wąskich granic zanim pierwszy obraz pojawi się na wyświetlaczu. Aplikacja Android, kontrakt JNI, powierzchnia renderowania, stan sesji i recompiler ARM64 każdy posiadają inną część tej ścieżki.",
+  "heroAlt": "Oficjalny baner telewizyjny EmuCoreX Android na ciemnoniebieskim tle",
+  "searchKeywords": [
+    "architektura EmuCoreX",
+    "NativeApp JNI",
+    "EkranEmulacji SurfaceView",
+    "ARM64 PCSX2 Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "architecture": "Architektura",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "android-runtime-hardening": "Commit implementacji czasu wykonywania ARM64 i TV Android",
+    "jit-cache-lifecycle": "ARM64 cykl życia pamięci podręcznej JIT zatwierdzenie",
+    "native-app-source": "Źródło NativeApp",
+    "emulation-screen-source": "Źródło EmulationScreen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proces Android wybiera i przygotowuje rdzeń natywny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Granica zaczyna się w `NativeApp`, obiekcie Kotlin, który wybiera bibliotekę rdzenia zgodną z rozmiarem strony przez `AndroidNativeCoreSelector`, ładuje ją za pomocą `System.loadLibrary` i rejestruje, czy natywny rdzeń i dodatkowe natywne narzędzia są dostępne. `initializeOnce()` następnie przygotowuje katalog danych emulatora, kopiuje dołączone zasoby, weryfikuje archiwum poprawki, eksportuje pakiet zaufania CA Android, konfiguruje natywną ścieżkę logów awarii i ostatecznie wywołuje punkt wejścia JNI `initialize(dataRoot, sdkInt)`. Ta kolejność jest ważna: strona C++ nigdy nie musi zgadywać, gdzie znajdują się dane lub certyfikaty Android."
+    },
+    {
+      "type": "heading",
+      "text": "Wyrenderowana klatka gry pochodzi z prawdziwego SurfaceView, a nie z p??tna Compose"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationScreen` osadza nieprzezroczysty Android `SurfaceView` przez `AndroidView`. Jego `SurfaceHolder.Callback` przekazuje `surfaceCreated`, zmiany rozmiaru i zniszczenie do `EmulatorBridge`, które z kolei trafia do natywnego renderera. Compose rysuje kontrolki dotykowe, informacje o wydajności, osiągnięcia i interfejs pauzy nad tą powierzchnią. Utrzymywanie tych warstw oddzielnie pozwala rendererowi posiadać niskopoziomowy Android `Surface`, podczas gdy nakładka utrzymuje stan Compose, animację, dostępność i adaptacyjny układ."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-android-architecture-android-shell",
+      "text": "Oficjalna grafika aplikacji EmuCoreX przedstawia powłokę Android; sam emulowany obraz jest dostarczany przez natywną powierzchnię pod nakładką Compose."
+    },
+    {
+      "type": "heading",
+      "text": "EmulationViewModel jest koordynatorem sesji"
+    },
+    {
+      "type": "paragraph",
+      "text": "`EmulationViewModel` nie jest emulatorem. Koordynuje stan skierowany do Android wokół emulatora: `PerGameSettingsRepository`, `CheatRepository`, `MemoryCardRepository`, dane zgodności, profile graczy, synchronizację czasu gry i `AndroidGamePerformance`. `StateFlow<EmulationUiState>` zasila interfejs użytkownika, podczas gdy mutexy cyklu życia i transportu szeregowo wykonują zadania rozpoczęcia, pauzy, wznowienia i zamknięcia. Pola ulotne przechowują bieżącą ścieżkę, numer seryjny, CRC, okładkę i profil układu dotykowego, aby późne wywołanie zwrotne nie mogło przypadkowo operować na następnej grze."
+    },
+    {
+      "type": "heading",
+      "text": "JNI ujawnia operacje, a nie drugi interfejs użytkownika"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kontrakt `NativeApp` zawiera wyraźne wywołania dotyczące powierzchni, ciśnienia kontrolera, wyboru renderera, ustawień zgrupowanych, stanów zapisu, kart pamięci, RetroAchievements, zrzutów GS, profilera JIT, śledzenia zawieszeń i transportu VM. Kotlin decyduje, kiedy te działania są legalne i jak się pojawiają; C++ wykonuje je na stanie pochodzącym z PCSX2. Na przykład warstwa Compose może ukrywać przewijanie do przodu i oszustwa, gdy natywny klient RetroAchievements zgłasza aktywną sesję hardcore, a następnie wymuszać ogranicznik klatek i przywracać stan do bezpiecznych wartości przez ten sam most."
+    },
+    {
+      "type": "heading",
+      "text": "Dwa commity z 22 lipca pokazują, dlaczego podział jest testowany jako jeden system"
+    },
+    {
+      "type": "paragraph",
+      "text": "Commit `0a16b80d` z 22 lipca 2026 roku dotknął obu stron granicy: `MainActivity`, `TvUiPolicy`, selektory pamięci, `EmulationViewModel`, ARM64 EE/IOP/VU recompilery, pamięć wirtualną, zamianę tekstur GS i kod renderera. Później tego samego dnia commit `f0e19666` skrócił czasy życia pamięci podręcznej JIT w EE, IOP, VIF i microVU oraz rozszerzył `JitProfiler`. Te zmiany stanowią użyteczne architektoniczne ujęcie: poprawka cyklu życia Android może wymagać natywnej dyscypliny pamięci wykonywalnej, a natywna poprawka wciąż potrzebuje ścieżki Android, która bezpiecznie ją uruchamia, obserwuje i zatrzymuje."
+    },
+    {
+      "type": "callout",
+      "text": "Repozytorium opisuje EmuCoreX jako stos emulatora PS2 we wczesnym etapie rozwoju. Podział odpowiedzialności ułatwia lokalizowanie błędów, ale nie sprawia, że zgodność jest niezależna od gry, urządzenia, sterownika GPU ani renderera."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/core/NativeApp.kt",
+      "label": "Przeczytaj kontrakt NativeApp JNI"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/emulation/EmulationScreen.kt",
+      "label": "Sprawdź integrację nakładki SurfaceView i Compose"
+    }
+  ]
+}

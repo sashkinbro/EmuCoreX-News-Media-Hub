@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorev-touch-input-layer",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "EmuCoreVがガラスのスクリーンをVitaのコントロールに変える方法",
+  "summary": "EmuCoreVのタッチレイヤーは単なる塗装されたボタン以上のものです。レイアウトデータは正規化されて永続化され、ベクトルコントロールは外観をヒットジオメトリから分離し、モーションセンサーはアナログ軸を駆動することができ、最終状態はコンパクトなJNI入力契約に渡されます。",
+  "heroAlt": "公式EmuCoreVのフェースボタンのグラフィックがVitaのダイヤモンド配置で配置されています",
+  "searchKeywords": [
+    "EmuCoreV タッチ操作",
+    "ベクタータッチコントロール",
+    "Vita ジャイロスコープ入力",
+    "インプットオーバーレイ JNI"
+  ],
+  "categoryLabels": {
+    "emucorev": "EmuCoreV",
+    "input": "入力",
+    "android": "Android"
+  },
+  "sourceLabels": {
+    "input-controls-commit": "入力コントロール実装コミット",
+    "touch-spacing-commit": "タッチ間隔の調整コミット",
+    "vector-controls-source": "VectorTouchControls のソース",
+    "layout-repository-source": "タッチレイアウトリポジトリのソース"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "保存されたレイアウトは正規化されたキャンバスを説明しています"
+    },
+    {
+      "type": "paragraph",
+      "text": "`TouchControlLayoutRepository`は各コントロールをIDと正規化された`x`、`y`、`width`、`height`の値、可視フラグ、およびアナログモードとして保存します。読み込みは防御的に行われます：寸法はキャンバスの0.035から0.5の範囲にクランプされ、位置はサイズ変更された要素が右端または下端を超えないように制約されます。左右のスティックは可視スティックとして機能する場合やタッチエリアとして機能する場合があり、名前付きIDはショルダー、Dパッド方向、フェイスボタン、Select、Start、Vitaタッチサーフェスをカバーします。"
+    },
+    {
+      "type": "heading",
+      "text": "ベクター描画はヒットターゲットを移動せずにスタイルを変更します"
+    },
+    {
+      "type": "paragraph",
+      "text": "7月29日の入力作業では、大規模な`VectorTouchControls.kt`実装が追加され、設定に明示的な契約が設けられました：視覚スタイルは決してコントロールの形状を決定せず、押下アニメーションは決して入力の送信を決定しません。プレイヤーはクラシック、レガシー、モダン、アーケード、またはミニマルの処理を選択し、その後、成長、縮小、スプリング、またはグローのフィードバックを独立して選択できます。Composeは同じインタラクション領域の周囲でスケールとグローをアニメートするため、コスメティックプリセットがボタンが指を受け付ける場所を密かに変更することはできません。"
+    },
+    {
+      "type": "image",
+      "assetId": "emucorev-touch-input-layer-analog-control",
+      "text": "公式のジョイスティック範囲と押されたスティックのラスターは、従来のアナログコントロールを形成します。ベクタースタイルはその表示を再描画できますが、論理軸とそのネイティブのマッピングは変更されません。"
+    },
+    {
+      "type": "heading",
+      "text": "タッチ、スティック、ボタンがInputOverlayで融合する"
+    },
+    {
+      "type": "paragraph",
+      "text": "`core/vita/overlay/InputOverlay`はコンパクトなネイティブ境界を所有しています。これは、仮想コントローラーの接続や切断、署名付き軸値の送信、ボタン状態の設定、およびタッチが前面パネルか背面パネルかをマークすることを行います。`EmulationOverlay`はコントロールを構成し、ジェスチャーをこれらの呼び出しに変換します。これにより、ポインタ操作と編集モードのビジュアルはAndroid側に留まり、Vita3K由来のコアは、理解できないComposeイベントや画面座標の代わりに、コントローラー形状の状態を受け取ることができます。"
+    },
+    {
+      "type": "heading",
+      "text": "モーション入力はアナログ軸に届く前にフィルタリングされます"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidGyroscopeInput`はハードウェアジャイロスコープでエイムをサポートし、ゲーム回転ベクターでステアリングをサポートします。ディスプレイの回転を考慮し、起動時にステアリングを中央にし、調整可能な感度、スムージング、軸の反転、および小さなデッドゾーンを適用し、ほぼ同一のサンプルを送信することを避けます。エイムは右スティックをターゲットにし、ステアリングは左スティックXをターゲットにします。モードを開始すると、まず前のセンサーの購読を停止し、停止すると中立値を送信するため、ゲームが古い傾きを保持することはできません。"
+    },
+    {
+      "type": "heading",
+      "text": "ハプティクスは遅延に敏感なボタンの経路から外れる"
+    },
+    {
+      "type": "paragraph",
+      "text": "`AndroidTouchHaptics` はシステムのバイブレーターと振幅能力を一度解決し、その後専用のデーモン実行者を通じて振動を送信します。ソフト、クリスプ、強力、システム指向のプリセットが、押下と解放の別々のパルスを形成します。バイブレーターが利用できない場合、レイヤーはビューのハプティックフィードバックにフォールバックします。重要な順序はアーキテクチャ上のものであり、Android のバイブレーターサービスへの遅いバインダー呼び出しが、エミュレーターコアに到達しなければならないボタン状態の遅延を引き起こしてはいけません。"
+    },
+    {
+      "type": "callout",
+      "text": "コミット `4f01d13e` はベクトルコントロール、オーバーレイの動作、ジャイロスコープ入力、ハプティクス、設定、および契約テストをまとめて変更しました。以前の `db7965b5` の間隔作業はデザインのもう半分を提供します：コントロールは切り欠きや画面端の周りで届く位置に維持される必要があり、見た目も正しくなければなりません。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/common/VectorTouchControls.kt",
+      "label": "ベクター制御スタイルと押下効果を探る"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreV/blob/main/app/src/main/java/com/sbro/emucorev/ui/emulation/TouchControlLayoutRepository.kt",
+      "label": "正規化されたレイアウトの永続性を検査する"
+    }
+  ]
+}

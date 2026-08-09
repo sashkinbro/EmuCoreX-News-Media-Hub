@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-disc-image-preloading",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Předběžné načítání obrazu disku vyměňuje RAM za předvídatelnou latenci čtení",
+  "summary": "Cesta obrazu paměti DuckStation načítá strukturovaná data disku do paměti RAM, přičemž zachovává stopy, sektory a sémantiku cue-sheet.",
+  "heroAlt": "Ofici?ln? grafika DuckStation na tmav?m pozad?",
+  "searchKeywords": [
+    "DuckStation",
+    "Předběžné načítání obrazu disku vyměňuje RAM za předvídatelnou latenci čtení",
+    "emulátor PlayStation"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "ps1": "PlayStation",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "memory-image": "Implementace obrazu CD v paměti",
+    "cue-parser": "CUE obrazový analyzátor",
+    "playlist-parser": "Vícediskový analyzátor M3U"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Předběžné načtení změní úložiště záloh, nikoli model disku"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation může přesouvat data obrazu disku do paměti RAM, aby se zabránilo probuzení úložiště a hledání latence během přehrávání. `src/util/cd_image_memory.cpp` stále zobrazuje obraz CD prostřednictvím stejného logického rozhraní jako zdroje zálohované soubory. Čtení hostů zůstávají adresována sektory a stopami; předběžné načítání je užitečné pouze v případě, že reprezentace v paměti zachovává obsah a každý podporovaný sektorový formulář přesně."
+    },
+    {
+      "type": "heading",
+      "text": "Metadata CUE definují více než jen název souboru"
+    },
+    {
+      "type": "paragraph",
+      "text": "List CUE může popisovat více datových a zvukových stop, indexových bodů, pregaps a sektorových režimů. `cd_image_cue.cpp` analyzuje tuto strukturu předtím, než cesta paměti může zkopírovat smysluplný obsah. Vzácné příkazy jsou důležité, protože platný archivní obraz je může uplatnit, i když to běžné jednostopé výpisy nedělají. Sloučení souborů bez analyzovaného rozložení by posunulo adresy nebo vrátilo nesprávné bajty do emulovaného řadiče CD."
+    },
+    {
+      "type": "heading",
+      "text": "Vícediskové playlisty jsou umístěny nad jednotlivými obrázky"
+    },
+    {
+      "type": "paragraph",
+      "text": "`cd_image_m3u.cpp` zpracovává seznamy skladeb, které řadí více obrázků pro jeden titul. Chování sdílené paměťové karty a přepínání disků závisí na zachování tohoto seskupení, přičemž každý obraz člena stále potřebuje své vlastní platné stopy a sektory. Předběžné načtení jednoho člena nemůže tiše sloučit disky ani zahodit identitu seznamu skladeb. Selhání swapu by proto mělo zaznamenat jak M3U, tak formát každého odkazovaného obrázku."
+    },
+    {
+      "type": "heading",
+      "text": "Náklady na RAM se mění podle velikosti obsahu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Příspěvek za latenci je vyplácen předem prostřednictvím alokace a kopírování. Velké obrázky zvyšují tlak na paměť a událost nedostatku paměti nebo stránkování může být horší než problém s úložištěm, kterému se tato možnost měla vyhnout. Zařízení s omezenou pamětí RAM potřebují předvídatelný návrat ke čtení zálohovanému soubory. Benchmarky by měly zahrnovat dobu předběžného načtení, rezidentní paměť a přesnou scénu, kde byla dříve viditelná latence úložiště."
+    },
+    {
+      "type": "heading",
+      "text": "Zpráva o disku obsahuje rozložení a stav předběžného načtení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zaznamenejte revizi DuckStation, formát obrázku, kontrolní součty, text CUE nebo playlistu, nastavení předběžného načtení a dostupnou paměť. Pokud selže pouze předem načtený režim, porovnejte stejný logický sektor prostřednictvím cesty zálohované souborem. Pokud obojí selže, je silnějším kandidátem analýza nebo samotný výpis. Toto řízené rozdělení umožňuje vývojářům prozkoumat `cd_image_memory`, aniž by si ji zaměňovali s CHD, PBP, CCD, MDS nebo analýzou základního obrazu CD."
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "id": "emucorex-library-cover-cache",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mengapa EmuCoreX memperlakukan sampul seni sebagai data perpustakaan yang dapat dipulihkan",
+  "summary": "Sampul permainan terlihat dekoratif, tetapi jalur yang basi, unduhan sebagian, dan kesalahan berulang dapat membuat perpustakaan Android terasa tidak dapat diandalkan. EmuCoreX mengisolasi karya seni yang diunduh, memvalidasi setiap gambar yang disimpan, dan memperbaiki daftar yang terlihat tanpa menyentuh sampul kustom pengguna.",
+  "heroAlt": "Sampul Final Fantasy X PS2 diambil dari sumber karya seni default yang digunakan oleh EmuCoreX",
+  "searchKeywords": [
+    "penutup cache EmuCoreX",
+    "ilustrasi perpustakaan PS2",
+    "RepositoriSeniSampul",
+    "cache gambar Android"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Perpustakaan",
+    "reliability": "Keandalan"
+  },
+  "sourceLabels": {
+    "cover-cache-reliability": "Komitmen keandalan penutup-cache",
+    "cover-repository-source": "Sumber CoverArtRepository",
+    "cover-policy-source": "Sumber CoverCachePolicy",
+    "home-view-model-source": "Sumber sinkronisasi penutup HomeViewModel"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dua area penyimpanan menarik garis antara karya seni sekali pakai dan pribadi"
+    },
+    {
+      "type": "paragraph",
+      "text": "`CoverArtRepository` secara otomatis menyimpan cover PS2 yang diunduh di bawah `cacheDir/game-covers` dan gambar sementara jarak jauh di bawah `cacheDir/remote-image-cache`. Karya seni yang dipilih pengguna sengaja berada di luar root tersebut dalam penyimpanan aplikasi yang persisten. Pemisahan itu memberi tindakan pengaturan janji yang jelas: `clearCache()` menghapus cover yang diunduh, sementara `clearAllTemporaryImageCaches()` juga menghapus gambar sementara jarak jauh, tetapi tidak satu pun operasi harus menghapus cover yang dipilih oleh pemain."
+    },
+    {
+      "type": "heading",
+      "text": "Nama file tidak diterima sebagai bukti bahwa sebuah gambar bertahan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Setiap pencarian melewatkan berkas kandidat melalui `isUsableCoverFile()`. Repositori memerlukan berkas reguler yang tidak kosong dan meminta `BitmapFactory` untuk hanya mendekode batasnya; baik lebar maupun tinggi harus positif. Oleh karena itu, respons nol-bita atau gambar yang terputus tidak dapat berpura-pura sebagai cache hit. Kandidat yang tidak valid dihapus sebelum repositori memilih antara varian JPG dan PNG, termasuk penamaan terpisah `_3d` yang digunakan oleh gaya sampul tiga dimensi."
+    },
+    {
+      "type": "image",
+      "assetId": "emucorex-library-cover-cache-cover-3d",
+      "text": "Serial Final Fantasy X yang sama tersedia dalam koleksi 3D sumber. EmuCoreX memberi gaya itu nama cache `_3d` yang berbeda, sehingga mengubah tampilan tidak membingungkannya dengan sampul default."
+    },
+    {
+      "type": "heading",
+      "text": "Normalisasi serial membuat satu identitas permainan mengarah ke satu entri cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebelum membangun URL atau nama file, repositori menormalkan serial seperti `SLUS-20312` menjadi identitas empat huruf dan lima digit dalam huruf besar. Repositori menerima variasi tanda baca, mencoba bentuk kanonik terlebih dahulu, dan dapat mencoba kembali bentuk kompak tanpa tanda hubung. Sumber sampul yang dikonfigurasi dapat menyediakan URL dasar default dan 3D yang terpisah; jika tidak, sumber bawaan yang digunakan. Respons yang berhasil pertama kali disalin ke file sementara, didekodekan, dan baru kemudian diganti namanya ke cache, sehingga pembaca tidak pernah melihat file akhir yang setengah tertulis."
+    },
+    {
+      "type": "heading",
+      "text": "Kehilangan yang diketahui disimpan dalam cache, tetapi tidak selamanya"
+    },
+    {
+      "type": "paragraph",
+      "text": "HTTP 404 membuat penanda `.miss` kecil di samping sampul yang diharapkan. Selama tujuh hari, pemindaian lain dapat melewati permintaan yang sama alih-alih terus-menerus meminta server untuk karya seni yang tidak ada. Penanda ini menghilang setelah gambar yang valid tiba, dan masa berlakunya yang terbatas memberi ruang bagi koleksi sampul hulu untuk mendapatkan serial itu nanti. Kegagalan jaringan lainnya tidak menjadi bukti permanen bahwa sampul tidak ada."
+    },
+    {
+      "type": "heading",
+      "text": "HomeViewModel memperbaiki baris usang di bawah konkurensi terbatas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Selama `syncMissingCovers()`, `HomeViewModel` pertama-tama hanya membersihkan jalur yang mengarah ke dalam cache sampul yang dikelola dan tidak lagi mengarah ke file yang dapat digunakan. Ia menerbitkan daftar yang diperbaiki itu, kemudian memproses game tanpa sampul lokal atau dengan sampul HTTP melalui semaphore yang dibatasi hingga tiga pekerjaan berjalan bersamaan. Setiap unduhan yang berhasil menggantikan game yang cocok berdasarkan jalur dan menerbitkan ulang status yang terlihat. Jika VM aktif, pekerjaan sampul ditunda alih-alih bersaing dengan emulasi, dan snapshot perpustakaan yang diperbarui disimpan setelah sinkronisasi."
+    },
+    {
+      "type": "callout",
+      "text": "`CoverCachePolicy` menormalisasi baik kandidat maupun root cache sebelum penghapusan. URI Konten dan URL HTTP ditolak secara langsung, dan sebuah file harus merupakan keturunan dari root yang dikelola. Ini mencegah nilai perpustakaan yang salah bentuk memperluas operasi pembersihan cache."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/data/CoverArtRepository.kt",
+      "label": "Periksa validasi sampul, unduh, dan pembersihan"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/sashkinbro/EmuCoreX/blob/main/app/src/main/java/com/sbro/emucorex/ui/home/HomeViewModel.kt",
+      "label": "Ikuti sinkronisasi penutup-hilang di perpustakaan"
+    }
+  ]
+}
