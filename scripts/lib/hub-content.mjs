@@ -611,11 +611,11 @@ export function publishedItems(collection) {
 
 export function sortItems(items) {
   return [...items].sort((left, right) => {
-    const priority = (right.metadata.priority ?? 0) - (left.metadata.priority ?? 0);
-    if (priority !== 0) return priority;
     const leftDate = left.section === "history" ? left.metadata.eventDate : left.metadata.publishedAt;
     const rightDate = right.section === "history" ? right.metadata.eventDate : right.metadata.publishedAt;
     const dateOrder = rightDate.localeCompare(leftDate);
-    return dateOrder !== 0 ? dateOrder : left.metadata.id.localeCompare(right.metadata.id);
+    if (dateOrder !== 0) return dateOrder;
+    const priority = (right.metadata.priority ?? 0) - (left.metadata.priority ?? 0);
+    return priority !== 0 ? priority : left.metadata.id.localeCompare(right.metadata.id);
   });
 }
