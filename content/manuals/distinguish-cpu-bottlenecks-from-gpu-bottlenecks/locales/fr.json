@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "distinguish-cpu-bottlenecks-from-gpu-bottlenecks",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguer les goulots d'étranglement CPU des goulots d'étranglement GPU dans l'émulation PS2",
+  "summary": "Utilisez une scène fixe, la résolution interne native et supérieure, la vitesse d'émulation, le temps par image et les compteurs GS de type PCSX2 pour identifier quelle charge de travail répond aux changements GPU et laquelle reste limitée par le travail CPU émulé.",
+  "heroAlt": "Graphique officiel PCSX2 comparant la charge GPU hôte et la charge du Graphics Synthesizer",
+  "searchKeywords": [
+    "Goulot d'étranglement CPU GPU de EmuCoreX",
+    "Émulation PS2 lente",
+    "Performance en résolution interne",
+    "Diagnostic du temps par image",
+    "Charge GS"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Performance",
+    "diagnostics": "Diagnostics"
+  },
+  "sourceLabels": {
+    "android-optimize": "Cadre d'optimisation des performances Android",
+    "pcsx2-performance": "Émulation PCSX2 et interprétation des compteurs GS"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Modifiez une variable mise à l'échelle GPU et observez ce qui se passe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une scène lente n'identifie pas son processeur limitant par son apparence. La résolution interne, le filtrage anisotrope et certains travaux de fusion changent principalement le coût hôte GPU, tandis que l'émulation de la logique de jeu, le travail du VU et la soumission de rendu peuvent rester limités par CPU. Choisissez une scène de jeu répétable, enregistrez la vitesse d'émulation et le temps de trame, puis comparez la résolution native avec une étape clairement supérieure tout en gardant tous les autres paramètres fixes."
+    },
+    {
+      "type": "callout",
+      "text": "Ne baissez pas simultanément la résolution, la fusion, les paramètres de cycle et le moteur de rendu. Un résultat plus rapide ne révélerait pas quelle limite a bougé et pourrait échanger la précision contre un nombre inexpliqué."
+    },
+    {
+      "type": "heading",
+      "text": "Gelez une charge de travail représentative"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde normale en jeu avant une scène lourde répétable.",
+        "Pilote système GPU et un moteur de rendu stable.",
+        "Profil natif et un profil à résolution interne plus élevée ne différant par aucune autre valeur.",
+        "Vitesse d'émulation, temps de trame et compteurs disponibles GS/GPU.",
+        "Une seconde scène connue pour contenir une logique de jeu lourde ou de nombreux dessins."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Effectuer des tests de sensibilité à la résolution et de sensibilité aux scènes"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Démarrer la première scène à froid à la résolution native et enregistrer la vitesse soutenue après la mise en chauffe.",
+        "2. Augmentez uniquement la résolution interne et rejouez le même chemin de caméra.",
+        "3. Lorsque le temps de trame se dégrade de manière significative avec la résolution, enregistrez un résultat sensible à GPU.",
+        "4. Lorsque les deux résolutions restent également lentes, restaurez la résolution native et inspectez les indicateurs de synchronisation CPU/émulation.",
+        "5. Exécutez la deuxième scène intensive en logique à la résolution native et supérieure.",
+        "6. Comparez les compteurs du rendu tels que dessins, téléchargements, lectures, et temps GPU de l'hôte si disponible.",
+        "7. Réduisez une seule fonctionnalité coûteuse en GPU uniquement dans la branche sensible à GPU et répétez.",
+        "8. Maintenir des paramètres par défaut sécurisés dans la branche sensible CPU jusqu'à ce qu'un changement documenté par titre puisse être testé séparément."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La résolution est une sonde contrôlée utile car elle augmente le nombre de pixels hôtes sans changer le fonctionnement prévu du jeu émulé CPU. Ce n'est pas parfait : le mélange et les lectures arrière peuvent coupler CPU et GPU, et la politique thermique peut déplacer les horloges pendant le test. Des parcours appariés et des exécutions à chaud réduisent ces facteurs confondants."
+    },
+    {
+      "type": "heading",
+      "text": "Preuves de classification des goulets d'étranglement"
+    },
+    {
+      "type": "paragraph",
+      "text": "Classer la scène uniquement lorsque la réponse se répète dans des conditions appariées."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les scènes sensibles à GPU ralentissent de manière prévisible à mesure que la résolution interne augmente.",
+        "Les scènes sensibles à CPU restent similaires à travers les étapes de résolution.",
+        "Le même pilote, moteur de rendu, caméra et état thermique ont été utilisés.",
+        "Les indicateurs audio et de vitesse d'émulation concordent avec les preuves de temps de trame.",
+        "Une deuxième exécution reproduit la classification."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Résultats qui restent ambigus"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les changements de température de l'appareil entre les profils : froid et répéter.",
+        "Un cache du moteur de rendu se réchauffe uniquement lors de la deuxième exécution : correspondre aux états froids ou chauds.",
+        "Une résolution plus basse modifie la faute visuelle elle-même : choisissez une autre scène de sonde.",
+        "Le mode d'alimentation du système modifie les horloges : verrouillez la politique de comparaison avant de relancer."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaurer le profil graphique avant le test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rétablir la résolution interne et les fonctionnalités optionnelles GPU à la valeur de référence enregistrée, supprimer les substituts temporaires de scène et redémarrer le titre à froid. Conserver la table de timings plutôt que de laisser les réductions diagnostiques activées globalement."
+    },
+    {
+      "type": "heading",
+      "text": "Les SoC mobiles partagent les budgets thermique et énergétique"
+    },
+    {
+      "type": "paragraph",
+      "text": "CPU et GPU sur Android se concurrencent souvent dans une limite de package. Une réduction de GPU peut libérer indirectement de l'énergie pour les horloges CPU, donc considérez les réponses mixtes comme couplées et répétez après une température stable."
+    },
+    {
+      "type": "link",
+      "text": "Passez en revue les compteurs de performance PCSX2",
+      "url": "https://developer.android.com/games/optimize"
+    }
+  ]
+}

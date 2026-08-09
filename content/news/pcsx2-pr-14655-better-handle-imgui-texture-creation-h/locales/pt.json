@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 interrompe a alocação de textura do ImGui que falhou antes que se torne uma falha de aplicação",
+  "summary": "Os caminhos de criação, envio e destruição agora tratam os BackendUserData ausentes como um estado real, evitando que uma falha de alocação caia em operações de handle nativo e map.",
+  "heroAlt": "Evidência de origem do pull request #14655 do PCSX2: GS: Melhor lidar com riscos de criação de texturas do imgui.",
+  "searchKeywords": [
+    "PCSX2",
+    "Textura do ImGui",
+    "falha de alocação",
+    "GSTexture",
+    "falha de aplicação"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Melhor lidar com riscos de criação de texturas do imgui."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O ImGui pode solicitar uma textura quando o GPU não consegue fornecer uma"
+    },
+    {
+      "type": "paragraph",
+      "text": "Atlas de fontes e outras imagens de interface passam pelos estados WantCreate, WantUpdates e WantDestroy. A alocação de textura pode falhar devido à perda do dispositivo, pressão de recursos, dimensões não suportadas ou outro erro do backend. O antigo ramo de criação relatava a falha, mas continuava como se uma GSTexture existisse, solicitando seu handle nativo e seguindo para o código de upload. Portanto, o diagnóstico ocorria antes de uma desreferência nula, em vez de contê-la."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate prossegue apenas com dados válidos do backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14655 envolve CreateTexture em um ramo de ponteiro bem-sucedido. Apenas uma textura real recebe um ImTextureID e BackendUserData antes que o código continue para o upload em tamanho completo. Em caso de falha, PCSX2 emite pxFailRel e sai do estado. WantUpdates verifica separadamente o BackendUserData antes das operações de map ou Update linha por linha, de modo que uma criação anterior que falhou não pode ser confundida com um recurso inicializado."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy também aceita que a criação pode nunca ter sido concluída"
+    },
+    {
+      "type": "paragraph",
+      "text": "O estado de destruição agora recicla e invalida a textura apenas quando BackendUserData não é nulo. Isso é importante quando o ImGui descarta uma solicitação de atlas após uma falha de alocação ou quando uma transição de estado compete com a lógica de recuperação. O comportamento de reciclagem em si não muda para texturas válidas, incluindo a reutilização de atlas do mesmo tamanho; o patch faz com que o gráfico de tempo de vida inclua um ramo de recurso ausente do início ao fim."
+    },
+    {
+      "type": "heading",
+      "text": "A injeção de falha é mais forte do que esperar pela issue #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduza o dump de crash vinculado, se possível, e então adicione um hook controlado no backend que faça com que o próximo CreateTexture do ImGui retorne nulo. O OSD e a renderização de fontes devem relatar a falha sem travar, enviar pixels ou reciclar um ponteiro inválido. Restaure a alocação e confirme que um atlas posterior pode ser criado e exibido. Repita a falha durante redimensionamento, despejo de fontes, reset do dispositivo e desligamento em todos os backends de hardware, e execute testes normais do OSD para garantir que o caminho protegido não bloqueie atualizações válidas."
+    },
+    {
+      "type": "callout",
+      "text": "A correção completa a máquina de estados de textura: falha de alocação é um ramo terminal para essa solicitação, não um aviso seguido pelo código de upload normal."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation 遵循嵌套的 PSF 库到程序的真实入口点",
+  "summary": "两行递归修改使最深的父级 _lib 提供 PC 和 SP，修复了一个会使入口点搜索过早停止一层的加载器。",
+  "heroAlt": "来源证据来自 DuckStation Pull Request #3489: PSFLoader: 修复递归 _lib 加载",
+  "searchKeywords": [
+    "DuckStation",
+    "PSF 加载器",
+    "_lib",
+    "程序计数器",
+    "堆栈指针"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "存储",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: 修复递归 _lib 加载"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一个 PSF 可以通过多个库继承可执行状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "便携式声音格式（PSF）文件可能通过 _lib 引用父文件，而该父文件可能又引用另一个第一个库。如果加载器从错误的层级选择 PC 和 SP，仅递归加载数据是不够的。更改引用的格式指南指出，必须沿着第一个 _lib 链一直跟随到最深层成员；该可执行上下文在所有继承部分组装完毕后初始化播放。"
+    },
+    {
+      "type": "heading",
+      "text": "旧的深度检查过早地消耗了入口点标志"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader 以前在 depth == 0 时创建 lib_use_pc_sp。这允许第一个父库声明程序计数器（PC）和堆栈指针（SP），然后阻止更深的递归再次声明。Pull request #3489 则将调用者的 use_pc_sp 标志递归传入 LoadLibraryPSF，并仅在第一次库调用返回后将其设置为 false。最深的第一个父库在任何较浅层级使用该标志之前就已经接收到它。"
+    },
+    {
+      "type": "heading",
+      "text": "只有第一个库链拥有 PC 和 SP 的选择权"
+    },
+    {
+      "type": "paragraph",
+      "text": "在展开期间清除 use_pc_sp 可以保留另一个 PSF 规则：后来的库可以贡献数据而无需反复替换初始寄存器。该补丁并未将每个 _lib 展平为一个无序列表。它区分了递归的第一个父路径（用于建立执行）与随后加载的兄弟库路径，在 psf_loader.cpp 中保持尽可能小的更改，而不是重写容器格式。"
+    },
+    {
+      "type": "heading",
+      "text": "回归测试夹具至少需要三级嵌套"
+    },
+    {
+      "type": "paragraph",
+      "text": "构建一个 PSF，其根、第一个父及最深的第一个父各自声明不同的 PC 和 SP 值，同时还有一个次级库具有另一对值。DuckStation 应加载所有所需数据，但从最深的第一个父寄存器开始；更改非第一个库不得移动入口点。将播放和记录的寄存器与 Mednafen 或其他符合格式的加载器进行比较，然后测试缺失、循环和不可读的库引用，以确保出现干净错误而不是无限递归。"
+    },
+    {
+      "type": "callout",
+      "text": "修复与递归顺序有关：数据可能来自许多库，但初始的 PC 和 SP 属于第一个 _lib 链的最深成员。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "阅读 DuckStation 工程讨论和源代码更改"
+    }
+  ]
+}

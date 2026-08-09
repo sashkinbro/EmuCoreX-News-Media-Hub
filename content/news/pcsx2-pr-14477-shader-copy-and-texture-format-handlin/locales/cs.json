@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 přesouvá politiku převodu textur za GSDevice",
+  "summary": "StretchRectAuto, CreateCompatible a ShaderConvertSelector reorganizují zpracování kopírování shaderů a formátu hloubky, aby hardwarový renderer mohl požadovat převod, aniž by znal detaily pipeline každého backendu.",
+  "heroAlt": "Vizuální důkaz z pull requestu PCSX2 #14477: GS/HW: Refaktorování kopírování shaderů a zpracování formátu textur.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "převod textur"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: Refaktorování kopírování shaderů a zpracování formátu textur."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache nesl rozhodnutí, která patří k hranici backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Shader kopie v PCSX2 musí vybrat konverzi na základě vstupního formátu, výstupního formátu, emulovaných bitů na pixel a filtrování. Před pull requestem #14477 viděly GSTextureCache a GSRendererHW příliš mnoho tohoto mechanizmu. Refaktoring přesouvá volbu za GSDevice, takže kód vyšší úrovně pro renderování popisuje kopii, kterou potřebuje, místo aby sám vybíral detaily shaderu specifické pro backend."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto a CreateCompatible vyjadřují operaci, ne API"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto přijímá dvě textury a informace o emulovaném formátu, pak uvnitř GSDevice vybírá konverzní shader. CreateCompatible vytvoří texturu odpovídající formátu existující textury. ShaderConvertSelector přidává modifikační bity, které mohou reprezentovat související konverze, aniž by se násobily nesouvisející vstupní body shaderu. Společně připravují hloubku uloženou jako barvu R32 a budoucí cesty integer-depth, přičemž neaktivní podporu ROV hloubky-barvy drží za stejným rozhraním."
+    },
+    {
+      "type": "heading",
+      "text": "Přejmenování jasně vyjadřuje záměr hloubky a ID primitivy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Záplata lépe sladí konverzní shadery OpenGL se Vulkan, přejmenovává inicializaci stencil-image na inicializaci primitive-ID a mění označení rgba8_16bits na rgb5a1_16bits. Float32 se mění na DepthColor, zatímco názvy selektorů FLOAT32, FLOAT24 a FLOAT16 se mění na DEPTH32, DEPTH24 a DEPTH16. Bilineární filtrování se také mění z Boolean na enum, což ponechává prostor pro explicitní režimy místo dalšího přetíženého přepínače."
+    },
+    {
+      "type": "heading",
+      "text": "Čistý refaktor vyžaduje testování výstupní identity na každém rendereru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uvedená smlouva znamená identický výstup jako předchozí kód. Běhy dumpu by proto měly porovnávat výsledky snímků napříč Direct3D, OpenGL, Vulkan a Metal s různými texturovými formáty, kopiemi hloubky, nativním rozlišením a upscalingem. Metal již obdržel ohlášenou kontrolu běhu dumpu, ale široká sada souborů znamená, že kompilace shaderů a výběr kopií musí být také provedeny na ostatních hardwarových backendech. Jakýkoli rozdíl v pixelech musí být vysvětlen předtím, než pozdější práce ROV použije novou cestu."
+    },
+    {
+      "type": "callout",
+      "text": "Závazek viditelný pro uživatele je záměrně konzervativní: zatím žádný nový efekt, ale užší hranice rendereru/backendu, kterou mohou později rozšířit formáty hloubky, aniž by opakovali politiku převodu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdrojového kódu"
+    }
+  ]
+}

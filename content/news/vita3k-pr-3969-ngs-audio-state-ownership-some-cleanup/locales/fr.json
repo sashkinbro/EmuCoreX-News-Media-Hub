@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K sépare quatre types d’état à l’intérieur de son moteur audio NGS",
+  "summary": "Les octets visibles par l’invité, les tampons temporaires, la logique pouvant être reprise et les objets d’exécution de l’hôte ont maintenant des propriétaires distincts, ce qui rend le routage vocal et la durée de vie du décodeur plus faciles à comprendre.",
+  "heroAlt": "Preuve source provenant de la demande de tirage Vita3K #3969 : ngs : refactorer la propriété de l'état audio ngs & quelques nettoyages",
+  "searchKeywords": [
+    "Vita3K",
+    "Audio NGS",
+    "ATRAC9",
+    "état vocal",
+    "routage audio"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs : refactorer la propriété de l'état audio ngs & quelques nettoyages"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une voix audio contient un état avec des durées de vie très différentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le système NGS de la Vita expose l'état du module lisible par les invités, mais un émulateur a également besoin d'objets décodeurs réservés à l'hôte, de rééchantillonneurs, de PCM temporaire, d'historique de boucle et de références de routage. Conserver ces éléments dans des membres vaguement liés rend la réinitialisation, la réutilisation des voix, les rappels et la destruction vulnérables aux pointeurs obsolètes. Un bloc mémoire invité ne devrait pas posséder accidentellement un décodeur hôte, et un tampon temporaire ne devrait pas être confondu avec des données nécessaires pour reprendre la lecture logique."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData nomme maintenant chaque catégorie de propriété"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3969 fournit un module guest_state_data pour les octets visibles par l'ABI et scratch_data pour le travail temporaire. Un logical_state polymorphe stocke des informations telles que l'historique ADPCM ou l'historique du décodeur ATRAC9 exporté qui doit survivre aux limites de traitement. Un runtime_state séparé possède les ressources de l'hôte telles que les décodeurs actifs et les rééchantillonneurs qui peuvent être effacés ou reconstruits. Les usines de modules créent chaque couche et initialisent les données vocales via une interface unique."
+    },
+    {
+      "type": "heading",
+      "text": "Les routes identifient les voix sans conserver des points de terminaison bruts fragiles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les objets de patch conservent la source et la destination sous forme d’indices de rack et de voix, puis les résolvent via le système et la mémoire émulée lorsque cela est nécessaire. Cela empêche un patch de suivre aveuglément un pointeur de voix après qu’un rack a changé. ATRAC9 charge l’historique du décodeur logique sauvegardé dans le décodeur d’exécution avant le travail et l’exporte ensuite. Les modules Player conservent l’historique ADPCM dans l’état logique, tandis que les tampons de sortie et de rééchantillonnage utilisent des conteneurs d’exécution explicites avec des opérations claires et compactes."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de cycle de vie doivent interrompre l’audio à chaque phase."
+    },
+    {
+      "type": "paragraph",
+      "text": "Créez, dirigez, démarrez, mettez en pause, reprenez, arrêtez, réinitialisez et détruisez des voix en utilisant les modules PCM, ADPCM, ATRAC9, sortie et rééchantillonnage. Réutilisez les emplacements de rack et supprimez l’un ou l’autre point de terminaison tant qu’un patch existe. Déclenchez les rappels invités, les transitions de boucle, videz les tampons et effectuez des modifications de configuration, puis comparez la sortie continue avec la sortie lors d’une sauvegarde de l’état logique et d’une reconstruction à l’exécution. Les analyseurs de threads et d’adresses doivent couvrir les points de déverrouillage/reverrouillage du planificateur, le démontage et les poignées invitées mal formées. Aucun pointeur hôte ne doit être récupérable à partir des octets d’état visibles par l’invité."
+    },
+    {
+      "type": "callout",
+      "text": "La précision audio s’améliore lorsque le moteur peut indiquer quelles données appartiennent à l’ABI de l’invité, l’état signalisable reprenable, le travail temporaire et l’exécution du décodeur hôte."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Lisez la discussion technique et les modifications de source Vita3K"
+    }
+  ]
+}

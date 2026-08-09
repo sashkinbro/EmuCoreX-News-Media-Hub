@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 fornece solicitações CDVD inválidas com uma saída de estado de unidade definida",
+  "summary": "Leituras de comprimento zero, negativas e além do fim agora atualizam o estado de pronto, status, erro e interrupção de forma coerente, juntamente com transições corrigidas de CdStop e bandeja.",
+  "heroAlt": "Evidência de fonte do pull request PCSX2 #5174: CDVD: Tratamento de alguns erros, alterações nos indicadores de Status+Pronto e correção do CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "contagem de setores",
+    "status da unidade",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Armazenamento",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Tratamento de alguns erros, alterações nos indicadores de Status+Pronto e correção do CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Vários jogos enviam comandos de disco que são estranhos, mas observáveis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, o teste da Princesa Aberanbou, demo de Evergrace e o exercício de Animação de Combate registram contagens de setor ou endereços que o fluxo CDVD mais antigo do PCSX2 não concluiu corretamente. Uma contagem zero ou negativa poderia manter um caminho de leitura ativo, enquanto um endereço além do disco não tinha uma transição de erro consistente. O resultado variava de comportamento inválido de LSN a falhas de TLB, falha na inicialização ou travamentos posteriores em filmes."
+    },
+    {
+      "type": "heading",
+      "text": "Ready e Status tornam-se atribuições explícitas do estado da unidade"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #5174 distingue os bits de pronto, ocupado, dados prontos, dispositivo conectado e erro, em vez de repetir ORing ou limpar uma bandeira no local. cdvdUpdateStatus registra o status atual e persistente, enquanto a conclusão do comando utiliza um caminho comum IRQ. Portanto, as callbacks de abrir, fechar, buscar, ler, pausar, parar, interromper e novo disco da bandeja publicam um par coerente de valores de status e prontidão, em vez de deixar bits de uma operação anterior."
+    },
+    {
+      "type": "heading",
+      "text": "Contagens inválidas e limites do disco agora encerram o comando"
+    },
+    {
+      "type": "paragraph",
+      "text": "O drive registra MaxSector do disco montado e verifica uma leitura antes de continuar além dele. Uma solicitação fora do alcance gera um erro na faixa mais externa, retorna para pausa, limpa a espera de DMA e aciona a interrupção de comando. Uma contagem de setores igual ou inferior a zero também conclui e retorna para pronto em vez de agendar outra transferência. CdStop e SCMD resultam em correções de registro dentro da mesma limpeza da máquina de estado."
+    },
+    {
+      "type": "heading",
+      "text": "Testes de savestate e multi-jogo devem inspecionar flags, não apenas o boot"
+    },
+    {
+      "type": "paragraph",
+      "text": "A alteração do layout de estado exigiu um aumento da versão savestate, então o tratamento de estados antigos e novos precisa de cobertura explícita. Reproduza os jogos nomeados e registre comando, LSN, contagem, Pronto, Status, Erro, IRQ e estado de DMA. Teste mudanças na bandeja, parar, quebra, leituras válidas no final do disco e solicitações deliberadamente inválidas. Alguns casos de origem ainda exigiam patches separados de jogo ou apresentavam travamentos posteriores em FMV; esses limites devem permanecer documentados em vez de serem atribuídos a essa limpeza de estado."
+    },
+    {
+      "type": "callout",
+      "text": "A melhoria é um caminho de saída completo: mesmo uma solicitação de disco malformada deve fazer com que a unidade, o motor DMA e o controlador de interrupção concordem sobre o que aconteceu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

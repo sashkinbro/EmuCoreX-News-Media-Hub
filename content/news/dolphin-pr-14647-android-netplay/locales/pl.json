@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14647-android-netplay",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin buduje pełną warstwę sesji NetPlay dla Android",
+  "summary": "Właściciel cyklu życia w Kotlin, most natywnych wywołań zwrotnych, reaktywny stan lobby oraz interfejs Compose umożliwiają hostowanie, dołączanie, czat, synchronizację oraz uruchamianie gry na urządzeniach mobilnych.",
+  "heroAlt": "Źródło dowodu z pull request Dolphin #14647: Android netplay",
+  "searchKeywords": [
+    "Dolphin",
+    "Android NetPlay",
+    "Kotlin Flow",
+    "Compose",
+    "traversal server"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "network": "Sieć",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14647": "Android netplay"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Desktopowy NetPlay nie mógł być po prostu udostępniony jako jeden przycisk Android"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sesja wieloosobowa obejmuje wykrywanie lub bezpośrednie połączenie, czas życia serwera i klienta, listy graczy, czat, mapowanie kontrolerów, dostrajanie bufora, wybór gry, transfer zapisów, sprawdzanie skrótu gry, stan serwera pośredniczącego oraz końcowy zsynchronizowany start. Okno dialogowe pulpitu Dolphin odpowiada za wiele z tych funkcji poprzez Qt. Android potrzebował architektury, która przetrwa nawigację po aktywnościach i przekształca natywne wywołania zwrotne w stan mobilny UI bez wycieków obiektów C++."
+    },
+    {
+      "type": "heading",
+      "text": "NetplaySession staje się jedynym właścicielem natywnych zasobów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14647 dodaje sesję Kotlin, która tworzy wywołania zwrotne UI i posiada wskaźniki do serwera, klienta oraz BootSessionData. NetplayManager serializuje tworzenie sesji, aby nowa sesja czekała na zamknięcie poprzedniej. StateFlow, SharedFlow i kanały udostępniają zmiany gracza, czat, uprawnienia do wejścia, postęp transferu, skrót gry, stan przemieszczania, błędy połączenia i rozłączenia. Chroniona ścieżka zwalniania czyści każdy wskaźnik przed wywołaniem jego natywnego destruktora."
+    },
+    {
+      "type": "heading",
+      "text": "Ekrany Compose oddzielają konfigurację połączenia od aktywnego lobby"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dedykowane czynności konfiguracyjne i sesyjne wspierają hosting i dołączanie za pomocą trybu bezpośredniego lub pośredniego. ViewModele łączą natywne przepływy sesji w stan ekranu, podczas gdy lobby może zmieniać gry, sprawdzać, czy wszyscy gracze posiadają tytuł, dostosowywać bufory pada, wymieniać wiadomości na czacie i rozpoczynać grę. Gdy gospodarz dostarcza BootSessionData, NativeLibrary.RunNetPlay wykorzystuje wskaźnik dokładnie raz i rozpoczyna emulację z zsynchronizowanymi ścieżkami i stanem Riivolution."
+    },
+    {
+      "type": "heading",
+      "text": "Cykl życia urządzeń mobilnych oraz sesje z mieszanymi wersjami wymagają intensywnych testów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hostuj i dołączaj przez bezpośredni LAN oraz przepływ, obracaj urządzenie na każdym etapie, przechodź w tle i wznów, odmawiaj połączenia, trac sieć i zamykaj podczas aktywnego zapisu lub transferu podsumowania. Zweryfikuj, czy wskaźniki są zwalniane raz, żaden callback nie trafia do zamkniętego obiektu Kotlin, a druga sesja czeka na oczyszczenie. Mieszaj Android z klientami desktopowymi, wieloma kontrolerami, brakującymi grami, wybuchami czatu, awarią host migration i wyjściem z emulacji do lobby. Testy użytkownika powinny być wspierane przez narzędzia do sprawdzania pamięci i wątków."
+    },
+    {
+      "type": "callout",
+      "text": "Mobile NetPlay jest w głównej mierze problemem cyklu życia: interfejs jest godny zaufania tylko wtedy, gdy każdy natywny obiekt sesji ma jednego właściciela od połączenia przez emulację aż do zakończenia."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14647",
+      "label": "Przeczytaj dyskusję inżynieryjną Dolphin i zmiany w źródłach"
+    }
+  ]
+}

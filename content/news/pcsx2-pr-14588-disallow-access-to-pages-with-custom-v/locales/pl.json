@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 blokuje klientom PINE dostęp do powiązanych z wątkiem obsługiwaczy MMIO",
+  "summary": "Interfejs pamięci zewnętrznej teraz odmawia stron VTLB obsługiwanych przez niestandardowe wywołania zwrotne urządzenia, ograniczając swoje bezpośrednie odczyty do pamięci bezpiecznej poza wątkiem emulacji.",
+  "heroAlt": "Dowody źródłowe z pull request PCSX2 #14588: PINE: Zabroń dostępu do stron z niestandardowymi obsługiwaczami VTLB",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "bezpieczeństwo wątków"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Bezpieczeństwo",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Zabroń dostępu do stron z niestandardowymi obsługiwaczami VTLB"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Adres gościa może reprezentować RAM lub aktywny rejestr sprzętowy"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE udostępnia operacje pamięci zewnętrznym narzędziom. Poprzez wirtualną warstwę translacji PCSX2, niektóre adresy wskazują na zwykłą pamięć RAM wspieraną przez hosta, podczas gdy inne kierują przez niestandardowe obsługi dla rejestrów MMIO i emulowanych peryferiów. Wywołanie niestandardowego handlera nie jest pasywnym odczytem: może zmienić stan urządzenia, wymagać kolejności wątku emulatora lub dotknąć komponentów, które nie mają synchronizacji dla dowolnego wątku serwera."
+    },
+    {
+      "type": "heading",
+      "text": "Strony z niestandardowym handlerem są odrzucane przed dostępem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14588 zmienia ścieżkę VTLB PINE, aby rozpoznawać strony, do których dostęp jest realizowany przez niestandardowy handler i odrzucać je. Bezpośrednio mapowana pamięć pozostaje dostępna dla klientów. Granica opiera się na tym, jak strona jest obsługiwana, a nie na kruchych, na stałe zakodowanych listach zakresów rejestrów, więc nowo zarejestrowane handlery MMIO dziedziczą ochronę bez kolejnej aktualizacji adresów specyficznej dla PINE."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead jest przepisane wokół tej samej bezpieczniejszej rozróżnienia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka również wyrównuje deklarację i definicję szablonu vtlb_ramRead oraz upraszcza jego implementację. Mikrobenchmark na komputerze autora wykazał niewielką poprawę wydajności, ale jest to sprawa drugorzędna. Główne zagwarantowanie dotyczy własności wątku: PINE nie może pozwolić, aby GS, SPU, CDVD lub inne peryferia wykonywały wywołania zwrotne na wątku, który pomija harmonogram VM."
+    },
+    {
+      "type": "heading",
+      "text": "Klienci potrzebują jasnej semantyki błędów i pokrycia regresji RAM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testuj istniejące debugery PINE z normalnym RAM, scratchpadem lub innymi explicite wspieranymi mapowaniami bezpośrednimi, granicami stron i niezmapowanymi adresami. Próbuj odczytów i zapisów na reprezentatywnych stronach MMIO i potwierdź czysty błąd protokołu bez skutków ubocznych dla peryferii czy awarii. Powtórz test podczas pracy VM, pauzy, resetu i wyłączenia. Jest to opisane jako wstępna poprawka oczekująca na szersze prace projektowe, dlatego klientom nie należy obiecywać bezpiecznego dostępu do rejestrów urządzeń, dopóki nie istnieje mechanizm przekazywania wątku emulatora."
+    },
+    {
+      "type": "callout",
+      "text": "PINE pozostaje interfejsem pamięci, a nie drugim wątkiem wykonawczym sprzętu; niestandardowe obsługi VTLB są odrzucane, dopóki nie mogą być bezpiecznie zarządzone."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

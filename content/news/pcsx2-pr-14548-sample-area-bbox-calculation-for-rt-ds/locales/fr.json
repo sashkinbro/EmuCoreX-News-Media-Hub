@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14548-sample-area-bbox-calculation-for-rt-ds",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 fait en sorte que les limites de danger des cibles de rendu respectent le wrapping des textures",
+  "summary": "Les modes de clamp et de wrap participent désormais au calcul de la zone échantillonnée utilisé lorsqu'un dessin lit à partir de sa propre cible de rendu ou de profondeur, empêchant la copie du danger d'omettre des pixels accessibles.",
+  "heroAlt": "Preuve visuelle du pull request #14548 de PCSX2 : GS/DX11/GL : Correction du calcul de la bbox de la zone échantillonnée pour le danger d'échantillonnage RT/DS.",
+  "searchKeywords": [
+    "PCSX2",
+    "danger d'échantillonnage",
+    "boîte englobante",
+    "ROV",
+    "wrapping des textures"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14548": "GS/DX11/GL : Correction du calcul de la bbox de la zone échantillonnée pour le danger d'échantillonnage RT/DS."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les coordonnées primitives seules ne définissent pas la région de texture échantillonnée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsqu'un tirage prélève des échantillons de la cible de rendu ou de la cible de profondeur qu'il est également en train d'écrire, PCSX2 peut nécessiter une copie sécurisée ou une barrière. La région requise dépend de l'adressage de la texture. Clamp peut fixer les coordonnées à un bord, tandis que wrap peut les rediriger vers une autre partie de l'image. L'ancien cadre de la zone d'échantillonnage ne prenait pas entièrement en compte ces modes, donc il pouvait copier une région plus petite ou différente de celle atteinte par le shader."
+    },
+    {
+      "type": "heading",
+      "text": "Les limites conscientes de clamp alimentent le chemin de risque RT/DS."
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request n°14548 corrige le calcul des limites partagé par le moteur de rendu matériel et les chemins de périphérique Direct3D 11 et OpenGL. Une fois la zone d'échantillons accessible connue, la logique de risque peut protéger ou copier les bons pixels. Le correctif simplifie également la gestion de la barrière complète : stocker un rectangle d'échantillons séparé pour chaque groupe de primitives ajoutait de la complexité sans démontrer suffisamment de bénéfices pour le cas de la barrière."
+    },
+    {
+      "type": "heading",
+      "text": "La correction est spécifique aux dépendances d'auto-échantillonnage."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ce n'est pas une correction générale de la fenêtre d'affichage ou du ciseau. Elle s'applique lorsqu'une cible de rendu ou de profondeur est simultanément une source de texture, un scénario où l'ordre et la propriété des régions sont importants. Avec ROV activé sur Direct3D 11, la zone copiée incorrecte était visible dans la copie Bakusou Dekotora Densetsu fournie. Les autres dessins de texture ordinaires ne devraient pas emprunter la branche de risque et constituent donc un test négatif important."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests doivent explorer séparément les routes de clamp, wrap et full-barrier."
+    },
+    {
+      "type": "paragraph",
+      "text": "La copie signalée a été vérifiée avec Direct3D 11 et ROV et c'était la seule image modifiée lors de cette exécution. Une matrice plus complexe devrait varier les modes de clamp horizontal et vertical, les groupes de primitives traversant une limite wrap, l'échantillonnage des cibles de rendu et de profondeur, ainsi que les routes de copie partielle et de full-barrier. Comparez les images exactes de la copie et enregistrez la boîte englobante calculée ; un résultat visuellement correct avec une copie surdimensionnée peut encore cacher une régression de performance."
+    },
+    {
+      "type": "callout",
+      "text": "La région de sécurité doit décrire les adresses que le shader peut atteindre après l'enveloppement, et pas seulement les coordonnées de texture non modifiées soumises par le client."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14548",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

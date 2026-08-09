@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin rejette les indices de contrôleur NetPlay avant qu'ils n'atteignent les cartes du serveur",
+  "summary": "Les vérifications de plage signées précèdent désormais l'accès aux cartes de pad et de Wiimote, fermant un chemin de crash à distance tout en préservant la validation de la propriété de l'expéditeur.",
+  "heroAlt": "Preuve source de la pull request Dolphin #14677 : NetPlayServer : Corriger le crash à distance via un index de pad invalide",
+  "searchKeywords": [
+    "Dolphin",
+    "Sécurité NetPlay",
+    "indice de pad",
+    "paquet à distance",
+    "carte Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Sécurité",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer : Corriger le crash à distance via un index de pad invalide"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un numéro de contrôleur provenant du réseau reste une entrée non fiable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les paquets NetPlay identifient la manette ou Wii Remote dont ils transportent l'état. Le serveur utilisait auparavant map_array.at après avoir vérifié la propriété dans certains chemins, mais un index signé invalide pouvait atteindre l'accès vérifié par bornes en premier. std::array::at lance alors une exception, transformant un paquet pair malformé ou hostile en échec de processus serveur plutôt qu'en message rejeté. Les valeurs négatives nécessitent une attention particulière avant conversion en size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Un utilitaire établit la plage avant la propriété"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14677 introduit IsValidPadIndex. Elle exige d'abord que l'index soit non négatif, puis le convertit et le compare à la taille concrète du tableau map. Les données de la manette, les sondages du serveur de manette et les données Wiimote appellent l'utilitaire avant at. Seul un emplacement valide mappé au joueur envoyant continue. Le serveur renvoie un échec de protocole pour une entrée invalide au lieu d'indexer ou de permettre à un client d'envoyer des commandes pour un autre participant."
+    },
+    {
+      "type": "heading",
+      "text": "Le comportement de déconnexion prend également en compte les Wiimotes mappées"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le même changement vérifie si un joueur non hôte qui quitte possède une quelconque configuration de Wiimote lorsque le jeu est actif. Si c’est le cas, le serveur arrête la session et diffuse DisableGame, reflétant le besoin d’éviter de continuer avec une entrée synchronisée manquante. La vérification ne prend le verrou du jeu que lors du changement du drapeau en cours d’exécution. Ce comportement est séparé de la validation des limites mais couvre un autre cas de cycle de vie du mappage des manettes."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzzer chaque message qui porte un index"
+    },
+    {
+      "type": "paragraph",
+      "text": "Envoyer l’entier minimum, -1, zéro, le dernier slot valide, le premier slot invalide et l’entier maximum à travers chaque type de paquet de manette et de Wiimote. Répéter en tant qu’hôte, client mappé, client non mappé, et après déconnexion ou remappage. Le serveur doit rejeter les entrées mal formées sans exceptions, journalisation excessive ou changements d’état. Ajouter du fuzzing de paquet autour des valeurs tronquées et des limites de type, puis vérifier que les sessions multi-manettes valides et les déconnexions de Wiimote en plein jeu suivent toujours la politique d’arrêt prévue."
+    },
+    {
+      "type": "callout",
+      "text": "Les limites et la propriété sont des questions distinctes : le serveur doit d'abord prouver qu'un emplacement existe, puis prouver que l'expéditeur distant est autorisé à le contrôler."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Lisez la discussion technique Dolphin et les modifications du code source"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K bewirkt, dass Schreibvorgänge des Gastspeichers Vulkan-Oberflächen ungültig machen",
+  "summary": "Geschützte Backing-Bereiche markieren jetzt zwischengespeicherte Farboberflächen als 'dirty', wodurch verhindert wird, dass veraltete GPU-Bilder nach Änderungen ihres Speichers durch CPU erneut als Texturen verwendet werden.",
+  "heroAlt": "Quellenbeleg aus dem Vita3K Pull-Request #3758: renderer/vulkan: Dirty-Flag zum Oberflächen-Cache hinzufügen",
+  "searchKeywords": [
+    "Vita3K",
+    "Vulkan Oberflächen-Cache",
+    "dirty-Flag",
+    "mprotect",
+    "Gastspeicher"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Dirty-Flag zum Oberflächen-Cache hinzufügen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Oberfläche kann im Speicher von GPU existieren, nachdem der Gast seine Backing-Bytes geändert hat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K speichert Vita-Farbenflächen als Vulkan-Ressourcen zwischen. Wenn ein Spiel den entsprechenden Gast-Speicher vom CPU schreibt, kann das zwischengespeicherte Bild diesen Adressbereich möglicherweise nicht mehr korrekt darstellen. Wenn man es als Textur zurückgibt, kann ein altes Bild oder Effekt angezeigt werden. Einige lineare Formate erfordern auch eine GPU-zu-Gast-Synchronisierung, wenn der CPU sie liest, sodass Lese- und Schreibfehler verwandte, aber unterschiedliche Bedeutungen haben."
+    },
+    {
+      "type": "heading",
+      "text": "Schutz-Callbacks enthalten jetzt gemeinsamen Sync- und Dirty-Zustand"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #3758 gibt jeder ColorSurfaceCacheInfo ein gemeinsames Dirty-Flag. protect_surface richtet das sicher schützbare Innenleben an 4-KiB-Seiten aus. Linearflächen mit Synchronisationsfähigkeit verwenden MemPerm::None, um Lese- und Schreibzugriffe abzufangen und need_surface_sync zu erfassen; andere Flächen verwenden ReadOnly, um Schreibzugriffe abzufangen. Ein Schreibzugriff markiert die Fläche als dirty. Für eine Fläche, die kleiner als eine Seite ist, wird das Tracking von dirty zurückgehalten, da ansonsten nicht zusammenhängende Daten auf derselben geschützten Seite falsche Ungültigmachungen verursachen würden."
+    },
+    {
+      "type": "heading",
+      "text": "Cache-Lookup lehnt GPU-Daten nach einem CPU-Schreibzugriff ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn eine Farboberfläche als Textur angefordert wird, gibt ein gesetztes Dirty-Flag kein zwischengespeichertes Ergebnis zurück, wodurch der Aufrufer von veraltetem GPU-Inhalt abgehalten wird. Wenn dieselbe Oberfläche wieder zu einem Framebuffer wird, kann Vita3K den Schutz wieder aktivieren und das Dirty-Flag zurücksetzen, nachdem die neue autoritative Verwendung festgelegt wurde. Überlappende Schutzmaßnahmen kombinieren sich durch most_restrictive_perm, sodass das Hinzufügen eines schwächeren Bereichs nicht versehentlich bereits stärker geschützten Speicher wieder öffnet."
+    },
+    {
+      "type": "heading",
+      "text": "Methoden der Speicherzuordnung und Seitenüberlappung sind entscheidende Tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Auf eine Oberfläche rendern, diese sampeln, alles oder einen Teil vom Gast CPU neu schreiben und dann erneut für lineare und gekachelte Formate sampeln. Beinhaltet ausgerichtete, nicht ausgerichtete, Sub-Page-, überlappende und gemeinsam genutzte Seitenzuordnungen; bestätigen, dass kleine Oberflächen keine falschen Dirty-Flags erzeugen, ohne echte Änderungen zu verbergen. Testen Sie die Rücklesesynchronisation separat von der Schreib-Invalidierung. Wiederholen Sie dies bei nativer Pufferzuordnung, Double Buffering, NVIDIA- und Nicht-NVIDIA-Linux-Treibern, Android und savestate-Wiederherstellung. Protokollieren Sie Schutzverletzungen, um Schleifen oder übermäßige Hot-Path-Fallen zu erkennen."
+    },
+    {
+      "type": "callout",
+      "text": "Ein Cache ist nur korrekt, solange sein Eigentumsnachweis aktuell ist; ein einziger Gastschreibvorgang reicht aus, um den Anspruch der GPU-Oberfläche an diesem Speicher aufzuheben."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Lesen Sie die Vita3K-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

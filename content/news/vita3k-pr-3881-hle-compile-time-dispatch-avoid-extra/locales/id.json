@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K memindahkan dispatch argumen HLE dari runtime ke dalam template",
+  "summary": "Layout argumen ARM pada waktu kompilasi dan pointer fungsi biasa mengurangi mekanisme jembatan per-impor sambil tetap menjaga konversi scalar, varargs, dan nilai kembalian tetap eksplisit.",
+  "heroAlt": "Bukti sumber dari pull request Vita3K #3881: module/bridge: HLE dispatch waktu kompilasi, menghindari indirection pointer tambahan",
+  "searchKeywords": [
+    "Vita3K",
+    "jembatan HLE",
+    "ABI ARM",
+    "template",
+    "dispatch fungsi"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Inti",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge: HLE dispatch waktu kompilasi, menghindari indirection pointer tambahan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Setiap impor tamu melewati batas terjemahan ABI yang sama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebuah panggilan fungsi Vita datang dengan argumen yang terbagi di antara register umum ARM, register titik floating, dan stack. Jembatan Vita3K di HLE harus menemukannya, mengonversi pointer dan representasi tamu menjadi tipe host, memanggil ekspor yang benar, dan menulis nilai kembali. Jembatan yang lebih tua membangun status layout dan menangkap pointer serta nama ekspor dalam std::function, menambahkan mekanisme runtime tujuan umum ke jalur yang dijalankan oleh hampir setiap panggilan layanan emulasi."
+    },
+    {
+      "type": "heading",
+      "text": "Fungsi ekspor menjadi bagian dari tipe jembatan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3881 memperkenalkan make_bridge dengan ExportFn sebagai parameter template non-tipe. lay_out berjalan sebagai constexpr untuk paket argumen ekspor, menghasilkan entri ArgLayout tetap dan status varargs. Sebuah fungsi non-capturing yang dihasilkan membaca setiap argumen melalui read_bridged_arg, memanggil ExportFn secara langsung, dan menulis hasil secara kondisional kecuali tipe kembalian adalah void. Oleh karena itu, ImportFn bisa berupa pointer fungsi biasa."
+    },
+    {
+      "type": "heading",
+      "text": "Tipe jembatan mempertahankan kontrak guest-ke-host"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tata letak saat kompilasi tidak berarti reinterpret-casting register menjadi objek C++ sembarangan. BridgeTypes memilih representasi ARM dari setiap argumen dan mengubahnya menggunakan memori yang diemulasikan bila diperlukan. module::vargs membawa keadaan yang telah dihitungnya alih-alih berpura-pura menjadi satu argumen skalar. Scope Tracy masih menerima nama ekspor melalui penyimpanan statis, menjaga profiling per-fungsi sambil menghapus penangkapan closure sebelumnya."
+    },
+    {
+      "type": "heading",
+      "text": "Kesesuaian ABI membutuhkan pengujian saat kompilasi dan eksekusi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instansiasikan bridge untuk nol argumen, empat dan lima integer, nilai yang selaras 64-bit, float, pointer, struktur yang direpresentasikan oleh bridge type, varargs, pengembalian void, dan kode kesalahan. Bandingkan lokasi register dan stack dengan ABI Vita dan implementasi sebelumnya. Kompilasi setiap modul yang dihasilkan pada compiler yang didukung, periksa ukuran kode dan bentuk panggilan, dan benchmark beban kerja yang banyak impor. Tipe yang tidak valid atau tidak didukung harus gagal saat kompilasi dengan diagnostik yang jelas daripada memilih tata letak yang salah secara diam-diam."
+    },
+    {
+      "type": "callout",
+      "text": "Optimisasi ini bekerja karena tanda tangan ekspor sudah memuat fakta ABI; template dapat mengubah fakta-fakta tersebut menjadi jembatan tetap sebelum emulasi dimulai."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Baca diskusi rekayasa Vita3K dan perubahan sumber"
+    }
+  ]
+}

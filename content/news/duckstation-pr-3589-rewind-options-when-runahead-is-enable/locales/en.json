@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3589-rewind-options-when-runahead-is-enable",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation makes FullscreenUI show that runahead and rewind are mutually exclusive",
+  "summary": "Three rewind controls are now disabled whenever runahead is active, bringing the controller-first settings screen in line with Qt and preventing a misleading configuration.",
+  "heroAlt": "Source evidence from DuckStation pull request #3589: FullscreenUI: Disable rewind options when runahead is enabled",
+  "searchKeywords": [
+    "DuckStation",
+    "FullscreenUI",
+    "runahead",
+    "rewind",
+    "settings"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3589": "FullscreenUI: Disable rewind options when runahead is enabled"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The core constraint existed, but one settings screen hid it"
+    },
+    {
+      "type": "paragraph",
+      "text": "Runahead and rewind both depend on storing and restoring emulator state, and DuckStation does not use them together. The Qt settings screen already locked rewind controls when runahead was enabled. FullscreenUI left the same controls interactive, allowing a controller user to change rewind frequency and slot count even though that configuration could not take effect. The inconsistency made the two frontends describe different capabilities."
+    },
+    {
+      "type": "heading",
+      "text": "The fix disables the exact three controls affected by the rule"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3589 greys out Enable Rewinding, Rewind Save Frequency, and Rewind Save Slots when runahead is active. It does not delete saved rewind preferences or silently rewrite them. When runahead is turned off, the controls can become available with their previous values. That distinction preserves user configuration while making the current runtime constraint visible at the point of editing."
+    },
+    {
+      "type": "heading",
+      "text": "Frontend parity prevents settings from becoming accidental policy"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change lives in fullscreenui_settings.cpp and mirrors Qt's established behavior rather than defining a second rule. Shared core semantics should not depend on whether a desktop user chose mouse-and-keyboard settings or a living-room controller interface. Keeping labels, enabled state, and value preservation aligned also reduces support reports where two screenshots appear to contradict each other."
+    },
+    {
+      "type": "heading",
+      "text": "Transition tests should verify both UI state and stored values"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enable rewind, set non-default frequency and slots, then activate runahead. All three controls should become disabled while retaining their stored values. Disable runahead and verify those values return. Repeat after restarting the emulator and from both Qt and FullscreenUI. Navigation must skip disabled controls cleanly, and configuration files must not contain unintended resets. Finally, confirm that the core still refuses conflicting runtime behavior if settings are edited outside either frontend."
+    },
+    {
+      "type": "callout",
+      "text": "This is a truthful-settings fix: FullscreenUI now exposes the same runahead-versus-rewind boundary the emulator and Qt already enforce."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3589",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

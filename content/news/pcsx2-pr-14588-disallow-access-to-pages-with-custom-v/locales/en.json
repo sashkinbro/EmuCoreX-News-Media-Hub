@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 blocks PINE clients from reaching thread-bound MMIO handlers",
+  "summary": "The external memory interface now refuses VTLB pages served by custom device callbacks, limiting its direct reads to memory that is safe outside the emulation thread.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14588: PINE: Disallow access to pages with custom VTLB handlers",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "thread safety"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Security",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Disallow access to pages with custom VTLB handlers"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A guest address can represent RAM or an active hardware register"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE exposes memory operations to external tools. Through PCSX2's virtual translation layer, some addresses point to ordinary host-backed RAM, while others route through custom handlers for MMIO registers and emulated peripherals. Calling a custom handler is not a passive read: it may change device state, require emulator-thread ordering, or touch components that have no synchronization for an arbitrary server thread."
+    },
+    {
+      "type": "heading",
+      "text": "Custom-handler pages are rejected before access"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14588 changes PINE's VTLB path to recognize pages whose access is implemented by a custom handler and deny them. Directly mapped memory remains available to clients. The boundary is based on how the page is served, not a brittle hard-coded list of register ranges, so newly registered MMIO handlers inherit the protection without another PINE-specific address update."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead is rewritten around the same safer distinction"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch also aligns the vtlb_ramRead template declaration and definition and simplifies its implementation. A microbenchmark on the author's machine showed a small speed improvement, but that is secondary. The primary guarantee is thread ownership: PINE must not make the GS, SPU, CDVD, or another peripheral execute callbacks on a thread that bypasses the VM scheduler."
+    },
+    {
+      "type": "heading",
+      "text": "Clients need clear failure semantics and RAM regression coverage"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test existing PINE debuggers against normal RAM, scratchpad or other explicitly supported direct mappings, page boundaries, and unmapped addresses. Attempt reads and writes to representative MMIO pages and confirm a clean protocol error with no peripheral side effect or crash. Repeat while the VM runs, pauses, resets, and shuts down. This is described as an initial fix pending broader design work, so clients should not be promised safe device-register access until a marshalled emulator-thread mechanism exists."
+    },
+    {
+      "type": "callout",
+      "text": "PINE remains a memory interface, not a second hardware-execution thread; custom VTLB handlers are denied until they can be marshalled safely."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

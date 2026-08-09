@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 在失败的 ImGui 纹理分配成为崩溃之前阻止它发生",
+  "summary": "创建、上传和销毁路径现在将缺失的 BackendUserData 视为真实状态，从而防止分配失败传递到本地句柄和映射操作。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14655 的来源证据：GS：更好地处理 imgui 纹理创建风险。",
+  "searchKeywords": [
+    "PCSX2",
+    "ImGui 纹理",
+    "分配失败",
+    "GSTexture",
+    "崩溃"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS：更好地处理 imgui 纹理创建风险。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "当 GPU 无法提供纹理时，ImGui 可以请求纹理"
+    },
+    {
+      "type": "paragraph",
+      "text": "字体图集和其他界面图像会经过 WantCreate、WantUpdates 和 WantDestroy 状态。由于设备丢失、资源压力、不支持的尺寸或其他后端错误，纹理分配可能会失败。旧的创建分支会报告失败，但随后继续操作，就好像 GSTexture 存在一样，请求其本机句柄并继续执行上传代码。因此，诊断发生在空指针解引用之前，而不是包含在其中。"
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate 仅在具有有效后端数据时继续执行"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14655 将 CreateTexture 包装在成功指针分支中。只有真实纹理在代码继续进行全尺寸上传之前，才会收到 ImTextureID 和 BackendUserData。在失败时，PCSX2 发出 pxFailRel 并跳出状态。WantUpdates 会在 map 或逐行 Update 操作之前单独检查 BackendUserData，因此之前失败的创建不会被误认为已初始化的资源。"
+    },
+    {
+      "type": "heading",
+      "text": "Destroy 也接受创建可能从未完成"
+    },
+    {
+      "type": "paragraph",
+      "text": "破坏状态现在仅在 BackendUserData 非空时才会回收并使纹理失效。当 ImGui 在分配失败后丢弃图集请求或状态转换与恢复逻辑竞争时，这一点很重要。对于有效纹理的回收行为本身没有变化，包括同尺寸图集的重用；该补丁使生命周期图从开始到结束包含一个缺失资源的分支。"
+    },
+    {
+      "type": "heading",
+      "text": "故障注入比等待 issue #14652 要强。"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果可能，重现相关的崩溃转储，然后添加一个受控的后端钩子，使下一个 ImGui CreateTexture 返回 null。OSD 和字体渲染应报告失败而不会崩溃、上传像素或回收无效指针。恢复分配并确认可以创建并显示后续图集。在所有硬件后端上，在调整大小、字体驱逐、设备重置和关闭过程中重复故障测试，并运行正常的 OSD 测试，以确保受保护路径不会阻止有效更新。"
+    },
+    {
+      "type": "callout",
+      "text": "该修复完成了纹理状态机：分配失败是该请求的终端分支，而不是先发出警告然后执行正常的上传代码。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

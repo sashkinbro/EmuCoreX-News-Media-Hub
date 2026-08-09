@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 risolve il ridimensionamento in due fasi di Gamescope senza tornare a 640x480",
+  "summary": "Un evento di ridimensionamento ritardato potrebbe durare più a lungo rispetto a una nuova richiesta di finestra 1280x800; l'ordine corretto dello stato mantiene il viewport finale dello Steam Deck alle dimensioni effettivamente selezionate da Gamescope.",
+  "heroAlt": "Prova fonte dalla pull request PCSX2 #14732: Qt: Correzione della risoluzione errata su Gamescope",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "debounce del ridimensionamento",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Correzione della risoluzione errata su Gamescope"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope segnala una finestra temporanea prima della reale dimensione del display"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modalità gaming di SteamOS può far aprire a Qt PCSX2 a 640x480 e ridimensionarlo immediatamente allo schermo 1280x800 del Steam Deck. Entrambi gli eventi sono legittimi in momenti diversi. Il bug è apparso perché il primo ridimensionamento ha avviato un timer di debounce, mentre una successiva query DisplaySurface ha aggiornato le dimensioni memorizzate alla dimensione finale. Il callback ritardato poi è stato eseguito con l'intenzione obsoleta di 640x480."
+    },
+    {
+      "type": "heading",
+      "text": "Il vecchio timer poteva sovrascrivere informazioni più recenti sulla finestra"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un debounce normalmente previene lavori costosi sulla viewport durante una tempesta di ridimensionamenti. Qui è diventato un rischio di ordine: le dimensioni di m_last_window descrivevano già 1280x800, ma il callback in sospeso applicava ancora il target precedente. Big Picture rimaneva a schermo intero a livello di sistema finestra mentre il renderer usava una piccola viewport, producendo l'immagine caratteristica 640x480 nell'angolo in basso a sinistra."
+    },
+    {
+      "type": "heading",
+      "text": "La correzione rende lo stato del ridimensionamento monotono durante la sequenza di avvio"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14732 modifica la logica di ridimensionamento della visualizzazione di Qt in modo che un evento debounced più vecchio non possa prevalere dopo che getWindowInfo ha osservato la superficie effettiva. Mira alla competizione tra due fonti di dimensioni piuttosto che gestire un caso speciale per una risoluzione fissa dello Steam Deck. Questo è rilevante per altri dispositivi Gamescope, display esterni e pannelli futuri le cui dimensioni finali differiscono da 1280x800."
+    },
+    {
+      "type": "heading",
+      "text": "Ripetuti avvii a freddo sono il test di regressione significativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Su Steam Deck o un'altra sessione Gamescope, avvia ripetutamente PCSX2 con -bigpicture -fullscreen e OpenGL, controllando il viewport dopo ogni avvio. Aggiungi transizioni da finestra a schermo intero, cambi di monitor esterno, sospensione/ripresa e diversi renderer back-end. Registra ogni evento di ridimensionamento, target del debounce, risultato di getWindowInfo e viewport applicato. La callback finale deve usare le dimensioni più recenti, mentre un singolo ridimensionamento ordinario attende ancora il debounce e si applica correttamente."
+    },
+    {
+      "type": "callout",
+      "text": "Il bug non era una costante di risoluzione errata; era un timer vecchio che vinceva dopo che una nuova dimensione della superficie era già diventata autorevole."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Leggi la discussione tecnica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

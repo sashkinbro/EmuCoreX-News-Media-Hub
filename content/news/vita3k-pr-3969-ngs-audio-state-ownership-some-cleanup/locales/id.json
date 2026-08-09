@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K memisahkan empat jenis status di dalam mesin audio NGS-nya",
+  "summary": "Byte yang terlihat tamu, buffer sementara, logika yang dapat dilanjutkan, dan objek runtime host sekarang memiliki pemilik yang berbeda, membuat routing suara dan umur decoder lebih mudah dipahami.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Vita3K #3969: ngs: merestrukturisasi kepemilikan status ngs/audio & beberapa pembersihan",
+  "searchKeywords": [
+    "Vita3K",
+    "Audio NGS",
+    "ATRAC9",
+    "status suara",
+    "routing audio"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: merestrukturisasi kepemilikan status ngs/audio & beberapa pembersihan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Satu suara audio mengandung status dengan masa hidup yang sangat berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sistem NGS pada Vita mengekspos status modul yang dapat dibaca tamu, tetapi emulator juga membutuhkan objek decoder khusus host, resampler, PCM sementara, riwayat loop, dan referensi routing. Menyimpan bagian-bagian tersebut dalam anggota yang longgar terkait membuat reset, penggunaan kembali suara, callback, dan penghancuran rentan terhadap pointer lama. Blok memori tamu tidak boleh secara tidak sengaja memiliki decoder host, dan buffer sementara tidak boleh disangka sebagai data yang diperlukan untuk melanjutkan pemutaran logis."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData sekarang menamai setiap kategori kepemilikan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3969 memberikan module guest_state_data untuk byte yang terlihat ABI dan scratch_data untuk pekerjaan sementara. Sebuah logical_state polimorfik menyimpan informasi seperti riwayat ADPCM atau riwayat decoder ATRAC9 yang diekspor yang harus bertahan melewati batas pemrosesan. Sebuah runtime_state terpisah memiliki sumber daya host seperti decoder aktif dan resampler yang dapat dibersihkan atau dibangun kembali. Pabrik modul membuat setiap lapisan dan menginisialisasi data suara melalui satu antarmuka."
+    },
+    {
+      "type": "heading",
+      "text": "Rute mengidentifikasi suara tanpa menyimpan endpoint mentah yang rapuh"
+    },
+    {
+      "type": "paragraph",
+      "text": "Objek patch menyimpan sumber dan tujuan sebagai indeks rak dan suara, kemudian menyelesaikannya melalui Sistem dan memori yang diemulasikan saat diperlukan. Ini mencegah sebuah patch mengikuti pointer Suara secara membabi buta setelah rak berubah. ATRAC9 memuat riwayat decoder logis yang disimpan ke dalam decoder runtime sebelum bekerja dan mengekspornya setelahnya. Modul pemain menyimpan riwayat ADPCM dalam keadaan logis, sementara buffer output dan resampling menggunakan wadah runtime eksplisit dengan operasi yang jelas dan ringkas."
+    },
+    {
+      "type": "heading",
+      "text": "Uji siklus hidup harus menghentikan audio di setiap fase"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat, rute, mulai, jeda, lanjutkan, hentikan, atur ulang, dan hancurkan suara menggunakan modul PCM, ADPCM, ATRAC9, output, dan resampling. Gunakan kembali slot rak dan hapus salah satu titik akhir saat patch masih ada. Jalankan callback tamu, transisi loop, kosongkan buffer, dan perubahan konfigurasi, lalu bandingkan output kontinu dengan output saat simpan status logis dan pembangunan ulang runtime. Penangkap thread dan alamat harus mencakup titik buka/kunci ulang scheduler, pembongkaran, dan handle tamu yang rusak. Tidak ada pointer host yang boleh dapat dipulihkan dari byte status yang terlihat tamu."
+    },
+    {
+      "type": "callout",
+      "text": "Ketepatan audio meningkat ketika mesin dapat menjawab data mana yang termasuk ABI tamu, status sinyal yang dapat dilanjutkan, pekerjaan sementara, dan runtime dekoder host."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Baca diskusi rekayasa Vita3K dan perubahan sumber"
+    }
+  ]
+}

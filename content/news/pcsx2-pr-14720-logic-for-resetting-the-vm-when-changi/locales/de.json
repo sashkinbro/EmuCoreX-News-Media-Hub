@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 bestellt Disc-Wechsel-Reset, bevor Qt die VM wieder starten kann",
+  "summary": "Ein aufgeschobener Reset-Zustand wurde durch VMLocks Unpause-Ereignis überschrieben; das Verschieben des Emulation-Ansichts-Übergangs nach dem Reset-Posting bewahrt den beabsichtigten VM-Lebenszyklus.",
+  "heroAlt": "Quellenbeweis vom PCSX2 Pull-Request #14720: Qt: Logik zum Zurücksetzen der VM beim Wechseln der Discs korrigieren",
+  "searchKeywords": [
+    "PCSX2",
+    "Disc-Wechsel",
+    "VM-Reset",
+    "VMLock",
+    "separates Fenster"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Logik zum Zurücksetzen der VM beim Wechseln der Discs korrigieren"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Das Wechseln einer Disc aus der Spielerliste überschreitet die UI- und VM-Lebenszyklen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mit aktivierter Funktion \"In separates Fenster rendern\" kann Qt Ansichten wechseln, die VM sperren, Ereignisse posten und in einer Benutzeraktion einen Reset anfordern. Der Reset selbst wurde verzögert. MainWindow bewegte sich zur Emulationsansicht, während der Sperrbereich endete, und der Destruktor von VMLock postete ein Entsperren. Dieses spätere Ereignis konnte VMState::Resetting ersetzen, bevor der Reset-Handler tatsächlich ausgeführt wurde."
+    },
+    {
+      "type": "heading",
+      "text": "Das Rennen betrifft die Ereignisreihenfolge, nicht fehlende Synchronisation."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die VM hatte einen gültigen Reset-Zustand und eine Sperre, die den Übergang schützen sollte. Das Problem war, dass zwei verzögerte Zustandsänderungen in falscher Reihenfolge eingereiht wurden. Ein gepostetes Entsperren aus der UI-Bereinigung durfte so ausgeführt werden, als ob der Reset abgeschlossen wäre. Dies erklärt, warum das Wechseln der Discs über einen bestimmten Frontend-Pfad fehlschlug, obwohl direkter Reset und normales Pausieren/Resume funktionierten."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView folgt jetzt dem geposteten Reset"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14720 verschiebt MainWindow::switchToEmulationView, nachdem das Reset-Ereignis veröffentlicht wurde. Die VM läuft nicht, während die Reset-Anfrage eingerichtet wird, und der Ansichtwechsel kann VMLock nicht mehr dazu bringen, Resetting durch ein frühes Fortsetzen zu beeinträchtigen. Die Quelle merkt an, dass eine umfassendere VM-Zustands-Neugestaltung möglich ist, aber diese Änderung behebt den bekannten Reihenfolgefehler, ohne den Umfang zu erweitern."
+    },
+    {
+      "type": "heading",
+      "text": "Änderungen an separaten Fenster-Discs müssen in jedem Zustand wiederholt werden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Render To Separate Window aktivieren, ein Multi-Disc-Spiel starten und während des Spielens, Pausierens und mit geöffnetem modalen UI eine andere Disc aus der Spiel-Liste auswählen. Veröffentlichen Sie protokollierte Reset- und Fortsetzungsereignisse und prüfen Sie, dass Resetting bis zum Abschluss des Resets erhalten bleibt. Nach Suspendierung, Zustandsladen und schnellen aufeinanderfolgenden Disc-Auswahlen wiederholen. Standardmäßige Änderungen im selben Fenster und manuelle Resets sind Negativkontrollen; die Reihenfolge-Korrektur darf die VM nicht dauerhaft pausieren oder Ansichten zu spät wechseln lassen."
+    },
+    {
+      "type": "callout",
+      "text": "Der VM-Reset wurde bereits angefordert; die Korrektur stellt sicher, dass kein UI-Cleanup-Ereignis die Ausführung wieder aufnehmen darf, bevor diese Anforderung wirksam wird."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

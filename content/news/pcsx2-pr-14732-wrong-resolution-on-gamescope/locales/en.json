@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 resolves Gamescope's two-step startup resize without reverting to 640x480",
+  "summary": "A delayed resize event could outlive a newer 1280x800 window query; corrected state ordering keeps the final Steam Deck viewport at the dimensions Gamescope actually selected.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14732: Qt: Fix wrong resolution on Gamescope",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "resize debounce",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Fix wrong resolution on Gamescope"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope reports a temporary window before the real display size"
+    },
+    {
+      "type": "paragraph",
+      "text": "SteamOS gaming mode can make Qt open PCSX2 at 640x480 and immediately resize it to the Steam Deck's 1280x800 screen. Both events are legitimate at different moments. The bug appeared because the first resize started a debounce timer, while a later DisplaySurface query updated the remembered dimensions to the final size. The delayed callback then fired with stale 640x480 intent."
+    },
+    {
+      "type": "heading",
+      "text": "The old timer could overwrite newer window information"
+    },
+    {
+      "type": "paragraph",
+      "text": "A debounce normally prevents expensive viewport work during a resize storm. Here it became an ordering hazard: m_last_window dimensions already described 1280x800, but the pending callback still applied the earlier target. Big Picture remained fullscreen at the window-system level while the renderer used a small viewport, producing the characteristic 640x480 image in the lower-left corner."
+    },
+    {
+      "type": "heading",
+      "text": "The fix makes resize state monotonic across the startup sequence"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14732 adjusts Qt display resize logic so an older debounced event cannot win after getWindowInfo has observed the actual surface. It targets the race between two size sources rather than special-casing a fixed Steam Deck resolution. That matters for other Gamescope devices, external displays, and future panels whose final dimensions differ from 1280x800."
+    },
+    {
+      "type": "heading",
+      "text": "Repeated cold launches are the meaningful regression test"
+    },
+    {
+      "type": "paragraph",
+      "text": "On Steam Deck or another Gamescope session, repeatedly launch PCSX2 with -bigpicture -fullscreen and OpenGL, checking the viewport after every startup. Add windowed-to-fullscreen transitions, external monitor changes, suspend/resume, and several renderer backends. Log every resize event, debounce target, getWindowInfo result, and applied viewport. The final callback must use the newest dimensions, while an ordinary single resize still waits for debounce and applies correctly."
+    },
+    {
+      "type": "callout",
+      "text": "The bug was not a wrong resolution constant; it was an old timer winning after a newer surface size had already become authoritative."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

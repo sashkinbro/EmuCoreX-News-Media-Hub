@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 将 Android 从 ANGLE 路由出去，而不重写用户的渲染器选择",
+  "summary": "运行时图形 API 解析器检测 Android 的 OpenGL-over-Vulkan 兼容层，选择 Vulkan 以安全执行，并解释为什么 UI 选择被禁用。",
+  "heroAlt": "来源证据来自 Azahar 拉取请求 #2197：android：如果 OpenGL 渲染器是 ANGLE，则强制使用 Vulkan",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "图形 API"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android：如果 OpenGL 渲染器是 ANGLE，则强制使用 Vulkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android 可以将兼容层标记为 OpenGL"
+    },
+    {
+      "type": "paragraph",
+      "text": "ANGLE 将 OpenGL 调用转换为 Vulkan，并且在更新的 Android 设备上正在成为默认路径。Azahar 的 OpenGL 渲染器期望原生驱动行为，并在置于该转换之上时出现问题。因此，直接读取 graphics_api 可能会返回 OpenGL，即使系统实际上执行的是不满足 Azahar 测试过的 OpenGL 路径的基于 Vulkan 的兼容性堆栈。"
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI 将存储的意图与可运行的后端分开"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2197 引入了 Settings::GetWorkingGraphicsAPI()。调用者使用它，而不是读取原始设置。当 Android 环境报告有问题的 ANGLE 配置时，该函数返回 Vulkan。存储的偏好设置保持不变，因此 Azahar 不会仅因为某个设备或 OS 会话无法安全执行而永久更改用户配置。"
+    },
+    {
+      "type": "heading",
+      "text": "设置 UI 可以解释被禁用的选项"
+    },
+    {
+      "type": "paragraph",
+      "text": "Android 设置项获得 disabledMessage，用于在此显示渲染器选择不可用的原因。这比一个看似可以交互但在运行时静默忽略的选择器要好，也比完全删除该选项要好。该属性具有足够通用性，可用于其他禁用的设置，但本文的行为是 ANGLE 特定消息和运行时修正。"
+    },
+    {
+      "type": "heading",
+      "text": "测试必须区分本地 OpenGL、ANGLE 和显式 Vulkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Android 17 之前和之后的设备上，识别实际的 GLES 实现并比较原始偏好与 GetWorkingGraphicsAPI。原生 OpenGL 应保持可选，ANGLE 应执行 Vulkan 并显示原因，而显式 Vulkan 偏好应保持不变。重启、迁移设置、旋转或重新创建表面，并确认每个 C++ 图形调用者都使用解析器。回退处理不能创建两个渲染器，也不能更改保存的值。"
+    },
+    {
+      "type": "callout",
+      "text": "Azahar 保留用户选择的内容，同时单独决定该 Android 图形堆栈可以安全运行的内容。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "阅读 Azahar 工程讨论和源代码变更"
+    }
+  ]
+}

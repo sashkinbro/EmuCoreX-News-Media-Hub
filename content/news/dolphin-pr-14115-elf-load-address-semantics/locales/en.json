@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin separates an ELF segment's load address from its virtual address",
+  "summary": "The loader now prefers p_paddr as the segment's load-memory address and falls back to p_vaddr only when no physical address is provided.",
+  "heroAlt": "Source evidence from Dolphin pull request #14115: Core/Boot: Fix ELF load address semantics",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: Fix ELF load address semantics"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF program headers can describe two different addresses"
+    },
+    {
+      "type": "paragraph",
+      "text": "A loadable ELF segment includes p_vaddr, the address used by the program when executing, and p_paddr, commonly treated in embedded environments as the load-memory address. Many binaries set them equal, which hides loaders that conflate the fields. Homebrew, boot components, or development images can intentionally separate them. Dolphin previously copied segment bytes to p_vaddr unconditionally, ignoring the physical placement encoded by the file."
+    },
+    {
+      "type": "heading",
+      "text": "The loader now gives a nonzero physical field first choice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14115 logs both values and initializes writeAddr from p_paddr. A nonzero physical address is mapped into the PowerPC virtual region by setting the 0x80000000 bit. If p_paddr is zero, Dolphin uses p_vaddr as the compatibility fallback. The MEM1-only check also switches to the actual chosen write address, so filtering evaluates where bytes will be written rather than a different header field."
+    },
+    {
+      "type": "heading",
+      "text": "This is a loader semantic correction, not arbitrary relocation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin does not calculate a new location or rewrite references inside the binary. It follows the program header's supplied load address and retains the established virtual mapping convention. That distinction matters for segments copied to one location before control flow or startup code uses them at another. It also prevents a zero p_paddr, common in files that do not distinguish addresses, from mapping accidentally to the base of memory."
+    },
+    {
+      "type": "heading",
+      "text": "Fixtures must cover equal, separate, zero, and invalid ranges"
+    },
+    {
+      "type": "paragraph",
+      "text": "Create small ELFs whose p_paddr equals p_vaddr, is zero, differs but remains in MEM1, lands near a boundary, or points outside writable emulated RAM. Fill each segment with a unique pattern and verify the exact destination, BSS clearing, entry execution, and overlap handling. Exercise only_in_mem1 filtering against writeAddr and inspect logs for both fields. Real homebrew should be tested alongside malformed files so improved semantics do not become unchecked guest memory writes."
+    },
+    {
+      "type": "callout",
+      "text": "When an embedded ELF supplies a load-memory address, the loader should honor it; the virtual address describes execution, not always where bytes first belong."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

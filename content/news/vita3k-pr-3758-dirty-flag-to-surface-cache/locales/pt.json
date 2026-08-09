@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K faz com que gravações na memória do convidado invalidem as superfícies Vulkan",
+  "summary": "Faixas de suporte protegidas agora marcam superfícies de cor em cache como sujas, prevenindo que imagens GPU obsoletas sejam reutilizadas como texturas após o CPU alterar sua memória.",
+  "heroAlt": "Evidência de origem do pull request #3758 do Vita3K: renderer/vulkan: Adicionar flag de sujo ao cache de superfícies",
+  "searchKeywords": [
+    "Vita3K",
+    "Cache de superfícies Vulkan",
+    "flag de sujo",
+    "mprotect",
+    "memória do convidado"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Adicionar flag de sujo ao cache de superfícies"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma superfície pode existir na memória GPU após o convidado alterar seus bytes de suporte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K armazena superfícies coloridas do Vita como recursos Vulkan. Quando um jogo grava na memória correspondente do convidado a partir do CPU, a imagem armazenada em cache pode não mais representar aquele intervalo de endereço. Retorná-la como uma textura pode mostrar um quadro ou efeito antigo. Alguns formatos lineares também exigem sincronização GPU-para-convidado quando o CPU os lê, portanto falhas de leitura e escrita têm significados relacionados, mas diferentes."
+    },
+    {
+      "type": "heading",
+      "text": "Os callbacks de proteção agora carregam estado de sincronia e sujo compartilhados"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #3758 dá a cada ColorSurfaceCacheInfo uma flag de sujo compartilhada. protect_surface alinha o interior protegível com segurança para páginas de 4 KiB. Superfícies lineares com capacidade de sincronização usam MemPerm::None para capturar leituras e gravações e capturar need_surface_sync; outras superfícies usam ReadOnly para capturar gravações. Uma gravação marca como sujo. Para uma superfície menor que uma página, o rastreamento de sujo é retido porque dados não relacionados na mesma página protegida criariam invalidações falsas."
+    },
+    {
+      "type": "heading",
+      "text": "A busca no cache recusa dados GPU após uma gravação CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando uma superfície colorida é solicitada como textura, um conjunto de flags de sujo retorna nenhum resultado em cache, forçando o chamador a se afastar de conteúdo desatualizado GPU. Quando a mesma superfície se torna um framebuffer novamente, Vita3K pode reativar a proteção e limpar o flag de sujo após estabelecer o novo uso autorizado. Proteções sobrepostas se combinam através do most_restrictive_perm, então adicionar um intervalo mais fraco não pode, acidentalmente, reabrir memória já protegida mais fortemente."
+    },
+    {
+      "type": "heading",
+      "text": "Métodos de mapeamento de memória e sobreposição de páginas são testes chave"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderize para uma superfície, amostre-a, reescreva toda ou parte a partir do CPU do convidado, e então amostre novamente para formatos lineares e em blocos (tiled). Inclua alocações alinhadas, não alinhadas, sub-page, sobrepostas e de página compartilhada; confirme que superfícies pequenas evitam flags de sujo falsos sem esconder mudanças reais. Teste a sincronização de leitura separadamente da invalidação de escrita. Repita na mapeamento de buffer nativo, double buffering, drivers Linux NVIDIA e não-NVIDIA, Android e restauração savestate. Registre falhas de proteção para capturar loops ou armadilhas excessivas em caminhos críticos."
+    },
+    {
+      "type": "callout",
+      "text": "Um cache é correto apenas enquanto sua evidência de propriedade estiver atual; uma escrita de um único convidado é suficiente para revogar a reivindicação da superfície GPU sobre essa memória."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Leia a discussão de engenharia Vita3K e as alterações de código-fonte"
+    }
+  ]
+}

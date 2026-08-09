@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dokumenty PPSSPP szczegółowo opisują zasady PSP dotyczące dokładnego bitowo mnożenia i dzielenia VFPU",
+  "summary": "Pomocnicze odniesienia wyjaśniają zachowanie denormalnych liczb, niedomiaru, zaokrąglania, znaku, nieskończoności i NaN, aby ścieżki hosta JIT mogły być porównywane z faktycznymi wynikami PSP.",
+  "heroAlt": "Dowody źródłowe z żądania pull PPSSPP #21815: Implementacja (miejmy nadzieję) dokładnie bitowo vmul/vdiv",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "liczby zmiennoprzecinkowe",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "Procesor",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implementacja (miejmy nadzieję) dokładnie bitowo vmul/vdiv"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 wciąż pozostawia miejsce na specyficzne dla sprzętu zachowania brzegowe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zwykłe mnożenie i dzielenie liczb zmiennoprzecinkowych wydaje się przenośne, dopóki dane wejściowe nie zbliżą się do liczb denormalnych, przepełnienia, nieskończoności lub NaN. PSP VFPU zachowuje się jak float32 z zaokrąglaniem do najbliższej liczby parzystej, przy czym liczby denormalne traktowane są jako zero, a bardzo małe wyniki przepływają do zera, plus specyficzne zasady dotyczące wartości NaN i znaku. Host x86, ARM i ustawienia kompilatora mogą różnić się dokładnie na tych granicach, powodując rzadkie różnice w logice gry lub grafice."
+    },
+    {
+      "type": "heading",
+      "text": "Referencja działa na surowych bitach przed i po operacji arytmetycznej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21815 dodaje jawne pomocnicze funkcje vfpu_mul i vfpu_div dla referencji. Odczytują operandy jako wartości uint32, redukują wejścia subnormalne do zera ze znakiem, wykonują arytmetykę i sprawdzają bity wyniku. Wyniki na poziomie lub poniżej zmierzonego progu przepływu są ponownie obliczane w podwójnej precyzji, aby zdecydować, czy zachować najmniejszy normalny wynik, czy zwrócić zero ze znakiem. Każde NaN jest kanonizowane do specyficznego dla VFPU ładunku 0x7F800001 ze znakiem pochodzącym od operandów."
+    },
+    {
+      "type": "heading",
+      "text": "Próg przechwytuje granicę, której flagi FTZ hosta mogą nie udostępniać"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zaobserwowane odcięcie flush to FLT_MIN minus jedna czwarta FLT_TRUE_MIN. Wygląda to na zgodne z testowaną granicą flush-to-zero w x86, ale nie zakłada się, że pasuje do każdego hosta ARM. Zakodowanie tego zachowania w czytelnej referencji daje backendom JIT źródło prawdy, nawet jeśli ich najszybsza implementacja używa trybów rejestru kontrolnego, instrukcji wektorowych lub korekcyjnych gałęzi. Pomocnicze materiały są materiałem odniesienia, a nie twierdzeniem, że skalarny C++ jest finalną gorącą ścieżką."
+    },
+    {
+      "type": "heading",
+      "text": "Wytrzymałe wektory graniczne powinny napędzać zgodność backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testuj dodatnie i ujemne zero, każdą klasę subnormalną, wartości wokół progu flush, największe skończone liczby, nieskończoności, ciche i sygnalizujące NaN-y oraz kombinacje znaków operandów. Porównuj interpreter, x86, ARM64 i inne wyniki JIT bit po bicie dla vmul i vdiv, a nie z epsylonem. Losowe testy różnicowe powinny koncentrować się na parach wykładników blisko przepełnienia i niedomiaru. Szybka matematyka kompilatora nie może usuwać kanonizacji, a operacje zespolone muszą być sprawdzane osobno, ponieważ mają różne punkty zaokrągleń."
+    },
+    {
+      "type": "callout",
+      "text": "Emulacja dokładna na poziomie bitów zaczyna się tam, gdzie kończy się przybliżona równość numeryczna: znak zero, jeden bit przepełnienia lub ładunek NaN mogą być obserwowalnym stanem gościa."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Przeczytaj dyskusję inżynierską PPSSPP i zmiany w źródle"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP verschiebt WebSocket Debugging-Arbeiten auf den CPU Thread",
+  "summary": "Eine synchrone Aufgabenbrücke ersetzt das verteilte Debugger-Locking, und der Disassembler verwirft zusammengeführte Makrooperationen, die die Schrittgröße mehrdeutig machten.",
+  "heroAlt": "Quellenbeweis aus dem Pull Request #22051 von PPSSPP: Refactor der Websocket-Debug-Schnittstelle, um Thread-Sicherheit zu gewährleisten, entferne \"Makro-Operationen\" im Disassembler",
+  "searchKeywords": [
+    "PPSSPP",
+    "WebSocket Debugger",
+    "CPU Thread",
+    "Breakpoints",
+    "Disassemblierung"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Werkzeuge",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refactor der Websocket-Debug-Schnittstelle, um Thread-Sicherheit zu gewährleisten, entferne \"Makro-Operationen\" im Disassembler"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Remote-Debugger-Anfragen überschritten eine Eigentumsgrenze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein WebSocket-Debugger läuft in einem Netzwerk-Thread, aber Breakpoints, Schritt-für-Schritt-Ausführung, Registerzugriff und ein Großteil des emulierten Speichers gehören dem CPU-Ausführungs-Thread. Das Schützen einzelner Funktionen mit nicht zusammenhängenden Sperren macht die Korrektheit abhängig von der Reihenfolge der Sperren und davon, dass sich jeder zukünftige Handler an dieselben Regeln erinnert. Es ist besonders fragil, während der Core pausiert ist, da eine Anfrage möglicherweise den CPU-Thread-Zustand genau dann benötigt, wenn der normale Frame-Fortschritt gestoppt ist."
+    },
+    {
+      "type": "heading",
+      "text": "Eine Brücke serialisiert CPU-verwaltete Operationen im Run-Loop"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #22051 fügt Core_RunOnCPUThread hinzu. Ein Aufrufer packt eine Funktion in eine gemeinsame Aufgabe, legt sie unter einem Queue-Mutex ab und wartet auf eine Bedingungsvariable. Core_RunLoopUntil leert die Queue am Anfang seiner Schleife, führt die Funktionen im CPU-Thread aus, markiert sie unter dem Mutex als abgeschlossen und weckt wartende Threads. Aufrufe, die bereits im CPU-Thread ausgeführt werden, werden sofort ausgeführt, wodurch eine Selbstblockade vermieden wird. Die Schleife leert kontinuierlich, während Schritt-für-Schritt-Ausführung oder Pause stattfindet und mindestens einmal pro Host-Frame während der Ausführung."
+    },
+    {
+      "type": "heading",
+      "text": "Die Disassemblierung behält jetzt die Schrittgröße in einer Einheit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die gleiche Arbeit entfernt Disassembler-Makrooperationen, die Instruktionsmuster wie lui plus ori zu einer Präsentationszeile zusammenfassten. Obwohl das Lesen praktisch ist, verschwimmen bei zusammengefassten Operationen die Bedeutungen der Schrittgröße, ob sie Bytes, Gast-Instruktionen oder Anzeigereihen meint. Der neue Vertrag behandelt stepSize als Anzahl von vier-Byte MIPS-Instruktionen, und die Berechnungen der Haltepunktadressen multiplizieren entsprechend. Ansichten können später visuelle Hinweise hinzufügen, ohne die zugrunde liegende Ausführungseinheit zu ändern."
+    },
+    {
+      "type": "heading",
+      "text": "Nebenläufigkeitstests benötigen pausierte und wieder betretbare Fälle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Führen Sie gleichzeitig WebSocket-Lese- und Schreibvorgänge, Breakpoint-Änderungen, Speicherprüfungen und Einzelschritte aus, während das Spiel läuft, pausiert ist und zwischen Zuständen wechselt. Trennen Sie Clients, während Aufgaben warten, stoppen Sie den Kern mit einer nicht leeren Warteschlange und rufen Sie die Brücke aus dem CPU-Thread selbst auf. ThreadSanitizer sollte keine Debugger-Races melden. Überprüfen Sie, dass jede Anfrage eine Fertigstellung oder einen kontrollierten Shutdown-Fehler erhält, und vergleichen Sie Disassemblierungsadressen um frühere Makro-Muster, sodass beim Einzelschritt niemals eine Gastanweisung übersprungen oder wiederholt wird."
+    },
+    {
+      "type": "callout",
+      "text": "Der Debugger fordert nicht mehr viele Sperren an, um den Besitz von CPU zu imitieren; er sendet die Operation an den Thread, der den Zustand bereits besitzt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Lesen Sie die PPSSPP-Engineering-Diskussion und die Quellcodeänderungen"
+    }
+  ]
+}

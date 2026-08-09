@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K provoca che le scritture nella memoria guest invalidino le superfici Vulkan",
+  "summary": "Le gamme di supporto protette ora segnano le superfici colore memorizzate nella cache come sporche, impedendo il riutilizzo di immagini GPU obsolete come texture dopo che CPU ha modificato la loro memoria.",
+  "heroAlt": "Prova sorgente dalla pull request #3758 di Vita3K: renderer/vulkan: Aggiungi flag dirty alla cache delle superfici",
+  "searchKeywords": [
+    "Vita3K",
+    "Cache delle superfici Vulkan",
+    "flag dirty",
+    "mprotect",
+    "memoria guest"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Aggiungi flag dirty alla cache delle superfici"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una superficie può esistere nella memoria GPU dopo che il guest ha modificato i byte di supporto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K memorizza nella cache le superfici colore Vita come risorse Vulkan. Quando un gioco scrive nella memoria guest corrispondente dal CPU, l'immagine memorizzata nella cache potrebbe non rappresentare più quell'intervallo di indirizzi. Restituirla come texture può mostrare un fotogramma o un effetto vecchio. Alcuni formati lineari richiedono anche la sincronizzazione GPU-guest quando il CPU li legge, quindi i fault di lettura e scrittura hanno significati correlati ma diversi."
+    },
+    {
+      "type": "heading",
+      "text": "I callback di protezione ora trasportano lo stato condiviso di sincronizzazione e sporco"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3758 assegna a ciascuna ColorSurfaceCacheInfo un flag condiviso di sporco. protect_surface allinea l'interno proteggibile in modo sicuro alle pagine di 4 KiB. Le superfici lineari capaci di sincronizzazione usano MemPerm::None per intercettare letture e scritture e catturare need_surface_sync; altre superfici usano ReadOnly per intercettare le scritture. Una scrittura segna come sporco. Per una superficie più piccola di una pagina, il tracciamento dello sporco è trattenuto perché dati non correlati sulla stessa pagina protetta creerebbero invalidazioni false."
+    },
+    {
+      "type": "heading",
+      "text": "La ricerca nella cache rifiuta i dati GPU dopo una scrittura CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando viene richiesta una superficie colorata come texture, un flag di sporco impostato non restituisce risultati memorizzati nella cache, costringendo il chiamante a evitare contenuti obsoleti GPU. Quando la stessa superficie diventa di nuovo un framebuffer, Vita3K può riattivare la protezione e cancellare lo sporco dopo aver stabilito il nuovo utilizzo autorevole. Le protezioni sovrapposte si combinano attraverso most_restrictive_perm, quindi aggiungere un intervallo più debole non può accidentalmente riaprire memoria già protetta più fortemente."
+    },
+    {
+      "type": "heading",
+      "text": "I metodi di mappatura della memoria e la sovrapposizione delle pagine sono test chiave"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderizzare su una superficie, campionarla, riscrivere tutto o parte dal guest CPU, quindi campionare di nuovo per formati lineari e a tiles. Includere allocazioni allineate, non allineate, sub-page, sovrapposte e condivise; confermare che le superfici piccole evitino falsi flag di sporco senza nascondere modifiche reali. Testare la sincronizzazione del readback separatamente dall'invalidazione della scrittura. Ripetere sulla mappatura del buffer nativa, in doppio buffering, sui driver Linux NVIDIA e non-NVIDIA, Android e sul ripristino savestate. Registrare i fault di protezione per catturare loop o trappole eccessive nel percorso caldo."
+    },
+    {
+      "type": "callout",
+      "text": "Una cache è corretta solo mentre la sua prova di proprietà è aggiornata; una sola scrittura di un guest è sufficiente a revocare la rivendicazione di quella memoria da parte della superficie GPU."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Leggi la discussione ingegneristica Vita3K e le modifiche al codice sorgente"
+    }
+  ]
+}

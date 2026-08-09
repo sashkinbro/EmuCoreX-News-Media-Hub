@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation corregge un registro host errato nel timing GTE di RISC-V",
+  "summary": "EndAndLinkBlock ha calcolato correttamente il tick di completamento in RARG2 ma ha memorizzato RARG1, un disallineamento di un'istruzione che potrebbe portare una prontezza del coprocessore errata nel blocco ricompilato successivo.",
+  "heroAlt": "Prove a supporto dalla pull request DuckStation #3702: CPU/RISCV64: Correggere memorizzazione gte_completion_tick in EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "ricompilatore",
+    "tick di completamento"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Correggere memorizzazione gte_completion_tick in EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il calcolo era corretto fino all'ultima memorizzazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation traccia quando il PlayStation Geometry Transformation Engine completa il lavoro, quindi seguendo le istruzioni CPU si osserva il corretto timing delle dipendenze. Nel percorso EndAndLinkBlock del ricompilatore RISC-V 64, il nuovo valore di completamento era già stato calcolato in RARG2. Tuttavia, lo store emesso utilizzava RARG1, scrivendo un registro argomento diverso nello stato globale del timing GTE subito prima che il controllo passasse a un altro blocco."
+    },
+    {
+      "type": "heading",
+      "text": "Una sostituzione di registro allinea RISC-V con gli altri ricompilatori"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3702 cambia l'istruzione SW per memorizzare RARG2 in g_state.gte_completion_tick. Nessuna formula di timing o decodificatore di istruzioni guest è stata modificata. La prova è il flusso dei dati in quel preciso punto e il comportamento corrispondente degli altri backend delle architetture. Piccole patch di questo tipo sono preziose proprio perché il registro errato può sopravvivere alla compilazione, generare codice macchina valido e fallire solo su una famiglia di host."
+    },
+    {
+      "type": "heading",
+      "text": "Un completion tick obsoleto cambia il momento in cui le istruzioni successive ritengono GTE pronto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se il valore errato è precedente al tick calcolato, il codice guest potrebbe consumare i risultati della geometria troppo presto; se è successivo, DuckStation può introdurre attese inutili. Entrambe le direzioni possono alterare i giochi che alternano il lavoro di CPU con i comandi GTE anche se l’aritmetica trasformata è corretta. L’errore viene trasportato attraverso un confine di blocco, quindi un test limitato alle istruzioni all’interno di un blocco generato potrebbe non rilevarlo."
+    },
+    {
+      "type": "heading",
+      "text": "I test dovrebbero forzare il valore di completamento attraverso EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un test mirato del ricompilatore dovrebbe emettere un comando GTE, terminare il blocco mentre l’unità è ancora occupata, collegarsi al codice che legge o dipende dal risultato, e confrontare interprete, RISC-V e un altro backend del ricompilatore. Registrare il valore RARG2 calcolato e il tick globale memorizzato. Coprire uscite condizionali e diversi casi di nuovo-PC gestiti da EndAndLinkBlock. Eseguire ripetutamente i test di temporizzazione GTE esistenti su hardware nativo RISC-V così da mettere alla prova le differenze di allocazione dei registri o convenzioni di chiamata."
+    },
+    {
+      "type": "callout",
+      "text": "La patch è un operando, ma l'invariante è architetturale: ogni backend host deve trasportare il tick di completamento GTE calcolato attraverso un collegamento di blocco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Leggi la discussione ingegneristica DuckStation e le modifiche al codice sorgente"
+    }
+  ]
+}

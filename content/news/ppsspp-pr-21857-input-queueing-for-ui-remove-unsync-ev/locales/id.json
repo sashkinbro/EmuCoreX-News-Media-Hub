@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP menyalurkan input platform melalui loop acara UI",
+  "summary": "Callback sentuhan, tombol, dan sumbu kini mengantri data untuk pengiriman berurutan di thread UI, menghapus metode layar yang tidak disinkronkan dan kunci rekursif yang luas.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21857: Menyusun ulang antrian input untuk UI, menghapus acara Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "antrian input",
+    "ScreenManager",
+    "touch",
+    "controller"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Input",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Menyusun ulang antrian input untuk UI, menghapus acara Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Callback input dan mutasi layar berbagi batas yang rapuh"
+    },
+    {
+      "type": "paragraph",
+      "text": "Backend desktop dan mobile dapat melaporkan kejadian sentuh, keyboard, dan kontroler dari konteks yang tidak memiliki tumpukan layar saat ini dari PPSSPP. Desain sebelumnya mencampur kunci input rekursif dengan titik masuk UnsyncTouch, UnsyncKey, dan UnsyncAxis yang dapat menelusuri tampilan secara langsung. Pergantian layar, overlay, dan pengiriman event karenanya bergantung pada kunci besar dan pada pemanggil yang mengetahui metode tidak sinkron mana yang aman."
+    },
+    {
+      "type": "heading",
+      "text": "Callback sekarang hanya melakukan operasi antrean singkat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21857 mendefinisikan event antrean bertipe untuk input sentuh, tombol, dan sumbu. Callback ScreenManager menyalin event dan menambahkannya saat memegang eventQueueLock. Selama pembaruan, thread UI memindahkan seluruh deque ke variabel lokal, melepaskan mutex, dan mengirimkan event secara berurutan. Bagian kritis tidak menjalankan kode tampilan, sehingga handler tidak dapat memperpanjang latensi callback platform atau secara rekursif memperoleh kunci antrean."
+    },
+    {
+      "type": "heading",
+      "text": "Aturan pengiriman khusus tetap eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Semua peristiwa sentuh-release tetap mencapai setiap lapisan layar, dan peristiwa key-up tetap menyebar sehingga lapisan latar tidak dapat mempertahankan tombol yang macet setelah perubahan tumpukan. Input biasa pergi ke layar depan, sementara overlay menerima touch-down terlebih dahulu sehingga dapat menutup dirinya sendiri dan mengkonsumsi peristiwa tersebut. Konversi navigasi-fokus menjadi helper KeyEventToFocusMoves normal, dan banyak metode Unsync menghilang karena dispatch sekarang terjadi di thread yang memilikinya."
+    },
+    {
+      "type": "heading",
+      "text": "Pengurutan dan transisi layar adalah tes yang sulit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hasilkan peristiwa touch, key, dan axis secara berselang-seling saat membuka dan menutup popup, mengganti layar, memutar perangkat, menyambungkan kembali controller, dan menahan tombol selama transisi. Konfirmasi urutan FIFO dan bahwa peristiwa release menghapus setiap status tekan. Tekan penghasil dari beberapa thread dan gunakan ThreadSanitizer pada akses antrian dan tumpukan layar. Definisikan perilaku ketika layar berubah setelah suatu peristiwa masuk antrian tetapi sebelum pembaruan; implementasi sengaja menargetkan tumpukan saat dispatch terjadi, jadi tes harus mengunci kontrak itu."
+    },
+    {
+      "type": "callout",
+      "text": "Callback platform sekarang melaporkan input; thread UI memutuskan ke mana input itu termasuk saat memproses antrian yang diurutkan."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Baca diskusi teknik PPSSPP dan perubahan sumber"
+    }
+  ]
+}

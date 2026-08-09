@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K rozdziela cztery rodzaje stanu w swoim silniku audio NGS",
+  "summary": "Bajty widoczne dla gościa, bufor roboczy, logika możliwa do wznowienia i obiekty czasu działania hosta mają teraz odrębnych właścicieli, co ułatwia rozważanie routingu głosu i czasu życia dekodera.",
+  "heroAlt": "Dowody źródłowe z pull requestu Vita3K #3969: ngs: refaktoryzacja własności stanu ngs/audio i trochę porządkowania",
+  "searchKeywords": [
+    "Vita3K",
+    "Audio NGS",
+    "ATRAC9",
+    "stan głosu",
+    "routing audio"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: refaktoryzacja własności stanu ngs/audio i trochę porządkowania"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jeden głos audio zawiera stan o bardzo różnych czasach życia"
+    },
+    {
+      "type": "paragraph",
+      "text": "System NGS konsoli Vita udostępnia stan modułu czytelny dla gościa, ale emulator potrzebuje także obiektów dekodera przeznaczonych tylko dla hosta, przetworników, tymczasowego PCM, historii pętli i odniesień routingowych. Przechowywanie tych elementów w luźno powiązanych członkach sprawia, że reset, ponowne użycie głosu, wywołania zwrotne i niszczenie są podatne na przeterminowane wskaźniki. Blok pamięci gościa nie powinien przypadkowo posiadać dekodera hosta, a tymczasowy bufor nie powinien być mylony z danymi wymaganymi do wznowienia logicznego odtwarzania."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData teraz nazywa każdą kategorię własności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3969 dostarcza module guest_state_data dla bajtów widocznych w ABI i scratch_data dla pracy tymczasowej. Polimorficzny logical_state przechowuje informacje takie jak historia ADPCM lub eksportowana historia dekodera ATRAC9, która musi przetrwać granice przetwarzania. Oddzielny runtime_state posiada zasoby hosta, takie jak aktywne dekodery i przetworniki, które można wyczyścić lub odbudować. Fabryki modułów tworzą każdą warstwę i inicjalizują dane głosu przez jeden interfejs."
+    },
+    {
+      "type": "heading",
+      "text": "Routing identyfikuje głosy bez utrzymywania kruchego surowego punktu końcowego"
+    },
+    {
+      "type": "paragraph",
+      "text": "Obiekty patch zachowują źródło i cel jako indeksy racka i voice, a następnie rozwiązują je przez System i emulowaną pamięć w razie potrzeby. Zapobiega to temu, aby patch ślepo podążał za wskaźnikiem Voice po zmianie racka. ATRAC9 ładuje zapisane historyczne dane dekodera logicznego do dekodera w czasie wykonywania przed rozpoczęciem pracy i eksportuje je po zakończeniu. Moduły odtwarzacza przechowują historię ADPCM w stanie logicznym, podczas gdy bufory wyjściowe i próbkowania ponownego używają jawnych kontenerów czasu wykonywania z czytelnymi i kompaktowymi operacjami."
+    },
+    {
+      "type": "heading",
+      "text": "Testy cyklu życia muszą przerywać audio na każdym etapie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Twórz, kieruj, uruchamiaj, wstrzymuj, wznawiaj, zatrzymuj, resetuj i niszcz dźwięki za pomocą modułów PCM, ADPCM, ATRAC9, wyjścia i przetwarzania próbkowania. Ponownie wykorzystuj sloty w racku i usuń dowolny punkt końcowy, gdy istnieje patch. Wywołuj callbacki gości, przejścia pętlowe, opróżniaj bufory i zmiany konfiguracji, a następnie porównuj ciągłe wyjście z wyjściem po zapisaniu stanu logicznego i przebudowie w czasie pracy. Wątki i narzędzia do sanitizacji adresów powinny obejmować punkty odblokowania/zablokowania harmonogramu, demontaż i nieprawidłowe uchwyty gości. Żaden wskaźnik gospodarza nie powinien być odzyskiwalny z bajtów stanu widocznych dla gościa."
+    },
+    {
+      "type": "callout",
+      "text": "Poprawność dźwięku wzrasta, gdy silnik może określić, które dane należą do ABI gościa, stan sygnału możliwego do wznowienia, tymczasową pracę i czas działania dekodera gospodarza."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Przeczytaj dyskusję inżynieryjną Vita3K oraz zmiany w źródle"
+    }
+  ]
+}

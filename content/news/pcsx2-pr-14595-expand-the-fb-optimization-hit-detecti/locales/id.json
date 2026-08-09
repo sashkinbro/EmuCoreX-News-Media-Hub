@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Backend PCSX2 Direct3D 12 mengingat pukulan framebuffer melewati transisi saat ini",
+  "summary": "Perubahan status warna atau kedalaman sekarang dapat memperluas deteksi pukulan untuk gambar berikutnya, mengurangi gangguan pada render-pass selanjutnya daripada membuang cakupan yang berguna karena transisi saat ini tidak dapat dihindari.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14595: GS/DX12: Memperluas backport deteksi pukulan optimasi fb dari GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "optimasi framebuffer",
+    "render pass",
+    "deteksi pukulan"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Memperluas backport deteksi pukulan optimasi fb dari GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Transisi yang tidak dapat dihindari masih dapat mengungkap cakupan berguna di masa depan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Optimisasi frame-buffer melacak ketika gambar berikutnya dapat tetap berada dalam keadaan render-pass yang kompatibel. Jalur Direct3D 12 sebelumnya menganggap perubahan warna atau keadaan kedalaman sebagai alasan untuk tidak memperluas deteksi hit. Itu terlalu sempit pandangannya: transisi saat ini mungkin diperlukan, tetapi wilayah yang terkena dampak masih memberi tahu PCSX2 bahwa perubahan keadaan berikutnya dapat dihindari."
+    },
+    {
+      "type": "heading",
+      "text": "Baik warna maupun kedalaman dapat memperluas jendela optimisasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14595 memindahkan perilaku yang lebih luas yang telah dieksplorasi dalam OpenGL dan Direct3D 11. Dalam GSDevice12, hit dari salah satu attachment dapat memperluas kondisi yang dilacak bahkan ketika salah satunya memicu transisi sekarang. Optimisasi tidak menghapus barrier atau perubahan render-pass yang diperlukan; ini menyimpan informasi yang membuat operasi kompatibel berikutnya lebih murah."
+    },
+    {
+      "type": "heading",
+      "text": "Patch ini bergantung pada manajemen keadaan render-pass yang benar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Catatan sumber menunjukkan bahwa perubahan render-pass yang tepat dari pekerjaan terkait adalah bagian dari dasar yang diuji. Ketergantungan itu penting karena jumlah pass yang lebih sedikit baru bermanfaat jika aturan load, store, dan transisi attachment tetap berlaku. Serangan yang terlalu luas dapat mempertahankan data yang seharusnya telah diselesaikan atau dibersihkan. Efek yang dilaporkan adalah pengurangan satu hingga dua digit dalam jumlah render-pass untuk permainan yang sama yang digunakan oleh pekerjaan optimasi sebelumnya."
+    },
+    {
+      "type": "heading",
+      "text": "Validasi kinerja harus mencakup perbandingan frame yang tepat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Putar kembali set dump yang direferensikan pada Direct3D 12, kumpulkan counter render-pass, barrier, copy, dan GPU-time, dan bandingkan frame dengan jalur yang tidak dioptimalkan. Buat kasus di mana hanya warna yang berubah, hanya kedalaman yang berubah, dan keduanya berubah, diikuti oleh draw yang seharusnya atau tidak seharusnya menggunakan kembali state. Penurunan jumlah pass tanpa identitas pixel adalah regresi. Tes juga membutuhkan beberapa vendor GPU karena perilaku render-pass driver dan biaya transisi dapat berbeda."
+    },
+    {
+      "type": "callout",
+      "text": "Optimisasi mengingat sebuah hit untuk apa yang akan datang; itu tidak pernah menggunakan penghematan di masa depan untuk melewati transisi yang dibutuhkan oleh arus saat ini."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

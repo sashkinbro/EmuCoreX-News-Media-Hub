@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K moves HLE argument dispatch from runtime into templates",
+  "summary": "Compile-time ARM argument layouts and plain function pointers reduce per-import bridge machinery while keeping scalar, varargs, and return-value conversion explicit.",
+  "heroAlt": "Source evidence from Vita3K pull request #3881: module/bridge: HLE compile-time dispatch, avoid extra pointer indirection",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE bridge",
+    "ARM ABI",
+    "templates",
+    "function dispatch"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge: HLE compile-time dispatch, avoid extra pointer indirection"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Every guest import crosses the same ABI translation boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "A Vita function call arrives with arguments split across ARM general registers, floating-point registers, and the stack. Vita3K's HLE bridge must locate them, convert guest pointers and representations to host types, invoke the correct export, and write a return value back. The older bridge built layout state and captured an export pointer and name in std::function, adding general-purpose runtime machinery to a path exercised by nearly every emulated service call."
+    },
+    {
+      "type": "heading",
+      "text": "The export function becomes part of the bridge type"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3881 introduces make_bridge with ExportFn as a non-type template parameter. lay_out runs as constexpr for the export's argument pack, producing fixed ArgLayout entries and varargs state. A generated non-capturing function reads each argument through read_bridged_arg, calls ExportFn directly, and conditionally writes the result unless the return type is void. ImportFn can therefore be a plain function pointer."
+    },
+    {
+      "type": "heading",
+      "text": "Bridge types retain the guest-to-host contract"
+    },
+    {
+      "type": "paragraph",
+      "text": "Compile-time layout does not mean reinterpret-casting registers into arbitrary C++ objects. BridgeTypes selects each argument's ARM representation and converts it using emulated memory where required. module::vargs carries its calculated state rather than pretending to be one scalar argument. Tracy scopes still receive the export name through static storage, preserving per-function profiling while removing the previous closure capture."
+    },
+    {
+      "type": "heading",
+      "text": "ABI conformance needs compile-time and execution tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instantiate bridges for zero arguments, four and five integers, 64-bit aligned values, floats, pointers, structures represented by bridge types, varargs, void returns, and error codes. Compare register and stack locations with the Vita ABI and the previous implementation. Compile every generated module on supported compilers, inspect code size and call shape, and benchmark import-heavy workloads. Invalid or unsupported types should fail during compilation with a clear diagnostic rather than silently selecting a wrong layout."
+    },
+    {
+      "type": "callout",
+      "text": "The optimization works because the export signature already contains the ABI facts; templates can turn those facts into a fixed bridge before emulation starts."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

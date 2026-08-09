@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar enseigne à OpenGL le suivi de l'état indiquant qu'une unité de texture peut cesser d'être 2D",
+  "summary": "La liaison des cubemaps a révélé une hypothèse d'état mise en cache selon laquelle chaque unité détenait GL_TEXTURE_2D ; suivi du type de cible et initialisation de la cube nul pour restaurer plus tard les opérations 2D.",
+  "heroAlt": "Preuve source du pull request #2242 de Azahar : renderer_gl : Corriger le suivi de l'état des unités de texture OpenGL",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "unité de texture",
+    "cubemap",
+    "suivi de l'état"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl : Corriger le suivi de l'état des unités de texture OpenGL"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une poignée de texture mise en cache est incomplète sans son type de cible"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL lie les textures à la fois par unité et par cible. Le cache d'état de Azahar supposait souvent qu'une unité représentait GL_TEXTURE_2D, ce qui fonctionnait jusqu'à ce que le suivi de cubemap nul introduise de véritables liaisons de cubemap. Une fois qu'une unité avait contenu GL_TEXTURE_CUBE_MAP, le code ultérieur pouvait sauter ou effectuer une liaison basée uniquement sur l'objet numérique mis en cache, même si l'espace de noms de la cible et les attentes d'échantillonnage en aval avaient changé."
+    },
+    {
+      "type": "heading",
+      "text": "Les enregistrements d'état distinguent maintenant les transitions 2D, cube et nulles"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2242 met à jour les utilitaires du cache de rasterisation et les chemins du moteur OpenGL pour que les unités de texture conservent la cible de liaison nécessaire pour décider si un changement d'état est redondant. NULL_SURFACE_CUBE_ID est correctement initialisé, donnant à la voie cubemap sans surface une ressource définie. Les fichiers Vulkan reçoivent des ajustements de cache partagé connexes, mais la défaillance observée et la correction de la machine à états se trouvent dans OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon et WWE montrent une corruption en aval due à une hypothèse obsolète"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les images avant-après pour Pokémon Ultra Moon et WWE All Stars montrent que le problème ne se limitait pas à une cubemap manquante. La liaison d'une cubemap modifiait la manière dont les opérations de texture ultérieures étaient interprétées, ce qui pouvait entraîner un rendu incorrect des surfaces ordinaires en aval. Un cache correct doit donc restaurer l'état sur toute une séquence et non simplement afficher la cubemap au moment où elle est définie."
+    },
+    {
+      "type": "heading",
+      "text": "Une séquence de régression doit alterner les cibles sur la même unité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lier des textures 2D, cubiques, cube nul et 2D à plusieurs reprises sur une unité et vérifier à la fois les appels GL émis et le rendu échantillonné. Reproduire les deux jeux, puis tester les cartes d'ombres, les cartes d'environnement, l'échantillonnage des cibles de rendu et la destruction des surfaces. Comparer l'état mis en cache avec les diagnostics glGet dans une version de débogage. L'optimisation peut encore sauter une liaison uniquement lorsque l'objet et la cible correspondent tous deux ; la réduction des appels ne doit jamais préserver une cible de l'utilisation précédente."
+    },
+    {
+      "type": "callout",
+      "text": "Le cache d'état OpenGL n'est valide que lorsqu'il se souvient du target de liaison ainsi que de l'objet texture."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications de source"
+    }
+  ]
+}

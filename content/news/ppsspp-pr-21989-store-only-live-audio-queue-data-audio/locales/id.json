@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP memangkas savestate dengan menyimpan hanya sampel audio yang aktif",
+  "summary": "Format antrean yang ringkas menyerialisasi sampel yang masih dapat diputar, daripada menyalin semua sembilan buffer audio kapasitas tetap ke setiap status.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21989: Savestate: simpan hanya data antrean audio aktif (Bagian AudioChannel v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "antrean audio",
+    "ukuran savestate",
+    "putar ulang",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: simpan hanya data antrean audio aktif (Bagian AudioChannel v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kapasitas tetap disalahartikan sebagai status yang bermakna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Setiap saluran sceAudio menggunakan FixedSizeQueue dengan ruang untuk 32768 kali delapan nilai 16-bit, sebuah penyimpanan cadangan 512 KB. Ada sembilan antrean saluran. Serializer sebelumnya menyalin setiap byte dari array tersebut meskipun hanya sebagian logis kecil antara head dan count yang bisa dilepaskan. Akibatnya, sekitar 4,6 MB data yang sebagian besar mati masuk ke simpanan manual, slot simpan, input kompresi, dan setiap snapshot pemutaran ulang di memori secara periodik."
+    },
+    {
+      "type": "heading",
+      "text": "Bentuk kompak mempertahankan urutan antrean saat pembungkusan ulang"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21989 memperkenalkan DoStateCompact sebagai format opsional. Ketika region aktif berkesinambungan, ia menulis satu array mentah. Ketika head ditambah count melintasi akhir penyimpanan, ia menulis ekor dan awal sebagai dua bagian dalam urutan pop. POD DoArray menulis byte mentah tanpa header per-panggilan, sehingga bagian tersebut membentuk aliran yang sama yang dikonsumsi oleh pembacaan linier tunggal. Pemuatan menempatkan urutan pada indeks nol dan menurunkan ekor baru dari count."
+    },
+    {
+      "type": "heading",
+      "text": "Versi melindungi state lama dan pemanggil lainnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bagian AudioChannel maju ke tingkat format baru dan hanya memilih serialisasi kompak di sana. Tingkat bagian lama masih menggunakan metode penyimpanan penuh asli, sehingga simpanan yang ada tetap dapat dibaca. Fungsi lama FixedSizeQueue tidak tersentuh karena tata letak baitnya tidak dapat dipertukarkan dan pemanggil lain mungkin mengandalkannya. Loader juga menolak jumlah di luar nol hingga kapasitas dengan SetError, mencegah file yang rusak mendesinkronisasi setiap bidang yang mengikuti."
+    },
+    {
+      "type": "heading",
+      "text": "Antrian yang dibungkus, kosong, dan penuh adalah tes utama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat antrian deterministik yang kosong, sebagian terisi, tepat penuh, dan dibungkus pada beberapa offset kepala. Simpan dan muat kembali, kemudian bandingkan setiap sampel yang dihapus dengan urutan aslinya. Latih semua sembilan saluran selama permainan, batas bawah dan atas audio, putaran mundur, rasio kompresi, dan kompatibilitas dengan keadaan lama. Rusak jumlah yang tersimpan untuk memastikan kegagalan pemuatan yang bersih. Ukur waktu simpan dan tekanan memori secara terpisah; payload yang lebih kecil diharapkan, tetapi keakuratan tetap menjadi pintu utama."
+    },
+    {
+      "type": "callout",
+      "text": "Kapasitas adalah detail implementasi; sebuah savestate membutuhkan urutan audio langsung dan metadata yang cukup untuk membangun kembali antrian yang setara."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Baca diskusi rekayasa PPSSPP dan perubahan sumber"
+    }
+  ]
+}

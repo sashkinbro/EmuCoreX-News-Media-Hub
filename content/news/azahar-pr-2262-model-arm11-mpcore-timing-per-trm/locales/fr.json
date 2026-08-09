@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Les modèles Azahar reproduisent le timing des instructions ARM11 tout en conservant une issue de secours héritée",
+  "summary": "Une table de cycles basée sur le TRM distingue les vidages de pipeline, les retours prédits, les modes d'adressage, les transferts et les opérations VFP au lieu de charger chaque instruction d'un tick.",
+  "heroAlt": "Preuve issue de la demande de tirage Azahar #2262 : core/arm : modéliser le timing MPCore de ARM11 selon le TRM",
+  "searchKeywords": [
+    "Azahar",
+    "MPCore ARM11",
+    "timing des instructions",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm : modéliser le timing MPCore de ARM11 selon le TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une instruction par tick masque les différences de pipeline et de transfert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le Nintendo 3DS CPU n'exécute pas chaque instruction ARM avec une latence identique. Une branche qui vide un pipeline à huit étages, un retour prédit, une adresse de registre décalée et un transfert multi-registres ou VFP ont des coûts différents. Le timing simple antérieur de Azahar pouvait déplacer les interruptions ou la logique de jeu par rapport au travail CPU, en particulier dans des séquences dont le comportement dépend du moment où un événement devient visible."
+    },
+    {
+      "type": "heading",
+      "text": "Le tableau suit les mécanismes ARM11 MPCore, et non des délais de jeu arbitraires."
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2262 étend arm_tick_counts avec un modèle de vidage de pipeline de sept cycles, une moyenne plus basse pour les branches indirectes, une gestion spéciale pour MOV ou le chargement dans PC, le coût des adresses de registre décalées, des transferts multiples de deux registres par cycle et des comptes de transfert VFP. Les aides à l'extraction de champ de bits sont corrigées dans le cadre de l'appariement des encodages d'instruction à la fonction de timing appropriée."
+    },
+    {
+      "type": "heading",
+      "text": "Les retours prédits diffèrent du flux de contrôle non structuré."
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr et les chargements basés sur la pile dans le PC peuvent utiliser la prédiction de retour et obtenir un résultat moins coûteux, tandis que d'autres écritures dans le PC ou les chargements à partir d'une table de saut subissent une pénalité de rechargement. Cette distinction empêche une constante de branche large de surtaxer les retours de fonction normaux et de sous-tarifer les redirections imprévisibles. Le modèle décrit les cycles invités émulés par l'hôte ; il est indépendant de la rapidité avec laquelle Dynarmic exécute le bloc traduit sur le téléphone ou le bureau."
+    },
+    {
+      "type": "heading",
+      "text": "Un interrupteur hérité comporte un risque de compatibilité lors de la validation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les paramètres de débogage CPU peuvent restaurer l'ancien comportement d'une instruction par tick pour les jeux sensibles au timing ; la séquence de poursuite de LEGO City Undercover est l'exemple cité. Les tests doivent comparer les deux modes à travers les benchmarks CPU, les interruptions, l'audio, le sondage des entrées et cette poursuite. Validez les comptes de cycles par rapport aux cas TRM et aux boucles d'instructions ciblées. L'interrupteur doit basculer de manière déterministe et persister, mais de nouvelles régressions doivent être examinées plutôt que de masquer définitivement chaque titre derrière le timing hérité."
+    },
+    {
+      "type": "callout",
+      "text": "Les nouveaux modèles de table expliquent pourquoi les instructions prennent différents cycles d’invité ; le commutateur hérité permet de tester les logiciels sensibles au temps pendant que ce modèle mûrit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Lisez la discussion d’ingénierie Azahar et les modifications de code source"
+    }
+  ]
+}

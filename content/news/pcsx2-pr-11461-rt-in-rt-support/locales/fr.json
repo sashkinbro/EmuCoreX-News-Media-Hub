@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-11461-rt-in-rt-support",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 apprend quand un jeu dessine à l'intérieur d'une cible de rendu existante",
+  "summary": "Le suivi des cibles de rendu dans une cible de rendu remplace les hypothèses d'adresse exacte pour les mises à jour des pages décalées et les permutations de demi-image, récupérant des effets qui apparaissaient auparavant uniquement dans un coin ou sur la moitié de l'écran.",
+  "heroAlt": "Preuve visuelle provenant de la pull request PCSX2 #11461 : GS/HW : Implémenter le support RT dans RT",
+  "searchKeywords": [
+    "PCSX2",
+    "cible de rendu",
+    "cache de textures",
+    "Tex dans RT",
+    "post-traitement"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-11461": "GS/HW : Implémenter le support RT dans RT"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La correspondance exacte de l'adresse de départ manquait certaines sous-régions d'une cible plus grande"
+    },
+    {
+      "type": "paragraph",
+      "text": "Certains jeux PlayStation 2 pointent le GS vers une adresse située à mi-chemin d'une cible de rendu qui a été créée auparavant. Ils peuvent mettre à jour une page, mélanger la moitié inférieure d'une image, ou échantillonner une région décalée pour le post-traitement. L'ancien chemin matériel reconnaissait principalement les cibles uniquement lorsque leurs adresses de départ correspondaient exactement. En conséquence, des opérations valides des invités pouvaient se transformer en artefacts dans le coin supérieur gauche, effets sur la moitié de l'écran, superpositions manquantes ou scintillement."
+    },
+    {
+      "type": "heading",
+      "text": "La reconnaissance RT-in-RT renvoie le décalage à la cible parente"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #11461 ajoute la prise en charge des dessins et des mélanges dont l'adresse se situe à l'intérieur d'une cible de rendu existante. Le cache de textures et le rendu matériel peuvent traiter cette sous-plage comme faisant partie de l'image parente, tandis que l'invalidation de la source est ajustée pour que les lectures ultérieures ne réutilisent pas des pages obsolètes. Le travail couvre l'état commun GS, les shaders, le routage matériel-hack et les paramètres GameDB car la reconnaissance seule est insuffisante si les plages mises en cache conservent l'ancienne propriété."
+    },
+    {
+      "type": "heading",
+      "text": "Les preuves de compatibilité couvrent les effets postérieurs et le rendu en écran partagé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les améliorations signalées incluent Battlefield 2, Death by Degrees, Drakengard, Hitman, Jak X, King Kong, Manhunt 2, Ridge Racer V, Tekken 5, Time Crisis 3, Tomb Raider: Legend, Urban Reign, et bien d'autres. Les visuels affectés ne sont pas un symptôme générique unique : le brouillard, la floraison, les échanges de canaux, les ombres, la vision nocturne, l'éclairage du joueur deux, le feu, les scènes sépia et les effets de livre sur demi-écran ciblent tous différemment les décalages."
+    },
+    {
+      "type": "heading",
+      "text": "Tex dans le RT gating et les cas restants d'échange définissent la limite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le chemin est bloqué derrière Tex dans le RT car le laisser actif pour des jeux incompatibles peut casser le rendu. Pachipara, Raw Danger et Steambot Chronicles ont été améliorés mais nécessitaient encore un désentrelacement manuel de la profondeur ou des échanges inhabituels nécessitant un travail supplémentaire. Les tests de régression doivent donc comparer les captures natives et suréchantillonnées, ne supprimer que les hacks CRC que la source identifie comme obsolètes, et retester les scènes fortement impactées par les invalidations plutôt que de transformer la large liste de jeux en une promesse de compatibilité générale."
+    },
+    {
+      "type": "callout",
+      "text": "Le gain architectural est la conscience de la plage d'adresses : une cible peut rester la même image même lorsqu'un jeu commence sa prochaine opération à partir d'une page à l'intérieur de celle-ci."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/11461",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications de source"
+    }
+  ]
+}

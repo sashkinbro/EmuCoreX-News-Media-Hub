@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar calibre les centres de déclenchement hérités au lieu de supposer zéro",
+  "summary": "Les axes de déclenchement du Steam Deck peuvent se situer près de -32767 dans l'API Joystick de SDL ; l'enregistrement du centre initial restaure les anciennes configurations qui autrement indiqueraient que L et R sont maintenus.",
+  "heroAlt": "Preuve source de la pull request #2328 de Azahar : BUGFIX : Déclencheurs de joystick hérités sur Linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "Joystick SDL",
+    "Calibration des déclencheurs",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Entrée",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX : Déclencheurs de joystick hérités sur Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La valeur neutre d'un déclencheur dépend de l'API SDL et de la configuration de l'appareil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les utilisateurs de Steam Deck via EmuDeck ont signalé que les boutons L et R restaient enfoncés en permanence. Leurs profils hérités utilisaient les axes des gâchettes via l'API Joystick de SDL, où la valeur de repos pouvait être -32767 plutôt que zéro. Une implémentation plus récente en état direct a cessé de conserver les échantillons historiques et a donc réutilisé une hypothèse de centre à zéro qui était valide pour certains appareils mais considérait cette position neutre comme une pression complète."
+    },
+    {
+      "type": "heading",
+      "text": "L'initialisation capture le centre de repos réel de l'appareil."
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #2328 ajoute une calibration par axe à la couche de joystick héritée. Lorsque l'appareil est initialisé, Azahar enregistre le centre actuel et compare les valeurs ultérieures par rapport à celui-ci. La correspondance mesure alors le mouvement à partir du point neutre observé au lieu de coder en dur une interprétation de plage SDL. Cela est particulièrement approprié pour la compatibilité ascendante car les anciennes configurations sauvegardées peuvent se référer aux axes du joystick bruts."
+    },
+    {
+      "type": "heading",
+      "text": "Les nouvelles correspondances utilisent normalement le contrôleur SDL et évitent l'ambiguïté héritée."
+    },
+    {
+      "type": "paragraph",
+      "text": "L'API standard moderne du contrôleur de Azahar standardise la sémantique des gâchettes et n'est pas la cible de cette correction. Les utilisateurs qui configurent un contrôleur maintenant ne devraient donc constater aucun changement. Le correctif préserve les profils de joystick hérités et les commandes inhabituelles qui restent en dehors de l'API standardisée. Maintenir le comportement limité empêche les heuristiques de calibration d'altérer un backend qui rapporte déjà correctement les gâchettes du contrôleur normalisées."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests nécessitent des axes à zéro centré et centrés négatifs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Commencez chaque appareil avec les gâchettes relâchées, confirmez le centre calibré, puis appuyez et relâchez lentement et complètement. Testez le Steam Deck, un contrôleur de bureau utilisant l'API héritée, la connexion à chaud, la mise en suspend/reprise et un appareil connecté alors qu'une gâchette est tenue. Les profils existants doivent se rétablir sans remappage, tandis que les nouveaux profils de l'API du contrôleur restent identiques. Un cas de maintien à l'initialisation nécessite une procédure de récupération documentée afin qu'un échantillon défectueux ne devienne pas le centre permanent de la session."
+    },
+    {
+      "type": "callout",
+      "text": "La calibration restaure le point de référence manquant : une valeur de déclenchement brute signifie pressée uniquement par rapport à la position neutre observée de cet appareil."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications du code source"
+    }
+  ]
+}

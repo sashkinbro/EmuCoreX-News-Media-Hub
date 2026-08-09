@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 membatasi pengubahan ukuran kedalaman bilinear hanya untuk penurunan skala nyata",
+  "summary": "Perubahan satu kondisi pada cache tekstur memisahkan kasus yang memerlukan penyaringan dari salinan di mana interpolasi mengubah nilai kedalaman dan menghasilkan bayangan atau artefak permukaan.",
+  "heroAlt": "Bukti visual dari permintaan tarik PCSX2 #14685: GS/TC: Hanya ubah ukuran kedalaman bilinear jika dikurangi skala",
+  "searchKeywords": [
+    "PCSX2",
+    "tujuan kedalaman",
+    "ubah ukuran bilinear",
+    "GSTextureCache",
+    "skala asli"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: Hanya ubah ukuran kedalaman bilinear jika dikurangi skala"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Penyaringan bilinear dapat menciptakan nilai kedalaman bahkan ketika ukuran tidak menyusut"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tekstur kedalaman bukanlah gambar warna biasa. Menginterpolasi sampel tetangga menghasilkan nilai yang tidak pernah ditulis oleh permainan, yang dapat mengubah perbandingan berikutnya dan muncul sebagai bayangan atau tepi geometri yang salah. PCSX2 telah mengaktifkan sampling bilinear secara luas setelah membantu kasus Native Scaling, tetapi aturan itu juga menyentuh salinan kedalaman berukuran sama dan diperbesar di mana penghalusan tidak diperlukan dan terkadang terlihat merusak."
+    },
+    {
+      "type": "heading",
+      "text": "Keputusan baru bertanya apakah target kedalaman benar-benar diturunkan skalanya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14685 mempertahankan jalur pengubahan ukuran di GSTextureCache tetapi mempersempit pilihan filternya. Sampling terdekat digunakan kecuali target kedalaman disalin ke dimensi yang lebih kecil; hanya downscale itu yang memilih penyaringan bilinear. Perbedaan ini mempertahankan nilai sumber yang tepat ketika piksel dipetakan langsung atau diperluas, sementara tetap merata sampel ketika target internal yang lebih besar harus dikembalikan ke representasi resolusi lebih rendah milik tamu."
+    },
+    {
+      "type": "heading",
+      "text": "Kingdom Hearts dan Xenosaga memperlihatkan sisi yang berlawanan dari kompromi tersebut"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kingdom Hearts menunjukkan perbedaan bayangan kaki ketika interpolasi mengenai salinan kedalaman yang sebenarnya tidak membutuhkannya, dan The Nightmare Before Christmas menampilkan artefak permukaan batu. Xenosaga Episode III adalah alasan mengapa penurunan skala kedalaman bilinear ada: jalur Native Scaling-nya terlihat buruk saat kembali ke resolusi normal tanpa pelicinan. Kondisi yang dikoreksi ini berharga karena mempertahankan kedua perilaku, alih-alih memilih salah satu permainan."
+    },
+    {
+      "type": "heading",
+      "text": "Perbandingan native dan upscaled harus memverifikasi nilai serta penampilan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sumber meminta penguji untuk membandingkan Kingdom Hearts, Xenosaga Episode III, dan The Nightmare Before Christmas pada resolusi native dan upscaled. Tangkapan layar harus mempertahankan adegan dan renderer tetap konstan, lalu memeriksa batas bayangan, area batu yang dilaporkan, dan garis air Xenosaga. Sebuah lintasan regresi juga harus mencatat dimensi sumber dan tujuan sehingga perbaikan yang tampak dapat dikaitkan dengan cabang nearest atau bilinear yang diharapkan, daripada variasi adegan yang tidak disengaja."
+    },
+    {
+      "type": "callout",
+      "text": "Aturannya jelas: penyaringan bilinear adalah alat untuk menurunkan skala target kedalaman, bukan default untuk setiap operasi berbentuk ubahan ukuran."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

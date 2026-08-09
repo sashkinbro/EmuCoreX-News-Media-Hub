@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13377-degenerate-primitive-testing-in-vertex",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 julga primitivos degenerados pelos pixels que eles realmente podem cobrir",
+  "summary": "Arredondamento de pontos e linhas, além do antialiasing, agora participam dos testes de área zero compartilhados pelo vertex kick e pelo renderizador de software, alinhando os limites com casos de borda de rasterização.",
+  "heroAlt": "Evidência de origem do pull request #13377 do PCSX2: GS: Melhorar os testes de primitivos degenerados no vertex kick e no cálculo da caixa delimitadora do SW. Outras correções menores.",
+  "searchKeywords": [
+    "PCSX2",
+    "primitivo degenerado",
+    "antialiasing",
+    "renderizador de software",
+    "caixa delimitadora"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13377": "GS: Melhorar os testes de primitivos degenerados no vertex kick e no cálculo da caixa delimitadora do SW. Outras correções menores."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Área matemática zero nem sempre significa zero pixels rasterizados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma linha ou ponto pode parecer degenerado nas coordenadas do vértice, mas ainda assim cobrir pixels depois que o GS aplica tamanho do ponto, arredondamento de linha ou regras de antialiasing. Por outro lado, um primitivo que passa por um teste simples de coordenadas pode não contribuir com nada dentro do limitador (scissor). PCSX2 usava verificações de degeneração tanto no disparo do vértice quanto na renderização de software, e desentendimentos em casos extremos poderiam eliminar trabalho visível ou enviar trabalho vazio mais profundamente no pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "Arredondamento e AA se tornam entradas para um teste consistente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #13377 atualiza o teste de disparo de vértice para levar em conta o arredondamento de linhas e pontos e o antialiasing, e então aplica a mesma correção ao renderizador de software. Compartilhar a regra é importante porque a preparação de hardware e a rasterização de software não devem discordar sobre se o convidado enviou um primitivo desenhável. O patch também simplifica cálculos de caixa delimitadora e do limitador (scissor) para que a decisão de cobertura e os limites que ela produz sigam a mesma geometria."
+    },
+    {
+      "type": "heading",
+      "text": "A otimização de linhas horizontais e a limpeza de assertivas permanecem secundárias"
+    },
+    {
+      "type": "paragraph",
+      "text": "O rasterizador de software obtém uma pequena otimização para linhas horizontais, e uma asserção é ajustada para evitar falsos positivos. Estas são limpezas relacionadas aos limites corrigidos, não evidências de uma reescrita de desempenho ampla. O objetivo declarado é precisão, com pouca alteração de desempenho esperada. O problema #8677 é o caso limite concreto, enquanto a discussão de trabalhos anteriores forneceu cenários adicionais."
+    },
+    {
+      "type": "heading",
+      "text": "Imagens de regressão precisam de combinações de subpixel, tesoura (scissor) e AA."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pontos de teste, linhas horizontais, verticais e de comprimento quase zero em coordenadas fracionárias com AA ativado e desativado. Movimente-os através de cada borda de tesoura e compare a saída de hardware e software em resoluções nativas e ampliadas. Inclua primitivas que deveriam desaparecer completamente e aquelas que ganham um único pixel coberto por arredondamento. Dumps de quadros devem mostrar decisões de aceitação/rejeição idênticas; verificações de desempenho precisam apenas confirmar que o novo teste e o caminho rápido horizontal não introduzem regressões mensuráveis."
+    },
+    {
+      "type": "callout",
+      "text": "Degenerescência é uma questão de rasterização, não apenas uma questão de geometria: arredondamento e AA podem transformar um primitivo matematicamente fino em cobertura real de pixels."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13377",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

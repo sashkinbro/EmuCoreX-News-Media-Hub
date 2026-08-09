@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStationは、RISC-VのGTEタイミングでの1つの誤ったホストレジスタを修正します",
+  "summary": "EndAndLinkBlockはRARG2で正しい完了ティックを計算しましたが、RARG1に格納しました。これは1命令の不一致であり、次の再コンパイルされたブロックに誤ったコプロセッサの準備状態を引き継ぐ可能性があります。",
+  "heroAlt": "DuckStationプルリクエスト #3702 からのソース証拠: CPU/RISCV64: EndAndLinkBlockでのgte_completion_tickの保存を修正",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "リコンパイラ",
+    "完了ティック"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "エミュレーション"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: EndAndLinkBlockでのgte_completion_tickの保存を修正"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "計算は最終的な保存まで正しかった"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStationは、PlayStationのジオメトリ変換エンジンが作業を完了したときにトラッキングを行い、CPUの指示に従って正しい依存関係のタイミングを観察します。RISC-V 64リコンパイラのEndAndLinkBlock経路では、新しい完了値はすでにRARG2に計算されています。それにもかかわらず、出力されたストアはRARG1を使用し、別の引数レジスタをグローバルGTEタイミング状態に書き込んでから、制御が別のブロックへ移動しました。"
+    },
+    {
+      "type": "heading",
+      "text": "1つのレジスタ置換により、RISC-Vは他のリコンパイラと一致します"
+    },
+    {
+      "type": "paragraph",
+      "text": "プルリクエスト#3702では、SW命令をRARG2をg_state.gte_completion_tickにストアするよう変更しました。タイミング式やゲスト命令デコーダには変更なしです。証拠は、まさにそのポイントでのデータフローと、他のアーキテクチャバックエンドの一致する動作です。この種の小さなパッチは、誤ったレジスタがコンパイルを通過して有効なマシンコードを生成し、特定のホストファミリでのみ失敗する可能性があるため、特に価値があります。"
+    },
+    {
+      "type": "heading",
+      "text": "古い完了ティックは、後続の命令がGTEの準備完了を認識するタイミングを変更します"
+    },
+    {
+      "type": "paragraph",
+      "text": "もし誤った値が計算されたティックよりも早い場合、ゲストコードがジオメトリ結果を早すぎて消費してしまう可能性があります；遅い場合、DuckStationが不要な待機を挿入する可能性があります。いずれの方向でも、変換された算術自体は正しいにもかかわらず、CPUの作業をGTEコマンドと交互に実行するゲームを変更する可能性があります。このエラーはブロック境界を越えて伝播するため、生成された1つのブロック内の命令に限定されたテストでは見逃す場合があります。"
+    },
+    {
+      "type": "heading",
+      "text": "テストはEndAndLinkBlockを越えて完了値を強制すべきです。"
+    },
+    {
+      "type": "paragraph",
+      "text": "対象とするリコンパイラテストは、GTEコマンドを発行し、ユニットがビジー状態のままブロックを終了し、結果を読み取るか依存するコードにリンクし、インタプリタ、RISC-V、および別のリコンパイラバックエンドで比較する必要があります。計算されたRARG2値および格納されたグローバルティックを記録してください。条件付き終了およびEndAndLinkBlockで処理される異なる新しいPCケースをカバーしてください。既存のGTEタイミングテストをネイティブRISC-Vハードウェアで繰り返し実行し、レジスタ割り当てや呼び出し規約の違いが反映されるようにしてください。"
+    },
+    {
+      "type": "callout",
+      "text": "パッチは一つのオペランドですが、不変量はアーキテクチャ的です：すべてのホストバックエンドは、ブロックリンクを越えて計算されたGTE完了ティックを保持しなければなりません。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "DuckStationのエンジニアリングディスカッションとソース変更を読んでください"
+    }
+  ]
+}

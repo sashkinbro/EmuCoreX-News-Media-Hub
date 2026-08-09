@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 mempertahankan data target render yang tidak tersentuh di seluruh pembersihan parsial",
+  "summary": "Pelacakan clear dan preload sekarang membedakan tumpang tindih penuh dari operasi setengah target, mencegah baris yang valid dibuang dan disalin kembali sebagai data yang rusak.",
+  "heroAlt": "Bukti visual dari permintaan tarik PCSX2 #14681: GS/TC: Tingkatkan perilaku clear dan preload",
+  "searchKeywords": [
+    "PCSX2",
+    "cache tekstur",
+    "pembersihan parsial",
+    "preload",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Tingkatkan perilaku clear dan preload"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pembersihan setengah target membatalkan frame yang datang sebelumnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 hanya dapat membersihkan setengah bagian belakang dari target render sementara 256 baris pertama sudah berisi data yang diperlukan untuk frame berikutnya. PCSX2 sebelumnya menandai target yang lebih luas sebagai tidak valid, kemudian memuat sebelumnya dari rentang yang sudah dinyatakan tidak dapat digunakan. Salinan tersebut secara internal konsisten dengan peta validitas yang salah, menghasilkan kedipan meskipun game tidak pernah membersihkan setengah bagian yang dipertahankan."
+    },
+    {
+      "type": "heading",
+      "text": "Membersihkan validitas sekarang memerlukan target yang cocok atau tumpang tindih penuh"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan tarik #14681 mengubah kapan saluran RGB dan alfa kehilangan status valid mereka. Pembersihan dapat membuang konten yang dilacak hanya ketika target cocok atau sepenuhnya menutupi rentang yang relevan. Tumpang tindih parsial menjaga sebagian yang tidak tersentuh tetap hidup. Renderer juga menangani pembersihan setengah pasangan lebih sengaja dan melewatkan gambar pembersihan normal ketika satu target diselesaikan ke nol, menghindari pekerjaan yang tidak dapat menyumbangkan pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Pra-muat mengikuti cakupan yang tersisa alih-alih label target lama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan preload pendamping penting karena validitas dan pemulihan adalah dua sisi dari keputusan cache yang sama. Ketika target yang tumpang tindih digunakan kembali, PCSX2 harus menyalin hanya data yang diketahui bertahan; jika tidak, pembersihan yang benar tetap bisa diikuti oleh preload yang usang atau tidak terdefinisi. Pekerjaan di GSRendererHW dan GSTextureCache menyelaraskan langkah-langkah tersebut, dengan GS register helpers menyediakan informasi cakupan yang digunakan oleh keputusan tersebut."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3, dan X-Men Origins mencakup pola pembersihan yang berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sumber mengidentifikasi kedipan Gran Turismo 4 sebagai reproduksi utama dan menyertakan tangkapan sebelum dan sesudah untuk Time Crisis 3 dan X-Men Origins. Pengujian harus mengunjungi kembali frame yang sama sambil mengubah render asli dan yang ditingkatkan, lalu menonton beberapa frame berikutnya untuk melihat korupsi yang tertunda. Pencahayaan Need for Speed adalah pemeriksaan lain yang diminta. Jejak yang berguna mencatat batas target, validitas saluran, dan batas preload untuk setiap pembersihan yang tumpang tindih."
+    },
+    {
+      "type": "callout",
+      "text": "Koreksi kunci bersifat temporal: penghapusan sebagian tidak boleh menghapus pengetahuan cache tentang piksel yang sengaja ditinggalkan tamu untuk frame berikutnya."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

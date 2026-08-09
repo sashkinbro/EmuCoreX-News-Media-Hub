@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Saydam PS2 efektlerini, katı yüzeyler olarak görünenleri onarın",
+  "summary": "Eksik alfa karışımını doku veya çizim sırası hatalarından ayırmak için tekrar edilebilir bir cam, su, duman veya menü örtüsü kullanın, doğruluğu adım adım artırın ve geçersiz kılmayı kaydetmeden önce ilgisiz yarı saydam katmanları test edin.",
+  "heroAlt": "Düzeltilmiş bir framebuffer efektini gösteren PCSX2 grafik karşılaştırma resmi",
+  "searchKeywords": [
+    "PS2 saydamlık opak",
+    "EmuCoreX alfa karışımı",
+    "katı duman düzeltmesi",
+    "su render hatası",
+    "saydam HUD"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafikler",
+    "accuracy": "Doğruluk"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 karışım-maliyet rehberi",
+    "pcsx2-performance": "PCSX2 doğru karışım göstergesi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Doğruluğu değiştirmeden önce katı katmanı sınıflandırın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Opak bir efekt, yalnızca amacı belli olduğunda faydalı bir kanıttır. Normal oyun sırasında şeffaflığı belli olan bir nesne seçin: bir cam panel arkasındaki geometrinin görünmesini sağlamalı, duman yumuşak katmanlı kenarlara sahip olmalı ve bir menü kaplaması altındaki sahneyi korumalıdır. Bozulmuş çıktıyı yerel çözünürlükte yakalayın ve katmanın doğru şekil ve renkte olup olmadığını not edin. Geometri doğru ama opaklık yanlışsa bu karıştırmaya işaret eder; boş bir dikdörtgen veya karışık bir doku farklı bir inceleme gerektirir."
+    },
+    {
+      "type": "callout",
+      "text": "Maksimum karıştırma doğruluğu evrensel bir kalite ön ayarı değildir. Önemli miktarda GPU işi ekleyebilir ve hangi alt seviye gerçek anlamda başlığı düzelttiğini gizleyebilir."
+    },
+    {
+      "type": "heading",
+      "text": "Yarı saydam-etki testi kilitle"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Bir dakikada aynı etkiye ulaşan bir kontrol noktası.",
+        "Yazılım renderlemesinden, orijinal donanım kaydından veya güvenilir başlığa özel dökümantasyondan bir referans.",
+        "Doku değişimleri ve shader'lar devre dışı bırakılmış yerel dahili çözünürlük.",
+        "Performans sayaçları veya tekrarlanabilir bir hız ölçümü.",
+        "Temiz bir oyun başına profil yedeklemesi."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Minimum karışım katmanını bulun"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Kontrol noktasını sistem sürücüsünde yeniden oynatın ve aynı animasyon anında opak katmanı kaydedin.",
+        "2. Vulkan ve OpenGL değerlerini diğer tüm değerler değişmeden karşılaştırın; bir yol efektin doğru şekilde bileşimlendiğini zaten gösteriyorsa kaydedin.",
+        "3. İkisi de başarısız olursa, kısa bir yazılım tabanlı referans edinin ve katman üzerinden neyin görünür kalması gerektiğini inceleyin.",
+        "4. Seçilen donanım API'sine dönün ve karıştırma doğruluğunu tam olarak bir seviye artırın.",
+        "5. Her değişiklikten sonra kontrol noktasını soğuk başlatın; bir devam eden oturumda birden fazla katmanı değerlendirmeyin.",
+        "6. Saydamlığı geri getiren ilk katmanda durun, sonra cihaz ısındıktan sonra yoğun efekt bölgesini ölçün.",
+        "7. Sis, gölgeler, parçacıklar veya duraklama menüsü kararması gibi ayrı bir alfa özelliğini inceleyin.",
+        "8. Değeri yalnızca bu başlığın profilinde kaydedin ve bunu haklı çıkaran kontrol noktasını belgeleyin."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 efektleri önceki framebuffer içeriklerinden okuyabilir, yazabilir ve bunlarla karışabilir. Konak GPU yolu, bu işlemleri farklı doğruluk ve maliyet seviyelerinde yaklaşık olarak gerçekleştirebilir. En küçük çalışan seviye değerlidir çünkü her çizimde ilgisiz davranışın maliyetini ödemeden gözlemlenen bağımlılığı yerine getirir. Bir renderer API’sinin geçişi temel seviyede sabitlemesi, başka bir API’de çok daha ağır bir karıştırma ayarına kıyasla tercih edilebilir."
+    },
+    {
+      "type": "heading",
+      "text": "Şeffaflık geçme kriterleri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme, hem görünümü hem de kompozisyon sırasını geri getirmelidir."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Arka plan geometrisi, efektin amaçlanan bölgelerinden görülebilir olmalıdır.",
+        "Katman kenarları stabil olmalı ve opak ile şeffaf arasında yanıp sönmemelidir.",
+        "Ön plan HUD elemanları hâlâ efektin üzerinde görünmelidir.",
+        "İkinci yarı saydam sahne doğru şekilde davranmalıdır.",
+        "Sıcak-oturum hızı, oyunun oynanabilir hedefinin altına düşmemelidir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Karıştırma testleri sırasında durdurma koşulları"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Şekil her seviyede bozuk: bunun yerine doku veya geometri çıktısını inceleyin.",
+        "Sadece daha yüksek iç çözünürlük opaklığı bozar: yükseltme-özgü bir yolu izole edin.",
+        "Menüler oyun dünyası ile birlikte saydam hale gelir: son seviyeyi sıfırlayın ve gerilemeyi kaydedin.",
+        "Doğruluk sürdürülemez hız maliyeti getirir: daha düşük temel seviyeyi koruyun ve yazılım renderlemesini yalnızca referans olarak belgeleyin."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "İzole alfa deneyini kaldırın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Karışımı tekrar Otomatik olarak ayarlayın, önceki render motorunu geri yükleyin, emülasyon oturumunu kapatın ve kaydedilen kontrol noktasında orijinal opak semptomun geri döndüğünü doğrulayın. Bu, test profilini arşivlemeden veya değiştirmeden önce değiştirilen değişkeni doğrular."
+    },
+    {
+      "type": "heading",
+      "text": "Görüntü kontrastı alfa doğruluğu değildir"
+    },
+    {
+      "type": "paragraph",
+      "text": "OLED siyah seviyesi, HDR dönüşümü, televizyon aralığı ve erişilebilirlik kontrastı, yarı saydam bir katmanı daha koyu gösterebilir, ancak çizim sırasını değiştirmezler. Harici ekran zincirini ayarlamadan önce framebuffer sonucunu ekran görüntüsünde doğrulayın."
+    },
+    {
+      "type": "link",
+      "text": "PCSX2 donanım gereksinimlerini inceleyin",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

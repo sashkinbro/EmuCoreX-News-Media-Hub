@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 rimuove due fonti di decisioni su stato non inizializzato rilevate da Valgrind",
+  "summary": "La geometria della tabella del debugger inizia da zero e le impostazioni audio confrontano i campi invece dei byte grezzi della struttura, eliminando i rami influenzati da memoria mai scritta e padding.",
+  "heroAlt": "Prova della fonte dal pull request PCSX2 #14638: Varie: Correzione di alcuni errori di Valgrind",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "lettura non inizializzata",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Strumentazione",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Varie: Correzione di alcuni errori di Valgrind"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il debugger ha colorato con membri che non avevano un valore iniziale definito"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind ha tracciato un ramo condizionale in MemoryViewTable::DrawTable verso conteggi di righe, posizioni, stato di selezione e membri di indirizzo che erano dichiarati senza inizializzazione. I percorsi normali di ridimensionamento o configurazione spesso li assegnavano prima della pittura, il che rendeva il difetto intermittente. Tuttavia, un evento di pittura che arriva prima potrebbe comunque leggere interi indeterminati e scegliere il comportamento del layout basandosi su qualsiasi bit occupasse l'oggetto."
+    },
+    {
+      "type": "heading",
+      "text": "Gli inizializzatori a zero forniscono alla prima pittura una tabella vuota valida"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14638 inizializza rowCount, rowVisible, rowHeight, value e text axes, la posizione della prima riga, gli indirizzi di start e selected e selectedIndex alla dichiarazione. Lo zero rappresenta uno stato sicuro pre-layout fino a quando non arrivano le dimensioni reali. La modifica non ipotizza un indirizzo o una selezione predefinita; garantisce che eventi precoci vedano un modello intenzionalmente vuoto invece di dati indefiniti."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp stava confrontando insieme campi audio e padding invisibile"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters ha implementato l'uguaglianza confrontando i byte grezzi della dimensione della struct. Il padding C++ tra i membri non è un campo e può mantenere valori indeterminati, quindi due configurazioni logicamente identiche potrebbero risultare non uguali al confronto. Questo raggiungeva i controlli di configurazione SPU2 durante le modifiche delle impostazioni e il caricamento di savestate. La patch sostituisce gli operatori personalizzati == e != con un confronto a tre vie predefinito, che confronta i membri dichiarati secondo i loro tipi e non tratta mai il padding come configurazione."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind e i test comportamentali dovrebbero coprire l'ordine degli eventi e il caricamento dello stato."
+    },
+    {
+      "type": "paragraph",
+      "text": "Eseguire il debugger sotto Valgrind mentre si aprono, ridimensionano, dipingono, selezionano e chiudono le viste della memoria prima e dopo l'avvio di una VM. Poi caricare savestate e applicare ripetutamente impostazioni audio identiche, confermando che non ci siano riavvii indesiderati e nessun rapporto di confronto non inizializzato. Modificare un campo audio reale per assicurarsi che l'ineguaglianza funzioni ancora. Le build del compilatore e del sanitizer con padding strutturale diverso sono preziose perché un risultato pulito su un layout non dimostra che il memcmp rimosso fosse sicuro altrove."
+    },
+    {
+      "type": "callout",
+      "text": "Entrambe le correzioni sostituiscono i contenuti di memoria accidentali con lo stato a livello di linguaggio: campi inizializzati per il layout UI e uguaglianza campo per campo per la configurazione audio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Leggi la discussione tecnica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

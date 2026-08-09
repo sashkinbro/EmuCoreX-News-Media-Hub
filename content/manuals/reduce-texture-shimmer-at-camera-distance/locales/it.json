@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "reduce-texture-shimmer-at-camera-distance",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Ridurre il tremolio delle texture distanti senza sfocare l'immagine PS2",
+  "summary": "Costruire un percorso della telecamera ripetibile attraverso strade, recinzioni o terreni, testare il mipmapping prima del filtraggio anisotropico, confrontare la risoluzione nativa e quella di destinazione, e accettare solo un'impostazione che stabilizzi i dettagli in movimento.",
+  "heroAlt": "Diagramma di campionamento a risoluzione nativa PCSX2 utilizzato per spiegare il comportamento delle texture durante l'upscaling",
+  "searchKeywords": [
+    "Tremolio delle texture PS2",
+    "Texture distanti EmuCoreX",
+    "Mipmapping",
+    "Filtraggio anisotropico",
+    "Sfarfallio del movimento della telecamera"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "sampling": "Campionamento"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 spiegazione del campionamento delle texture",
+    "pcsx2-performance": "PCSX2 indicatori di mipmapping e filtraggio"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Usa il movimento per esporre dettagli della texture instabili"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lo scintillio è un problema temporale: i motivi fini delle texture cambiano rapidamente quando la telecamera si muove perché i texel lontani sono campionati in modo incoerente. Un'immagine statica può apparire nitida mentre il percorso scintilla durante il gioco. Scegli una strada dritta, un pavimento a piastrelle, una recinzione a filo o un pendio del terreno con velocità della telecamera controllabile. Il percorso deve essere abbastanza lungo per vedere le transizioni di distanza e abbastanza corto da poter ripetere con gli stessi input."
+    },
+    {
+      "type": "callout",
+      "text": "Non iniziare forzando insieme il livello anisotropico più alto e uno shader di nitidezza. Ognuno dei due può modificare il dettaglio apparente senza dimostrare se i livelli mip del titolo vengano selezionati correttamente."
+    },
+    {
+      "type": "heading",
+      "text": "Crea un percorso di stabilità della texture"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio in gioco prima di un movimento della telecamera di dieci-venti secondi.",
+        "Registrazioni a risoluzione nativa e a risoluzione target del percorso invariato.",
+        "Filtraggio delle texture predefinito e mipmapping automatico hardware registrati.",
+        "Nitidezza posteriore, sostituzione delle texture e miglioramento del display disattivati.",
+        "Un elemento UI in primo piano nella visuale per rilevare sfocature globali indesiderate."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Testare la selezione mip prima del filtraggio obliquo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Eseguire il percorso a risoluzione nativa e segnare dove i dettagli lontani iniziano a tremolare.",
+        "2. Ripetere con il moltiplicatore di ingrandimento previsto senza cambiare il filtraggio o il renderer.",
+        "3. Se il tremolio aumenta con la risoluzione, tornare alla risoluzione nativa e testare il successivo livello di precisione del mipmapping supportato.",
+        "4. Registrare lo stesso percorso e confrontare le transizioni piuttosto che singoli fotogrammi nitidi.",
+        "5. Una volta che le transizioni dei mip sono stabili, prova il filtraggio anisotropico moderato sulle superfici viste ad un angolo ripido.",
+        "6. Controlla font, sprite e bordi della texture-atlas per aloni, giunture o ammorbidimenti inattesi.",
+        "7. Torna alla risoluzione target e ripeti dopo che il dispositivo ha raggiunto la temperatura di funzionamento normale.",
+        "8. Conserva il mipmapping e il filtraggio solo nel profilo del titolo interessato se un secondo gioco regredisce."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "I mipmap forniscono livelli di texture prefiltrati più piccoli per superfici lontane, mentre il filtraggio anisotropico migliora i campioni visualizzati ad angoli obliqui. Risolvono problemi di campionamento correlati ma diversi. L'upscaling può rivelare lacune e assunzioni sull'atlas che erano nascoste al tasso di campionamento di PS2, quindi un output più nitido non è automaticamente più stabile o fedele."
+    },
+    {
+      "type": "heading",
+      "text": "Passaggio di stabilità della texture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Giudicare l'intero percorso alla velocità di riproduzione normale e poi ispezionare i fotogrammi rappresentativi."
+    },
+    {
+      "type": "list",
+      "items": [
+        "I pattern lontani cambiano in modo uniforme invece di scintillare tra i fotogrammi.",
+        "Strade e pavimenti rimangono dettagliati ad angoli obliqui senza bordi sfuggenti.",
+        "Il testo HUD e le sprite 2D mantengono la nitidezza prevista.",
+        "I bordi dell'atlas di texture non si mescolano con le opere adiacenti.",
+        "La combinazione scelta non comporta penalità termiche o di tempo di frame sostenute."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modifiche al campionamento da rifiutare"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Lo scintillio diminuisce solo perché l'intero frame è sfocato: ripristinare il filtro precedente.",
+        "Nuove cuciture colorate appaiono intorno alle sprite: rimuovere il filtraggio forzato e ritestare l'atlas.",
+        "Solo un moltiplicatore di upscaling fallisce: mantieni l'ultima risoluzione stabile invece di accumulare correzioni.",
+        "Il tremolio della superficie rimane nel software a output nativo: conferma se il gioco originale si comporta allo stesso modo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Riporta i controlli di campionamento a valori sicuri per il gioco"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ripristina il mipmapping automatico, il filtraggio delle texture controllato dal gioco e la risoluzione interna precedente. Disabilita qualsiasi fase di sharpening introdotta durante il confronto, avvia da freddo il percorso salvato e conferma il modello baseline del tremolio prima di tentare una correzione documentata specifica per il titolo."
+    },
+    {
+      "type": "heading",
+      "text": "La compressione video nasconde e inventa il tremolio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le registrazioni a basso bitrate possono trasformare i dettagli fini in blocchi o eliminare il trascinamento temporale. Conserva copie locali ad alta qualità per l'analisi e tratta le versioni in streaming solo come strumenti di navigazione, non come prove definitive."
+    },
+    {
+      "type": "link",
+      "text": "Studia la spiegazione del campionamento PCSX2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 odstraňuje dva zdroje rozhodnutí s neinicializovaným stavem nalezené pomocí Valgrindu",
+  "summary": "Geometrie tabulky debuggeru začíná na nule a nastavení zvuku porovnává pole místo syrových bytů struktury, čímž eliminuje větve ovlivněné pamětí a vycpávkami, které nebyly nikdy zapsány.",
+  "heroAlt": "Důkazy ze zdroje z pull requestu PCSX2 #14638: Různé: Oprava některých chyb Valgrindu",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "neinicializované čtení",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Nástroje",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Různé: Oprava některých chyb Valgrindu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Debugger vybarvoval členy, které neměly definovanou počáteční hodnotu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind sledoval podmíněnou větev v MemoryViewTable::DrawTable k počtům řádků, pozicím, stavu výběru a členům adres, které byly deklarovány bez inicializace. Běžné cesty při změně velikosti nebo nastavení je často přiřadily před vykreslením, což způsobovalo, že chyba byla přerušovaná. Nicméně událost vykreslení, která přišla dříve, mohla číst neurčité celé čísla a vybrat chování rozvržení podle jakýchkoli bitů, které objekt zrovna obsahoval."
+    },
+    {
+      "type": "heading",
+      "text": "Nulové inicializátory dávají prvnímu vykreslení platnou prázdnou tabulku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14638 inicializuje rowCount, rowVisible, rowHeight, value a textové osy, pozici prvního řádku, startovní a vybrané adresy a selectedIndex při deklaraci. Nula představuje bezpečný stav před rozvržením, dokud nepřijdou skutečné rozměry. Změna nehádá výchozí adresu nebo výběr; zajišťuje, že rané události vidí záměrně prázdný model namísto nedefinovaných dat."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp porovnával audio pole a neviditelnou vycpávku společně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Parametry AudioStreamParameters implementovaly porovnávání rovnosti pomocí porovnávání surových bajtů o velikosti struktury (sizeof(struct)). C++ vycpávky mezi členy nejsou pole a mohou obsahovat nedefinované hodnoty, takže dvě logicky identické konfigurace mohou být považovány za nerovné. To se projevilo při kontrolech konfigurace SPU2 během změn nastavení a načítání savestate. Patch nahrazuje vlastní operátory == a != výchozím trojcestným porovnáním, které porovnává deklarované členy podle jejich typů a nikdy nezpracovává vycpávky jako součást konfigurace."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind a testy chování by měly pokrývat pořadí událostí a načítání stavů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spusťte debugger pod Valgrindem při otevírání, měnění velikosti, vykreslování, výběru a zavírání paměťových pohledů před startem VM a po něm. Poté načtěte savestate a opakovaně aplikujte identická audio nastavení, potvrzující, že nedochází k falešnému restartu a nejsou hlášeny nainicializované porovnání. Změňte jedno skutečné audio pole, aby se ověřilo, že nepravdivost stále funguje. Sestavení s kompilátorem a sanitizérem s různým paddingem struktur jsou cenná, protože čistý výsledek u jedné struktury nedokazuje, že odstraněný memcmp byl bezpečný jinde."
+    },
+    {
+      "type": "callout",
+      "text": "Obě opravy nahrazují náhodný obsah paměti stavem na úrovni jazyka: inicializovanými poli pro rozvržení UI a porovnáním polí podle hodnot pro konfiguraci zvuku."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdrojového kódu"
+    }
+  ]
+}

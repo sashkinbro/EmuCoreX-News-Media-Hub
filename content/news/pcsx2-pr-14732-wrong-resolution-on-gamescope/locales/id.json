@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 memperbaiki perubahan ukuran dua langkah Gamescope tanpa kembali ke 640x480",
+  "summary": "Peristiwa perubahan ukuran yang tertunda bisa saja melebihi query jendela 1280x800 yang lebih baru; pengurutan status yang diperbaiki menjaga viewport Steam Deck akhir pada dimensi yang sebenarnya dipilih Gamescope.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14732: Qt: Perbaiki resolusi yang salah pada Gamescope",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "penundaan perubahan ukuran",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Antarmuka depan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Perbaiki resolusi yang salah pada Gamescope"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope melaporkan jendela sementara sebelum ukuran tampilan yang sebenarnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mode gaming SteamOS dapat membuat Qt membuka PCSX2 pada 640x480 dan segera mengubah ukurannya ke layar Steam Deck 1280x800. Kedua peristiwa ini sah pada momen yang berbeda. Bug muncul karena resize pertama memulai timer debounce, sementara query DisplaySurface berikutnya memperbarui dimensi yang diingat ke ukuran akhir. Callback tertunda kemudian dijalankan dengan niat 640x480 yang sudah usang."
+    },
+    {
+      "type": "heading",
+      "text": "Timer lama dapat menimpa informasi jendela yang lebih baru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debounce biasanya mencegah pekerjaan viewport yang mahal selama badai resize. Di sini menjadi bahaya urutan: dimensi m_last_window sudah menggambarkan 1280x800, tetapi callback yang tertunda masih menerapkan target sebelumnya. Big Picture tetap menjadi layar penuh pada level sistem jendela sementara renderer menggunakan viewport kecil, menghasilkan gambar karakteristik 640x480 di sudut kiri bawah."
+    },
+    {
+      "type": "heading",
+      "text": "Perbaikan membuat status resize menjadi monoton di seluruh urutan startup"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14732 menyesuaikan logika perubahan ukuran tampilan Qt sehingga sebuah event debounced yang lebih lama tidak bisa menang setelah getWindowInfo mengamati permukaan yang sebenarnya. Ini menargetkan perlombaan antara dua sumber ukuran daripada memberikan kasus khusus untuk resolusi tetap Steam Deck. Hal ini penting untuk perangkat Gamescope lainnya, layar eksternal, dan panel masa depan yang dimensi akhirnya berbeda dari 1280x800."
+    },
+    {
+      "type": "heading",
+      "text": "Peluncuran dingin berulang merupakan tes regresi yang bermakna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Di Steam Deck atau sesi Gamescope lainnya, luncurkan berulang kali PCSX2 dengan -bigpicture -fullscreen dan OpenGL, memeriksa viewport setelah setiap startup. Tambahkan transisi dari windowed ke fullscreen, perubahan monitor eksternal, suspend/resume, dan beberapa backend renderer. Catat setiap event resize, target debounce, hasil getWindowInfo, dan viewport yang diterapkan. Callback terakhir harus menggunakan dimensi terbaru, sementara resize tunggal biasa masih menunggu debounce dan diterapkan dengan benar."
+    },
+    {
+      "type": "callout",
+      "text": "Bug bukan karena konstanta resolusi yang salah; melainkan timer lama menang setelah ukuran permukaan yang lebih baru sudah menjadi otoritatif."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

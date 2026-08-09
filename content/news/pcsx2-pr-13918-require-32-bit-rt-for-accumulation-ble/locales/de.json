@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 verweigert die Akkumulationsmischung auf 16-Bit-Zielen bei maximaler Genauigkeit",
+  "summary": "Ein Präzisionsschutz deaktiviert eine Optimierung, deren Rundungsreihenfolge die darstellbare 16-Bit-Farbstufe überschreiten kann, wodurch die hochgenaue Hardware-Ausgabe mit der Software-Referenz abgeglichen wird.",
+  "heroAlt": "Quellenbeweis aus dem PCSX2 Pull Request #13918: GS/HW: 32-Bit-RT für Akkumulationsmischung bei maximaler Mischung erforderlich.",
+  "searchKeywords": [
+    "PCSX2",
+    "Akkumulationsmischung",
+    "16-Bit-Renderziel",
+    "Maximale Mischung",
+    "Dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: 32-Bit-RT für Akkumulationsmischung bei maximaler Mischung erforderlich."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Akkumulationsänderungen, welche Werte die 16-Bit-Rundung erhalten"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 kann einige Mischungen optimieren, indem es über ein Host-Renderziel akkumuliert. Auf einem 32-Bit-Ziel ist die zusätzliche Genauigkeit im Allgemeinen mit dem beabsichtigten Ergebnis kompatibel. Ein 16-Bit-Ziel von GS quantisiert Farben anders: Das Anwenden von Rundung nach dem falschen Zwischenergebnis kann RGB 255 erzeugen, obwohl das beabsichtigte Formatende bei etwa 240 liegt. Das Bild kann ähnlich aussehen, während sein Dithermuster und exakte Farbtöne abweichen."
+    },
+    {
+      "type": "heading",
+      "text": "Maximale Genauigkeit erfordert jetzt ein 32-Bit-Ziel für den schnellen Pfad"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #13918 fügt eine Bedingung in GSRendererHW hinzu. Wenn die Mischgenauigkeit auf Maximum gesetzt ist, bleibt das Akkumulations-Mischen nur verfügbar, wenn das Renderziel 32-Bit ist. Ein 16-Bit-Ziel fällt auf den nicht akkumulierten Pfad zurück, der seine Quantisierung respektiert. Modi mit geringerer Genauigkeit können weiterhin ihre dokumentierten Performance-Abwägungen treffen; die Änderung stimmt die strengste Einstellung mit ihrem Genauigkeitsversprechen ab."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity zeigt den Unterschied im Dither-Detail"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der bereitgestellte Vulkan-Vergleich verwendet einen 16-Bit-Frame aus Sonic Riders: Zero Gravity und beinhaltet Software-Rendering als Referenz. In normaler Größe kann die Änderung schwer zu erkennen sein, aber beim Hineinzoomen in das Dither-Muster wird die unterschiedliche Farbskala sichtbar. Deshalb sind referenzierte Bilder auf Pixelebene wichtig: Ein Screenshot mit breiter Kompatibilität könnte den numerischen Fehler übersehen, den die maximale Einstellung speziell vermeiden soll."
+    },
+    {
+      "type": "heading",
+      "text": "Regressionstests sollten sowohl Ziel-Tiefen als auch Blend-Modi abdecken"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spielen Sie den Quelldump auf Vulkan und anderen Hardware-Backends erneut ab, vergleichen Sie verlustfreie Pixel mit der Software-Ausgabe und prüfen Sie, dass der Akkumulationspfad nur für 16-Bit-Ziele unter maximalem Blend abgelehnt wird. Ein 32-Bit-Ziel sollte die Optimierung beibehalten. Zeichnen Sie die Draw-Routing- und GPU-Zeit auf, da das Deaktivieren einer Optimierung die Leistung kosten kann, selbst wenn die Ausgabekorrektur transparent ist. Testen Sie mehrere Dithering-Muster und Akkumulationsgleichungen anstelle einer einzelnen Ground-Textur."
+    },
+    {
+      "type": "callout",
+      "text": "Die maximale Mischgenauigkeit behandelt nun die Zielpräzision als Teil des Algorithmus: Eine 16-Bit-Oberfläche kann die 32-Bit-Akkumulationsabkürzung nicht sicher verwenden."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

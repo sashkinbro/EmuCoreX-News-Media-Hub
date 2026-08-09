@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14503-rov-support-for-feedback-draws",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 apporte des tirages de rétroaction ordonnés à trois backends matériels",
+  "summary": "L'exécution de style ROV sur Direct3D 11, Direct3D 12 et Vulkan réduit le fractionnement dans le rendu à forte rétroaction tout en exposant les copies, les barrières et les limitations du backend pour la validation.",
+  "heroAlt": "Preuve source provenant de la demande de tirage PCSX2 #14503 : GS/HW : prise en charge ROV pour les tirages de rétroaction.",
+  "searchKeywords": [
+    "PCSX2",
+    "ROV",
+    "tirage de rétroaction",
+    "Vulkan",
+    "Direct3D 12"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14503": "GS/HW : prise en charge ROV pour les tirages de rétroaction."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les tirages de rétroaction imposent un choix entre l'ordre et des passes supplémentaires"
+    },
+    {
+      "type": "paragraph",
+      "text": "Certain effets GS lisent des données liées à la cible qu'ils sont en train d'écrire, y compris les chemins de mélange logiciel et AA1. Sans un mécanisme matériel ordonné, PCSX2 peut répartir le travail, copier la cible, ou insérer des barrières afin que les fragments ultérieurs voient les valeurs requises. Ces dispositifs de sécurité préservent la correction mais multiplient les appels de dessin et le trafic mémoire dans les scènes où le feedback est fréquent."
+    },
+    {
+      "type": "heading",
+      "text": "DX11, DX12 et Vulkan obtiennent des chemins ordonnés explicites"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14503 met en œuvre le support du feedback en ordre de rastériseur ou équivalent sur Direct3D 11, Direct3D 12 et Vulkan. Elle s'appuie sur la refonte précédente du format de texture pour que la profondeur stockée pour ROV puisse passer par des sélecteurs de conversion partagés. L'implémentation de OpenGL a été retirée car les tests ont montré qu'elle était trop peu fiable, démontrant que la fonctionnalité est activée par les garanties du backend plutôt que forcée dans chaque API."
+    },
+    {
+      "type": "heading",
+      "text": "Les statistiques et les barrières Vulkan rendent visible le coût caché"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les paramètres graphiques exposent les contrôles ROV, et l'OSD signale les appels de dessin, les copies et les barrières du ROV en plus des totaux normaux. Vulkan propose également une option de barrière ROV plus solide pour les systèmes qui scintillent avec la synchronisation par défaut. Une transition de rétroaction Windows RDNA2 a reçu une correction dédiée. Direct3D 12 a fonctionné sur plusieurs systèmes mais a montré un fort Z fighting dans certaines captures sur le GPU de l'auteur, une limite non résolue plutôt qu'une affirmation de succès universel."
+    },
+    {
+      "type": "heading",
+      "text": "Les exécutions de dump doivent comparer la correction et les comptes d'opérations ensemble"
+    },
+    {
+      "type": "paragraph",
+      "text": "Activer le ROV par backend et rejouer les dumps à rétroaction intensive couvrant le blending logiciel, AA1, la rétroaction de profondeur et les transitions de cible. Comparer la sortie sans perte avec les références non-ROV et logicielles, puis enregistrer les dessins, les copies, les barrières, le temps GPU et le pilote. Re-vérifier Vulkan avec et sans la barrière plus forte. Direct3D 12 nécessite une attention particulière sur le matériel Intel, tandis qu'un test OpenGL doit confirmer que l'option supprimée ne peut pas sélectionner le chemin connu pour être bogué."
+    },
+    {
+      "type": "callout",
+      "text": "Le ROV n'est précieux que lorsque l'API et le pilote préservent l'ordre des fragments ; les compteurs OSD montrent si cet ordre remplace réellement les copies et les tirages fractionnés."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14503",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

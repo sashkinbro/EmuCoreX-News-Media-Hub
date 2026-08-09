@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 bewahrt unveränderte Renderziel-Daten bei teilweisen Löschungen",
+  "summary": "Das Verfolgen von Löschen und Vorladen unterscheidet jetzt eine vollständige Überlappung von einer Halbzieloperation, wodurch verhindert wird, dass gültige Zeilen verworfen und als beschädigte Daten zurückkopiert werden.",
+  "heroAlt": "Visuelle Beweise aus dem PCSX2 Pull Request #14681: GS/TC: Verhalten von Löschen und Vorladen verbessern",
+  "searchKeywords": [
+    "PCSX2",
+    "Textur-Cache",
+    "Teilweises Löschen",
+    "Vorladen",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Verhalten von Löschen und Vorladen verbessern"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Halbziel-Löschen machte das vorhergehende Frame ungültig"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 kann nur die zweite Hälfte eines Renderziels löschen, während die ersten 256 Zeilen bereits Daten für den nächsten Frame enthalten. PCSX2 markierte zuvor das breitere Ziel als ungültig und lud dann später aus einem Bereich vor, den er bereits als unbrauchbar deklariert hatte. Die Kopie war intern mit der falschen Gültigkeitskarte konsistent und erzeugte Flackern, obwohl das Spiel die erhaltene Hälfte nie gelöscht hatte."
+    },
+    {
+      "type": "heading",
+      "text": "Das Löschen der Gültigkeit erfordert nun ein passendes Ziel oder eine vollständige Überlappung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull-Request #14681 ändert den Zeitpunkt, wann RGB- und Alphakanäle ihren gültigen Status verlieren. Ein Löschen kann den nachverfolgten Inhalt nur verwerfen, wenn das Ziel übereinstimmt oder den relevanten Bereich vollständig abdeckt. Teilüberlappungen lassen den unberührten Teil intakt. Der Renderer behandelt auch gepaarte Halb-Löschungen gezielter und überspringt ein normales Lösch-Draw, wenn ein Ziel auf null aufgelöst wird, wodurch Arbeit vermieden wird, die keine Pixel beitragen kann."
+    },
+    {
+      "type": "heading",
+      "text": "Das Vorladen folgt der noch bestehenden Abdeckung anstelle des alten Ziellabels"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Begleit-Preload-Änderungen sind wichtig, weil Gültigkeit und Wiederherstellung zwei Seiten derselben Cache-Entscheidung sind. Wenn ein überlappendes Ziel wiederverwendet wird, muss PCSX2 nur Daten kopieren, von deren Überleben bekannt ist; andernfalls kann eine korrekte Löschung immer noch von einem veralteten oder undefinierten Preload gefolgt werden. Die Arbeit in GSRendererHW und GSTextureCache stimmt diese Schritte ab, wobei GS Register-Hilfsprogramme die Coverage-Informationen liefern, die für die Entscheidung verwendet werden."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 und X-Men Origins decken verschiedene Löschmuster ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelle identifiziert das Flackern in Gran Turismo 4 als den primären Reproduzenten und enthält Vorher- und Nachher-Aufnahmen für Time Crisis 3 und X-Men Origins. Tests sollten dieselben Frames erneut überprüfen, während zwischen nativer und hochskalierten Darstellung umgeschaltet wird, und anschließend mehrere nachfolgende Frames auf verzögerte Korruption überwachen. Die Beleuchtung in Need for Speed ist eine weitere angeforderte Überprüfung. Eine nützliche Trace zeichnet Zielgrenzen, Kanalgültigkeit und Preload-Grenzen für jede überlappende Löschung auf."
+    },
+    {
+      "type": "callout",
+      "text": "Die wichtigste Korrektur ist zeitlicher Natur: Ein teilweises Leeren darf das Cache-Wissen über Pixel, die der Gast absichtlich für einen späteren Frame gelassen hat, nicht löschen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Lesen Sie die PCSX2-Ingenieursdiskussion und die Quellcodeänderungen"
+    }
+  ]
+}

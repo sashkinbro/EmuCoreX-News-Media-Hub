@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar modeliert die ARM11 Befehlsausführungszeiten, während ein legacy Notausgang beibehalten wird",
+  "summary": "Eine TRM-basierte Zyklustabelle unterscheidet Pipeline-Flushes, vorhergesagte Rückgaben, Adressierungsmodi, Transfers und VFP-Operationen, anstatt jedem Befehl einen Takt zuzuordnen.",
+  "heroAlt": "Quellenbeweis aus Azahar Pull Request #2262: core/arm: Modellierung der ARM11 MPCore-Ausführungszeiten gemäß TRM",
+  "searchKeywords": [
+    "Azahar",
+    "ARM11 MPCore",
+    "Befehlsausführungszeiten",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: Modellierung der ARM11 MPCore-Ausführungszeiten gemäß TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Befehl pro Takt verdeckt Unterschiede in Pipeline und Transfers"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Nintendo 3DS CPU führt nicht jede ARM-Anweisung mit identischer Latenz aus. Ein Sprung, der eine achtstufige Pipeline leert, eine vorhergesagte Rückkehr, eine verschobene Registeradresse und eine Übertragung von mehreren Registern oder VFP haben unterschiedliche Kosten. Das frühere einfache Timing von Azahar konnte Unterbrechungen oder Spiel-Logik im Verhältnis zu CPU-Arbeiten verschieben, insbesondere in Sequenzen, deren Verhalten davon abhängt, wann ein Ereignis sichtbar wird."
+    },
+    {
+      "type": "heading",
+      "text": "Die Tabelle folgt den ARM11-MPCore-Mechanismen, nicht willkürlichen Spielverzögerungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #2262 erweitert arm_tick_counts mit einem siebenzyklischen Pipeline-Flush-Modell, einem niedrigeren Durchschnitt für indirekte Sprünge, spezieller Behandlung für MOV oder Laden in das PC, Kosten für verschobene Registeradressen, zwei-Register-pro-Zyklus-Mehrfachübertragungen und VFP-Übertragungszähler. Hilfsprogramme zur Extraktion von Bitfeldern werden im Rahmen der Zuordnung von Befehlskodierungen zur entsprechenden Timing-Funktion korrigiert."
+    },
+    {
+      "type": "heading",
+      "text": "Vorhergesagte Rückgaben unterscheiden sich vom unstrukturierten Kontrollfluss"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr und stack-basierte Ladevorgänge in PC können Rücksprungvorhersage nutzen und ein günstigeres Ergebnis erhalten, während andere PC-Schreibvorgänge oder Sprungtabellen-Ladevorgänge eine Nachfüllstrafe zahlen. Diese Unterscheidung verhindert, dass ein breiter Sprungkonstantenwert normale Funktionsrückgaben überlädt und unvorhersehbare Umleitungen unterbelastet. Das Modell beschreibt vom Host emulierte Gastzyklen; es ist unabhängig davon, wie schnell Dynarmic den übersetzten Block auf dem Telefon oder Desktop ausführt."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Legacy-Umschalter enthält Kompatibilitätsrisiken während der Validierung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debug CPU-Einstellungen können das ältere Ein-Takt-pro-Befehl-Verhalten für zeitkritische Spiele wiederherstellen; die Verfolgungssequenz in LEGO City Undercover ist das angeführte Beispiel. Tests sollten beide Modi über CPU-Benchmarks, Interrupts, Audio, Eingabeabfragen und diese Verfolgung vergleichen. Zählen Sie Zyklen im Vergleich zu TRM-Fällen und gezielten Befehlschleifen. Der Umschalter muss deterministisch umschalten und bestehen bleiben, aber neue Regressionen sollten untersucht werden, anstatt dauerhaft jeden Titel hinter der Legacy-Timing-Einstellung zu verstecken."
+    },
+    {
+      "type": "callout",
+      "text": "Die neuen Tischmodelle zeigen, warum Anweisungen unterschiedliche Gastzyklen benötigen; der alte Schalter hält zeitkritische Software testbar, während dieses Modell reift."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Lesen Sie die Azahar Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

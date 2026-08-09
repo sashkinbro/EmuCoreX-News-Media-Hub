@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 usuwa prowadzenie bufora rysowania, gdy żadna partia nie może go użyć",
+  "summary": "Wyłączone lub natychmiast niebuferowane rysunki nie kopiują już ani nie przywracają środowisk GS, podczas gdy lokalne odniesienia zastępują ruch wskaźnika dodany do gorących ścieżek renderowania.",
+  "heroAlt": "Dowód źródłowy z pull request PCSX2 #14729: GS: Optymalizacja buforowania rysowania i logiki wskaźników",
+  "searchKeywords": [
+    "PCSX2",
+    "buforowanie rysowania",
+    "Wątek GS",
+    "gorąca ścieżka",
+    "wydajność"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Optymalizacja buforowania rysowania i logiki wskaźników"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wyłączona optymalizacja wciąż ponosiła koszt jej ustawienia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buforowanie rysowania może łączyć kompatybilne operacje, ale PCSX2 może wyłączyć je globalnie lub wykryć, że następujące rysowanie nie może być buforowane. Implementacja nadal tworzyła kopię zapasową środowiska rysowania i przywracała je podczas opróżniania bufora, nawet jeśli żadna przyszła partia nie mogła wykorzystać tej migawki. W przypadku obciążenia zdominowanego przez GS, wielokrotne kopiowanie zamienia nieaktywną funkcję w wymierny narzut CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Kopie środowiska teraz podążają za rzeczywistymi kryteriami kwalifikacji do buforowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14729 zawęża operacje tworzenia kopii zapasowej i przywracania do ścieżek, w których buforowanie rysowania może zachować kolejne operacje. Jeśli buforowanie jest wyłączone lub zgodność od razu się nie powiedzie, renderer nadal używa bieżącego kontekstu bez tworzenia kopii naprawczej. Zachowuje to funkcjonalne zachowanie opróżniania bufora przy jednoczesnym usunięciu ruchu stanu, którego jedynym celem było cofnąć partię, która nigdy nie istniała."
+    },
+    {
+      "type": "heading",
+      "text": "Lokalne odwołania zastępują śledzenie wskaźników w najczęściej używanych ścieżkach"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wcześniejsza implementacja buforowania wprowadziła wskaźniki używane w całym procesie rysowania, aby kod mógł przełączać się między stanem na żywo a buforowanym. Tam, gdzie ta pośredniość nie jest już wymagana, poprawka używa lokalnych referencji. Referencje pozwalają kompilatorowi utrzymywać często używany stan bliżej operacji i zmniejszać powtarzające się ładowanie wskaźników, bez zmiany własności ani czasu życia kontekstu GS."
+    },
+    {
+      "type": "heading",
+      "text": "Testy przepustowości muszą utrzymać stan buforowania widoczny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Użyj gier i zrzutów GS-heavy, aby porównać maksymalny czas FPS, GS-wątków oraz liczby kopiowania środowiska przy włączonym, wyłączonym buforowaniu i przy częstym odrzucaniu. Słabsze CPUs są oczekiwanymi beneficjentami. Porównanie ramek bezstratnie nadal jest wymagane, ponieważ pominięta kopia zapasowa na jednej granicy kompatybilności może wprowadzić zmodyfikowany stan do kolejnego rysunku. Profiluj reprezentatywne przyczyny opróżniania i weryfikuj, że poprawa nie jest tylko sztucznym przypadkiem w działaniu programu."
+    },
+    {
+      "type": "callout",
+      "text": "Optymalizacja usuwa pracę z ścieżek, które nie mogą skorzystać z buforowania; nie osłabia to przywracania stanu wymaganego przez prawdziwą buforowaną partię."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Przeczytaj dyskusję inżynierską i zmiany w źródle PCSX2"
+    }
+  ]
+}

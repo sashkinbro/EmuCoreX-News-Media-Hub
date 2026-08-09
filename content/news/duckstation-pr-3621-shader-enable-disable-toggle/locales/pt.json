@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3621-shader-enable-disable-toggle",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation permite que um estágio de pós-processamento durma sem esquecer sua configuração",
+  "summary": "Chaves de ativação por shader preservam a ordem da cadeia e os parâmetros personalizados, separando a passagem temporária da remoção destrutiva tanto no Qt quanto no FullscreenUI.",
+  "heroAlt": "Evidência da origem do pedido de pull DuckStation #3621: Qt, FullscreenUI, Pós-Processamento: Adicionar alternância de ativar/desativar shader.",
+  "searchKeywords": [
+    "DuckStation",
+    "pós-processamento",
+    "cadeia de shaders",
+    "parâmetros",
+    "FullscreenUI"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3621": "Qt, FullscreenUI, Pós-Processamento: Adicionar alternância de ativar/desativar shader."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Remover um shader era a única maneira de contorná-lo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma cadeia de pós-processamento frequentemente contém vários efeitos cujos parâmetros foram ajustados juntos. Antes do pull request #3621, verificar temporariamente a imagem sem uma etapa significava removê-la, e depois recriar o shader e seus valores posteriormente. Isso transforma uma simples comparação em trabalho de configuração e facilita a perda de um preset cuidadosamente ajustado ou a restauração do efeito na posição errada."
+    },
+    {
+      "type": "heading",
+      "text": "O estado ativado passa a fazer parte da etapa, e não ser uma substituição vazia"
+    },
+    {
+      "type": "paragraph",
+      "text": "A representação compartilhada de pós-processamento agora registra se um shader individual é executado. Uma etapa desativada permanece na cadeia com seus valores de parâmetro e ordenação intactos; o renderizador simplesmente ignora seu trabalho. Reativá-la, portanto, restaura o mesmo efeito em vez de criar uma instância padrão. Isto é diferente de remover uma etapa, que continua sendo a operação correta quando o usuário quer que a definição da cadeia em si mude."
+    },
+    {
+      "type": "heading",
+      "text": "Qt e FullscreenUI expõem o mesmo controle não destrutivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "A implementação abrange a camada de utilitário de pós-processamento, o widget de configurações do Qt e as configurações do FullscreenUI. Isso garante que a flag habilitada não seja apenas uma decoração da interface: qualquer interface altera o estado que o renderizador consome. Também permite que os usuários configurem a mesma cadeia a partir de uma janela de desktop ou de uma exibição com prioridade para o controle, sem que um lado descarte silenciosamente a nova propriedade."
+    },
+    {
+      "type": "heading",
+      "text": "Testes de persistência e ordem da cadeia são mais importantes do que uma captura de tela"
+    },
+    {
+      "type": "paragraph",
+      "text": "Crie uma cadeia com vários shaders, modifique múltiplos parâmetros e desative um estágio no meio. A saída deve corresponder a uma cadeia que ignora esse efeito enquanto os estágios posteriores permanecem na mesma ordem. Salve as configurações, reinicie e confirme se o estado desativado e os parâmetros foram mantidos; então reative e compare com a captura original. Teste ambos os frontends, importação de presets, remoção de estágio e alternância rápida. O tempo de GPU deve ser afetado apenas pelo trabalho do estágio contornado."
+    },
+    {
+      "type": "callout",
+      "text": "Desativar agora é uma escolha de execução reversível; remover continua sendo uma edição estrutural da cadeia de pós-processamento."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3621",
+      "label": "Leia a discussão de engenharia DuckStation e as alterações de código-fonte"
+    }
+  ]
+}

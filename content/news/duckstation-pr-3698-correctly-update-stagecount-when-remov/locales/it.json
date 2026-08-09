@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation mantiene la lunghezza della catena di post-elaborazione coerente dopo la rimozione e la cancellazione",
+  "summary": "La persistenza corretta di StageCount distingue una catena accorciata, una catena di base esplicitamente vuota e un override per gioco vuoto che dovrebbe essere rimosso.",
+  "heroAlt": "Prove dalla fonte del pull request #3698 di DuckStation: PostProcessing: aggiornare correttamente `StageCount` durante la rimozione/cancellazione delle fasi",
+  "searchKeywords": [
+    "DuckStation",
+    "post-elaborazione",
+    "StageCount",
+    "impostazioni per gioco",
+    "rimozione dello shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: aggiornare correttamente `StageCount` durante la rimozione/cancellazione delle fasi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount è sia una lunghezza che un marcatore di override"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation memorizza le fasi di post-elaborazione nelle impostazioni insieme a StageCount. Nelle impostazioni di base, zero significa esplicitamente nessuna fase. In un livello per gioco, eliminare il campo può significare che il gioco non sovrascrive più la catena globale. Trattare questi casi allo stesso modo causa fasi obsolete o impedisce l'ereditarietà. Una rimozione che lascia due fasi deve scrivere due; una rimozione che non ne lascia alcuna potrebbe dover cancellare il campo per gioco."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage ora elimina solo la sovrascrittura per gioco realmente vuota"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3698 calcola new_stage_count e mantiene quel valore quando le fasi rimangono. Il campo viene rimosso solo quando l'interfaccia delle impostazioni non è il livello base e il conteggio raggiunge zero, permettendo a una sovrascrittura vuota specifica per gioco di sparire. Precedentemente il ramo poteva cancellare StageCount dopo qualsiasi rimozione per gioco, perdendo la lunghezza dichiarata della catena rimanente."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages corregge il ramo opposto del livello base"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il percorso chiaro aveva la sua condizione base-versus-gioco invertita. Il codice corretto scrive StageCount = 0 per le impostazioni di base, dove una catena globale vuota esplicita ha significato, e rimuove il valore per singolo gioco in modo che la configurazione globale possa fluire. Questa simmetria è il cuore della correzione: abbreviare, cancellare globalmente e cancellare una sovrascrittura sono tre operazioni di persistenza distinte."
+    },
+    {
+      "type": "heading",
+      "text": "I test di andata e ritorno dovrebbero coprire ogni livello e il conteggio rimanente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Creare una catena globale a tre fasi e una catena per gioco a tre fasi diversa. Rimuovere la fase intermedia per gioco, riavviare e verificare che i due sopravvissuti mantengano ordine e parametri. Rimuovere le ultime due e confermare che la catena globale ritorni. Poi cancellare la catena di base e confermare che rimane vuota dopo il riavvio. Ripetere tramite Qt e FullscreenUI, ispezionare StageCount dopo ogni operazione e testare l’aggiunta di una fase immediatamente dopo la cancellazione per catturare campi indicizzati obsoleti."
+    },
+    {
+      "type": "callout",
+      "text": "Una lunghezza della catena di zero non è sempre memorizzata nello stesso modo: le impostazioni di base registrano il vuoto, mentre un livello per gioco vuoto dovrebbe smettere di sovrascrivere la base."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Leggi la discussione ingegneristica DuckStation e le modifiche al sorgente"
+    }
+  ]
+}

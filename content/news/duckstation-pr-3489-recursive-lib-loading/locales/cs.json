@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation sleduje vnořené knihovny PSF až k reálnému vstupnímu bodu programu",
+  "summary": "Dvouřádková změna rekurze způsobí, že nejhlubší rodičovská knihovna _lib poskytne PC a SP, čímž se opraví loader, který zastavil hledání vstupního bodu o jednu úroveň příliš brzy.",
+  "heroAlt": "Důkazy ze zdroje z žádosti o pull request DuckStation #3489: PSFLoader: Oprava rekurzivního načítání _lib",
+  "searchKeywords": [
+    "DuckStation",
+    "PSF loader",
+    "_lib",
+    "program counter (počítač programu)",
+    "stack pointer (ukazatel zásobníku)"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Úložiště",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Oprava rekurzivního načítání _lib"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PSF může dědit spustitelný stav skrze více než jednu knihovnu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Soubory Portable Sound Format mohou odkazovat na rodiče přes _lib a tento rodič může odkazovat na další první knihovnu. Rekurzivní načítání dat nestačí, pokud načítač zvolí PC a SP z nesprávné úrovně. Formátový návod citovaný ve změně uvádí, že první řetězec _lib musí být sledován až k jeho nejhlubšímu členu; tento spustitelný kontext inicializuje přehrávání poté, co byly sestaveny všechny děděné sekce."
+    },
+    {
+      "type": "heading",
+      "text": "Stará kontrola hloubky spotřebovala příznak vstupního bodu příliš brzy"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader dříve vytvářel lib_use_pc_sp z depth == 0. To umožnilo první rodičovské knihovně získat programový čítač a ukazatel zásobníku, a pak zabránilo hlubší rekurzi, aby to udělala. Pull request #3489 místo toho předává rekurzivně příznak use_pc_sp volajícího do LoadLibraryPSF a nastaví jej na false až po návratu z volání první knihovny. Nejhlubší první rodič přijme příznak, než jej spotřebuje jakákoli mělčí úroveň."
+    },
+    {
+      "type": "heading",
+      "text": "Pouze řetězec první knihovny vlastní výběr PC a SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vymazání use_pc_sp během odvíjení zachovává další pravidlo PSF: pozdější knihovny mohou přispívat daty, aniž by opakovaně nahrazovaly počáteční registry. Záplata nesjednocuje každou _lib do jednoho neuspořádaného seznamu. Rozlišuje rekurzivní cestu prvního rodiče, která určuje provádění, od sourozenců načtených později, čímž zachovává co nejmenší změnu v psf_loader.cpp namísto přepisování formátu kontejneru."
+    },
+    {
+      "type": "heading",
+      "text": "Regresní fixace vyžaduje alespoň tři zanořená úrovně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sestavte PSF, jehož kořen, první rodič a nejhlubší první rodič deklarují každý jiné hodnoty PC a SP, plus sekundární knihovnu s dalším párem. DuckStation by měl načíst všechna potřebná data, ale začít od registrů nejhlubšího prvního rodiče; změna knihovny, která není první, nesmí posunout vstupní bod. Porovnejte přehrávání a zaznamenané registry s Mednafenem nebo jiným loaderem dodržujícím formát, a potom otestujte chybějící, cyklické a nečitelně odkázané knihovny pro čisté chyby namísto neomezené rekurze."
+    },
+    {
+      "type": "callout",
+      "text": "Oprava se týká pořadí rekurze: data mohou pocházet z mnoha knihoven, ale počáteční PC a SP patří nejhlubšímu členovi prvního řetězce _lib."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Přečtěte si inženýrskou diskusi DuckStation a změny zdrojového kódu"
+    }
+  ]
+}

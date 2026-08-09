@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3885-taihen-plugin-framework-and-kubridge-h",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K estabelece a base para plugins taiHEN e kubridge",
+  "summary": "Carregamento de plugin por título, trampolins de gancho realocáveis, rastreamento de injeção, memória HLE e callbacks de aborto do convidado abrem um caminho cuidadosamente limitado para compatibilidade de plugins Vita.",
+  "heroAlt": "Evidência da fonte do pull request #3885 do Vita3K: Adicionar framework de plugin taiHEN e suporte kubridge HLE",
+  "searchKeywords": [
+    "Vita3K",
+    "taiHEN",
+    "kubridge",
+    "Plugins Vita",
+    "ganchos inline"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Núcleo",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3885": "Adicionar framework de plugin taiHEN e suporte kubridge HLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Plugins Vita dependem da infraestrutura abaixo de módulos de usuário comuns"
+    },
+    {
+      "type": "paragraph",
+      "text": "Os plugins taiHEN fazem mais do que importar uma biblioteca. Eles localizam funções por módulo e NID, substituem stubs de importação ou prólogos de função, continuam através de um trampolim, injetam intervalos de bytes e, posteriormente, liberam cada objeto. kubridge expõe reserva de memória, comprometimento, proteção e manipulação de exceções orientadas ao kernel para plugins de usuário. Executar a implementação original de baixo nível dentro de um emulador vincularia o comportamento aos endereços do firmware e aos detalhes de falha do host."
+    },
+    {
+      "type": "heading",
+      "text": "Objetos de hook mantêm estado suficiente para desfazer cada modificação."
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #3885 adiciona um estado taiHEN com IDs únicos, mapas de hook e injeção, e seções de configuração para caminhos de plugins específicos de título. Hooks de importação preservam o stub original em um trampolim e corrigem um salto para o hook do convidado. Hooks inline usam suporte de relocação de instrução para copiar um prólogo seguro antes de redirecionar a execução ARM ou Thumb. Cada registro retém o alvo, bytes salvos, trampolim, metadados do hook convidado, modo e tamanho do patch para liberação controlada."
+    },
+    {
+      "type": "heading",
+      "text": "Chamadas de memória kubridge permanecem sob propriedade de Vita3K"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementações HLE traduzem flags de proteção kubridge em MemPerm, reservam espaço de endereço, alocam e desalocam páginas, e registram manipuladores de exceção. Uma falha de memória protegida registra endereço e direção da escrita em atômicos CPU seguros para sinais, interrompe a execução e permite que o loop normal do convidado construa um contexto de abort na pilha do convidado. Ponteiros CPU locais a thread são limpos por uma proteção para que threads do host recicladas não exponham estado obsoleto."
+    },
+    {
+      "type": "heading",
+      "text": "A compatibilidade do plugin não deve superar os testes de isolamento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Carregue nenhum plugin, um plugin, múltiplas seções de título e kernel, caminhos ausentes, hooks de importação, ARM e hooks inline Thumb, requisições com aparência encadeada, injeções e liberação em ordem incomum. Rejeite realocações que não podem ser transformadas ou intervalos fora da memória do convidado. Teste registro de abort de dados, leituras e escritas protegidas, saída de threads, savestates, troca de título e desligamento. Verifique se os bytes originais e alocações retornam após a liberação, enquanto tipos de exceção não suportados e comportamento específico de firmware falham explicitamente em vez de fingirem sucesso."
+    },
+    {
+      "type": "callout",
+      "text": "O suporte a plugins é seguro apenas quando cada hook de convidado, trampolim, intervalo injetado e callback de exceção possui um proprietário visível pelo emulador e um tempo de vida reversível."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3885",
+      "label": "Leia a discussão de engenharia Vita3K e as alterações de código-fonte"
+    }
+  ]
+}

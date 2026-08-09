@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 在其 NGS 音频引擎中区分了四种状态",
+  "summary": "访客可见的字节、临时缓冲区、可恢复逻辑和主机运行时对象现在有不同的所有者，使语音路由和解码器生命周期更容易理解。",
+  "heroAlt": "来源证据来自 Vita3K 拉取请求 #3969：ngs：重构 ngs/音频 状态所有权并进行一些清理",
+  "searchKeywords": [
+    "Vita3K",
+    "NGS 音频",
+    "ATRAC9",
+    "语音状态",
+    "音频路由"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "音频",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs：重构 ngs/音频 状态所有权并进行一些清理"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一个音频声道包含具有非常不同生命周期的状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita 的 NGS 系统会暴露可供客体读取的模块状态，但模拟器还需要仅供主机使用的解码器对象、重采样器、临时 PCM、循环历史和路由引用。将这些部分放在松散相关的成员中会导致重置、声音重用、回调和销毁容易出现过期指针问题。客体内存块不应意外拥有主机解码器，临时缓冲区也不应被误认为是恢复逻辑播放所需的数据。"
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData 现在为每个所有权类别命名"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #3969 提供了 module guest_state_data 用于 ABI 可见的字节，以及 scratch_data 用于临时工作。多态的 logical_state 存储信息，例如 ADPCM 历史或必须跨处理边界保持的导出 ATRAC9 解码器历史。单独的 runtime_state 拥有主机资源，如可清除或重建的活动解码器和重采样器。模块工厂通过一个接口创建每一层并初始化声音数据。"
+    },
+    {
+      "type": "heading",
+      "text": "路由在不保持脆弱的原始端点的情况下识别声音"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch 对象将源和目标保留为机架和声音索引，然后在需要时通过系统和模拟内存进行解析。这可以防止在机架更改后，Patch 盲目地跟随声音指针。ATRAC9 在工作前将保存的逻辑解码器历史加载到运行时解码器中，并在工作后导出。播放器模块在逻辑状态中保留 ADPCM 历史，而输出和重采样缓冲区则使用带有清除和紧凑操作的显式运行时容器。"
+    },
+    {
+      "type": "heading",
+      "text": "生命周期测试必须在每个阶段中中断音频"
+    },
+    {
+      "type": "paragraph",
+      "text": "使用 PCM、ADPCM、ATRAC9、输出和重采样模块创建、路由、启动、暂停、恢复、停止、重置和销毁声音。在存在补丁时重用机架插槽并移除任一端点。触发客户回调、循环转换、清空缓冲区和配置更改，然后比较连续输出与逻辑状态保存和运行时重建后的输出。线程和地址清理工具应覆盖调度器解锁/重新锁定点、拆解以及格式错误的客户句柄。主机指针不应能从客户可见的状态字节中恢复。"
+    },
+    {
+      "type": "callout",
+      "text": "当引擎能够回答哪些数据属于客户 ABI、可恢复的信号状态、临时工作以及主机解码器运行时，音频正确性会提高。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "阅读 Vita3K 工程讨论和源代码更改"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Model Azahar meniru waktu instruksi ARM11 sambil mempertahankan jalur pelarian lama",
+  "summary": "Tabel siklus berbasis TRM membedakan flush pipeline, return yang diprediksi, mode pengalamatan, transfer, dan operasi VFP alih-alih membebankan setiap instruksi satu tick.",
+  "heroAlt": "Bukti sumber dari Azahar pull request #2262: core/arm: meniru waktu MPCore ARM11 per TRM",
+  "searchKeywords": [
+    "Azahar",
+    "MPCore ARM11",
+    "waktu instruksi",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "Cpu",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: meniru waktu MPCore ARM11 per TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Satu instruksi per tick menyembunyikan perbedaan pipeline dan transfer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nintendo 3DS CPU tidak menjalankan setiap instruksi ARM dengan latensi yang sama. Suatu cabang yang membuang jalur pipa delapan tahap, prediksi kembalian, alamat register yang digeser, dan transfer multi-register atau VFP memiliki biaya yang berbeda. Waktu sederhana Azahar sebelumnya dapat memindahkan interupsi atau logika permainan relatif terhadap pekerjaan CPU, terutama dalam urutan yang perilakunya bergantung pada saat suatu peristiwa menjadi terlihat."
+    },
+    {
+      "type": "heading",
+      "text": "Tabel mengikuti mekanisme ARM11 MPCore, bukan penundaan permainan sewenang-wenang"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2262 memperluas arm_tick_counts dengan model flush jalur pipa tujuh siklus, rata-rata lebih rendah untuk cabang tidak langsung, penanganan khusus untuk MOV atau load ke PC, biaya alamat register yang digeser, transfer beberapa register-per-siklus sebanyak dua, dan perhitungan transfer VFP. Pembantu ekstraksi bit-field diperbaiki sebagai bagian dari pencocokan pengkodean instruksi dengan fungsi waktu yang sesuai."
+    },
+    {
+      "type": "heading",
+      "text": "Prediksi kembalian berbeda dari alur kontrol yang tidak terstruktur"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr dan pemuatan berbasis stack ke PC dapat menggunakan prediksi pengembalian dan menerima hasil yang lebih murah, sementara penulisan PC lainnya atau pemuatan tabel-loncat dikenakan penalti pengisian ulang. Perbedaan itu mencegah konstanta cabang luas membebankan pengembalian fungsi normal secara berlebihan dan membebankan pengalihan yang tidak dapat diprediksi secara terlalu ringan. Model ini menjelaskan siklus tamu yang diemulasi oleh host; model ini independen dari seberapa cepat Dynarmic mengeksekusi blok yang diterjemahkan pada ponsel atau desktop."
+    },
+    {
+      "type": "heading",
+      "text": "Saklar warisan mengandung risiko kompatibilitas selama validasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengaturan debug CPU dapat mengembalikan perilaku satu-tick-per-instruction yang lama untuk game yang sensitif terhadap waktu; urutan pengejaran LEGO City Undercover adalah contoh yang dikutip. Uji harus membandingkan kedua mode di seluruh tolok ukur CPU, interupsi, audio, polling input, dan pengejaran itu. Validasi jumlah siklus terhadap kasus TRM dan loop instruksi yang ditargetkan. Saklar harus beralih secara deterministik dan bertahan, tetapi regresi baru harus diselidiki daripada secara permanen menyembunyikan setiap judul di balik timing warisan."
+    },
+    {
+      "type": "callout",
+      "text": "Model meja baru menjelaskan mengapa instruksi memerlukan siklus tamu yang berbeda; switch warisan menjaga perangkat lunak sensitif waktu tetap dapat diuji sementara model itu berkembang."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumbernya"
+    }
+  ]
+}

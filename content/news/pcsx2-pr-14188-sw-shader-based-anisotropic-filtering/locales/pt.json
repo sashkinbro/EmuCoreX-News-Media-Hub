@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 adiciona anisotropia de shader para texturas que devem permanecer com filtragem por ponto",
+  "summary": "Um fallback Direct3D realiza amostragem anisotrópica em shaders, evitando caminhos de hardware que forçam filtragem linear ou recusam texturas não-mipmaps em alguns drivers AMD.",
+  "heroAlt": "Evidência da fonte do pull request PCSX2 #14188: GS/HW: Adicionar filtragem anisotrópica baseada em shader",
+  "searchKeywords": [
+    "PCSX2",
+    "filtragem anisotrópica",
+    "filtragem por ponto",
+    "Direct3D 12",
+    "teste de alfa"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Adicionar filtragem anisotrópica baseada em shader"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A anisotropia de hardware pode violar o modo de filtragem necessário da textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D não fornece a combinação necessária de filtragem anisotrópica com filtragem pontual no caminho do PCSX2, então habilitar AF anteriormente fazia com que as texturas afetadas fossem direcionadas para a amostragem linear. A interpolação linear mistura cores vizinhas antes do teste de alfa; portanto, um texel transparente pode puxar uma cor que o jogo nunca pretendia exibir. O resultado é mais visível em superfícies inclinadas com teste de alfa e nas bordas das texturas."
+    },
+    {
+      "type": "heading",
+      "text": "O caminho do shader controla amostras direcionais explicitamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14188 adiciona um filtro anisotrópico baseado em software e shader aos renderizadores Direct3D. Como o PCSX2 seleciona e combina as amostras por si mesmo, ele pode preservar decisões de cores pontuais enquanto cobre a pegada alongada criada por uma superfície oblíqua. A configuração é separada do nível normal de anisotropia, permitindo que os usuários habilitem a nova rota deliberadamente em vez de substituir silenciosamente o comportamento do hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Texturas AMD DX12 não mipmapeadas ganham uma alternativa consistente"
+    },
+    {
+      "type": "paragraph",
+      "text": "A fonte também relata que o driver Direct3D 12 da AMD não aplica AF de hardware a texturas sem mipmaps, mesmo que a renderização comparável Vulkan funcione. A amostragem de shader contorna essa limitação do host e visa a paridade com o comportamento Vulkan entre AMD e NVIDIA. É descrito como mais agressivo do que o AF de hardware da NVIDIA, especialmente na resolução nativa, portanto, não se assume que a saída seja visualmente idêntica."
+    },
+    {
+      "type": "heading",
+      "text": "Os testes precisam de bordas alfa, texturas sem mipmap e vários fornecedores."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ative a filtragem anisotrópica e a opção de shader, e então compare a geometria testada por alfa com AF de hardware, filtragem linear e Vulkan na mesma cena. Inclua texturas sem mipmaps, resoluções nativas e ampliadas, ângulos de visão acentuados e bordas transparentes do problema #14077. Registre as amostras de textura e o tempo GPU na AMD e NVIDIA Direct3D 11 e 12. Verifique que cores ocultas não vazem e que o sharpening agressivo não crie cintilação nem aliasing em movimento."
+    },
+    {
+      "type": "callout",
+      "text": "A anisotropia do shader existe para preservar a intenção de filtragem do usuário quando as opções de hardware Direct3D ou misturam vizinhos proibidos ou ignoram completamente a textura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

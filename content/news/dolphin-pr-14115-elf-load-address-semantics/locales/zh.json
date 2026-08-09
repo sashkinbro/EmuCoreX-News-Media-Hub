@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 将 ELF 段的加载地址与其虚拟地址分开",
+  "summary": "加载器现在更倾向于使用 p_paddr 作为段的加载内存地址，只有在未提供物理地址时才回退到 p_vaddr。",
+  "heroAlt": "来自 Dolphin 拉取请求 #14115 的源证据：Core/Boot：修复 ELF 加载地址语义",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "自制软件"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "核心",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot：修复 ELF 加载地址语义"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF 程序头可以描述两个不同的地址"
+    },
+    {
+      "type": "paragraph",
+      "text": "可加载的 ELF 段包括 p_vaddr，即程序执行时使用的地址，以及 p_paddr，在嵌入式环境中通常被视为加载内存地址。许多二进制文件将它们设置为相等，这会掩盖将两个字段混淆的加载器。自制软件、引导组件或开发镜像可以有意地将它们分开。Dolphin 之前无条件地将段字节复制到 p_vaddr，而忽略了文件编码的物理位置。"
+    },
+    {
+      "type": "heading",
+      "text": "加载器现在优先选择非零的物理字段"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14115 记录了两个值，并从 p_paddr 初始化 writeAddr。非零的物理地址通过设置 0x80000000 位映射到 PowerPC 虚拟区。如果 p_paddr 为零，Dolphin 使用 p_vaddr 作为兼容回退。仅 MEM1 的检查也切换到实际选择的写入地址，因此过滤器会评估字节将被写入的位置，而不是其他头字段。"
+    },
+    {
+      "type": "heading",
+      "text": "这是加载器语义的修正，而不是任意重定位"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin 不会计算新的位置或重写二进制文件中的引用。它遵循程序头提供的加载地址，并保留已建立的虚拟映射约定。这一区别对于在控制流或启动代码使用它们之前复制到一个位置的段非常重要。它还防止了在文件中不区分地址时常见的零 p_paddr 意外映射到内存基址。"
+    },
+    {
+      "type": "heading",
+      "text": "夹具必须涵盖相等、分离、零和无效范围"
+    },
+    {
+      "type": "paragraph",
+      "text": "创建小型 ELFs，其 p_paddr 等于 p_vaddr，为零，有差异但仍在 MEM1 内，落在边界附近，或指向可写仿真 RAM 之外的区域。用独特的模式填充每个段，并验证精确目标、BSS 清除、入口执行和重叠处理。对 only_in_mem1 进行 writeAddr 过滤，并检查两个字段的日志。真实自制软件应与格式错误的文件一起测试，以防改进的语义导致未受控制的客户机内存写入。"
+    },
+    {
+      "type": "callout",
+      "text": "当嵌入的 ELF 提供一个负载内存地址时，加载器应当遵守它；虚拟地址描述的是执行，而不一定是字节最初所属的位置。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "阅读 Dolphin 工程讨论和源代码更改"
+    }
+  ]
+}

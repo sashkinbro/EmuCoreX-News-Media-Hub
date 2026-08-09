@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K connects real Vita kernel modules to its emulated module graph",
+  "summary": "Boot and sysmodule SKPRX loading now joins broader SELF, driver-export, TLS, lifecycle, and patch handling needed for a low-level system-module path.",
+  "heroAlt": "Source evidence from Vita3K pull request #3913: modules: lle kernel module \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "LLE kernel",
+    "SKPRX",
+    "sysmodule",
+    "module loader"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "modules: lle kernel module \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Low-level system modules need more than a SELF parser"
+    },
+    {
+      "type": "paragraph",
+      "text": "Loading a real Vita kernel binary means resolving its imports and exports, assigning segment memory, creating module information, honoring start and stop behavior, exposing driver services, and cleaning every symbol when it unloads. The binary also expects kernel TLS fields and other system modules to exist. A loader that copies bytes successfully but leaves those relationships incomplete will fail later with an unresolved NID or stale export."
+    },
+    {
+      "type": "heading",
+      "text": "The startup graph now includes bootimage and sysmodule"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3913 adds os0:kd/bootimage.skprx and os0:kd/sysmodule.skprx to the preload list. It expands module manager, thread manager, process manager, sysmem, debug, process-event, QAF, sysclib, and sysmodule-facing functions needed around them. Kernel TLS names gain stack-check and fiber-context roles. Import and export unload paths are simplified to remove entries by NID and module ownership without carrying relocation data they no longer use."
+    },
+    {
+      "type": "heading",
+      "text": "Patching moves to the layer that knows final segments"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game patches are taken out of the generic kernel SELF loader. After the main executable becomes a loaded module, interface code retrieves its SceKernelModuleInfo and copies only patches whose segment exists and whose offset plus byte count fits memsz. This keeps a user-facing title patch separate from loading system binaries and makes the bound check use the final mapped segments rather than parser assumptions."
+    },
+    {
+      "type": "heading",
+      "text": "A mixed LLE and HLE graph requires traceable failure tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Boot with complete firmware files, missing bootimage, missing sysmodule, incompatible binaries, and ordinary HLE-only configurations. Trace every resolved import, module start result, TLS value, export removal, and reverse-order shutdown. Reload titles repeatedly to expose stale NIDs and module IDs. Feed patches at segment start, exact end, and one byte beyond. Kernel binaries must never grant host access; all pointers remain guest ranges, and unsupported driver functions should report a precise boundary instead of returning invented success."
+    },
+    {
+      "type": "callout",
+      "text": "LLE is not simply running more firmware code; it is building a reversible module graph where real guest binaries and emulator services meet at explicit imports."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

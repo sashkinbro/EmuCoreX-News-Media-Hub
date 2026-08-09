@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Entfernen Sie Farbbanding, das durch einen Post-Processing-Shader eingeführt wurde",
+  "summary": "Erfassen Sie einen gleichmäßigen Himmel- oder Nebelverlauf mit deaktiviertem Post-Processing, aktivieren Sie die Shader-Stufen einzeln wieder, prüfen Sie die Ausgabe vor der Anzeigeumwandlung und behalten Sie nur ein Preset, dessen Genauigkeit die Quelle nicht zerdrückt oder posterisiert.",
+  "heroAlt": "PCSX2 Shader-Verarbeitungsillustration aus einem offiziellen Fortschrittsbericht zur Grafik",
+  "searchKeywords": [
+    "PS2 Shader-Banding",
+    "EmuCoreX Verlaufsposterisierung",
+    "Post-Processing-Präzision",
+    "Himmelbänder",
+    "Farbverlust"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "post-processing": "Nachbearbeitung"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 Einstellungen und Beweise erfassen",
+    "android-hdr": "Android Anzeige-Kontext der Umwandlung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Beweisen Sie, dass die Bänder nach dem Emulatorbild beginnen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bänderung verwandelt einen sanften Farbverlauf in sichtbare Stufen. Das Spiel kann bereits eine Kunst mit niedriger Präzision verwenden, ein Shader kann Zwischenfarben quantisieren, die Screenshot-Codierung kann die Präzision reduzieren oder die Anzeigekette kann Werte zerstören. Wählen Sie einen großen stabilen Verlauf, wie zum Beispiel den Abendhimmel, Nebel oder ein Menü-Fading. Erfassen Sie die direkte Ausgabe mit deaktivierter Nachbearbeitung, bevor Sie ein Fernsehfoto beurteilen."
+    },
+    {
+      "type": "callout",
+      "text": "Dithering kann Stufen durch das Hinzufügen von Rauschen verbergen, aber es stellt keine Werte wieder her, die bereits von einer vorherigen Shader-Stufe abgeschnitten wurden. Finden Sie die Stufe, die Präzision verliert, bevor Sie Rauschen als Heilmittel betrachten."
+    },
+    {
+      "type": "heading",
+      "text": "Erstellen Sie ein Gradient-Referenzset"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ein stabiles In-Game-Save mit einem großen, bewegungsarmen Gradient.",
+        "Verlustfreie oder hochwertige Direktaufnahmen mit deaktivierten und aktivierten Shadern.",
+        "Shader-Voreinstellung an einem Rollback-Ort kopiert.",
+        "HDR-Konvertierung, Nachtmodus und Barrierefreiheits-Farbtransformationen für die Basislinie deaktiviert.",
+        "Ein zweites Gradient mit unterschiedlicher Helligkeit und Farbton."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Identifiziere die erste Phase, die Präzision verliert"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Kaltstart mit deaktivierter Nachbearbeitung und erfasst beide Gradienten.",
+        "2. Aktiviere das Preset, aber schalte jede optionale Phase aus, die seine Schnittstelle bietet.",
+        "3. Füge eine Phase nach der anderen hinzu und starte die Szene neu, wenn die Pipeline eine Reinitialisierung erfordert.",
+        "4. Vergleiche Histogrammschritte und sichtbare Konturgrenzen in direkten Aufnahmen, nicht in neu kodierten Vorschauen.",
+        "5. Wenn die verantwortliche Phase gefunden ist, reduziere ihre Stärke oder wähle ihren dokumentierten Pfad mit höherer Präzision.",
+        "6. Testen Sie erneut ohne Emulator-Dithering, und aktivieren Sie dann nur die beabsichtigte Dithering-Option, wenn noch Restquellschritte vorhanden sind.",
+        "7. Schließen Sie den normalen Anzeigemodus wieder an und überprüfen Sie separat Near-Black- sowie helle Verläufe.",
+        "8. Speichern Sie ein titelabhängiges Preset, wenn andere Spiele eine andere Tonwert-Pipeline benötigen."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine Shader-Kette ist so geordnet: Eine frühe Stufe kann Werte clippen, quantisieren oder umwandeln, die spätere Stufen nicht rekonstruieren können. Die Direktaufnahme zeigt, ob der Verlust vor Android vorhanden ist oder ob die externe Anzeige den Frame transformiert. Zwei Helligkeitsbereiche verhindern, dass eine Korrektur der Himmelslichter dunklen Nebel unbemerkt zerstört."
+    },
+    {
+      "type": "heading",
+      "text": "Akzeptanz der Gradientenqualität"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das endgültige Preset muss die tonalen Details bewahren, ohne das Spieltiming oder die Farbabsicht zu verändern."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Große Gradienten gehen ohne neue Konturringe in einander über.",
+        "Nahezu schwarze Stufen bleiben unterscheidbar und Highlights werden nicht abgeschnitten.",
+        "HUD-Weißwerte und Hauttöne nehmen keinen Farbstich an.",
+        "Der zweite Gradient verbessert sich unter derselben Stufenreihenfolge.",
+        "Die Bildfrequenz und die anhaltende GPU-Belastung bleiben innerhalb der Basistoleranz."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Bänderungsquellen außerhalb des Shaders"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Bänder existieren mit deaktivierter Verarbeitung bei direkter Aufnahme: Vergleiche die originalen Spielausgaben oder Assets.",
+        "Direkte Aufnahme ist flüssig, aber die Fernseh-Bänder: überprüfe den RGB-Bereich, HDR und Panelverarbeitung.",
+        "Nur gemeinsame Screenshots zeigen Ringe: Verwende eine verlustfreie lokale Datei, bevor du das Preset änderst.",
+        "Eine Stufe behebt Bänder durch Verwischen von Details: lehne sie ab und stelle die quellenerhaltende Kette wieder her."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Stelle den bekannten unverarbeiteten Frame wieder her"
+    },
+    {
+      "type": "paragraph",
+      "text": "Deaktivieren Sie das bearbeitete Preset, stellen Sie die gespeicherte Datei oder die Standardwerte wieder her, schalten Sie experimentelles Dithering aus und erfassen Sie den Basisfarbverlauf erneut. Aktivieren Sie Anzeige-Transfomationen erst wieder, nachdem die Emulatorausgabe als flüssig bestätigt wurde."
+    },
+    {
+      "type": "heading",
+      "text": "Screenshots können Farb-Pipelines ändern"
+    },
+    {
+      "type": "paragraph",
+      "text": "Einige Android-Erfassungspfade ton-mappen HDR oder speichern einen anderen Farbraum als der angezeigte Frame. Zeichnen Sie das Erfassungsformat und den Anzeigemodus auf; verwenden Sie sowohl direkte Beweise als auch eine kalibrierte Anzeigeprüfung, wenn das Problem nur in HDR auftritt."
+    },
+    {
+      "type": "link",
+      "text": "Lesen Sie Android HDR-Pipeline-Anleitungen",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

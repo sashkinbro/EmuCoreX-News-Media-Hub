@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar menginisialisasi peta tombol PlayStation sebelum mengaktifkan gerakan",
+  "summary": "Mengatur ulang dan menghapus duplikasi aktivasi gerakan SDL menghilangkan bahaya threading saat peluncuran yang spesifik untuk pengaturan kontrol DualShock 4 dan DualSense HIDAPI.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2345: Perbaikan bug untuk controller ps4/ps5 macet saat peluncuran",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "input gerakan"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Masukan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Perbaikan bug untuk controller ps4/ps5 macet saat peluncuran"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Startup gerakan masuk ke SDL sebelum pemetaan controller siap"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar memungkinkan input giroskop dan akselerometer melalui jalur pengontrol SDL. Untuk perangkat PS4 dan PS5 yang menggunakan HIDAPI, memanggil EnableMotion sebelum peta tombol ada dapat memicu masalah threading dan kadang-kadang membuat emulator macet saat diluncurkan. API Joystick yang lebih lama tidak melalui jalur ini, yang menjelaskan mengapa masalah ini muncul hanya setelah inisialisasi pengontrol dipindahkan ke API modern."
+    },
+    {
+      "type": "heading",
+      "text": "Inisialisasi sekarang membuat pemetaan sebelum satu panggilan motion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2345 menghapus panggilan EnableMotion yang berlebihan dari SDLState dan CreateControllerButtonMap dan menjaga aktivasi di SDLJoystick setelah status konstruksi ditetapkan. Perubahan penting adalah urutan dan keunikan, bukan penundaan: pemetaan tombol selesai, kemudian dukungan motion diaktifkan sekali. Itu mencegah callback atau pekerjaan HIDAPI melihat objek pengontrol yang setengah diinisialisasi."
+    },
+    {
+      "type": "heading",
+      "text": "Panggilan ganda membuat perlombaan lebih sulit untuk dipahami"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktivasi gerak dari beberapa lapisan bisa terlihat tidak berbahaya jika SDL memperlakukannya sebagai idempoten, tetapi setiap pemanggilan mungkin masuk ke kode perangkat, mengalokasikan sensor, atau mengambil kunci. Menghapus titik masuk yang berlebihan membuat kepemilikan menjadi jelas dan mengurangi jumlah jadwal yang dapat mengalami deadlock. Tombol standar dan input analog tetap diinisialisasi secara normal, dan pengontrol tanpa gerak harus melewati urutan yang sama tanpa menciptakan sensor."
+    },
+    {
+      "type": "heading",
+      "text": "Loop peluncuran harus menyertakan kasus hot-plug dan motion-disabled"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cold-start Azahar berulang kali dengan DualShock 4 dan DualSense terhubung melalui USB dan Bluetooth, dengan gerak diaktifkan dan dinonaktifkan. Tambahkan hot-plug selama startup, sambungkan kembali setelah emulasi dimulai, dan inisialisasi beberapa pengontrol. Catat penyelesaian peta dan satu-satunya aktivasi gerak. Uji perangkat Joystick legacy sebagai kontrol negatif. Perbaikan harus menghilangkan hang tanpa kehilangan data gyro, label tombol, atau pemetaan, dan proses shutdown harus menutup thread HIDAPI dengan bersih."
+    },
+    {
+      "type": "callout",
+      "text": "Pengaturan pengendali sekarang memiliki satu pemilik dan satu urutan: petakan input terlebih dahulu, lalu biarkan SDL memulai perangkat keras gerak."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumber"
+    }
+  ]
+}

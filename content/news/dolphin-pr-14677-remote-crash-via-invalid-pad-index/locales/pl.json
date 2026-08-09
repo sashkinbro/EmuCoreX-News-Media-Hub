@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin odrzuca indeksy kontrolera NetPlay zanim dotrą do map serwera",
+  "summary": "Sprawdzenia zakresu liczb ze znakiem teraz poprzedzają dostęp do mapy pada i Wiimote, zamykając ścieżkę zdalnego awarii przy jednoczesnym zachowaniu weryfikacji własności nadawcy.",
+  "heroAlt": "Dowody źródłowe z pull requesta Dolphin #14677: NetPlayServer: Napraw zdalną awarię przez nieprawidłowy indeks pada",
+  "searchKeywords": [
+    "Dolphin",
+    "Bezpieczeństwo NetPlay",
+    "indeks pada",
+    "zdalny pakiet",
+    "mapa Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Bezpieczeństwo",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Napraw zdalną awarię przez nieprawidłowy indeks pada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Numer kontrolera z sieci nadal jest nieufnym inputem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pakiety NetPlay identyfikują pad lub Wii Remote, którego stan niosą. Serwer wcześniej używał map_array.at po sprawdzeniu własności w niektórych ścieżkach, ale nieprawidłowy podpisany indeks mógł najpierw dotrzeć do dostępu sprawdzanego pod kątem granic. std::array::at wtedy wyrzuca wyjątek, zamieniając uszkodzony lub wrogi pakiet od klienta w awarię procesu serwera zamiast odrzuconej wiadomości. Wartości ujemne wymagają specjalnej ostrożności przed konwersją do size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Jeden pomocnik ustala zakres przed własnością"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14677 wprowadza funkcję IsValidPadIndex. Najpierw wymaga, aby indeks był nieujemny, następnie konwertuje go i porównuje z konkretnym rozmiarem tablicy map. Dane pada, odpytywania hosta pada i dane Wiimote wywołują pomocnika przed at. Tylko prawidłowy slot przypisany do wysyłającego gracza jest kontynuowany. Serwer zwraca błąd protokołu dla nieprawidłowego wejścia zamiast indeksowania lub pozwalania klientowi na wysyłanie sterowania dla innego uczestnika."
+    },
+    {
+      "type": "heading",
+      "text": "Zachowanie odłączania również uwzględnia przypisane Wiimote'y"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta sama zmiana sprawdza, czy odchodzący gracz niebędący gospodarzem posiada jakiekolwiek mapowanie Wiimote podczas aktywnej gry. Jeśli tak, serwer zatrzymuje sesję i wysyła DisableGame, odzwierciedlając potrzebę unikania kontynuowania z brakującym zsynchronizowanym wejściem. Sprawdzenie uzyskuje blokadę gry tylko przy zmianie flagi running. To zachowanie jest oddzielone od walidacji zakresu, ale obejmuje inny przypadek życia mapy kontrolera."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzz każdą wiadomość, która zawiera indeks"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyślij minimalną liczbę całkowitą, -1, zero, ostatni prawidłowy slot, pierwszy nieprawidłowy slot oraz maksymalną liczbę całkowitą przez każdy typ pakietu pad i Wiimote. Powtórz jako gospodarz, mapowany klient, nienaprawiany klient oraz po rozłączeniu lub ponownym mapowaniu. Serwer powinien odrzucić nieprawidłowe dane wejściowe bez wyjątków, nadmiernego logowania lub zmian stanu. Dodaj fuzzowanie pakietów wokół skróconych wartości i granic typów, a następnie sprawdź, czy prawidłowe sesje wielokontrolerowe i odłączenia Wiimote w trakcie gry nadal przestrzegają zamierzonej polityki zamykania."
+    },
+    {
+      "type": "callout",
+      "text": "Granice i własność to osobne kwestie: serwer musi najpierw udowodnić, że slot istnieje, a następnie udowodnić, że zdalny nadawca ma prawo go kontrolować."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Przeczytaj dyskusję inżynierską Dolphin i zmiany w kodzie źródłowym"
+    }
+  ]
+}

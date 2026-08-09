@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 removes draw-buffer bookkeeping when no batch can use it",
+  "summary": "Disabled or immediately unbufferable draws no longer copy and restore GS environments, while local references replace pointer traffic added to hot rendering paths.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14729: GS: Optimize draw buffering and pointer logic",
+  "searchKeywords": [
+    "PCSX2",
+    "draw buffering",
+    "GS thread",
+    "hot path",
+    "performance"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Optimize draw buffering and pointer logic"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A disabled optimization was still paying its setup cost"
+    },
+    {
+      "type": "paragraph",
+      "text": "Draw buffering can combine compatible work, but PCSX2 may disable it globally or discover that the following draw cannot be buffered. The implementation still backed up the drawing environment and restored it during flushes, even though no future batch could consume that snapshot. On a GS-heavy workload, repeated copies turn an inactive feature into measurable CPU overhead."
+    },
+    {
+      "type": "heading",
+      "text": "Environment copies now follow actual buffering eligibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14729 narrows backup and restore operations to paths where draw buffering can retain subsequent work. If buffering is disabled or compatibility fails immediately, the renderer keeps using the current context without manufacturing a recovery copy. This preserves the functional flush behavior while removing state traffic whose only purpose was to undo a batch that never existed."
+    },
+    {
+      "type": "heading",
+      "text": "Local references replace pointer chasing in the hottest paths"
+    },
+    {
+      "type": "paragraph",
+      "text": "The earlier buffering implementation introduced pointers used throughout draw processing so code could switch between live and buffered state. Where that indirection is no longer required, the patch uses local references. References let the compiler keep frequently accessed state closer to the operation and reduce repeated pointer loads, without changing the ownership or lifetime of the underlying GS context."
+    },
+    {
+      "type": "heading",
+      "text": "Throughput tests must keep buffering state visible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use GS-heavy games and dumps to compare maximum FPS, GS-thread time, and environment-copy counts with buffering enabled, disabled, and frequently rejected. Weaker CPUs are the expected beneficiary. Lossless frame comparison is still required because a skipped backup at one compatibility boundary could leak modified state into the next draw. Profile representative flush causes and verify the improvement is not only an artificial runner case."
+    },
+    {
+      "type": "callout",
+      "text": "The optimization removes work from paths that cannot benefit from buffering; it does not weaken the state restore required by a real buffered batch."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

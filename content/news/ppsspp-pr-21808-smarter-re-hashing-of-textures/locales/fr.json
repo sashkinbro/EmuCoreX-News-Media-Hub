@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP relie le ré-hachage de textures à la synchronisation des invités GPU",
+  "summary": "La validité des textures suit désormais les points où le logiciel PSP peut observer ou réécrire la mémoire GPU, remplaçant une heuristique basée sur le nombre de frames par des domaines de synchronisation explicites.",
+  "heroAlt": "Preuve source du pull request PPSSPP #21808 : Cache de textures : Ré-hachage plus intelligent des textures",
+  "searchKeywords": [
+    "PPSSPP",
+    "cache de textures",
+    "ré-hachage",
+    "synchronisation GE",
+    "mémoire GPU"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Cache de textures : Ré-hachage plus intelligent des textures"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'ancienneté des frames n'était qu'un proxy pour la visibilité de la mémoire"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une texture PSP mise en cache peut rester inchangée pendant des centaines de frames ou être réécrite plusieurs fois au sein d'un même frame. La stratégie précédente de recul des textures utilisait des mini-hachages, des compteurs de frames, des indices d'invalidation et un calendrier exponentiel pour décider quand effectuer un hachage complet. Cela réduisait le travail, mais les frames écoulées ne décrivent pas directement quand le CPU et le GPU invités se sont synchronisés autour de la mémoire, donc l'heuristique pouvait effectuer des vérifications inutiles ou conserver un contenu obsolète."
+    },
+    {
+      "type": "heading",
+      "text": "Les domaines de synchronisation marquent les moments où les suppositions peuvent changer"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21808 incrémente textureSyncTimeDomain lors des attentes GE, des changements d'adresse de blocage, de la synchronisation des dessins, des copies de framebuffer et des transferts de blocs pertinents. Chaque entrée de texture non fiable enregistre le dernier domaine dans lequel elle a été vérifiée. Les flags explicites HASH_RECHECK et CLUT_RECHECK forcent toujours le travail dans les cas connus d'invalidation, tandis que les textures fiables de type police peuvent ignorer le test de domaine. La décision est désormais liée aux événements de visibilité émulés plutôt qu'à un minuteur."
+    },
+    {
+      "type": "heading",
+      "text": "La refonte supprime également la comptabilité qui pourrait dériver"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif supprime le basculement de temporisation pour l'utilisateur, le planning mini-hash par entrée, les indicateurs de fréquence de changement, et les compteurs de taille de cache modifiables. La pression du cache est dérivée en additionnant les entrées actuelles lorsque la décimation s'exécute, échangeant un calcul occasionnel contre un état qui ne peut pas devenir incohérent après un chemin de suppression inhabituel. Les textures vidéo et les variantes de palette conservent un comportement dédié car leurs schémas de mutation diffèrent des images statiques ordinaires."
+    },
+    {
+      "type": "heading",
+      "text": "La correction nécessite des jeux qui réécrivent les textures dans des ordres inhabituels"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tester la lecture vidéo, les effets de rendu sur texture, les jeux qui modifient la mémoire de texture depuis le CPU, de nombreuses variantes de CLUT, les copies de framebuffer et les polices UI statiques de longue durée. Comparer les hashs et les captures d’écran avant et après chaque transition de domaine de synchronisation. Mesurer le nombre total de hashs, le temps CPU, la taille du cache et le comportement d’éviction sur de longues sessions. Le chargement de savestate, l’invalidation de la mémoire et les changements de backend doivent réinitialiser ou avancer l’état du domaine afin qu’une entrée ne puisse hériter d’une fausse prétention de fraîcheur."
+    },
+    {
+      "type": "callout",
+      "text": "La question utile n’est pas combien de trames une texture a survécu, mais si la synchronisation visible par l’invité a créé une nouvelle chance que sa mémoire change."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Lire la discussion technique et les modifications de source PPSSPP"
+    }
+  ]
+}

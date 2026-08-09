@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 rifiuta la miscelazione per accumulo su target a 16 bit con massima precisione",
+  "summary": "Una protezione di precisione disabilita un'ottimizzazione il cui ordine di arrotondamento può superare la scala di colori rappresentabile a 16 bit, allineando l'output hardware ad alta precisione con il riferimento software.",
+  "heroAlt": "Prova sorgente dalla pull request #13918 di PCSX2: GS/HW: Richiedere RT a 32 bit per la miscelazione per accumulo al massimo blending.",
+  "searchKeywords": [
+    "PCSX2",
+    "miscelazione per accumulo",
+    "target di rendering a 16 bit",
+    "massimo blending",
+    "dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Richiedere RT a 32 bit per la miscelazione per accumulo al massimo blending."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'accumulo cambia quale valore riceve l'arrotondamento a 16 bit"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 può ottimizzare alcune combinazioni accumulando attraverso un target di rendering host. Su un target a 32 bit, la precisione extra è generalmente compatibile con il risultato previsto. Un target GS a 16 bit quantizza il colore in modo diverso: applicando l'arrotondamento dopo il passo intermedio sbagliato, può produrre RGB 255 anche se la scala prevista dal formato arriva al massimo intorno a 240. L'immagine può sembrare simile mentre il suo pattern di dithering e le sfumature esatte divergono."
+    },
+    {
+      "type": "heading",
+      "text": "La massima precisione ora richiede un target a 32 bit per il percorso veloce"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #13918 aggiunge una condizione in GSRendererHW. Quando la precisione del blending è impostata al massimo, il blending di accumulazione resta disponibile solo se il target di rendering è a 32 bit. Un target a 16 bit ricade sul percorso senza accumulazione che rispetta la sua quantizzazione. Le modalità a precisione inferiore possono continuare a fare i compromessi di prestazioni documentati; la modifica allinea l'impostazione più rigorosa alla promessa di precisione."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity mostra la differenza nel dettaglio del dithering"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il confronto fornito Vulkan utilizza un frame a 16 bit da Sonic Riders: Zero Gravity e include il rendering software come riferimento. A dimensione normale il cambiamento può essere difficile da notare, ma ingrandendo il pattern di dithering si rivela la scala di colori diversa. Ecco perché le immagini di riferimento a livello di pixel sono importanti: uno screenshot di ampia compatibilità potrebbe non rilevare l'errore numerico che l’impostazione massima è specificamente progettata per evitare."
+    },
+    {
+      "type": "heading",
+      "text": "I controlli di regressione dovrebbero coprire sia le profondità target che le modalità di fusione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Riprodurre il dump sorgente su Vulkan e altri backend hardware, confrontare i pixel lossless con l’output software e verificare che il percorso di accumulazione venga rifiutato solo per target a 16 bit sotto fusione massima. Un target a 32 bit dovrebbe mantenere l’ottimizzazione. Registrare il routing dei disegni e il tempo di GPU, perché disabilitare un’ottimizzazione può ridurre le prestazioni anche quando la correzione dell’output è trasparente. Testare diversi pattern di dithering e equazioni di accumulazione invece di una sola texture di riferimento."
+    },
+    {
+      "type": "callout",
+      "text": "La massima precisione di fusione ora considera la precisione del target come parte dell'algoritmo: una superficie a 16 bit non può utilizzare in sicurezza la scorciatoia di accumulo a 32 bit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

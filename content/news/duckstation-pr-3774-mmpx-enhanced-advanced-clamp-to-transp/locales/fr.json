@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation donne à MMPX une bordure transparente au lieu des pixels de bord répétés",
+  "summary": "Les valeurs voisines hors limites contribuent désormais avec un alpha et une couleur nuls, empêchant la duplication de type clamp-to-edge de créer des formes qui perturbent les règles de morphologie du scaler.",
+  "heroAlt": "Preuve source de la pull request DuckStation #3774 : MMPX Renforcement/Avancé de la cartographie hors limites clamp-to-transparent",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "clamp sur le bord",
+    "pixels transparents",
+    "échantillonnage de shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Renforcement/Avancé de la cartographie hors limites clamp-to-transparent"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Clamp-to-edge fabrique des voisins que l'image source ne contient pas"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX décide comment étendre les pixels en examinant les formes et tendances locales des couleurs. À une frontière de texture, l'échantillonnage normal limité répète le dernier texel valide pour chaque coordonnée hors limite. Ce comportement est pratique pour le filtrage ordinaire, mais un redimensionneur morphologique interprète la couleur répétée comme une structure supplémentaire. Par conséquent, les coins et lignes près de la bordure peuvent être classés différemment des formes identiques au milieu de l'image."
+    },
+    {
+      "type": "heading",
+      "text": "Les masques de coordonnées transforment les échantillons invalides en échantillons transparents"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3774 modifie l'assistant srcf dans la génération des shaders MMPX Enhanced et Advanced. Chaque voisin appelle toujours SampleFromVRAM, mais le résultat est multiplié par des masques de pas horizontal et vertical comparant la coordonnée demandée avec uv_limits. Une coordonnée en dehors du rectangle permis reçoit un multiplicateur nul, rendant l'échantillon effectif transparent plutôt qu'une copie du texel de bord."
+    },
+    {
+      "type": "heading",
+      "text": "Le changement est local à l'analyse de forme, pas à l'adressage global des textures"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation ne remplace pas le comportement de serrage pour chaque texture PlayStation. Le masque se trouve dans les helpers d'échantillonnage MMPX générés, car ces algorithmes nécessitent un voisinage conceptuellement vide au-delà de l'image source. D'autres chemins de shader peuvent continuer à utiliser leurs sémantiques de wrap ou de clamp établies. Cette portée étroite empêche une correction de mise à l'échelle des pixels-art de modifier la manière dont les jeux eux-mêmes adressent les bords des textures."
+    },
+    {
+      "type": "heading",
+      "text": "Les fixations de bord doivent refléter exactement les formes intérieures"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construisez des images de test contenant des diagonales, des coins, des lignes d'un pixel et des intersections de quatre pixels à la fois au bord de la texture et plusieurs pixels vers l'intérieur. Après mise à l'échelle, la forme du bord doit correspondre à la forme intérieure sauf pour la zone extérieure manquante. Répétez avec des sous-rectangles UV non nuls, des pages de texture, de la transparence et des dimensions impaires. Comparez les variantes Enhanced et Advanced et inspectez les quatre côtés ; une erreur de signe dans un masque de coordonnées pourrait corriger le bord droit tout en cassant le bord gauche."
+    },
+    {
+      "type": "callout",
+      "text": "Pour la morphologie MMPX, l’espace en dehors de l’image est vide ; répéter la couleur du bord n’est pas un filtrage inoffensif mais une fausse preuve de forme."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Lisez la discussion d’ingénierie DuckStation et les modifications de source"
+    }
+  ]
+}

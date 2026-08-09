@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar inicializuje mapy tlačítek PlayStation před povolením pohybu",
+  "summary": "Přeřazení a odstranění duplicit aktivace pohybu SDL odstraňuje riziko spouštění více vláken při startu specifické pro nastavení ovladače DualShock 4 a DualSense HIDAPI.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Azahar č. 2345: Oprava chyby visení ovladače ps4/ps5 při spuštění",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "vstup pohybu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Vstup",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Oprava chyby visení ovladače ps4/ps5 při spuštění"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Počáteční spuštění pohybu vstupovalo do SDL před tím, než byla mapa ovladače připravena"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar umožňuje vstup z gyroskopu a akcelerometru přes řadičovou cestu SDL. U zařízení PS4 a PS5 používajících HIDAPI mohla volání EnableMotion před existencí mapování tlačítek vyvolat problém s vlákny a občas zavěsit emulátor při spuštění. Starší API Joystick tuto cestu nepoužívalo, což vysvětluje, proč se problém objevil až poté, co byla inicializace řadiče přesunuta na moderní API."
+    },
+    {
+      "type": "heading",
+      "text": "Inicializace nyní vytváří mapování před prvním voláním motion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2345 odstraňuje duplicitní volání EnableMotion z SDLState a CreateControllerButtonMap a ponechává aktivaci v SDLJoystick po vytvoření stavu konstrukce. Důležitá změna je pořadí a jedinečnost, nikoli zpoždění: mapování tlačítek se dokončí a poté je podpora pohybu povolena jednou. To zabraňuje tomu, aby zpětné volání nebo práce HIDAPI zaznamenaly poloinicializovaný objekt řadiče."
+    },
+    {
+      "type": "heading",
+      "text": "Duplicitní volání činila závodní podmínku těžší k pochopení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktivace pohybu z několika vrstev může působit neškodně, pokud SDL k ní přistupuje jako k idempotentní, ale každý volání může vstoupit do kódu zařízení, alokovat senzory nebo získat zámky. Odstranění nadbytečných vstupních bodů jasně vymezuje vlastnictví a snižuje počet plánů, které mohou způsobit deadlock. Standardní tlačítka a analogový vstup se stále inicializují normálně a ovladače bez pohybu by měly projít stejnou sekvencí, aniž by vynalézaly senzor."
+    },
+    {
+      "type": "heading",
+      "text": "Spouštěcí smyčky musí zahrnovat případy s hot-plug a zakázaným pohybem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cold-start Azahar opakovaně s připojenými DualShock 4 a DualSense přes USB a Bluetooth, s povoleným a zakázaným pohybem. Přidejte hot-plug během spuštění, znovu připojte po zahájení emulace a inicializujte více ovladačů. Zaznamenejte dokončení mapy a jedinou aktivaci pohybu. Otestujte starší zařízení Joystick jako negativní kontrolu. Oprava musí odstraněním visení zachovat data gyroskopu, označení tlačítek i mapování a vypnutí musí čistě ukončit vlákna HIDAPI."
+    },
+    {
+      "type": "callout",
+      "text": "Nastavení ovladače nyní má jednoho vlastníka a jednu objednávku: nejprve namapujte vstupy, potom nechte SDL spustit pohybový hardware."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Přečtěte si inženýrskou diskusi Azahar a změny zdrojového kódu"
+    }
+  ]
+}

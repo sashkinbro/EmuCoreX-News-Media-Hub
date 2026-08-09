@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14503-rov-support-for-feedback-draws",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 porta i draw di feedback ordinati a tre backend hardware",
+  "summary": "Esecuzione in stile ROV su Direct3D 11, Direct3D 12 e Vulkan riduce la divisione nel rendering con molto feedback, esponendo copie, barriere e limitazioni del backend per la convalida.",
+  "heroAlt": "Evidenza della fonte dalla pull request #14503 di PCSX2: GS/HW: Supporto ROV per i feedback draw.",
+  "searchKeywords": [
+    "PCSX2",
+    "ROV",
+    "draw di feedback",
+    "Vulkan",
+    "Direct3D 12"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14503": "GS/HW: Supporto ROV per i feedback draw."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I feedback draw costringono a scegliere tra ordinamento e passaggi aggiuntivi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alcuni effetti GS leggono dati relativi all'obiettivo su cui stanno attualmente scrivendo, inclusi percorsi di software-blend e AA1. Senza un meccanismo hardware ordinato, PCSX2 può suddividere il lavoro, copiare l'obiettivo o inserire barriere in modo che frammenti successivi vedano i valori richiesti. Queste salvaguardie preservano la correttezza ma moltiplicano le chiamate di disegno e il traffico di memoria nelle scene in cui il feedback è frequente."
+    },
+    {
+      "type": "heading",
+      "text": "DX11, DX12 e Vulkan ottengono percorsi ordinati espliciti"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14503 implementa il supporto al feedback in ordine rasterizzatore o equivalente su Direct3D 11, Direct3D 12 e Vulkan. Si basa sul precedente refactor del formato delle texture in modo che la profondità memorizzata per ROV possa passare attraverso selettori di conversione condivisi. L'implementazione di OpenGL è stata rimossa perché i test hanno rilevato che era troppo inaffidabile, dimostrando che la funzionalità è abilitata dalle garanzie del backend piuttosto che forzata in ogni API."
+    },
+    {
+      "type": "heading",
+      "text": "Le statistiche e le barriere Vulkan rendono visibile il costo nascosto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le impostazioni grafiche espongono i controlli ROV, e l'OSD riporta le chiamate di disegno ROV, le copie e le barriere insieme ai totali normali. Vulkan offre anche un'opzione di barriera ROV più robusta per i sistemi che lampeggiano con la sincronizzazione predefinita. Una transizione feedback RDNA2 su Windows ha ricevuto una correzione dedicata. Direct3D 12 ha funzionato su diversi sistemi ma ha mostrato un grave Z fighting in alcuni dump sull'Intel GPU dell'autore, un confine irrisolto piuttosto che una dichiarazione di successo universale."
+    },
+    {
+      "type": "heading",
+      "text": "I dump devono confrontare correttezza e conteggi delle operazioni insieme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Abilitare ROV per backend e riprodurre dump con feedback intensivo che coprono blending software, AA1, feedback di profondità e transizioni dei target. Confrontare l'output senza perdita con i riferimenti non-ROV e software, quindi registrare draw, copie, barriere, tempo GPU e driver. Ricontrollare Vulkan con e senza la barriera più robusta. Direct3D 12 richiede particolare attenzione sull'hardware Intel, mentre un test OpenGL dovrebbe confermare che l'opzione rimossa non può selezionare il percorso noto per i bug."
+    },
+    {
+      "type": "callout",
+      "text": "ROV è utile solo dove l'API e il driver preservano l'ordinamento dei frammenti; i contatori OSD mostrano se quell'ordinamento sostituisce effettivamente le copie e i disegni frazionati."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14503",
+      "label": "Leggi la discussione di ingegneria PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

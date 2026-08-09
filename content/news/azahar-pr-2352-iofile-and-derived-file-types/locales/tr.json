@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar özel dosyaları, birleştirilebilir bir depolama katmanları yığınına dönüştürür",
+  "summary": "Yeni bir IOFileBase zinciri, sınırlı görünüm, sıkıştırma ve şifrelemenin birbirini sarmasına imkan tanır ve birden fazla özel dosya türünün iş birliği yapmak zorunda kaldığı durumlarda kırılgan hale gelen mirası (inheritance) değiştirir.",
+  "heroAlt": "Azahar pull request #2352'den kaynak kanıtı: core: IOFile ve türetilmiş dosya türlerini yeniden yapılandır",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Depolama",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: IOFile ve türetilmiş dosya türlerini yeniden yapılandır"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Miras alma (inheritance), bir dosyanın birden fazla davranışa ihtiyaç duyduğunda ölçeklenmeyi durdurdu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar, sıkıştırılmış ve şifrelenmiş dosyaları başlangıçta doğrudan IOFile'dan türetmiştir. Her özel sınıf temel işlemleri geçersiz kılabilirdi, fakat bunları birleştirmek hile gerektiriyordu çünkü C++ mirası bir nesnenin ne olduğunu tanımlar, dönüşümlerin sıralı bir zincirini değil. Yaklaşan işler için başka bir dosya tipi eklemek, bu kombinasyonları çoğaltacak ve offsetlerin, serileştirmenin ve hataların hangi alt sınıfın en üstte yer aldığına bağlı olmasına neden olacaktı."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase sahip olunan bir alt katman aracılığıyla yetki devreder"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2352, tam erişim sözleşmesine sahip soyut bir IOFileBase ve bir unique_ptr child_file tanıtıyor. Bir katman yalnızca dönüştürdüğü işlemleri geçersiz kılar ve aksi takdirde altına devreder. En altta IOFile veya NullIOFile bulunur. Bu şekilde sıkıştırılmış bir CCI RomFS, RomFS için SubIOFile, NCSD içindeki NCCH için başka bir SubIOFile, açmak için Z3DSReadIOFile ve ana bilgisayar erişimi için IOFile olabilir."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile ve NullIOFile, sınırları ve hataları açık nesneler haline getirir"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile sabit bir pencere açar ve her çağıranın offset veya sınır kontrolünü tekrarlamasını gerektirmeden seek, size, read ve write işlemlerini dönüştürür. NCSD ve NCCH ayrıştırması zaten bunu kullanmaktadır. NullIOFile aynı arabirimi uygular ancak hata değerleri döndürür; bu, başarısız yapılandırma ve serileştirmenin geçerli bir nesne grafiğini korumasını sağlar, böylece her katmanda nullptr kontrolleri dağıtmak gerekmez."
+    },
+    {
+      "type": "heading",
+      "text": "Şifrelenmiş dosyalar kimlik kazanır, eski veri ise desteklenmeye devam eder."
+    },
+    {
+      "type": "paragraph",
+      "text": "Yeni CryptoIOFile çıktısı, sürüm, başlık boyutu ve anahtar ile nonce'den türetilen bir hash içeren AZCR başlığıyla başlar. Azahar formatı tanıyabilir ve yanlış bir anahtarı, çözülen byte'ların makul görünüp görünmediğini tahmin etmeden reddedebilir. Başlıksız eski dosyalar hâlâ uyumluluk mantığı aracılığıyla açılır. Testler, her katman sırasını oluşturmalı, alt dosya sınırları arasında arama yapmalı, başarısız nesneleri serileştirmeli, yanlış anahtarları doğrulamalı ve eski şifrelenmiş varlıkları yeniden yazmadan tekrar açabilmelidir."
+    },
+    {
+      "type": "callout",
+      "text": "Mimari değişiklik kompozisyondur: her dosya katmanı bir sorumluluğa sahiptir ve kalanını aynı arayüz üzerinden aşağıya iletir."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Azahar mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin teaches extracted Triforce discs about the DIMM address window",
+  "summary": "DirectoryBlob now avoids a shadowed arcade-memory range and uses Triforce's smaller file alignment instead of applying GameCube and Wii layout assumptions.",
+  "heroAlt": "Source evidence from Dolphin pull request #14599: DirectoryBlob: fix data alignment for GC/Triforce and skip Triforce DIMM memory range",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "disc alignment"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: fix data alignment for GC/Triforce and skip Triforce DIMM memory range"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A directory-backed disc still needs platform-specific placement"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin can mount extracted files through DirectoryBlob as if they were a disc image. That virtual layout assigns offsets and alignment to every file. Reusing GameCube and Wii rules for Sega's Triforce arcade platform overlooked hardware attached to the AMMediaboard. Addresses in a particular disc region are shadowed by SRAM and return DIMM contents, so a perfectly valid host file could become unreadable after being placed there."
+    },
+    {
+      "type": "heading",
+      "text": "The Triforce flag changes two layout decisions"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14599 records whether the source volume is Triforce. Before placing a file, DirectoryBlob checks whether its proposed range overlaps 0x1F000000 through 0x1F800000. If so, the offset jumps to 0x1F800000, keeping the complete file beyond the shadowed window. Subsequent Triforce files align to 0x20 bytes rather than the conservative 0x8000-byte boundary used for GameCube and Wii directory discs."
+    },
+    {
+      "type": "heading",
+      "text": "Avoiding overlap must consider the whole file interval"
+    },
+    {
+      "type": "paragraph",
+      "text": "Checking only a starting address would miss a file that begins below the window and extends into it. The code compares both data_offset and data_offset plus entry size, then relocates the entire entry. Smaller 32-byte alignment also prevents unnecessary gaps in arcade images while preserving the platform's expected granularity. Non-Triforce volumes never enter either branch, so their established placement remains byte-for-byte governed by the older policy."
+    },
+    {
+      "type": "heading",
+      "text": "Boundary fixtures should probe every side of the hole"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construct directory trees that place zero-length, tiny, and large files immediately before, across, inside, and after both DIMM boundaries. Verify generated FST offsets, 0x20 alignment, file contents read through the emulated AMMediaboard, and total image size. Repeat the same tree as GameCube and Wii to prove 0x8000 alignment is unchanged. Include exact-end arithmetic and very large offsets to catch overflow, then boot representative Triforce titles from extracted directories rather than only inspecting metadata."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob is a virtual disc builder; correct filenames are not enough when arcade hardware changes which physical address ranges can return disc data."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

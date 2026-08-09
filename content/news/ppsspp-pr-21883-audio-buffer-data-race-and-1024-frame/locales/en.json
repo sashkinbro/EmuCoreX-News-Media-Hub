@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP closes a cross-thread race in libretro audio delivery",
+  "summary": "Every operation on the shared converted-sample buffer now uses one mutex, preventing realloc or shutdown from invalidating memory while another thread writes audio.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21883: libretro: fix audio buffer data race and >1024-frame sample pushes",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "audio race",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Audio",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: fix audio buffer data race and >1024-frame sample pushes"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Two threads could own the same raw pointer at once"
+    },
+    {
+      "type": "paragraph",
+      "text": "In the libretro frontend path, System_AudioPushSamples converts PSP audio and appends it to output_audio_buffer. With OpenGL backends, sample pushes can arrive through the GL command queue on the emulation side, while retro_run drains the buffer on the libretro thread. Initialization, shutdown, and capacity growth also replace or free the allocation. Without one ownership rule, a realloc could invalidate the pointer while the other thread was reading or writing it."
+    },
+    {
+      "type": "heading",
+      "text": "A single mutex now defines the buffer's lifetime"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883 adds output_audio_buffer_mutex and takes it in initialization, destruction, upload, and System_AudioPushSamples. The capacity helper is explicitly documented as requiring the caller to hold that lock, so growth happens inside the same critical section as the append that needs it. Upload keeps the lock through the batch callback and size reset, preventing a producer from changing the payload halfway through delivery."
+    },
+    {
+      "type": "heading",
+      "text": "The fix protects structure and samples together"
+    },
+    {
+      "type": "paragraph",
+      "text": "Locking only size or capacity would not be enough: data, size, and capacity form one invariant. The pointer must refer to an allocation at least capacity elements long, and size must identify initialized samples within it. The mutex makes updates to all three visible as one operation. This is particularly relevant to threaded GL timing, but init and free use the same rule so fast core restarts cannot race a late producer."
+    },
+    {
+      "type": "heading",
+      "text": "Stress testing must vary callback and renderer timing"
+    },
+    {
+      "type": "paragraph",
+      "text": "Run libretro with OpenGL, Vulkan, and software rendering while repeatedly pausing, fast-forwarding, resetting, switching content, and closing the core. Use audio callbacks that consume quickly, slowly, and in irregular batches, plus sample pushes above ordinary frame sizes. ThreadSanitizer should see no unsynchronized access to the buffer tuple. Listen and hash captured PCM for gaps or reordering, and confirm no callback re-enters a path that waits on the same non-recursive mutex."
+    },
+    {
+      "type": "callout",
+      "text": "A growable audio buffer is one shared object, not three independent fields; its pointer, size, and capacity must cross threads under the same lock."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation le da a MMPX un límite transparente en lugar de píxeles de borde repetidos",
+  "summary": "Los píxeles vecinos fuera de los límites ahora contribuyen con cero alfa y color, evitando que la duplicación de borde invente formas que confundan las reglas de morfología del escalador.",
+  "heroAlt": "Evidencia fuente del pull request #3774 de DuckStation: MMPX Mapeo avanzado/mejorado de fuera de límites con transparencia",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "ajustar al borde",
+    "píxeles transparentes",
+    "muestreo de sombreado"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Mapeo avanzado/mejorado de fuera de límites con transparencia"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ajustar al borde crea vecinos que la imagen fuente no contiene"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX decide cómo expandir píxeles examinando formas y tendencias de color locales. En un límite de textura, el muestreo normal con recorte repite el último texel válido para cada coordenada fuera de rango. Ese comportamiento es conveniente para el filtrado ordinario, pero un escalador morfológico interpreta el color repetido como estructura adicional. Por lo tanto, las esquinas y líneas cerca del borde pueden clasificarse de manera diferente a formas idénticas en el centro de la imagen."
+    },
+    {
+      "type": "heading",
+      "text": "Las máscaras de coordenadas convierten los toques inválidos en muestras transparentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de pull #3774 cambia el helper srcf tanto en la generación de shaders MMPX Enhanced como Advanced. Cada vecino todavía llama a SampleFromVRAM, pero el resultado se multiplica por máscaras de pasos horizontales y verticales comparando la coordenada solicitada con uv_limits. Una coordenada fuera del rectángulo permitido recibe un multiplicador cero, haciendo que la muestra efectiva sea transparente en lugar de una copia del texel del borde."
+    },
+    {
+      "type": "heading",
+      "text": "El cambio es local al análisis de formas, no a la direccionamiento global de texturas"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation no reemplaza el comportamiento de clamp para todas las texturas de PlayStation. La máscara reside en los ayudantes de muestreo MMPX generados porque estos algoritmos requieren un vecindario vacío conceptual más allá de la imagen fuente. Otros caminos de shaders pueden seguir usando sus semánticas de wrap o clamp establecidas. Ese alcance limitado evita que una corrección de escalado de arte de píxeles cambie cómo los juegos mismos abordan los bordes de las texturas."
+    },
+    {
+      "type": "heading",
+      "text": "Las fijaciones de borde deben reflejar exactamente las formas interiores."
+    },
+    {
+      "type": "paragraph",
+      "text": "Construya imágenes de prueba que contengan diagonales, esquinas, líneas de un píxel e intersecciones de cuatro píxeles tanto en el borde de la textura como a varios píxeles hacia adentro. Después del escalado, la forma del borde debe coincidir con la forma interior, excepto por el área externa faltante. Repita con subrectángulos UV distintos de cero, páginas de textura, transparencia y dimensiones impares. Compare las variantes Enhanced y Advanced e inspeccione los cuatro lados; un error de signo en una máscara de coordenadas podría arreglar el borde derecho mientras rompe el izquierdo."
+    },
+    {
+      "type": "callout",
+      "text": "Para la morfología MMPX, el espacio fuera de la imagen está vacío; repetir el color del borde no es un filtrado inofensivo sino evidencia falsa de forma."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Lea la discusión de ingeniería DuckStation y los cambios de fuente"
+    }
+  ]
+}

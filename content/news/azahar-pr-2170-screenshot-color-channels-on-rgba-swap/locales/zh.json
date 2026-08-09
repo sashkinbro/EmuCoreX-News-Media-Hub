@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 让 Vulkan 截图遵循交换链的真实通道顺序",
+  "summary": "QImage 期望 BGRA 字节，但一些 Vulkan 驱动程序显示为 RGBA；将选定的表面格式传入两个截图路径，使得仅在需要时进行廉价的红蓝交换。",
+  "heroAlt": "来自 Azahar pull request #2170 的原始证据: renderer_vulkan: 修复 RGBA 交换链格式下的截图颜色通道",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan 截图",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: 修复 RGBA 交换链格式下的截图颜色通道"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "显示的帧可能是正确的，而保存的图像却不正确"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan 从驱动支持的选项中选择交换链格式。一些平台偏好 BGRA，而另一些平台偏好 RGBA。Azahar 的呈现着色器处理了所选格式，但截图内存被传递给 QImage::Format_RGB32，它期望 BGRA 字节顺序。因此，在 RGBA 交换链上，红色和蓝色只在捕获的文件中交换，使渲染器在实时窗口外看起来不正确。"
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow 将协商好的格式暴露给捕获代码"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2170 为 Vulkan 的 present-window 实现添加了 GetSurfaceFormat，并在两条截图路径中检查：暂存复制捕获和主机内存捕获。当格式为 eR8G8B8A8Unorm 时，Azahar 遍历宽度乘高度的像素，并交换字节 0 和 2。BGRA 交换链使用现有字节保持不变，避免在已经匹配 QImage 的平台上进行转换。"
+    },
+    {
+      "type": "heading",
+      "text": "字节重排比更改前端图像契约更便宜"
+    },
+    {
+      "type": "paragraph",
+      "text": "更改 QImage 格式将需要将通道顺序信息进一步传递到前端，并确保每个使用者都理解它。局部交换保持了已建立的 RGB32 合约，并且在截图时每个像素只需一次红蓝交换，而不是每个显示帧。作者在偏好 BGRA 的 Mac 上强制使用 RGBA 进行测试，同时 Linux Mesa 被认为是可能会自然受影响的平台，需要确认。"
+    },
+    {
+      "type": "heading",
+      "text": "捕获路径和 alpha 都需要精确颜色固定装置"
+    },
+    {
+      "type": "paragraph",
+      "text": "渲染一个包含纯红、蓝、绿、黑、白及非平凡 alpha 的测试图案，然后通过本地 RGBA 和 BGRA 交换链的暂存和主机内存路径进行捕获。比较保存的字节和显示输出。在奇数尺寸、缩放布局以及交换链重建后重复操作。受影响的 Linux 用户应确认自然格式路径。交换必须正好发生一次；双重转换可能会使一个后端看似修复，而另一个后端退化。"
+    },
+    {
+      "type": "callout",
+      "text": "截图代码现在从实际协商的 Vulkan 格式进行转换，而不是假设每个驱动程序都以 QImage 首选的顺序呈现像素。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "阅读 Azahar 工程讨论和源代码更改"
+    }
+  ]
+}

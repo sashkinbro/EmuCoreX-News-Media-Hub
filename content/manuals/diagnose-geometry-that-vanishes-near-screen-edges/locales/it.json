@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-geometry-that-vanishes-near-screen-edges",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostica la geometria che scompare vicino ai bordi dello schermo panoramico",
+  "summary": "Usa un percorso di panning ai bordi per distinguere il taglio dello schermo panoramico dal clipping, dalla perdita del renderer e dalla normale distanza di disegno; confronta le scene 4:3 non corrette, le scene 16:9 corrispondenti per seriale e le scene con telecamera fissa prima di applicare una patch.",
+  "heroAlt": "Cattura ufficiale di gioco panoramico PCSX2 con geometria del mondo che si estende verso entrambi i bordi dello schermo",
+  "searchKeywords": [
+    "La geometria PS2 scompare al bordo dello schermo",
+    "Taglio dello schermo panoramico",
+    "Clipping al bordo EmuCoreX",
+    "Oggetti mancanti 16:9",
+    "Artefatto di panning della telecamera"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "widescreen": "Schermo largo"
+  },
+  "sourceLabels": {
+    "pcsx2-aspect": "Comportamento dello schermo largo e del formato PCSX2",
+    "pcsx2-patches": "Patch ufficiali per schermo largo specifiche per il seriale"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tracciare un oggetto attraverso il confine originale 4:3"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lo schermo panoramico può rivelare spazi di gioco che il gioco non si aspettava di visualizzare. Un oggetto che scompare esattamente dove sarebbe stato il bordo vecchio 4:3 è probabilmente eliminato dalla logica di gioco, mentre la geometria tagliata dall'attuale viewport può indicare clipping o proiezione. Scegli un punto di riferimento fermo vicino al lato della telecamera e panoramica lentamente fino a quando non esce e rientra. Registra il numero di serie del titolo, l'identità della patch, l'impostazione del formato e il renderer prima di confrontare."
+    },
+    {
+      "type": "callout",
+      "text": "Non nascondere la perdita dei bordi con zoom o overscan. Ritagliare il viewport nasconde le prove e rimuove contenuti validi dell'immagine senza correggere il culling."
+    },
+    {
+      "type": "heading",
+      "text": "Prepara un percorso che attraversa il bordo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un normale salvataggio in gioco con controllo libero della telecamera orizzontale.",
+        "Un punto di riferimento che attraversa il precedente bordo 4:3 sotto 16:9.",
+        "Profili dei titoli puliti non patchati e patchati con seriale corrispondente.",
+        "Output originale 4:3 con overscan del display disabilitato.",
+        "Una cutscene a telecamera fissa per un secondo controllo di culling."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separare il culling del gioco dal clipping del renderer"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avviare a freddo il 4:3 non patchato e registrare il punto di riferimento che si muove dal centro all'esterno del frame visibile.",
+        "2. Abilitare la patch widescreen verificata e ripetere la stessa velocità e posizione della telecamera.",
+        "3. Segna il punto orizzontale esatto in cui l'oggetto scompare e se la sua ombra, particella o riflesso scompare con esso.",
+        "4. Mantieni attivo il patch ma confronta le API hardware supportate alla risoluzione nativa.",
+        "5. Se entrambe le API perdono l'oggetto al vecchio confine, considera la culling di gioco come la causa principale piuttosto che le prestazioni di GPU.",
+        "6. Disattiva la patch mantenendo brevemente l'allungamento 16:9 per distinguere le modifiche della proiezione dalla semplice distorsione del viewport.",
+        "7. Riproduci la scena con telecamera fissa e controlla gli attori o gli oggetti di scena appena visibili ai lati.",
+        "8. Mantieni la patch solo se il gioco normale non rivela rimozioni disruptive o scene scriptate interrotte."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "I giochi spesso evitano di disegnare oggetti al di fuori del loro frustum della telecamera previsto. Una patch widescreen può allargare la proiezione senza espandere ogni regola di culling. Il clipping del renderer tende a seguire il viewport attivo o l'API, mentre il culling lato gioco segue comunemente un confine originale invisibile attraverso i renderer."
+    },
+    {
+      "type": "heading",
+      "text": "Accettazione ai bordi dello schermo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un profilo widescreen utilizzabile deve mantenere la continuità del mondo durante il movimento."
+    },
+    {
+      "type": "list",
+      "items": [
+        "I punti di riferimento rimangono presenti fino a quando non escono naturalmente dal frame 16:9.",
+        "Ombre e riflessi non si staccano prima dal loro oggetto sorgente.",
+        "Sia i piatti di sinistra che quelli di destra si comportano in modo coerente.",
+        "Le scene con telecamera fissa non espongono attori mancanti o allestimenti incompleti.",
+        "La patch corrispondente serialmente sopravvive a un avvio a freddo senza zoom aggiuntivo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Prove che la modalità wide è incompleta"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Gli oggetti scompaiono al limite precedente 4:3 su ogni renderer: limiti di eliminazione della patch del documento.",
+        "Solo un'API ritaglia i triangoli al bordo corrente: isolare un problema del renderer.",
+        "Zoom nasconde il difetto ma rimuove i sottotitoli: ripristina l'output non ritagliato.",
+        "Una patch per un'altra revisione si comporta in modo imprevedibile: rimuovila prima di ulteriori test."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restituisci proiezione e viewport insieme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disabilita la patch widescreen, seleziona 4:3, reimposta zoom e overscan, poi avvia a freddo il percorso edge. Rimuovi qualsiasi patch utente che non corrisponde all'eseguibile CRC e verifica lo stesso punto di riferimento sotto il profilo pulito."
+    },
+    {
+      "type": "heading",
+      "text": "La distanza di visualizzazione non viene sempre tagliata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli oggetti che scompaiono in base alla distanza dalla telecamera piuttosto che alla posizione sullo schermo possono seguire regole di livello di dettaglio o distanza di disegno. Ripeti la panoramica da due distanze prima di classificare il confine."
+    },
+    {
+      "type": "link",
+      "text": "Esamina i registri ufficiali della patch widescreen PCSX2",
+      "url": "https://pcsx2.net/blog/2016/q2-2016-progress-report/"
+    }
+  ]
+}

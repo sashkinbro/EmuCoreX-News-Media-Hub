@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP déplace le travail de débogage WebSocket sur le thread CPU",
+  "summary": "Un pont de tâche synchrone remplace le verrouillage du débogueur distribué, et le désassembleur supprime les macro-opérations fusionnées qui rendaient la taille des pas ambiguë.",
+  "heroAlt": "Preuve source provenant de la pull request PPSSPP #22051 : Refactoriser l'interface de débogage websocket pour qu'elle soit sûre pour les threads, supprimer les \"macro ops\" dans le désassemblage",
+  "searchKeywords": [
+    "PPSSPP",
+    "Débogueur WebSocket",
+    "Thread CPU",
+    "Points d'arrêt",
+    "Désassemblage"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Outils",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refactoriser l'interface de débogage websocket pour qu'elle soit sûre pour les threads, supprimer les \"macro ops\" dans le désassemblage"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les requêtes du débogueur à distance traversaient une limite de propriété"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un débogueur WebSocket s'exécute sur un thread de réseau, mais les points d'arrêt, le pas à pas, l'accès aux registres et une grande partie de la mémoire émulée sont possédés par le thread d'exécution CPU. Protéger des fonctions individuelles avec des verrous non liés fait que l'exactitude dépend de l'ordre des verrous et de la mémoire de chaque futur gestionnaire des mêmes règles. C'est particulièrement fragile lorsque le cœur est en pause, car une requête peut avoir besoin de l'état du thread CPU précisément lorsque le progrès normal des frames s'est arrêté."
+    },
+    {
+      "type": "heading",
+      "text": "Un pont sérialise les opérations possédées par CPU dans la boucle d'exécution"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #22051 ajoute Core_RunOnCPUThread. Un appelant empaquette une fonction dans une tâche partagée, la pousse sous un mutex de file d'attente et attend sur une variable conditionnelle. Core_RunLoopUntil vide la file d'attente au début de sa boucle, exécute les fonctions sur le thread CPU, les marque comme terminées sous le mutex et réveille les threads en attente. Les appels déjà sur le thread CPU s'exécutent immédiatement, évitant un blocage sur soi-même. La boucle se vide continuellement pendant le pas à pas ou la pause et au moins une fois par frame hôte en cours d'exécution."
+    },
+    {
+      "type": "heading",
+      "text": "Le désassemblage conserve désormais la taille de pas en une seule unité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le même travail supprime les opérations macro du désassembleur qui combinaient des motifs d'instruction comme lui plus ori en une seule ligne de présentation. Bien que pratique à lire, les opérations fusionnées rendent flou le sens d'une taille de pas, qu'il s'agisse d'octets, d'instructions invitées ou de lignes d'affichage. Le nouveau contrat considère stepSize comme un nombre d'instructions MIPS de quatre octets, et les calculs d'adresses des points d'arrêt sont multipliés en conséquence. Les vues peuvent ultérieurement ajouter des indices visuels sans modifier l'unité d'exécution sous-jacente."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de concurrence nécessitent des cas mis en pause et réentrants"
+    },
+    {
+      "type": "paragraph",
+      "text": "Émettre des lectures WebSocket simultanées, des écritures, des changements de points d'arrêt, des scans de mémoire et des pas à pas simples pendant que le jeu fonctionne, est en pause et en transition entre les états. Déconnecter les clients pendant que les tâches attendent, arrêter le noyau avec une file non vide, et appeler le pont depuis le thread CPU lui-même. ThreadSanitizer ne devrait signaler aucune course de débogueur. Vérifier que chaque requête reçoit une complétion ou une erreur d'arrêt contrôlé, et comparer les adresses de désassemblage autour des anciens modèles de macros afin que le pas à pas ne saute jamais ou ne répète jamais une instruction invitée."
+    },
+    {
+      "type": "callout",
+      "text": "Le débogueur ne demande plus de nombreux verrous pour imiter la possession CPU ; il envoie l'opération au thread qui possède déjà l'état."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Lire la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

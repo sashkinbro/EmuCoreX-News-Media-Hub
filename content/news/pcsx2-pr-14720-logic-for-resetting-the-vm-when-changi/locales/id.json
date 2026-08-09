@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 memerintahkan reset pergantian disk sebelum Qt dapat melanjutkan VM",
+  "summary": "Status reset yang ditunda sedang terganggu oleh peristiwa unpause VMLock; memindahkan transisi tampilan emulasi setelah reset diposting menjaga siklus hidup VM yang dimaksud.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14720: Qt: Memperbaiki logika untuk mereset VM saat mengganti disk",
+  "searchKeywords": [
+    "PCSX2",
+    "pergantian disk",
+    "reset VM",
+    "VMLock",
+    "jendela terpisah"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Inti",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Memperbaiki logika untuk mereset VM saat mengganti disk"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengganti disk dari daftar game melintasi siklus hidup UI dan VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dengan Render To Separate Window diaktifkan, Qt dapat mengganti tampilan, mengunci VM, mengirimkan event, dan meminta reset dalam satu tindakan pengguna. Reset itu sendiri ditunda. MainWindow bergerak menuju tampilan emulasi saat lingkup kunci berakhir, dan destruktor VMLock mengirimkan unpause. Event yang dikirim kemudian itu bisa menggantikan VMState::Resetting sebelum handler reset benar-benar dijalankan."
+    },
+    {
+      "type": "heading",
+      "text": "Masalah perlombaan adalah urutan event, bukan sinkronisasi yang hilang"
+    },
+    {
+      "type": "paragraph",
+      "text": "VM memiliki status resetting yang valid dan kunci yang dimaksudkan untuk melindungi transisi. Masalahnya adalah dua perubahan status yang ditunda di antrekan dalam urutan yang salah. Unpause yang dikirim dari pembersihan UI diperbolehkan dijalankan seolah-olah reset sudah selesai. Ini menjelaskan mengapa mengganti disc dari jalur frontend tertentu gagal meskipun reset langsung dan pause/resume biasa berhasil."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView sekarang mengikuti reset yang dikirim"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14720 memindahkan MainWindow::switchToEmulationView setelah event reset diposting. VM tidak berjalan saat permintaan reset dibuat, dan transisi tampilan tidak lagi dapat menyebabkan VMLock merusak Resetting dengan unpause dini. Sumber menyatakan bahwa desain ulang keadaan VM yang lebih luas mungkin dilakukan, tetapi perubahan ini memperbaiki kesalahan urutan yang diketahui tanpa memperluas cakupan."
+    },
+    {
+      "type": "heading",
+      "text": "Perubahan disc jendela terpisah harus diulang di setiap keadaan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktifkan Render To Separate Window, jalankan judul multi-disc, dan pilih disc lain dari daftar permainan saat berjalan, berhenti sejenak, dan dengan UI modal terbuka. Catat event reset dan unpause yang diposting dan pastikan bahwa Resetting tetap sampai reset selesai. Ulangi setelah suspend, pemuatan keadaan, dan pemilihan disc berurutan yang cepat. Perubahan standar di jendela yang sama dan reset manual adalah kontrol negatif; perbaikan urutan tidak boleh membuat VM berhenti permanen atau men-switch tampilan terlalu terlambat."
+    },
+    {
+      "type": "callout",
+      "text": "Reset VM sudah diminta; perbaikan memastikan tidak ada event pembersihan UI yang diizinkan untuk melanjutkan eksekusi sebelum permintaan tersebut berlaku."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

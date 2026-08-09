@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar labels OpenGL work with the renderer operation that caused it",
+  "summary": "Named DebugScopes around draw and texture-runtime paths turn GPU captures into a hierarchy of reinterpret, clear, copy, upload, download, mipmap, and scale work.",
+  "heroAlt": "Source evidence from Azahar pull request #2133: renderer_gl: Add `DebugScopes` to rasterizer and texture-runtime",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL debugging",
+    "DebugScope",
+    "RenderDoc",
+    "texture runtime"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl: Add `DebugScopes` to rasterizer and texture-runtime"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A GL command stream loses the C++ reason behind each call"
+    },
+    {
+      "type": "paragraph",
+      "text": "GPU debuggers can show glBindTexture, glFramebufferTexture, draws, and copies, but a long capture does not automatically say which Azahar operation produced them. Diagnosing a renderer fault then requires correlating API order with CPU traces manually. Pull request #2133 adds structured labels at the rasterizer and texture-runtime boundaries where the emulator still knows the semantic operation."
+    },
+    {
+      "type": "heading",
+      "text": "Scopes include parameters that distinguish similar operations"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch names RasterizerOpenGL::Draw and texture reinterpret, clear with or without FBO, copy, blit, mipmap generation, handle copy, upload, custom upload, download, attach, scale-up, and blit-scale paths. Labels include pixel formats, clear colors, copy counts, or scale values where useful. A capture can therefore separate two visually similar copies that came from different format or scaling decisions."
+    },
+    {
+      "type": "heading",
+      "text": "Scope depth is paid only when renderer debugging is enabled"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sampler scope depth increments conditionally on Settings::values.renderer_debug. Normal gameplay should not maintain diagnostic nesting it will never export. When enabled, the hierarchy can be consumed by debug markers and capture tools, tying a group of GL calls to one C++ call stack. The scopes do not change synchronization or fix rendering themselves; they make subsequent investigation precise."
+    },
+    {
+      "type": "heading",
+      "text": "Capture validation should cover nesting and disabled overhead"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enable renderer debugging, capture scenes that upload, reinterpret, clear, copy, scale, and download textures, and confirm each GL group has the correct name and parameters with balanced nesting. Trigger an early return or failed operation to ensure RAII closes the scope. Disable debugging and verify markers and depth increments disappear, then benchmark CPU overhead. The labels must identify the operation actually executing rather than copy-pasted names that create false evidence."
+    },
+    {
+      "type": "callout",
+      "text": "Debug scopes do not change pixels; they change whether a capture can answer which Azahar operation produced those pixels."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

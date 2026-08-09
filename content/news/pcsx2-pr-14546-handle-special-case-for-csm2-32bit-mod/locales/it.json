@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 isola il caricamento della palette CSM2 dall'ordine swizzled di CSM1",
+  "summary": "Un cambio di modalità di memorizzazione in Breath of Fire ha esposto perché i dati sequenziali CSM2 non possono riutilizzare in sicurezza un buffer CLUT temporaneo popolato secondo le regole di swizzle di CSM1.",
+  "heroAlt": "Prova visiva dalla pull request #14546 di PCSX2: GS/CLUT: Gestire il caso speciale per il cambio di modalità 32bit di CSM2",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "palette",
+    "Breath of Fire"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT: Gestire il caso speciale per il cambio di modalità 32bit di CSM2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una palette sopravvive al cambio di modalità, ma il suo ordine no"
+    },
+    {
+      "type": "paragraph",
+      "text": "Breath of Fire: Dragon Quarter ricarica la sua tabella di ricerca dei colori in Modalità di Memorizzazione CLUT 1 e poi passa alla Modalità di Memorizzazione 2. CSM1 applica una disposizione swizzled, mentre CSM2 indirizza le voci della palette in sequenza. Riutilizzare i dati temporanei preparati per la prima modalità fornisce quindi alla seconda modalità colori validi nelle posizioni sbagliate. Il testo del menu mostra poi buchi neri dove dovrebbe apparire il colore principale previsto."
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 ora legge la palette autorevole dalla memoria locale GS"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14546 cambia GSClut in modo che la modalità di memorizzazione 2 carichi sempre il CLUT dalla memoria locale piuttosto che dal buffer temporaneo orientato a CSM1. L'approccio spiega anche il comportamento più lento di CSM2: tratta la memoria GS come sorgente al momento del caricamento della cache della texture. Scegliendo la sorgente secondo la modalità di memorizzazione attiva, PCSX2 evita di inventare una conversione tra due layout che il gioco stesso non ha mai richiesto."
+    },
+    {
+      "type": "heading",
+      "text": "La fonte presenta una teoria hardware, non una certezza fabbricata"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implementazione si basa sul comportamento del gioco, su una esecuzione pulita del dump GS e sul fatto che nessun'altra regola di riutilizzo ha prodotto una palette CSM2 coerente. L'autore nota esplicitamente che era prevista una verifica hardware per confermare il modello. Questo confine è importante per un articolo di ingegneria: la correzione software ha un forte riproduttore, ma la ragione interna precisa per cui l'originale GS si comporta in questo modo rimane un'ipotesi fino a quando le tracce della console non la confermano."
+    },
+    {
+      "type": "heading",
+      "text": "I test dovrebbero accoppiare il riproduttore del menu con le prove della console"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il controllo immediato della regressione è Breath of Fire: Dragon Quarter nel menu interessato, confrontando le voci della palette prima e dopo il passaggio da CSM1 a CSM2. Una traccia utile registra la modalità di memorizzazione, l'indirizzo della sorgente CLUT, l'ordine delle voci e il colore usato dal testo danneggiato. Altri giochi che alternano le due modalità di memorizzazione dovrebbero confermare che forzare il caricamento dalla memoria locale non disturba le palette che in precedenza funzionavano. I risultati hardware dovrebbero essere documentati separatamente dalle deduzioni dell'emulatore."
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 corregge la corruzione della palette osservata mantenendo onesta la spiegazione hardware: il comportamento diretto della memoria locale di CSM2 è supportato da prove, ma è ancora in attesa di una conferma più solida dalla console."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "Leggi la discussione ingegneristica e le modifiche al codice sorgente di PCSX2"
+    }
+  ]
+}

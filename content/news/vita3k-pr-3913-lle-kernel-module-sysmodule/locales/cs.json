@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K propojuje skutečné kernel moduly Vita se svým emulovaným modulem grafu",
+  "summary": "Spouštění a načítání sysmodulu SKPRX se nyní připojuje k širšímu SELF, řešení ovladače, TLS, životního cyklu a záplatování potřebného pro nízkoúrovňovou cestu systémového modulu.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Vita3K #3913: moduly: lle kernel modul \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "LLE kernel",
+    "SKPRX",
+    "sysmodule",
+    "načítací modul"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Jádro",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "moduly: lle kernel modul \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nízkourovňové systémové moduly potřebují více než parser SELF"
+    },
+    {
+      "type": "paragraph",
+      "text": "Načítání skutečného binárního jádra Vita znamená řešení jeho importů a exportů, přiřazování paměti segmentů, vytváření informací o modulech, dodržování chování při spuštění a zastavení, zpřístupňování služeb ovladače a čištění všech symbolů při jeho odkládání. Binární soubor také očekává existenci polí kernel TLS a dalších systémových modulů. Loader, který úspěšně zkopíruje bajty, ale zanechá tyto vazby neúplné, selže později s nevyřešeným NID nebo zastaralým exportem."
+    },
+    {
+      "type": "heading",
+      "text": "Startup graf nyní zahrnuje bootimage a sysmodule"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3913 přidává os0:kd/bootimage.skprx a os0:kd/sysmodule.skprx do seznamu předběžného načítání. Rozšiřuje správce modulů, správce vláken, správce procesů, sysmem, debug, process-event, QAF a funkce orientované na sysmodule potřebné kolem nich. Jména Kernel TLS získávají role stack-check a fiber-context. Cesty odkládání importů a exportů jsou zjednodušeny tak, aby odstraňovaly položky podle NID a vlastnictví modulu, aniž by nesly relační data, která již nepoužívají."
+    },
+    {
+      "type": "heading",
+      "text": "Patchování se přesouvá na vrstvu, která zná konečné segmenty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Herní záplaty jsou vyjímány ze generického kernelového loaderu SELF. Poté, co se hlavní spustitelný soubor stane načteným modulem, kód rozhraní získá jeho SceKernelModuleInfo a kopíruje pouze záplaty, jejichž segment existuje a jejichž offset plus počet bytů se vejde do memsz. To udržuje uživatelsky viditelnou záplatu titulu oddělenou od načítání systémových binárek a způsobuje, že kontrola hranic používá konečné namapované segmenty místo předpokladů parseru."
+    },
+    {
+      "type": "heading",
+      "text": "Smíšený graf LLE a HLE vyžaduje testy selhání, které jsou sledovatelné"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spusťte s kompletními soubory firmwaru, chybějícím bootimage, chybějícím sysmodule, nekompatibilními binárkami a běžnými konfiguracemi pouze pro HLE. Sledujte každý vyřešený import, výsledek spuštění modulu, hodnotu TLS, odstranění exportu a vypnutí v opačném pořadí. Opakovaně načítejte tituly, abyste odhalili zastaralý NIDs a modul IDs. Podávejte záplaty na začátku segmentu, přesném konci a o jeden bajt za ním. Binárky jádra nesmí nikdy udělovat přístup hostiteli; všechny ukazatele zůstávají v rozsahu hosta a nepodporované funkce ovladače by měly hlásit přesnou hranici místo toho, aby vracely vymyšlený úspěch."
+    },
+    {
+      "type": "callout",
+      "text": "LLE nepouští jen více kódu firmware; vytváří reverzibilní modulový graf, kde se skutečné binárky hosta a služby emulátoru setkávají při explicitních importech."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Přečtěte si technickou diskusi a změny zdrojového kódu Vita3K"
+    }
+  ]
+}

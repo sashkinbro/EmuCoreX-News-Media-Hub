@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Donanımsal renderda sahneyi fazla pozlamadan bozuk parlaklığı geri yükleyin",
+  "summary": "Eksik veya yanlış hizalanmış bir framebuffer adımını belirlemek, bir yazılım referansıyla karşılaştırmak ve en az maliyetli karıştırma veya yerel ölçeklendirme düzeltmesini bulmak için eşleştirilmiş parlak ve karanlık kontrol noktalarını kullanın.",
+  "heroAlt": "God of War PCSX2 ekran görüntüsü, yanlış renderlanmış parlak bloom ve sis adımını gösteriyor",
+  "searchKeywords": [
+    "PS2 bozuk bloom",
+    "EmuCoreX aşırı parlak ışıma",
+    "donanımsal render bloom",
+    "framebuffer karıştırma",
+    "yerel ölçeklendirme hayaletlenmesi"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafikler",
+    "accuracy": "Doğruluk"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 bloom için karıştırma, framebuffer okuma ve yerel ölçeklendirme açıklaması",
+    "pcsx2-july-august-2015": "PCSX2 bloom ve sis doğruluğu öncesi ve sonrası örnekler"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bloomu yok, yer değiştirmiş, kırpılmış veya aşırı olarak sınıflandırın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloom genellikle birden fazla geçişten oluşturulur: oyun parlak bilgiyi izole eder, filtreler veya küçültür ve sonucu sahnenin üzerine bileştirir. Bu nedenle bir donanım renderlayıcı birkaç görünür şekilde farklı şekilde başarısız olabilir. Eksik bloom, ışık kaynaklarını keskin kenarlı bırakır; yerinden oynayan bloom, kaynaktan kaymış bir hayalet üretir; kırpılmış bloom bir dikdörtgen haline gelir; aşırı bloom ise yakındaki geometrileri yıkar. Güçlü izole bir lamba veya büyü olan bir kontrol noktası ile karanlık arka plan üzerinde küçük vurguların olduğu başka bir kontrol noktasını seçin. Oyunun seri numarasını, dahili çözünürlüğünü, renderlayıcıyı, GPU sürücüsünü, karıştırma doğruluğunu, orijinal ölçekleme durumunu ve manuel framebuffer veya skip-draw düzeltmelerinin aktif olup olmadığını kaydedin."
+    },
+    {
+      "type": "callout",
+      "text": "Bloom'u tek bir aşırı pozlanmış telefon fotoğrafından değerlendirmeyin. Otomatik pozlama ve HDR ton haritalama, emülatörün gerçek karesinde bulunan detayları silebilir."
+    },
+    {
+      "type": "heading",
+      "text": "Işık referanslarıyla iki bloom sahnesi hazırlayın"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Etrafında görülebilir geometri olan tekrarlanabilir parlak efektten önce oyunda bir kayıt.",
+        "Tüm çıkışı karartarak geçemeyecek küçük yayıcı detaylar içeren ikinci karanlık bir sahne.",
+        "Yerel donanım çıktısından doğrudan ekran görüntüleri ve kısa bir yazılım tabanlı doğruluk referansı.",
+        "Gönderi gölgelendiriciler, reshade katmanları, HDR görüntüleme dönüşümü, doku değiştirme ve özel renk kontrolleri devre dışı bırakıldı.",
+        "Parlak sahneden sıcak oturum performans örneği ve oyunun grafik profili yedeği."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Büyütme hizalamasından kompozisyon doğruluğunu ayrı tut"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Parlak kontrol noktasını yerel dahili çözünürlükte soğuk başlatın, otomatik karıştırmayı açın ve kaynak ile çevresindeki ayrıntıyı yakalayın.",
+        "2. Aynı anı kısa süreliğine yazılım modunda render edin ve bloom yarıçapı, merkez, örtüşme ve ön plan nesnelerinin parlamayı doğru şekilde engelleyip engellemediğini karşılaştırın.",
+        "3. Donanım moduna geri dönün ve sürücüyü veya çözünürlüğü değiştirmeden desteklenen grafik API'lerini karşılaştırın; referansı en iyi koruyan yolu koruyun.",
+        "4. Bloom eksik olduğunda veya yerel çözünürlükte bir katı şekle kesildiğinde, karıştırma doğruluğunu bir kademe artırın, sahneyi yeniden başlatın ve kompozisyonu geri getiren ilk kademede durun.",
+        "5. Yerel donanım doğruysa ancak bloom yalnızca ölçeklendirmeden sonra ışığından ayrılıyorsa, otomatik karıştırmayı geri yükleyin ve emülatörün belgelenmiş yerel ölçek düzeltmesini test edin.",
+        "6. Karanlık kontrol noktasını tekrar oynatın ve küçük parlak noktaların siyah arka planları kaldırmadan veya karakter dokularını beyazlatmadan parladığını doğrulayın.",
+        "7. Cihazı ısıtın, yoğun efekt dizisini ölçün ve yapım aşaması bunları açığa çıkarıyorsa engel, render-pakı veya okuma sayaçlarını karşılaştırın.",
+        "8. Bu oyunun profilinde yalnızca başarılı dalı kaydedin ve bunun yerel çıktıda mi yoksa yükseltilmişken sonrası işleme hizalamasında mı karışımı ele aldığını not edin."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Karışım doğruluğu, donanım renderinginin önceki framebuffer içerikleriyle etkileşimleri ne kadar sadık bir şekilde çoğalttığını belirlerken, yerel ölçeklendirme PS2'nin orijinal ölçeğinde çalışacak şekilde tasarlanmış son işlem geçişlerini hedefler. Bunlar, benzer görünen belirtileri farklı aşamalarda çözer. Yazılım rendering, GS davranışını daha doğrudan çoğaltabildiği için bir kompozisyon referansı sağlar, ancak hızı kabul hedefi değildir. İki sahneli test, parlaklığı azaltmanın bir aşırı ışıklı lambayı daha iyi göstermesi durumunda yanlış bir düzeltmeyi ve diğer yerdeki niyet edilen parlamayı silmeyi önler."
+    },
+    {
+      "type": "heading",
+      "text": "Bloom profili kabulü"
+    },
+    {
+      "type": "paragraph",
+      "text": "Seçilen profil, efektin şeklini, derinlik ilişkisini, ton aralığını ve oynanabilirliğini korumalıdır."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Parlama, ışık yayan nesnenin merkezinde yer alır ve kamera veya karakter hareketi sırasında onu takip eder.",
+        "Ön plan geometrisi, yazılım referansında bir engel gösterildiğinde parlamayı engeller.",
+        "Parlak yüzeyler, tekdüze beyaz bir leke yerine doku detayını korur.",
+        "Koyu kontrol noktası siyah alanları korur ve küçük amaçlanan vurgularını hâlâ gösterir.",
+        "Termal stabilizasyon sonrası sürekli kare zamanlaması kabul edilebilir durumda kalır ve ilgisiz şeffaflık gerilemez."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Başka bir inceleme gerektiren bloom sonuçları"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Yazılım çıktısı aynı anormal parlaklığa sahip: sahne referansını doğrulayın ve oyun yamalarını veya doku modifikasyonlarını kaldırın.",
+        "Direct ekran görüntüleri dengeliyken sadece fiziksel ekran bloom yapıyor: HDR, renk aralığı, panel iyileştirmesi ve kamera pozlamasını denetleyin.",
+        "Daha yüksek bir karıştırma seviyesi lambayı düzeltir ama gölgeleri veya sisi bozar: bunu geri alın ve başlığa özel bir render raporu toplayın.",
+        "Etkisi yalnızca alışılmadık bir özel çözünürlükte kayar: her türlü manuel ofseti eklemeden önce desteklenen bir tam sayı çarpanı kullanın."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Maliyetli framebuffer deneyini geri al"
+    },
+    {
+      "type": "paragraph",
+      "text": "Karıştırmayı Otomatik olarak ayarlayın, test edilen yerel ölçekleme veya ofset geçersiz kılmayı devre dışı bırakın, orijinal API'yi geri yükleyin ve uygulamayı yeniden başlatın. Önceki belirtiyin tekrar üretilebilir olduğunu doğrulamak için her iki kontrol noktasını da oynatın; ardından performansı geçen son düşük düzeyi seçin veya hassas bir düzeltme mevcut olana kadar yerel çözünürlüğe dönün."
+    },
+    {
+      "type": "heading",
+      "text": "Kasıtlı parlama görsel olarak agresif olabilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bazı PS2 oyunları kasıtlı olarak geniş, parlak bloom kullanır. Amaç, tekdüze bastırılmış aydınlatma değil, güvenilir bir referansa sadakati sağlamaktır. Bir oyundan küresel bir öneriyi yayımlamaktan kaçının, çünkü framebuffer formatları, karıştırma denklemleri ve post-process ölçekleme motorlar arasında ve hatta sahneler arasında farklılık gösterir."
+    },
+    {
+      "type": "link",
+      "text": "PCSX2 açıklamasını modern karıştırma ve yerel ölçekleme hakkında inceleyin.",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

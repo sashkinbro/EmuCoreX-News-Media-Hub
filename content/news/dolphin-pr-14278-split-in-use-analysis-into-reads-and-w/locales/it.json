@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin insegna al suo JIT se un registro attivo verrà letto o sovrascritto",
+  "summary": "Maschere separate per lettura futura e scrittura futura permettono alle cache x64 e ARM64 di prendere decisioni di precaricamento e svuotamento più sicure e precise rispetto a un singolo flag in uso.",
+  "heroAlt": "Prove sorgente dalla richiesta di pull Dolphin #14278: PPCAnalyst: Dividere l'analisi \"in uso\" in letture e scritture",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "cache dei registri",
+    "analisi della vivacità",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "Cpu",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Dividere l'analisi \"in uso\" in letture e scritture"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Essere attivo non indica cosa farà la prossima istruzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un registro guest può essere rilevante per il blocco rimanente perché una futura istruzione ne legge il valore corrente, perché una futura istruzione lo sovrascrive, o entrambi. La vecchia maschera in uso di Dolphin univa quei casi. Una cache di registri JIT aveva quindi informazioni limitate quando decideva se precaricare un valore guest, scrivere un valore host sporco, scartare una mappatura, o mantenerla attraverso un confine di fallback."
+    },
+    {
+      "type": "heading",
+      "text": "Due set di utilizzo futuro rendono esplicito il flusso dei dati"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14278 propaga gprWillBeRead e gprWillBeWritten, con maschere equivalenti per i registri in virgola mobile e i registri di condizione. Il precaricamento considera i registri che parteciperanno in entrambe le direzioni escludendo ancora gli input scartabili. Le flush complete mirano ai valori non più utilizzati dalle operazioni successive. Gli output che non saranno scritti successivamente ricevono un trattamento separato in modo che il loro valore sporco corrente raggiunga lo stato guest prima che la cache li segni come puliti."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty mantiene una mappatura utile dopo aver impegnato il suo valore"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il refactoring nomina esattamente il comportamento di flush. Full scrive dati sporchi e rimuove la mappatura. MaintainState preserva lo stato esistente dove richiesto. La nuova modalità Undirty scrive un valore sporco ma mantiene l'associazione del registro host come pulita. Questo è utile quando un output deve essere coerente esternamente a un confine ma può ancora essere letto successivamente. Entrambi i percorsi x64 e ARM64 adottano il vocabolario, inclusi l'accesso alla memoria lenta e i siti di fallback dell'interprete."
+    },
+    {
+      "type": "heading",
+      "text": "I test a blocchi differenziali devono concentrarsi sul flusso di controllo complicato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Confrontare l'interprete, JIT64, e JITARM64 attraverso blocchi generati con schemi di sola lettura, sola scrittura, lettura-then-scrittura, scrittura-then-lettura, scartati, immediati, floating-point e registri di condizione. Aggiungere eccezioni, errori di memoria, controlli gather-pipe, branch, istruzioni di fallback e uscite a blocchi in ogni posizione. Strumentare host spills e writeback degli ospiti per verificare che l'ottimizzazione riduca effettivamente il lavoro senza cambiare lo stato. L'esecuzione differenziale casuale dovrebbe confrontare tutti i registri architetturali dopo ogni confine forzato."
+    },
+    {
+      "type": "callout",
+      "text": "La liveness del registro diventa azionabile solo quando lo JIT sa se il futuro ha bisogno del valore odierno o se ha semplicemente bisogno del nome del registro per una futura sovrascrittura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Leggi la discussione ingegneristica Dolphin e le modifiche al codice sorgente"
+    }
+  ]
+}

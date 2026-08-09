@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 orders disc-switch reset before Qt can unpause the VM",
+  "summary": "A deferred reset state was being trampled by VMLock's unpause event; moving the emulation-view transition after reset posting preserves the intended VM lifecycle.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14720: Qt: Fix logic for resetting the VM when changing discs",
+  "searchKeywords": [
+    "PCSX2",
+    "disc switch",
+    "VM reset",
+    "VMLock",
+    "separate window"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Fix logic for resetting the VM when changing discs"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Changing a disc from the game list crosses UI and VM lifecycles"
+    },
+    {
+      "type": "paragraph",
+      "text": "With Render To Separate Window enabled, Qt can switch views, lock the VM, post events, and request a reset in one user action. The reset itself was deferred. MainWindow moved toward the emulation view while the lock scope ended, and VMLock's destructor posted an unpause. That later event could replace VMState::Resetting before the reset handler actually executed."
+    },
+    {
+      "type": "heading",
+      "text": "The race is event ordering, not missing synchronization"
+    },
+    {
+      "type": "paragraph",
+      "text": "The VM had a valid resetting state and a lock intended to protect the transition. The problem was that two deferred state changes were queued in the wrong order. A posted unpause from UI cleanup was allowed to run as if the reset had finished. This explains why changing discs from a particular frontend path failed even though direct reset and ordinary pause/resume worked."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView now follows the posted reset"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14720 moves MainWindow::switchToEmulationView after the reset event is posted. The VM is not running while the reset request is being established, and the view transition can no longer cause VMLock to trample Resetting with an early unpause. The source notes that a broader VM-state redesign is possible, but this change fixes the known ordering fault without expanding scope."
+    },
+    {
+      "type": "heading",
+      "text": "Separate-window disc changes must be repeated through every state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enable Render To Separate Window, boot a multi-disc title, and select another disc from the game list while running, paused, and with a modal UI open. Log posted reset and unpause events and assert that Resetting survives until reset completion. Repeat after suspend, state load, and rapid consecutive disc selections. Standard same-window changes and manual resets are negative controls; the ordering fix must not leave the VM permanently paused or switch views too late."
+    },
+    {
+      "type": "callout",
+      "text": "The VM reset was already requested; the fix ensures no UI cleanup event is allowed to resume execution before that request takes effect."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

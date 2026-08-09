@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "document-a-ps2-library-so-another-device-can-restore-it",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Construire un manifeste de restauration de bibliothèque PS2 indépendant de l'appareil",
+  "summary": "Enregistrer les titres, les numéros de série, les régions, les révisions, les relations de disque, les chemins relatifs, les octets, SHA-256, les rôles de stockage et les dates de vérification afin qu'un autre appareil Android puisse reconstruire les racines sans copier les URI obsolètes.",
+  "heroAlt": "Assistant de configuration macOS PCSX2 montrant BIOS et les sélections de répertoire de jeu qu'un manifeste de restauration doit mapper sur un autre appareil",
+  "searchKeywords": [
+    "Manifeste de bibliothèque PS2",
+    "restaurer EmuCoreX sur un autre téléphone",
+    "inventaire de hachage de numéros de série de jeu",
+    "chemins indépendants de l'appareil",
+    "documentation de la bibliothèque"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Bibliothèque",
+    "manifest": "Manifeste"
+  },
+  "sourceLabels": {
+    "android-saf": "Modèle d'URI local à l'appareil",
+    "powershell-hash": "Outil d'inventaire SHA-256"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Documenter l'intention, pas l'URI actuel de Android"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les URI Storage Access Framework appartiennent à un utilisateur, fournisseur, volume et sélection Android particuliers. Un autre téléphone ne peut pas restaurer directement cet identifiant. Un manifeste utile enregistre l'identité humaine et cryptographique ainsi qu'un chemin relatif neutre pour l'appareil et un rôle de stockage. Le nouvel appareil recrée ensuite les dossiers et attribue ses propres URI."
+    },
+    {
+      "type": "callout",
+      "text": "Ne mettez pas de octets BIOS, de contenus d'image, de jetons de compte, ou de chemins utilisateurs absolus privés dans un manifeste portable. Il doit décrire et vérifier les données contrôlées par le propriétaire, pas les intégrer."
+    },
+    {
+      "type": "heading",
+      "text": "Définissez les colonnes avant de collecter les entrées"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un format de ligne utilisé pour chaque image et composant fonctionnel.",
+        "SHA-256 et tailles en octets vérifiés.",
+        "Numéro de série du jeu, région, révision, et numéro de disque lorsque connus.",
+        "Vocabulaire des rôles de stockage tels que Actif, Préservation, Sauvegarde, Quarantaine.",
+        "Sections séparées pour les racines de bibliothèque, références BIOS, cartes, et exportations de profils."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Créer un inventaire reconstituable"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Attribuez à chaque racine planifiée un nom logique stable tel que Interne-Actif ou SD-Archive, et non un URI de périphérique.",
+        "2. Enregistrez le chemin de chaque image par rapport à cette racine logique.",
+        "3. Ajoutez le nombre exact d'octets, SHA-256, le numéro de série, la région, la révision et l'appartenance au jeu.",
+        "4. Pour les ensembles cue/bin, listez le cue et chaque piste référencée sous un identifiant d'ensemble unique.",
+        "5. Enregistrez la finalité de la racine, le système de fichiers, la capacité et la date de dernière vérification.",
+        "6. Listez les artefacts de carte mémoire et de sauvegarde de profil dans une section privée séparée sans les mélanger avec les scans de jeux.",
+        "7. Testez le manifeste en reconstruisant une petite racine dans un dossier de mise en scène vide et en comparant ses hachages.",
+        "8. Sur le périphérique de destination, créez de nouveaux dossiers, copiez les fichiers vérifiés et accordez chaque racine via le sélecteur de Android."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Le CSV est pratique pour le tri, tandis que JSON peut préserver les ensembles de disques imbriqués ; l’un ou l’autre est acceptable s’il reste lisible sans service propriétaire. Gardez une note de schéma lisible par l’humain à côté des modifications de fichier et de version plutôt que de réutiliser silencieusement les colonnes."
+    },
+    {
+      "type": "heading",
+      "text": "Répétition de restauration du manifeste"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un document est complet uniquement lorsqu'il peut guider une petite restauration réelle sans hypothèses cachées."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Chaque fichier actif correspond à une racine logique et un chemin relatif.",
+        "Les empreintes (hashes) et les octets identifient le contenu indépendamment du nom de fichier.",
+        "Les relations régionales et multi-disques sont explicites.",
+        "Aucun URI Android n'est considéré comme portable.",
+        "Un sous-ensemble mis en scène restaure, hache et démarre à froid depuis le manifeste."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Les conceptions de manifeste qui ne peuvent pas restaurer"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Seuls les chemins absolus sont stockés : un autre fournisseur ne peut pas les reproduire.",
+        "Les titres existent sans numéros de série ni hachages : les conflits régionaux restent ambigus.",
+        "Les fichiers cue sont listés sans pistes : les ensembles de CD sont incomplets.",
+        "Les copies actives et de sauvegarde n'ont pas de rôles : la déduplication peut supprimer la mauvaise."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Versionnez le manifeste au lieu d'écraser l'historique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si une migration révèle des champs manquants, conservez le manifeste précédent en lecture seule, ajoutez une nouvelle version du schéma et régénérez les lignes affectées à partir de sources vérifiées. Ne modifiez pas les hachages ni les identités pour faire apparaître une destination échouée comme cohérente."
+    },
+    {
+      "type": "heading",
+      "text": "Chiffrez l'enregistrement compagnon privé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un manifeste de bibliothèque de style public peut omettre les chemins sensibles et les détails du firmware. Stockez le compagnon privé contenant les emplacements de sauvegarde et les références BIOS dans une archive chiffrée contrôlée par l'utilisateur, puis vérifiez une extraction test séparément."
+    },
+    {
+      "type": "link",
+      "text": "Examinez le modèle de fournisseur de documents Android",
+      "url": "https://developer.android.com/guide/topics/providers/document-provider"
+    }
+  ]
+}

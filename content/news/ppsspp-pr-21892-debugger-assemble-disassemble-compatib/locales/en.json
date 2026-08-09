@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21892-debugger-assemble-disassemble-compatib",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP makes VFPU disassembly round-trip through its assembler",
+  "summary": "Instruction names, saturation notation, condition operands, and vector widths now match accepted assembler syntax, backed by a full game-text round-trip check.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21892: Improve debugger assemble/disassemble compatiblity",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "armips",
+    "disassembler",
+    "MIPS debugger"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21892": "Improve debugger assemble/disassemble compatiblity"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Readable text is not enough when a debugger can patch code"
+    },
+    {
+      "type": "paragraph",
+      "text": "A disassembler may print an understandable mnemonic that still cannot be parsed back into the same machine word. PPSSPP's debugger exposes assemble and disassemble operations through its WebSocket interface, so syntax differences become functional bugs. A renamed VFPU operation, missing .s suffix, incorrect destination width, or decorative brackets can cause assembly failure or silently select a different encoding."
+    },
+    {
+      "type": "heading",
+      "text": "The changes follow round-trip evidence across a game executable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21892 was developed with a script that disassembled every instruction in a game's .text section, assembled the resulting text, disassembled again, and compared outputs. PPSSPP also advances its armips dependency for VFPU parsing changes. The patch removes brackets from vpfx source parameters where inappropriate, adds explicit saturation ranges for vpfxd, and uses assembler-compatible scalar FPU comparison names such as c.eq.s."
+    },
+    {
+      "type": "heading",
+      "text": "Vector conversions need destination sizes derived from the opcode"
+    },
+    {
+      "type": "paragraph",
+      "text": "VFPU conversion mnemonics do not always preserve source width. New safe quarter, half, double, and quadruple vector-size helpers let the disassembler print the actual destination shape for vuc2ifs, vc2i, vi2uc, vi2c, vi2us, and vi2s families. Conditional move and branch forms print the immediate condition index directly rather than a CC[imm3] display token. Those details decide whether text maps back to the original bit fields."
+    },
+    {
+      "type": "heading",
+      "text": "A broader corpus should distinguish stable syntax from aliases"
+    },
+    {
+      "type": "paragraph",
+      "text": "Repeat the round-trip across commercial executables, homebrew, generated coverage for every VFPU encoding, invalid encodings, and boundary vector sizes. Test output through the UI and WebSocket APIs, then assemble with the exact bundled armips revision. Compare machine words, not only normalized strings, while allowing documented canonical aliases. Include saturation modes, NaNs in literal data, branch targets, and instructions whose destination shape is invalid so the debugger reports an error rather than inventing a register."
+    },
+    {
+      "type": "callout",
+      "text": "Debugger disassembly becomes dependable when every printed operand is a reversible description of the instruction bits, not merely a familiar label."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21892",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP nadaje mapom pamięci jądra bardziej zwięzły format savestate",
+  "summary": "BlockAllocator teraz zapisuje kompaktowy rekord na blok i gwarantuje wypełnione zerami tagi przy ich tworzeniu, zmniejszając pracę strukturalną dużych map pamięci.",
+  "heroAlt": "Dowód źródłowy z pull request PPSSPP #21990: Savestate: kompaktowa serializacja BlockAllocator (sekcja v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "pamięć jądra",
+    "serializacja",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: kompaktowa serializacja BlockAllocator (sekcja v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tysiąc bloków pomnożonych przez małe koszty serializacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serializuje powiązane listy bloków dla pamięci użytkownika, jądra i pamięci ulotnej. Uruchomiona gra może utrzymywać przy życiu około tysiąca bloków. Poprzedni układ otwierał nazwaną sekcję serializacji dla każdego bloku, dodając nagłówek i dane wielokrotnie. Wywoływał też strlen i memset przy każdym zapisie, aby wyczyścić nieużywane bajty w stałym buforze tagów, ponieważ pomocnik kopiujący tag nie inicjalizował pozostałego wypełnienia."
+    },
+    {
+      "type": "heading",
+      "text": "Nowy rekord zawiera tylko pola definiujące blok"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21990 dodaje BlockAllocator sekcję v2. Jego kompaktowa gałąź zapisuje start, rozmiar, zajęte i pełną tablicę tagów o stałej wielkości bez zagnieżdżonej sekcji bloków. Odczyt wykonuje tę samą sekwencję pól. Jest to celowa decyzja na poziomie BlockAllocator, a nie cicha zmiana w starej metodzie bloków, ponieważ formaty serializowane wymagają wyraźnej granicy, gdy układ bajtów się różni."
+    },
+    {
+      "type": "heading",
+      "text": "Higiena tagów przenosi się do punktu mutacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konstrukcja bloków i SetAllocated teraz czyszczą cały bufor etykiet przed kopiowaniem do niego tekstu. Dzięki temu wypełnienie jest deterministyczne przez cały czas życia obiektu i eliminuje powtarzające się operacje strlen oraz memset w gorącej ścieżce zapisu. Zapobiega to również dotarciu niezainicjalizowanej pamięci procesu do pliku stanu. Wersja pierwsza pozostaje dostępna do ładowania starszych stanów, podczas gdy nowo zapisane skompaktowane stany podlegają normalnej regule niezgodności wstecznej dla zwiększenia sekcji."
+    },
+    {
+      "type": "heading",
+      "text": "Topologia alokatora ma większe znaczenie niż sama wielkość pliku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Twórz stany z pustymi listami, jednym blokiem, tysiącami na przemian wolnych i zajętych bloków, etykietami o maksymalnej długości, ponownie używanymi blokami, pamięcią ulotną oraz alokacją zarówno z góry na dół, jak i z dołu do góry. Ładuj stare fixture w wersji v1 i nowe fixture w wersji v2, porównuj kolejność na liście i każdą granicę, a następnie alokuj i zwalniaj po przywróceniu, aby ujawnić uszkodzone odnośniki. Sprawdź wynik pod kątem deterministycznego wypełnienia etykiet i braku niezainicjalizowanych bajtów. Mierz wielkość i czas serializacji dopiero po przejściu testu równoważności strukturalnej i obsługi uszkodzeń."
+    },
+    {
+      "type": "callout",
+      "text": "Kompaktowa serializacja jest najbezpieczniejsza, gdy deterministyczny stan obiektu jest ustalany w momencie mutacji, a nie naprawiany za każdym razem, gdy zapisywany jest zapis."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Przeczytaj dyskusję inżynierską PPSSPP i zmiany w źródle"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP collega il rehashing delle texture alla sincronizzazione degli ospiti GPU",
+  "summary": "La validità delle texture ora segue i punti in cui il software PSP può osservare o riscrivere la memoria GPU, sostituendo un euristica basata sul conteggio dei frame con domini di sincronizzazione espliciti.",
+  "heroAlt": "Prove di origine dalla richiesta di pull PPSSPP #21808: Cache delle texture: Rehashing più intelligente delle texture",
+  "searchKeywords": [
+    "PPSSPP",
+    "cache delle texture",
+    "rehashing",
+    "sincronizzazione GE",
+    "memoria GPU"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Cache delle texture: Rehashing più intelligente delle texture"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'età del frame era solo un proxy per la visibilità della memoria"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una texture PSP memorizzata nella cache può rimanere invariata per centinaia di frame o essere riscritta più volte all'interno di un singolo frame. La strategia precedente di backoff delle texture utilizzava mini-hash, contatori di frame, suggerimenti di invalidazione e un programma esponenziale per decidere quando eseguire un hash completo. Questo riduceva il lavoro, ma i frame trascorsi non descrivono direttamente quando gli ospiti CPU e GPU si sono sincronizzati intorno alla memoria, quindi l'euristica poteva eseguire controlli non necessari o mantenere contenuti obsoleti."
+    },
+    {
+      "type": "heading",
+      "text": "I domini di sincronizzazione segnano i momenti in cui le assunzioni possono cambiare"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21808 incrementa textureSyncTimeDomain durante le attese GE, i cambiamenti dell'indirizzo di blocco, la sincronizzazione del disegno, le copie del framebuffer e i trasferimenti di blocchi rilevanti. Ogni voce di texture non affidabile registra l'ultimo dominio in cui è stata controllata. I flag espliciti HASH_RECHECK e CLUT_RECHECK continuano a forzare il lavoro nei casi di invalidazione noti, mentre le texture affidabili simili a font possono saltare il test del dominio. La decisione è ora collegata agli eventi di visibilità emulati piuttosto che a un timer."
+    },
+    {
+      "type": "heading",
+      "text": "La riprogettazione rimuove anche la contabilità che potrebbe derivare."
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch rimuove l'interruttore di backoff visibile all'utente, il programma mini-hash per voce, i flag di frequenza di modifica e i contatori mutabili della dimensione della cache. La pressione della cache viene ricavata sommando le voci attuali quando le decimazioni avvengono, scambiando calcoli occasionali con uno stato che non può diventare incoerente dopo un percorso di eliminazione insolito. Le texture video e le varianti di palette mantengono un comportamento dedicato perché i loro schemi di mutazione differiscono dalle immagini statiche ordinarie."
+    },
+    {
+      "type": "heading",
+      "text": "La correttezza richiede giochi che riscrivono le texture in ordini insoliti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testare la riproduzione video, effetti render-to-texture, giochi che modificano la memoria delle texture dallo CPU, molte varianti di CLUT, copie del framebuffer e font UI statici di lunga durata. Confrontare hash e screenshot prima e dopo ogni transizione di dominio di sincronizzazione. Misurare il numero totale di hash, il tempo CPU, la dimensione della cache e il comportamento di espulsione durante sessioni lunghe. I caricamenti di savestate, l'invalidazione della memoria e i cambiamenti del backend devono reimpostare o avanzare lo stato del dominio in modo che un ingresso non possa ereditare un falso senso di freschezza."
+    },
+    {
+      "type": "callout",
+      "text": "La domanda utile non è quante immagini una texture sia sopravvissuta, ma se la sincronizzazione visibile all'ospite abbia creato una nuova possibilità che la sua memoria cambi."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Leggere la discussione ingegneristica PPSSPP e le modifiche al codice sorgente"
+    }
+  ]
+}

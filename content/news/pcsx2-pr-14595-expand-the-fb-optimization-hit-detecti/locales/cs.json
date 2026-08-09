@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Backend Direct3D 12 od PCSX2 si pamatuje zásahy do framebufferu nad rámec aktuálního přechodu",
+  "summary": "Změny stavu barvy nebo hloubky mohou nyní rozšířit detekci zásahů pro budoucí vykreslení, čímž se snižuje pozdější přetížení renderovacího průchodu namísto vyřazení užitečného pokrytí, protože současný přechod byl nevyhnutelný.",
+  "heroAlt": "Důkazy ze zdroje z pull requestu #14595 PCSX2: GS/DX12: Rozšíření zpětného přenosu detekce zásahů optimalizace fb z GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "optimalizace framebufferu",
+    "renderovací průchod",
+    "detekce zásahů"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Rozšíření zpětného přenosu detekce zásahů optimalizace fb z GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nezbytný přechod může stále odhalit užitečné budoucí pokrytí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Optimalizace frame-bufferu sledují, kdy může pozdější vykreslování zůstat v rámci kompatibilního stavu render-pass. Cesta Direct3D 12 dříve považovala změnu stavu barvy nebo hloubky za důvod, proč nerozšiřovat detekci zásahu. To bylo příliš krátkozraké: současný přechod může být nutný, ale ovlivněná oblast stále říká PCSX2, že lze předejít následným změnám stavu."
+    },
+    {
+      "type": "heading",
+      "text": "Buď barva, nebo hloubka mohou rozšířit okno optimalizace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14595 přenáší širší chování, které již bylo prozkoumáno v OpenGL a Direct3D 11. V GSDevice12 může zásah z kteréhokoliv přílohy rozšířit sledovaný stav, i když některá z nich nyní spouští přechod. Optimalizace neodstraňuje požadovanou současnou bariéru nebo změnu render-pass; uchovává informace, které zlevňují další kompatibilní operaci."
+    },
+    {
+      "type": "heading",
+      "text": "Záplata závisí na správném řízení stavu render-pass"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdroj poznamenává, že správné změny render-pass z příbuzných prací jsou součástí testované základny. Tato závislost je důležitá, protože méně průchodů je výhodné pouze tehdy, pokud pravidla načítání, ukládání a přechodu příloh zůstávají platná. Příliš široký zásah může zachovat data, která měla být vyřešena nebo vyčištěna. Uvedený efekt je snížení počtu render-pass z jednocyfrového na dvojciferné číslo pro stejné hry použité při předchozí optimalizační práci."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření výkonu musí zahrnovat porovnání přesných snímků"
+    },
+    {
+      "type": "paragraph",
+      "text": "Přehrávejte referencovanou sadu dumpů na Direct3D 12, sbírejte čítače render-pass, bariér, kopírování a GPU-čas, a porovnávejte snímky proti neoptimalizované cestě. Sestavte případy, kde se mění pouze barva, pouze hloubka nebo obojí, následované vykresleními, která by měla nebo neměla znovu použít stav. Pokles počtu průchodů bez zachování identity pixelů je regresí. Testy také potřebují několik dodavatelů GPU, protože chování render-pass ve ovladačích a náklady přechodu se mohou lišit."
+    },
+    {
+      "type": "callout",
+      "text": "Optimalizace si pamatuje zásah pro to, co přijde dál; nikdy nepoužívá budoucí úspory k přeskočení přechodu vyžadovaného současným odběrem."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny PCSX2"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Repariere transparente PS2-Effekte, die als feste Oberflächen angezeigt werden",
+  "summary": "Verwende eine wiederholbare Glas-, Wasser-, Rauch- oder Menüüberlagerung, um fehlende Alpha-Blending-Effekte von Textur- oder Zeichenreihenfolgefehlern zu unterscheiden, erhöhe die Genauigkeit schrittweise und teste nicht zusammenhängende transluzente Schichten, bevor du die Überschreibung speicherst.",
+  "heroAlt": "PCSX2-Grafikvergleichsbild, das einen korrigierten Framebuffer-Effekt zeigt",
+  "searchKeywords": [
+    "PS2 Transparenz undurchsichtig",
+    "EmuCoreX Alpha-Blending",
+    "Festes Rauch-Fix",
+    "Wasser-Renderer-Problem",
+    "Transparenter HUD"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "accuracy": "Genauigkeit"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 Richtlinien für Blending-Kosten",
+    "pcsx2-performance": "PCSX2 genauer Blending-Indikator"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Klassifizieren Sie die feste Schicht, bevor Sie die Genauigkeit ändern"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein undurchsichtiger Effekt ist nur dann nützlicher Beweis, wenn sein beabsichtigtes Erscheinungsbild bekannt ist. Wähle ein Objekt, dessen Transparenz im normalen Spiel offensichtlich ist: Eine Glasscheibe sollte die dahinterliegende Geometrie zeigen, Rauch sollte weiche, geschichtete Kanten haben, und ein Menü-Overlay sollte die darunterliegende Szene bewahren. Erfasse die fehlerhafte Ausgabe in nativer Auflösung und überprüfe, ob die Ebene die richtige Form und Farbe hat. Korrekte Geometrie mit falscher Deckkraft deutet auf Blending hin; ein leeres Rechteck oder ein durcheinandergeratener Texturtext benötigt eine andere Untersuchung."
+    },
+    {
+      "type": "callout",
+      "text": "Maximale Mischgenauigkeit ist kein universelles Qualitätsvorgabe. Sie kann erhebliche GPU-Arbeiten hinzufügen und kann verbergen, welche niedrigere Stufe tatsächlich den Titel behebt."
+    },
+    {
+      "type": "heading",
+      "text": "Sperren Sie einen Transluzenten-Effekt-Test"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ein Kontrollpunkt, der innerhalb einer Minute denselben Effekt hat.",
+        "Eine Referenz aus Software-Rendering, Original-Hardware-Erfassung oder zuverlässiger titelspezifischer Dokumentation.",
+        "Native interne Auflösung mit deaktivierten Texturersatz und Shadern.",
+        "Leistungszähler oder eine wiederholbare Geschwindigkeitsmessung.",
+        "Ein sauberes Profil pro Spiel."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Finde die minimale Blending-Stufe"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Wiederholen Sie den Checkpoint auf dem Systemtreiber und erfassen Sie die undurchsichtige Ebene im selben Animationsmoment.",
+        "2. Vergleichen Sie Vulkan und OpenGL, wobei alle anderen Werte unverändert bleiben; notieren Sie, ob ein Pfad den Effekt bereits korrekt kompositiert.",
+        "3. Wenn beide fehlschlagen, erhalten Sie ein kurzes software-gerendertes Referenzbild und überprüfen, was durch die Schicht sichtbar bleiben sollte.",
+        "4. Kehren Sie zur ausgewählten Hardware-API zurück und erhöhen Sie die Mischgenauigkeit genau um eine Stufe.",
+        "5. Starten Sie den Checkpoint nach jeder Änderung kalt; bewerten Sie nicht mehrere Ebenen innerhalb einer fortgesetzten Sitzung.",
+        "6. Halten Sie an der ersten Stufe an, die die Durchsichtigkeit wiederherstellt, und messen Sie dann den effektintensiven Abschnitt, nachdem das Gerät warm ist.",
+        "7. Überprüfen Sie ein separates Alpha-Feature wie Nebel, Schatten, Partikel oder das Abdunkeln des Pausenmenüs.",
+        "8. Speichern Sie den Wert nur im Profil dieses Titels und dokumentieren Sie den Checkpoint, der ihn gerechtfertigt hat."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2-Effekte können von den Inhalten des vorherigen Framebuffers lesen, in sie schreiben und mit ihnen mischen. Der Host-GPU-Pfad kann diese Operationen mit unterschiedlichen Genauigkeits- und Kostenstufen annähern. Die kleinste funktionierende Stufe ist wertvoll, da sie die beobachtete Abhängigkeit erfüllt, ohne für jeden Draw unbegründetes Verhalten zu bezahlen. Eine Renderer-API, die den Durchgang auf der Basisebene festlegt, kann einer viel stärkeren Mischstufe in einer anderen API vorzuziehen sein."
+    },
+    {
+      "type": "heading",
+      "text": "Transparenzprüfkriterien"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Korrektur muss sowohl das Erscheinungsbild als auch die Kompositionsreihenfolge wiederherstellen."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Die Hintergrundgeometrie bleibt durch die vorgesehenen Teile des Effekts sichtbar.",
+        "Die Kanten der Ebene sind stabil und flackern nicht zwischen undurchsichtig und transparent.",
+        "Vordergrund-HUD-Elemente erscheinen weiterhin über dem Effekt.",
+        "Eine zweite transparente Szene verhält sich korrekt.",
+        "Die Geschwindigkeit der Warm-Session fällt nicht unter das spielbare Ziel des Titels."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Abbruchbedingungen während der Blendtests"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Die Form ist auf jeder Ebene beschädigt: Untersuchen Sie stattdessen Texture- oder Geometrieausgabe.",
+        "Nur höhere interne Auflösung bricht die Deckkraft: isolieren Sie einen nur für Hochskalierung spezifischen Pfad.",
+        "Menüs werden mit der Spielwelt transparent: Setzen Sie die letzte Ebene zurück und erfassen Sie die Regression.",
+        "Korrektheit kostet untragbare Geschwindigkeit: Behalten Sie die niedrigere Basislinie bei und dokumentieren Sie die Softwarewiedergabe nur als Referenz."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Entfernen Sie das isolierte Alpha-Experiment"
+    },
+    {
+      "type": "paragraph",
+      "text": "Setzen Sie das Blending wieder auf Automatisch, stellen Sie den früheren Renderer wieder her, schließen Sie die Emulationssitzung und prüfen Sie, ob das ursprüngliche undurchsichtige Symptom am aufgezeichneten Kontrollpunkt zurückkehrt. Dies bestätigt die geänderte Variable, bevor Sie das Testprofil archivieren oder ersetzen."
+    },
+    {
+      "type": "heading",
+      "text": "Die Anzeigehelligkeit ist nicht alpha-genau"
+    },
+    {
+      "type": "paragraph",
+      "text": "OLED-Schwarzpegel, HDR-Konvertierung, Fernsehbereich und Kontrast für Barrierefreiheit können eine durchscheinende Ebene dunkler erscheinen lassen, ändern jedoch nicht ihre Zeichenreihenfolge. Überprüfen Sie das Framebuffer-Ergebnis in einem Screenshot, bevor Sie die externe Anzeigekette anpassen."
+    },
+    {
+      "type": "link",
+      "text": "Überprüfen Sie die Hardwareanforderungen von PCSX2",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

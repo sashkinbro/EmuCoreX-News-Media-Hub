@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin deriva la dimensione della memoria del GameCube dal disco che la richiede",
+  "summary": "Il campo simulated-memory di bi2.bin ora seleziona MEM1 nei limiti dell'hardware, mentre le sovrascritture manuali rimangono disponibili per esperimenti deliberati.",
+  "heroAlt": "Evidenza di origine dalla richiesta di pull Dolphin #14665: Core: Regolare automaticamente la dimensione della memoria emulata.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "Devkit GameCube",
+    "dimensione della memoria"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Core: Regolare automaticamente la dimensione della memoria emulata."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'intestazione del disco conteneva già un contratto di sviluppo della memoria"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il file GameCube bi2.bin include una dimensione di memoria simulata all'offset 0x04. Su hardware di sviluppo con più RAM, Apploader usava quel valore per imitare una macchina target più piccola durante i test. Dolphin in passato esponeva la dimensione della memoria principalmente come un override manuale con un forte avvertimento perché valori arbitrari rompevano molti giochi. Questo lasciava le immagini dei dischi progettate intorno al proprio header incapaci di richiedere automaticamente la capacità appropriata."
+    },
+    {
+      "type": "heading",
+      "text": "Ora i metadata viaggiano da VolumeDisc a MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14665 legge il campo come un intero a 32 bit scambiato dalla partizione del gioco, lo memorizza con i metadata della partita in esecuzione, lo copia in Core::System durante l'inizializzazione e lo espone alla mappatura della memoria. Il risultato automatico è limitato ad almeno la dimensione retail di 24 MiB MEM1 e al massimo 64 MiB, il massimo supportato dal controller di memoria di Flipper. Le fonti WAD e non-disco riportano zero."
+    },
+    {
+      "type": "heading",
+      "text": "Gli override espliciti prevalgono ancora, ma gli utenti ordinari non hanno bisogno di fare supposizioni"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando l'override manuale della RAM è abilitato, i suoi valori configurati continuano a controllare la mappa. Altrimenti, un'intestazione sopra la capacità retail può espandere MEM1 e i record di comportamento FIFO correlati che registrano tale fatto. Un valore sotto il retail non riduce la console al di sotto di quanto il software rilasciato si aspetta. La descrizione delle impostazioni ora spiega che Dolphin normalmente determina il valore dalle informazioni di gioco, separando il comportamento legittimo guidato dai metadata dalla sperimentazione manuale rischiosa."
+    },
+    {
+      "type": "heading",
+      "text": "I test richiedono intestazioni reali, valori malformati e consumatori di sottosistema"
+    },
+    {
+      "type": "paragraph",
+      "text": "Costruire fixture del disco con zero, 24 MiB, valori intermedi, 48 MiB, 64 MiB e valori oltre il limite del controller. Verificare la decodifica endian, il comportamento di clamp, gli intervalli di indirizzi MEM1, il comportamento del rilascio IOS, le analisi e le registrazioni FIFO. Cambiare gioco senza riavviare per garantire che i metadata non possano trapelare tra i sistemi. Confermare che gli override manuali hanno la precedenza e che l'avvio WAD rimane delle dimensioni retail. Infine, eseguire immagini di sviluppo che utilizzano realmente memoria extra e giochi retail i cui header contengono valori insoliti."
+    },
+    {
+      "type": "callout",
+      "text": "Il valore predefinito sicuro non è più un numero universale; è il pavimento del dettaglio più una richiesta limitata presa dai metadati di sviluppo del disco stesso."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Leggi la discussione ingegneristica Dolphin e le modifiche al codice sorgente"
+    }
+  ]
+}

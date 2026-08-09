@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 elimina el registro de búfer de dibujo cuando ningún lote puede usarlo",
+  "summary": "Los dibujos deshabilitados o que no se pueden almacenar inmediatamente ya no copian ni restauran los entornos GS, mientras que las referencias locales reemplazan el tráfico de punteros agregado a rutas de renderizado crítico.",
+  "heroAlt": "Evidencia de fuente del pull request #14729 de PCSX2: GS: Optimizar el almacenamiento en búfer de dibujo y la lógica de punteros",
+  "searchKeywords": [
+    "PCSX2",
+    "almacenamiento en búfer de dibujo",
+    "hilo GS",
+    "ruta crítica",
+    "rendimiento"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Optimizar el almacenamiento en búfer de dibujo y la lógica de punteros"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una optimización deshabilitada aún estaba pagando su costo de configuración"
+    },
+    {
+      "type": "paragraph",
+      "text": "El almacenamiento en búfer de dibujo puede combinar trabajos compatibles, pero PCSX2 puede desactivarlo globalmente o descubrir que el siguiente dibujo no se puede almacenar en búfer. La implementación aún respaldaba el entorno de dibujo y lo restauraba durante los vaciados, aunque ningún lote futuro pudiera consumir esa instantánea. En una carga de trabajo con mucha presencia de GS, las copias repetidas convierten una característica inactiva en una sobrecarga medible de CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Las copias del entorno ahora siguen la elegibilidad real para el almacenamiento en búfer"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14729 limita las operaciones de respaldo y restauración a rutas donde el almacenamiento en búfer de dibujo puede retener el trabajo posterior. Si el almacenamiento en búfer está desactivado o la compatibilidad falla de inmediato, el motor de renderizado sigue usando el contexto actual sin generar una copia de recuperación. Esto preserva el comportamiento funcional de vaciado mientras elimina el tráfico de estado cuyo único propósito era deshacer un lote que nunca existió."
+    },
+    {
+      "type": "heading",
+      "text": "Las referencias locales reemplazan la búsqueda de punteros en las rutas más calientes"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación de almacenamiento en búfer anterior introdujo punteros que se usaban en todo el procesamiento de dibujo, de modo que el código podía cambiar entre el estado en vivo y el estado en búfer. Cuando esa indirecta ya no es necesaria, el parche utiliza referencias locales. Las referencias permiten que el compilador mantenga el estado al que se accede con frecuencia más cerca de la operación y reduzca las cargas repetidas de punteros, sin cambiar la propiedad o el tiempo de vida del contexto GS subyacente."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de rendimiento deben mantener el estado de almacenamiento en búfer visible."
+    },
+    {
+      "type": "paragraph",
+      "text": "Usa juegos pesados y volcados de GS para comparar el tiempo máximo de hilos FPS, GS y los conteos de copiado de entorno con el almacenamiento en búfer habilitado, deshabilitado y frecuentemente rechazado. Se espera que los CPUs más débiles sean los beneficiarios. Todavía se requiere la comparación de cuadros sin pérdidas porque una copia de seguridad omitida en un límite de compatibilidad podría filtrar el estado modificado en el siguiente dibujo. Perfila las causas representativas de vaciado y verifica que la mejora no sea solo un caso artificial de ejecución."
+    },
+    {
+      "type": "callout",
+      "text": "La optimización elimina trabajo de rutas que no pueden beneficiarse del almacenamiento en búfer; no debilita la restauración de estado requerida por un lote realmente almacenado en búfer."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de fuente"
+    }
+  ]
+}

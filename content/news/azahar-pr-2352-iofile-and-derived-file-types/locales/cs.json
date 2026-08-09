@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar přeměňuje speciální soubory na kompozitní zásobník úrovní úložiště",
+  "summary": "Nový řetězec IOFileBase umožňuje, aby se omezované pohledy, komprese a šifrování navzájem překrývaly, a nahrazuje dědičnost, která se stala křehkou, když muselo spolupracovat více typů speciálních souborů.",
+  "heroAlt": "Zjistit zdrojové důkazy z žádosti o sloučení Azahar č. 2352: jádro: Refaktor IOFile a odvozené typy souborů",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Úložiště",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "jádro: Refaktor IOFile a odvozené typy souborů"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dědičnost přestala být škálovatelná, když jeden soubor potřeboval několik chování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar původně odvozoval komprimované a šifrované soubory přímo od IOFile. Každá speciální třída mohla přepsat základní operace, ale jejich kombinace vyžadovala triky, protože dědičnost v C++ popisuje, co objekt je, nikoli pořadovaný řetězec transformací. Přidání dalšího typu souboru pro nadcházející práci by znásobilo tyto kombinace a způsobilo, že posuny, serializace a chyby by závisely na tom, která podtřída se právě nachází nahoře."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase deleguje prostřednictvím vlastněné dětské vrstvy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2352 zavádí abstraktní IOFileBase s kompletní smlouvou o přístupu a unique_ptr child_file. Vrstva přepisuje pouze operace, které transformuje, a jinak deleguje na své dítě. Spodní vrstva je IOFile nebo NullIOFile. Komprimovaný CCI RomFS může být proto SubIOFile pro RomFS, další SubIOFile pro NCCH uvnitř NCSD, Z3DSReadIOFile pro dekompresi a IOFile pro přístup z hostitele."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile a NullIOFile zajišťují, že rozsahy a selhání jsou explicitní objekty"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile zpřístupňuje pevné okno a převádí operace seek, size, read a write, aniž by každý volající musel opakovat kontrolu offsetů nebo hranic. NCSD a NCCH parsing jej již používají. NullIOFile implementuje stejné rozhraní, ale vrací chybové hodnoty, což umožňuje, aby neúspěšná konstrukce a serializace zachovala platný objektový graf místo rozptylování kontrol nullptr skrze všechny vrstvy."
+    },
+    {
+      "type": "heading",
+      "text": "Šifrované soubory získávají identitu, zatímco starší data zůstávají podporována."
+    },
+    {
+      "type": "paragraph",
+      "text": "Nový výstup CryptoIOFile začíná hlavičkou AZCR obsahující verzi, velikost hlavičky a hash odvozený z klíče a nonce. Azahar dokáže identifikovat formát a odmítnout nesprávný klíč, aniž by hádal, zda dešifrované bajty vypadají věrohodně. Starší soubory bez hlavičky se stále otevírají přes logiku kompatibility. Testy by měly složit všechny vrstvy, hledat napříč limity podsouborů, serializovat neúspěšné objekty, ověřovat nesprávné klíče a znovu otevírat stará šifrovaná aktiva bez jejich přepisování."
+    },
+    {
+      "type": "callout",
+      "text": "Architektonická změna je kompozice: každá vrstva souboru má jednu odpovědnost a zbytek předává dále stejným rozhraním."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu Azahar"
+    }
+  ]
+}

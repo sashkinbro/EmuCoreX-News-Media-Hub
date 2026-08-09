@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation keeps post-processing chain length consistent after removal and clear",
+  "summary": "Corrected StageCount persistence distinguishes a shortened chain, an explicitly empty base chain, and an empty per-game override that should be removed.",
+  "heroAlt": "Source evidence from DuckStation pull request #3698: PostProcessing: Correctly update `StageCount` when removing/clearing stages",
+  "searchKeywords": [
+    "DuckStation",
+    "post-processing",
+    "StageCount",
+    "per-game settings",
+    "shader removal"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: Correctly update `StageCount` when removing/clearing stages"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount is both a length and an override marker"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation stores post-processing stages in settings together with StageCount. In base settings, zero explicitly means no stages. In a per-game layer, deleting the field can mean the game no longer overrides the global chain. Treating those cases alike causes stale stages or prevents inheritance. A removal that leaves two stages must write two; a removal that leaves none may need to erase the per-game field."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage now deletes only the truly empty per-game override"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3698 calculates new_stage_count and keeps that value when stages remain. The field is removed only when the settings interface is not the base layer and the count reaches zero, allowing an empty game-specific override to disappear. Previously the branch could wipe StageCount after any per-game removal, losing the remaining chain's declared length."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages corrects the opposite base-layer branch"
+    },
+    {
+      "type": "paragraph",
+      "text": "The clear path had its base-versus-game condition reversed. The corrected code writes StageCount = 0 for base settings, where an explicit empty global chain is meaningful, and removes the per-game value so the global configuration can flow through. This symmetry is the core of the fix: shorten, clear globally, and clear an override are three distinct persistence operations."
+    },
+    {
+      "type": "heading",
+      "text": "Round-trip tests should cover every layer and remaining count"
+    },
+    {
+      "type": "paragraph",
+      "text": "Create a three-stage global chain and a different three-stage per-game chain. Remove the middle per-game stage, restart, and verify the two survivors keep order and parameters. Remove the last two and confirm the global chain returns. Then clear the base chain and confirm it remains empty after restart. Repeat through Qt and FullscreenUI, inspect StageCount after each operation, and test adding a stage immediately after clear to catch stale indexed fields."
+    },
+    {
+      "type": "callout",
+      "text": "A chain length of zero is not always stored the same way: base settings record emptiness, while an empty per-game layer should stop overriding the base."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

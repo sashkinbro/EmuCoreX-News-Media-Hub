@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP gibt Kernel-Speicherkarten ein schlankeres savestate-Format",
+  "summary": "BlockAllocator schreibt nun einen kompakten Eintrag pro Block und garantiert nullgefüllte Tags, wenn sie erstellt werden, wodurch die strukturelle Arbeit bei großen Speicherkarten reduziert wird.",
+  "heroAlt": "Quellenbeweis aus dem PPSSPP Pull Request #21990: Savestate: kompakte BlockAllocator-Serialisierung (Abschnitt v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "Kernel-Speicher",
+    "Serialisierung",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: kompakte BlockAllocator-Serialisierung (Abschnitt v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tausend Blöcke multiplizieren kleine Serialisierungskosten"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serialisiert verknüpfte Blocklisten für Benutzer-, Kernel- und flüchtigen Speicher. Ein laufendes Spiel kann ungefähr tausend Blöcke am Leben erhalten. Das vorherige Layout öffnete für jeden Block eine benannte Serialisierungs-Sektion, was wiederholt Header-Arbeiten und Payload hinzufügte. Es rief auch bei jedem Speichern strlen und memset auf, um ungenutzte Bytes in einem festen Tag-Puffer zu löschen, weil der Helfer, der ein Tag kopierte, das verbleibende Padding nicht initialisierte."
+    },
+    {
+      "type": "heading",
+      "text": "Der neue Datensatz enthält nur Felder, die einen Block definieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #21990 fügt BlockAllocator Sektion v2 hinzu. Sein kompakter Zweig schreibt Start, Größe, belegt und das vollständige Tag-Array fester Größe direkt, ohne verschachtelte Blocksektion. Das Lesen erfolgt in derselben Feldfolge. Dies ist bewusst eine BlockAllocator-Ebene Wahl und keine stille Änderung an der alten Blockmethode, da serialisierte Formate eine explizite Grenze benötigen, wann immer sich das Byte-Layout unterscheidet."
+    },
+    {
+      "type": "heading",
+      "text": "Tag-Hygiene verschiebt sich zum Punkt der Mutation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Blockkonstruktion und SetAllocated leeren nun den gesamten Tag-Puffer, bevor Text hineinkopiert wird. Das macht die Auffüllung über die gesamte Lebensdauer des Objekts deterministisch und entfernt wiederholte strlen- und memset-Arbeiten aus dem heißen Speicherpfad. Es verhindert auch, dass uninitialisierter Prozessspeicher in eine Zustandsdatei gelangt. Version eins bleibt zum Laden älterer Zustände verfügbar, während neu geschriebene kompakte Zustände die normale Vorwärts-Inkompatibilitätsregel für eine Abschnittserhöhung befolgen."
+    },
+    {
+      "type": "heading",
+      "text": "Die Topologie des Allokators ist wichtiger als die Dateigröße allein"
+    },
+    {
+      "type": "paragraph",
+      "text": "Baue Zustände mit leeren Listen, einem Block, tausenden abwechselnd freier und belegter Blöcke, Tags mit maximaler Länge, wiederverwendeten Blöcken, flüchtigem Speicher und sowohl Top-down- als auch Bottom-up-Allocation. Lade alte v1-Fixtures und neue v2-Fixtures, vergleiche die Listenreihenfolge und jede Grenze, dann allociere und gib nach der Wiederherstellung frei, um fehlerhafte Verbindungen aufzudecken. Prüfe die Ausgabe auf deterministische Tag-Auffüllung und keine uninitialisierten Bytes. Benchmark-Größe und Serialisierungszeit nur nach Bestehen des strukturellen Vergleichs und der Überprüfung auf Datenkorruption."
+    },
+    {
+      "type": "callout",
+      "text": "Kompakte Serialisierung ist am sichersten, wenn der deterministische Objektzustand zum Zeitpunkt der Mutation festgelegt wird und nicht jedes Mal repariert wird, wenn eine Speicherung geschrieben wird."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Lesen Sie die PPSSPP-Technikdiskussion und Quelländerungen"
+    }
+  ]
+}

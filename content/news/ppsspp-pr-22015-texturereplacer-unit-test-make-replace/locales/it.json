@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22015-texturereplacer-unit-test-make-replace",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP fornisce alla sostituzione delle texture un ambiente di test autonomo",
+  "summary": "Un pacchetto sintetico e un punto di ingresso di test esplicito esercitano hash, intervalli, filtraggio, mipmap e voci mancanti senza avviare il renderer dell'emulatore.",
+  "heroAlt": "Prova di origine dal pull request PPSSPP #22015: Aggiungi test unitario TextureReplacer; rendi il sostituto testabile in modo autonomo",
+  "searchKeywords": [
+    "PPSSPP",
+    "sostituzione delle texture",
+    "test unitario",
+    "textures.ini",
+    "mipmap"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Strumenti",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22015": "Aggiungi test unitario TextureReplacer; rendi il sostituto testabile in modo autonomo"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I pacchetti di texture combinano diverse regole che sono facili da regressare"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una sostituzione non viene selezionata solo dal nome del file. PPSSPP legge textures.ini, interpreta hash inventati o calcolati, applica intervalli di hash, sceglie i livelli mip, rispetta le direttive di filtraggio e gestisce voci mancanti o ignorate. Testare solo avviando un gioco fa sì che i fallimenti dipendano dal fatto che un titolo raggiunga il draw corretto, dal supporto del formato del backend, dallo stato del filesystem e dal confronto umano delle immagini. Questo è lento e lascia molti casi negativi non coperti."
+    },
+    {
+      "type": "heading",
+      "text": "Il sostitutore può ora essere costruito al di fuori del renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #22015 consente un DrawContext nullo. In quella modalità, i formati compressi GPU semplicemente riportano non supportati invece di dereferenziare un backend. LoadPackForTesting accetta una directory di base, abilita la sostituzione, disabilita il salvataggio e analizza direttamente quel pacchetto invece di consultare la configurazione globale o l'ID di un gioco in esecuzione. Le funzioni di lookup e filtraggio utilizzano lo stato replaceEnabled dell'istanza, il che rende il comportamento dell'oggetto isolato deterministico."
+    },
+    {
+      "type": "heading",
+      "text": "Un pacchetto sintetico fornisce prove leggibili e controllate"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il nuovo fixture TestTextureReplacer crea textures.ini con hash inventati riconoscibili e file PNG reali. Le asserzioni coprono lookup diretto, decisioni di filtro, intervalli di hash, livelli mip, oltre a record mancanti e ignorati. Poiché ogni file è fatto apposta, un'asserzione fallita può indicare esattamente la regola che è stata violata. Il test è integrato in CMake e nelle sorgenti dei test unitari Android, quindi le differenze di build tra piattaforme sono meno probabili che nascondano il comportamento del parser."
+    },
+    {
+      "type": "heading",
+      "text": "La copertura futura dovrebbe includere pacchetti malformati e sensibili alla piattaforma"
+    },
+    {
+      "type": "paragraph",
+      "text": "Estendere i fixture con chiavi duplicate, hash non validi, intervalli sovrapposti, livelli mip assenti, percorsi con lettere maiuscole e minuscole miste, nomi Unicode, separatori di percorso, formati compressi non supportati, dati PNG malformati e ricariche della configurazione. Eseguire su desktop e filesystem Android e assicurarsi che le directory temporanee siano isolate. Le asserzioni dovrebbero verificare sia la sostituzione scelta che il motivo per cui un candidato è stato rifiutato. Un DrawContext null deve rimanere una capacità di test esplicita, e non far ignorare accidentalmente al codice di produzione il supporto del formato."
+    },
+    {
+      "type": "callout",
+      "text": "Una pipeline di sostituzione diventa manutenibile quando le regole di pacchetto possono essere verificate con un piccolo filesystem deterministico invece che con una sessione di gioco completa."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22015",
+      "label": "Leggi la discussione ingegneristica e le modifiche al codice sorgente PPSSPP"
+    }
+  ]
+}

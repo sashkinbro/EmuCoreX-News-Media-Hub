@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 detiene la asignación fallida de texturas ImGui antes de que se convierta en un fallo",
+  "summary": "Las rutas de creación, carga y destrucción ahora tratan la ausencia de BackendUserData como un estado real, evitando que un fallo de asignación se traslade a operaciones con manejadores nativos y mapas.",
+  "heroAlt": "Evidencia de fuente del pull request #14655 de PCSX2: GS: Mejor manejo de los riesgos de creación de texturas imgui.",
+  "searchKeywords": [
+    "PCSX2",
+    "Textura ImGui",
+    "fallo de asignación",
+    "GSTexture",
+    "fallo"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Mejor manejo de los riesgos de creación de texturas imgui."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui puede solicitar una textura cuando el GPU no puede proporcionar una"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los atlas de fuentes y otras imágenes de la interfaz pasan por los estados WantCreate, WantUpdates y WantDestroy. La asignación de texturas puede fallar debido a la pérdida del dispositivo, presión de recursos, dimensiones no soportadas u otro error del backend. La antigua rama de creación informaba del fallo pero luego continuaba como si existiera un GSTexture, solicitando su identificador nativo y pasando al código de carga. Por lo tanto, el diagnóstico precedía a una desreferencia nula en lugar de contenerla."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate solo continúa con datos de backend válidos"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14655 envuelve CreateTexture en una rama de puntero exitoso. Solo una textura real recibe un ImTextureID y BackendUserData antes de que el código continúe con la carga a tamaño completo. En caso de fallo, PCSX2 emite pxFailRel y sale del estado. WantUpdates verifica por separado BackendUserData antes de realizar operaciones de actualización por mapa o fila por fila, por lo que una creación fallida previamente no puede confundirse con un recurso inicializado."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy también acepta que la creación puede que nunca se haya completado"
+    },
+    {
+      "type": "paragraph",
+      "text": "El estado de destrucción ahora recicla e invalida la textura solo cuando BackendUserData no es nulo. Eso importa cuando ImGui descarta una solicitud de atlas después de un fallo de asignación o cuando una transición de estado compite con la lógica de recuperación. El comportamiento de reciclaje en sí no cambia para texturas válidas, incluido el reuso de atlas del mismo tamaño; el parche hace que el grafo de vida útil incluya una rama de recursos ausentes desde el inicio hasta el final."
+    },
+    {
+      "type": "heading",
+      "text": "La inyección de fallos es más fuerte que esperar al problema #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduce el volcado de bloqueo vinculado si es posible, luego añade un gancho de backend controlado que haga que la siguiente CreateTexture de ImGui devuelva nulo. El OSD y la representación de fuentes deberían informar el fallo sin bloquearse, sin subir píxeles ni reciclar un puntero inválido. Restaura la asignación y confirma que un atlas posterior puede ser creado y mostrado. Repite el fallo durante cambio de tamaño, expulsión de fuentes, reinicio del dispositivo y apagado en todos los backends de hardware, y ejecuta las pruebas normales de OSD para asegurar que la ruta protegida no bloquee actualizaciones válidas."
+    },
+    {
+      "type": "callout",
+      "text": "La corrección completa la máquina de estados de texturas: la falla de asignación es una rama terminal para esa solicitud, no una advertencia seguida del código normal de carga."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K verschiebt HLE Argument-Dispatch von der Laufzeit in Templates",
+  "summary": "Compile-Zeit ARM Argument-Layouts und einfache Funktionszeiger reduzieren den pro-Import Bridging-Aufwand, während die Skalare, Varargs und Rückgabewert-Konvertierung explizit bleiben.",
+  "heroAlt": "Quellnachweis aus Vita3K Pull Request #3881: module/bridge: HLE Compile-Zeit Dispatch, zusätzliche Zeiger-Umleitung vermeiden",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE Brücke",
+    "ARM ABI",
+    "Templates",
+    "Funktions-Dispatch"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge: HLE Compile-Zeit Dispatch, zusätzliche Zeiger-Umleitung vermeiden"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jeder Gast-Import überschreitet die gleiche ABI-Übersetzungsschnittstelle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Vita-Funktionsaufruf kommt mit Argumenten an, die über die ARM-Generalregister, Gleitkommaregister und den Stack verteilt sind. Die Vita3K-HLE-Brücke muss sie lokalisieren, Gastzeiger und -repräsentationen in Host-Typen umwandeln, den richtigen Export aufrufen und einen Rückgabewert zurückschreiben. Die ältere Brücke erstellte den Layout-Zustand und erfasste einen Exportzeiger und Namen in std::function, wobei allgemeine Laufzeitmaschinen hinzugefügt wurden, die auf einem Pfad agieren, der nahezu jeder emulierten Serviceaufruf verwendet."
+    },
+    {
+      "type": "heading",
+      "text": "Die Exportfunktion wird Teil des Brückentyps"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #3881 führt make_bridge mit ExportFn als non-type Template-Parameter ein. lay_out läuft als constexpr für das Argumentpaket des Exports und erzeugt feste ArgLayout-Einträge und varargs-Zustand. Eine generierte nicht-erfassende Funktion liest jedes Argument über read_bridged_arg, ruft ExportFn direkt auf und schreibt das Ergebnis bedingt, es sei denn, der Rückgabewert ist void. ImportFn kann daher ein einfacher Funktionszeiger sein."
+    },
+    {
+      "type": "heading",
+      "text": "Brückentypen behalten den Gast-zu-Host-Vertrag bei"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Layout-Zeitkompilierung bedeutet nicht, Register in beliebige C++-Objekte umzudeuten. BridgeTypes wählt die ARM-Darstellung jedes Arguments aus und konvertiert sie bei Bedarf mithilfe emulierten Speichers. module::vargs trägt seinen berechneten Zustand mit sich, anstatt vorzutäuschen, ein einzelnes Skalarargument zu sein. Tracy-Bereiche erhalten weiterhin den Exportnamen über statischen Speicher, wodurch die per-Funktion-Profilierung erhalten bleibt und die vorherige Closure-Capture entfernt wird."
+    },
+    {
+      "type": "heading",
+      "text": "Die Einhaltung der ABI erfordert Tests zur Kompilier- und Laufzeitanzeige"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instanziiere Bridges für null Argumente, vier und fünf Ganzzahlen, 64-Bit-ausgerichtete Werte, Fließkommazahlen, Zeiger, Strukturen, die durch Bridge-Typen dargestellt werden, varargs, Rückgaben von void und Fehlercodes. Vergleiche Register- und Stapelspeicherorte mit der Vita-ABI und der vorherigen Implementierung. Kompiliere jedes generierte Modul auf unterstützten Compilern, untersuche die Codegröße und den Aufrufverlauf und messe die Leistung bei importsintensiven Workloads. Ungültige oder nicht unterstützte Typen sollten während der Kompilierung mit einer klaren Diagnose fehlschlagen, anstatt stillschweigend ein falsches Layout auszuwählen."
+    },
+    {
+      "type": "callout",
+      "text": "Die Optimierung funktioniert, weil die Exportsignatur bereits die ABI-Informationen enthält; Templates können diese Informationen in eine feste Schnittstelle umwandeln, bevor die Emulation beginnt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Lesen Sie die Vita3K Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

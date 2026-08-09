@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP dokumentiert bit-exakte PSP-Regeln für VFPU Multiplikation und Division",
+  "summary": "Referenz-Hilfen schreiben Denormal, Unterlauf, Rundung, Vorzeichen, Unendlichkeit und NaN-Verhalten aus, sodass Host-JIT-Pfade gegen die tatsächlichen Ergebnisse der PSP gemessen werden können.",
+  "heroAlt": "Quellnachweise aus PPSSPP Pull Request #21815: Implementieren (hoffentlich) bitweise-exakte vmul/vdiv",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "Gleitkomma",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implementieren (hoffentlich) bitweise-exakte vmul/vdiv"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 lässt immer noch Platz für hardware-spezifisches Randverhalten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gewöhnliche Float-Multiplikation und -Division wirken portabel, bis die Eingaben in den Bereich von Denormalzahlen, Unterlauf, Unendlichkeit oder NaN gelangen. Der PSP VFPU verhält sich wie float32 Rundung-zum-Nächsten-gerade mit Denormalzahlen, die als Null behandelt werden, und winzigen Ausgaben, die auf Null gesetzt werden, sowie einer spezifischen NaN-Nutzlast- und Vorzeichenregel. Host x86, ARM und Compiler-Einstellungen können genau an diesen Grenzen unterschiedlich sein, was selten zu Diskrepanzen in der Spiel-Logik oder Grafik führen kann."
+    },
+    {
+      "type": "heading",
+      "text": "Die Referenz arbeitet mit den rohen Bits vor und nach der arithmetischen Operation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #21815 fügt explizite vfpu_mul- und vfpu_div-Hilfsmethoden für die Referenz hinzu. Sie lesen die Operanden als uint32-Werte, fassen subnormale Eingaben zu null zusammen, führen die Arithmetik durch und inspizieren die Ergebnisbits. Ausgaben an oder unterhalb der gemessenen Flush-Schwelle werden in doppelter Genauigkeit neu berechnet, um zu entscheiden, ob das kleinste normale Ergebnis beibehalten oder null zurückgegeben wird. Jede NaN wird auf die VFPU-spezifische 0x7F800001-Nutzlast mit vom Operanden abgeleitetem Vorzeichen kanonisiert."
+    },
+    {
+      "type": "heading",
+      "text": "Die Schwelle erfasst eine Grenze, die Host-FTZ-Flags möglicherweise nicht teilen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der beobachtete Flush-Grenzwert liegt bei FLT_MIN minus einem Viertel von FLT_TRUE_MIN. Das scheint mit der getesteten x86 Flush-to-Zero-Grenze übereinzustimmen, wird jedoch nicht angenommen, dass es mit jedem ARM-Host übereinstimmt. Das Kodieren des Verhaltens in einer lesbaren Referenz liefert JIT-Backends eine Wahrheitsquelle, selbst wenn ihre schnellste Implementierung Kontrollregister-Modi, Vektoroperationen oder Korrekturzweige verwendet. Die Hilfsmittel sind Referenzmaterial und nicht die Behauptung, dass skalare C++-Implementierungen der endgültige heiße Pfad sind."
+    },
+    {
+      "type": "heading",
+      "text": "Exhaustive Grenzvektoren sollten die Backend-Konformität vorantreiben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testen Sie positive und negative Null, jede Subnormal-Klasse, Werte in der Nähe der Flush-Schwelle, die größten endlichen Zahlen, Unendlichkeiten, stille und signalgebende NaNs sowie Kombinationen von Operandenzeichen. Vergleichen Sie Interpreter, x86, ARM64 und andere JIT-Ergebnisse Bit für Bit für vmul und vdiv, nicht mit einem Epsilon. Randomisierte Differenztests sollten Exponentenpaare in der Nähe von Überlauf und Unterlauf konzentrieren. Der Compiler-Fast-Math-Modus darf die Kanonisierung nicht löschen, und verschmolzene Operationen müssen separat überprüft werden, da sie unterschiedliche Rundungspunkte haben."
+    },
+    {
+      "type": "callout",
+      "text": "Bit-genaue Emulation beginnt dort, wo ungefähre numerische Gleichheit aufhört: Vorzeichen-null, ein Underflow-Bit oder eine NaN-Nutzlast können beobachtbarer Gastsystemzustand sein."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Lesen Sie die PPSSPP Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

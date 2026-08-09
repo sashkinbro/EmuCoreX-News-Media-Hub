@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 为必须保持点过滤的纹理添加了着色器各向异性",
+  "summary": "Direct3D 回退在着色器中执行各向异性采样，避免在某些 AMD 驱动上被强制线性过滤或拒绝非多级渐远纹理的硬件路径。",
+  "heroAlt": "PCSX2 拉取请求 #14188 的来源证据：GS/HW：添加基于着色器的各向异性过滤",
+  "searchKeywords": [
+    "PCSX2",
+    "各向异性过滤",
+    "点过滤",
+    "Direct3D 12",
+    "alpha 测试"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW：添加基于着色器的各向异性过滤"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "硬件各向异性可能违反纹理所需的过滤模式"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D 在 PCSX2 的路径中没有提供各向异性过滤与点过滤所需的组合，因此之前启用 AF 会将受影响的纹理推向线性采样。线性插值在 alpha 测试之前混合邻近颜色；因此，一个透明的纹素可能引入游戏从未打算显示的颜色。这个结果在斜坡的 alpha 测试表面和纹理边缘最为明显。"
+    },
+    {
+      "type": "heading",
+      "text": "着色器路径显式控制方向采样"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14188 为 Direct3D 渲染器添加了一个基于软件的着色器各向异性过滤器。由于 PCSX2 自行选择和组合采样，它可以在覆盖斜面创建的拉长足迹时保留点状颜色决策。这个设置与普通各向异性级别分开，使用户能够有意启用新的路径，而不会悄悄替换硬件行为。"
+    },
+    {
+      "type": "heading",
+      "text": "非 mipmap 的 AMD DX12 纹理获得一致的替代方案"
+    },
+    {
+      "type": "paragraph",
+      "text": "该来源还报告称，AMD 的 Direct3D 12 驱动程序不会对没有 mipmaps 的纹理应用硬件各向异性过滤（AF），尽管可比较的 Vulkan 渲染能正常工作。着色器采样绕过了该主机限制，并旨在实现 AMD 和 NVIDIA 上 Vulkan 行为的一致性。其描述为比 NVIDIA 硬件 AF 更激进，尤其是在原生分辨率下，因此输出不被认为在视觉上完全相同。"
+    },
+    {
+      "type": "heading",
+      "text": "测试需要 alpha 边缘、无 mipmap 纹理以及多个供应商。"
+    },
+    {
+      "type": "paragraph",
+      "text": "启用各向异性过滤和着色器选项，然后将 alpha 测试几何图形与硬件 AF、线性过滤和同一场景下的 Vulkan 比较。包括无 mipmap 的纹理、原生和升级分辨率、陡峭的视角以及问题 #14077 的透明边界。在 AMD 和 NVIDIA Direct3D 11 和 12 上记录纹理采样和 GPU 时间。验证隐藏颜色不会透出，并且激进锐化不会在运动中产生闪烁或锯齿。"
+    },
+    {
+      "type": "callout",
+      "text": "着色器各向异性存在是为了在 Direct3D 硬件选择要么混合禁止的邻居，要么完全跳过纹理时，保留访客过滤意图。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

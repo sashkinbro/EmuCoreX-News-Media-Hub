@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP verbindet Textur-Rehashing mit der Gast-GPU-Synchronisation",
+  "summary": "Textur-Gültigkeit folgt nun den Punkten, an denen PSP-Software GPU-Speicher beobachten oder neu schreiben kann, und ersetzt eine Frame-Count-Heuristik durch explizite Synchronisationsdomänen.",
+  "heroAlt": "Quellenbeweis aus PPSSPP Pull Request #21808: Texture-Cache: Intelligenteres Re-Hashing von Texturen",
+  "searchKeywords": [
+    "PPSSPP",
+    "Texture-Cache",
+    "Rehashing",
+    "GE-Sync",
+    "GPU-Speicher"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Texture-Cache: Intelligenteres Re-Hashing von Texturen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Frame-Alter war nur ein Proxy für die Speicher-Sichtbarkeit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine im Cache gespeicherte PSP-Textur kann Hunderte von Frames unverändert bleiben oder innerhalb eines Frames mehrfach überschrieben werden. Die vorherige Textur-Backoff-Strategie verwendete Mini-Hashes, Frame-Zähler, Ungültigkeitshinweise und einen exponentiellen Zeitplan, um zu entscheiden, wann ein vollständiger Hash durchgeführt wird. Das reduzierte die Arbeit, aber vergangene Frames beschreiben nicht direkt, wann die Gast-CPU und GPU um den Speicher herum synchronisiert wurden, sodass die Heuristik unnötige Überprüfungen durchführen oder veralteten Inhalt behalten konnte."
+    },
+    {
+      "type": "heading",
+      "text": "Synchronisierungsdomänen markieren Momente, in denen Annahmen sich ändern können"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #21808 erhöht textureSyncTimeDomain bei GE-Wartezeiten, Stall-Adressänderungen, Zeichen-Synchronisation, Framebuffer-Kopien und relevante Blockübertragungen. Jeder nicht zuverlässige Textur-Eintrag protokolliert die letzte Domäne, in der er geprüft wurde. Explizite HASH_RECHECK- und CLUT_RECHECK-Flags erzwingen weiterhin Arbeiten für bekannte Invalidierungsfälle, während zuverlässige, fontähnliche Texturen den Domänen-Test überspringen können. Die Entscheidung ist nun mit emulierten Sichtbarkeitsereignissen verbunden, anstatt mit einem Timer."
+    },
+    {
+      "type": "heading",
+      "text": "Das Redesign entfernt auch die Buchführung, die abweichen könnte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch entfernt den für Benutzer sichtbaren Backoff-Schalter, den Mini-Hash-Zeitplan pro Eintrag, Häufigkeitsänderungs-Flags und veränderliche Cache-Größenzähler. Der Cache-Druck wird durch Summierung der aktuellen Einträge beim Dezimationslauf abgeleitet, wobei gelegentliche Berechnungen gegen einen Zustand eingetauscht werden, der nach einem ungewöhnlichen Löschpfad nicht inkonsistent werden kann. Video-Texturen und Palettenvarianten behalten ein dediziertes Verhalten, da ihre Mutationsmuster sich von gewöhnlichen statischen Bildern unterscheiden."
+    },
+    {
+      "type": "heading",
+      "text": "Die Korrektheit erfordert Spiele, die Texturen in ungewöhnlichen Reihenfolgen neu schreiben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testen Sie die Videowiedergabe, Render-zu-Textur-Effekte, Spiele, die den Texturspeicher von der CPU ändern, viele CLUT-Varianten, Framebuffer-Kopien und langlebige statische UI-Schriftarten. Vergleichen Sie Hashes und Screenshots vor und nach jedem Synchronisationsbereichswechsel. Messen Sie die Full-Hash-Anzahl, CPU-Zeit, Cache-Größe und Auslagerungsverhalten über lange Sitzungen. Savestate-Ladevorgänge, Speicherungültigkeit und Backend-Wechsel müssen den Bereichszustand zurücksetzen oder vorantreiben, sodass ein Eintrag keine falsche Frischebehauptung erben kann."
+    },
+    {
+      "type": "callout",
+      "text": "Die nützliche Frage ist nicht, wie viele Frames eine Textur überlebt hat, sondern ob die für den Gast sichtbare Synchronisation eine neue Chance geschaffen hat, dass sich ihr Speicher ändert."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Lesen Sie die PPSSPP-Ingenieursdiskussion und Source-Änderungen"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2는 Valgrind에서 발견된 초기화되지 않은 상태 결정의 두 가지 원인을 제거합니다.",
+  "summary": "디버거 테이블 구조는 0에서 시작하며, 오디오 설정은 원시 구조체 바이트 대신 필드를 비교하여, 결코 쓰이지 않는 메모리와 패딩의 영향을 받는 분기를 제거합니다.",
+  "heroAlt": "PCSX2 풀 리퀘스트 #14638에서 나온 소스 증거: 기타: 일부 Valgrind 오류 수정",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "초기화되지 않은 읽기",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "도구",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "기타: 일부 Valgrind 오류 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "디버거는 정의된 첫 번째 값이 없는 멤버로 표시되었습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind은 MemoryViewTable::DrawTable에서 초기화되지 않은 상태로 선언된 행 수, 위치, 선택 상태 및 주소 멤버에 대한 조건부 분기를 추적했습니다. 일반적인 리사이즈나 설정 경로에서는 페인팅 전에 종종 이 값들을 할당했기 때문에 결함이 간헐적으로 발생했습니다. 그러나 페인트 이벤트가 더 일찍 도착하면 불확정 정수를 읽고 객체가 점유한 비트에서 레이아웃 동작을 선택할 수 있었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "제로 초기화자는 첫 번째 페인트에서 유효한 빈 테이블을 제공합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14638은 선언 시 rowCount, rowVisible, rowHeight, value와 text 축, 첫 번째 행 위치, 시작 및 선택된 주소, selectedIndex를 초기화합니다. 0은 실제 치수가 도착할 때까지 안전한 레이아웃 전 상태를 나타냅니다. 이 변경은 기본 주소나 선택을 추측하지 않으며, 초기 이벤트가 정의되지 않은 데이터 대신 의도적으로 빈 모델을 보도록 보장합니다."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp는 오디오 필드와 보이지 않는 패딩을 함께 비교했습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters는 구조체의 sizeof 원시 바이트를 비교하여 동등성을 구현했습니다. 멤버 사이의 C++ 패딩은 필드가 아니며 불확정 값을 유지할 수 있으므로, 논리적으로 동일한 두 구성도 같지 않게 비교될 수 있습니다. 이는 설정 변경 및 savestate 로드 동안 SPU2 구성 검사에 도달했습니다. 이 패치는 사용자 정의 == 및 !=를 기본 제공 삼방 비교로 교체하여, 선언된 멤버를 그 타입에 따라 비교하고 패딩을 구성으로 취급하지 않게 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind 및 행동 테스트는 이벤트 순서와 상태 로드를 커버해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "VM이 시작되기 전후에 메모리 뷰를 열기, 크기 조정, 페인팅, 선택 및 닫기 동안 Valgrind 아래에서 디버거를 실행합니다. 그런 다음 savestate를 로드하고 동일한 오디오 설정을 반복적으로 적용하여 불필요한 재시작 및 초기화되지 않은 비교 보고가 없는지 확인합니다. 실제 오디오 필드 하나를 변경하여 여전히 불일치가 작동하는지 확인합니다. 다양한 구조체 패딩을 가진 컴파일러 및 sanitizer 빌드는 유용한데, 한 레이아웃에서 깨끗한 결과가 나타난다고 하더라도 제거된 memcmp가 다른 곳에서 안전하다는 것을 증명하지 않기 때문입니다."
+    },
+    {
+      "type": "callout",
+      "text": "두 수정 사항 모두 우발적인 메모리 내용을 언어 수준 상태로 교체합니다: UI 레이아웃을 위한 초기화된 필드와 오디오 구성을 위한 필드별 동등성입니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "PCSX2 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Les documents PPSSPP décrivent les règles PSP bit-à-bit exactes pour VFPU multiplication et division",
+  "summary": "Les aides de référence expliquent le comportement des nombres dénormalisés, de l'underflow, de l'arrondi, du signe, de l'infini et des NaN afin que les chemins hôtes JIT puissent être mesurés par rapport aux résultats réels du PSP.",
+  "heroAlt": "Preuve source de la demande de tirage PPSSPP #21815 : Implémenter (espérons-le) vmul/vdiv bit à bit exact",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "virgule flottante",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implémenter (espérons-le) vmul/vdiv bit à bit exact"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 laisse toujours de la place pour un comportement de bord spécifique au matériel"
+    },
+    {
+      "type": "paragraph",
+      "text": "La multiplication et la division de flottants ordinaires semblent portables jusqu'à ce que les entrées approchent des nombres dénormalisés, de la sous-flux, de l'infini ou de NaN. Le PSP VFPU se comporte comme un float32 arrondi au plus proche, avec liaison aux pairs, les dénormalisés étant traités comme zéro et les très petites sorties étant éliminées à zéro, plus une règle spécifique pour le payload et le signe de NaN. Les x86 et ARM hôtes, ainsi que les paramètres du compilateur, peuvent différer exactement à ces limites, provoquant de rares divergences de logique de jeu ou de graphismes."
+    },
+    {
+      "type": "heading",
+      "text": "La référence travaille à partir des bits bruts avant et après l'arithmétique"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21815 ajoute des helpers vfpu_mul et vfpu_div explicites pour la référence. Ils lisent les opérandes comme des valeurs uint32, convertissent les entrées subnormales en zéro signé, effectuent l'arithmétique et inspectent les bits du résultat. Les sorties au-dessus ou à la limite du seuil de mise à zéro mesuré sont recalculées en double précision pour décider s'il faut conserver le plus petit résultat normal ou retourner zéro signé. Tout NaN est canonisé avec le payload spécifique VFPU 0x7F800001 avec signe dérivé de l'opérande."
+    },
+    {
+      "type": "heading",
+      "text": "Le seuil capture une limite que les drapeaux FTZ de l'hôte peuvent ne pas partager"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le seuil de vidage observé est FLT_MIN moins un quart de FLT_TRUE_MIN. Cela semble correspondre à la limite de vidage à zéro testée sur x86 mais n’est pas supposé correspondre à chaque hôte ARM. Encoder ce comportement dans une référence lisible fournit aux backends JIT une source de vérité même si leur implémentation la plus rapide utilise des modes de registre de contrôle, des instructions vectorielles ou des branches correctives. Les aides sont du matériel de référence plutôt qu’une affirmation que le C++ scalaire est le chemin critique final."
+    },
+    {
+      "type": "heading",
+      "text": "Des vecteurs de frontière exhaustifs devraient guider la conformité des backends."
+    },
+    {
+      "type": "paragraph",
+      "text": "Tester le zéro positif et négatif, chaque classe de sous-normaux, les valeurs autour du seuil de vidage, les plus grands nombres finis, les infinis, les NaN silencieux et signalés, ainsi que les combinaisons de signes des opérandes. Comparer les résultats de l’interpréteur, x86, ARM64 et autres JIT bit à bit pour vmul et vdiv, pas avec un epsilon. Les tests différentiels aléatoires devraient se concentrer sur les paires d’exposants proches du débordement et du sous-dépassement. Le fast-math du compilateur ne doit pas effacer la canonicalisation, et les opérations fusionnées doivent être vérifiées séparément car elles ont différents points d’arrondi."
+    },
+    {
+      "type": "callout",
+      "text": "L'émulation bit-exacte commence là où s'arrête l'égalité numérique approximative : zéro signé, un bit de sous-flux ou une charge utile NaN peuvent constituer un état observable de l'invité."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

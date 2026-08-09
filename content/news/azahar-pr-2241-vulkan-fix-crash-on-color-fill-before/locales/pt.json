@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar protege o preenchimento de cor Vulkan quando um plugin 3GX chega antes do framebuffer",
+  "summary": "Uma ordem de inicialização exposta pelo PokeReader pode chamar FillScreen antes que a imagem alvo exista; o renderizador agora trata essa imagem ausente como um estado de configuração adiado em vez de travar.",
+  "heroAlt": "Evidência de fonte do pull request #2241 do Azahar: video_core: vulkan: Corrige travamento ao preencher cor antes da configuração do framebuffer",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Corrige travamento ao preencher cor antes da configuração do framebuffer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um plugin pode solicitar a cor da tela antes de Vulkan possuir uma imagem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilitar o carregador 3GX com o PokeReader produziu uma falha consistente no Windows no sistema AMD Vulkan do repórter após a implementação do FillScreen. Logs e um git bisect identificaram a regressão nessa implementação. A ordem das chaves é incomum, mas válida para o frontend: a inicialização do plugin alcança a configuração de preenchimento de cores antes que a imagem Vulkan da textura do framebuffer seja criada."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture agora verifica o recurso, não a intenção"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #2241 adiciona uma proteção estreita em RendererVulkan::ConfigureFramebufferTexture. Se texture.image estiver ausente, a função retorna antes de configurar ou preencher o framebuffer. Uma chamada posterior com uma imagem válida segue o caminho normal. A correção não cria uma imagem fictícia nem assume dimensões, evitando um recurso placeholder cujo layout e tempo de vida poderiam entrar em conflito com o framebuffer real."
+    },
+    {
+      "type": "heading",
+      "text": "A falha pode explicar relatórios além de um GPU, mas as evidências permanecem limitadas"
+    },
+    {
+      "type": "paragraph",
+      "text": "A fonte cita PokeReader, Windows, Vulkan e potencialmente AMD como a combinação reproduzível e vincula vários problemas com comportamento possivelmente relacionado. Esses relatórios são pistas, não correções confirmadas. A única invariável comprovada é que nenhuma operação Vulkan pode usar uma imagem de framebuffer antes que ela exista. Outros crashes precisam de seus próprios logs para determinar se atingem o mesmo estado inicial de FillScreen."
+    },
+    {
+      "type": "heading",
+      "text": "O teste de regressão deve forçar tanto a ordem de preenchimento inicial quanto a normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Inicie com suporte 3GX desligado e ligado, com PokeReader selecionado, em AMD, NVIDIA e Vulkan móvel quando disponível. Instrumente a criação de imagens e a ordem do FillScreen, verifique se a chamada inicial retorna sem erros de validação e confirme que um preenchimento inicializado posteriormente ainda limpa a tela. Repita o descarregamento de plugins, reinício do jogo, recriação de superfícies e troca de backend. A ausência de crash é insuficiente se a proteção deixar um framebuffer permanentemente não preenchido ou obsoleto."
+    },
+    {
+      "type": "callout",
+      "text": "O mecanismo de renderização agora diferencia um preenchimento solicitado de um alvo inicializado; o trabalho Vulkan começa apenas depois que a imagem realmente existe."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Leia a discussão de engenharia Azahar e as alterações de código-fonte"
+    }
+  ]
+}

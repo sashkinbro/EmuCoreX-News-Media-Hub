@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar models ARM11 instruction timing while keeping a legacy escape hatch",
+  "summary": "A TRM-based cycle table distinguishes pipeline flushes, predicted returns, addressing modes, transfers, and VFP operations instead of charging every instruction one tick.",
+  "heroAlt": "Source evidence from Azahar pull request #2262: core/arm: model ARM11 MPCore timing per TRM",
+  "searchKeywords": [
+    "Azahar",
+    "ARM11 MPCore",
+    "instruction timing",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "Cpu",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: model ARM11 MPCore timing per TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "One instruction per tick hides pipeline and transfer differences"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Nintendo 3DS CPU does not execute every ARM instruction with identical latency. A branch that flushes an eight-stage pipeline, a predicted return, a shifted register address, and a multi-register or VFP transfer have different costs. Azahar's earlier simple timing could move interrupts or game logic relative to CPU work, particularly in sequences whose behavior depends on when an event becomes visible."
+    },
+    {
+      "type": "heading",
+      "text": "The table follows ARM11 MPCore mechanisms, not arbitrary game delays"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2262 expands arm_tick_counts with a seven-cycle pipeline-flush model, a lower average for indirect branches, special handling for MOV or load into PC, shifted-register address cost, two-register-per-cycle multiple transfers, and VFP transfer counts. Bit-field extraction helpers are corrected as part of matching instruction encodings to the appropriate timing function."
+    },
+    {
+      "type": "heading",
+      "text": "Predicted returns differ from unstructured control flow"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr and stack-based loads into PC can use return prediction and receive a cheaper result, while other PC writes or jump-table loads pay a refill penalty. That distinction prevents a broad branch constant from overcharging normal function returns and undercharging unpredictable redirection. The model describes host-emulated guest cycles; it is independent of how quickly Dynarmic executes the translated block on the phone or desktop."
+    },
+    {
+      "type": "heading",
+      "text": "A legacy toggle contains compatibility risk during validation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debug CPU settings can restore the older one-tick-per-instruction behavior for timing-sensitive games; LEGO City Undercover's chase sequence is the cited example. Tests should compare both modes across CPU benchmarks, interrupts, audio, input polling, and that chase. Validate cycle counts against TRM cases and targeted instruction loops. The toggle must switch deterministically and persist, but new regressions should be investigated rather than permanently hiding every title behind legacy timing."
+    },
+    {
+      "type": "callout",
+      "text": "The new table models why instructions take different guest cycles; the legacy switch keeps timing-sensitive software testable while that model matures."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

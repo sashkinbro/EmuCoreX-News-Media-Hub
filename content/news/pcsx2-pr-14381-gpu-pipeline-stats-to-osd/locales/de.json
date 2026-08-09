@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 zeigt Shader-Aufrufzahlen an, bevor das Overlay sie ändert",
+  "summary": "Eine optionale OSD-Metrik berichtet über Vertex- und Pixel-Shader-Aufrufe, die vor dem ImGui-Zeichnen gesammelt wurden, wodurch der Vergleich der Backend-Arbeitslast stabiler und leichter zu lesen ist.",
+  "heroAlt": "Quellenbeleg aus PCSX2 Pull-Request #14381: GS: Füge GPU Pipeline-Statistiken zum OSD hinzu.",
+  "searchKeywords": [
+    "PCSX2",
+    "GPU Pipeline-Statistiken",
+    "Vertex-Shader-Aufrufe",
+    "Pixel-Shader-Aufrufe",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Werkzeuge",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Füge GPU Pipeline-Statistiken zum OSD hinzu."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die Bildrate kann nicht zeigen, ob eine Szene die Vertex- oder Pixel-Arbeit erweitert hat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine Leistungsregression kann durch mehr übermittelte Scheitelpunkte, mehr abgedeckte Samples, zusätzliche Durchläufe oder Synchronisation entstehen. PCSX2 zeigte bereits mehrere Renderer-Metriken an, aber es fehlten direkte Pipeline-Aufrufzahlen. Pull Request #14381 fügt VSI und PSI hinzu, sodass ein Entwickler sehen kann, ob der GPU Tausende von Vertex-Shader-Aufrufen oder Millionen von Pixel-Shader-Aufrufen im gemessenen Intervall ausgeführt hat."
+    },
+    {
+      "type": "heading",
+      "text": "Abfragen werden über jede Hardware-API implementiert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Gerätekategorien Direct3D 11, Direct3D 12, OpenGL, Vulkan und Metal stellen Pipeline-Statistiken für gängige Leistungsmetriken bereit. Die Einstellung erscheint in der OSD-Konfiguration, und die Overlay-Formate stellen große Zahlen mit den Dezimalpräfixen K, M und B dar. Das Sammeln über Backend-Abfragen ist notwendig, weil eine grobe Schätzung anhand der Draw-Zahlen Clipping, Instancing, Sample-Coverage und API-spezifische Ausführungen übersehen würde."
+    },
+    {
+      "type": "heading",
+      "text": "Sampling vor ImGui entfernt das Overlay aus der eigenen Messung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Frühe Ergebnisse variierten stark, da die Abfrage OSD- und ImGui-Rendering einschließen konnte. Das endgültige Verhalten sammelt Statistiken, bevor das Overlay gezeichnet wird, stabilisiert die Zahlen und macht Szenenvergleiche aussagekräftiger. Das Software-Rendering wird weiterhin über Vulkan angezeigt, daher können Werte dort erscheinen, beschreiben jedoch die Präsentation und nicht die Software-GS-Arbeitslast; die Quelle warnt, dass diese Zahlen nicht wie Hardware-Renderer-Statistiken interpretiert werden sollten."
+    },
+    {
+      "type": "heading",
+      "text": "Ein gültiger Vergleich fixiert die Szene und das Abfrageintervall"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktivieren Sie \"Show GPU Pipeline Statistics\" und halten Sie eine Szene über alle Backends hinweg still, wobei überprüft wird, dass VSI und PSI erscheinen und sich plausibel skalieren, wenn sich Auflösung oder Geometrie ändern. Schalten Sie das OSD selbst um und bestätigen Sie, dass die gemessenen Werte nicht durch die Zählung seiner Pixel springen. Testen Sie Abfrage-Reset, Geräteverlust, Pause und Backend-Wechsel. Zähler über APIs hinweg können weiterhin unterschiedlich sein, da sich Spezifikationen und Sample-Abrechnungen unterscheiden; analysieren Sie daher Trends innerhalb eines Backends, bevor Sie eine exakte Übereinstimmung beanspruchen."
+    },
+    {
+      "type": "callout",
+      "text": "Der OSD meldet Ergebnisse der Hardware-Abfrage, nicht eine universelle cross-API-Wahrheit; die Probe vor ImGui zu nehmen macht sie nützlich, ohne dass das Messgerät sich selbst misst."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

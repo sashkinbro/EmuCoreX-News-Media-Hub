@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2's Direct3D 12-Backend merkt sich Framebuffer-Treffer über die aktuelle Transition hinaus",
+  "summary": "Farb- oder Tiefenzustandsänderungen können nun die Treffererkennung für zukünftige Zeichnungen erweitern, wodurch späterer Aufwand in Render-Pässen reduziert wird, anstatt nützliche Abdeckung zu verwerfen, weil die gegenwärtige Transition unvermeidbar war.",
+  "heroAlt": "Quellnachweis aus dem PCSX2-Pull-Request #14595: GS/DX12: Übernahme der erweiterten fb-Optimierung Treffererkennung von GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "Framebuffer-Optimierung",
+    "Render-Pass",
+    "Treffererkennung"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Übernahme der erweiterten fb-Optimierung Treffererkennung von GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine unvermeidbare Transition kann immer noch nützliche zukünftige Abdeckung aufdecken"
+    },
+    {
+      "type": "paragraph",
+      "text": "Frame-Buffer-Optimierungen verfolgen, wann ein späteres Zeichnen innerhalb eines kompatiblen Render-Pass-Zustandes bleiben kann. Der Direct3D 12-Pfad behandelte zuvor eine Änderung des Farb- oder Tiefenzustandes als Grund, die Treffererkennung nicht zu erweitern. Das war zu kurzsichtig: Der aktuelle Übergang mag notwendig sein, aber die betroffene Region teilt PCSX2 weiterhin mit, dass nachfolgende Zustandsänderungen vermieden werden können."
+    },
+    {
+      "type": "heading",
+      "text": "Entweder Farbe oder Tiefe kann das Optimierungsfenster erweitern"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #14595 portiert ein breiteres Verhalten, das bereits in OpenGL und Direct3D 11 untersucht wurde. In GSDevice12 kann ein Treffer von einer beliebigen Attachment-Bedingung die getrackte Bedingung erweitern, selbst wenn eine von ihnen jetzt einen Übergang auslöst. Die Optimierung löscht nicht die erforderliche aktuelle Barriere oder Änderung des Render-Passes; sie behält Informationen bei, die die nächste kompatible Operation günstiger macht."
+    },
+    {
+      "type": "heading",
+      "text": "Der Patch hängt von korrektem Render-Pass-Zustandsmanagement ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelle stellt fest, dass ordnungsgemäße Render-Pass-Änderungen aus verwandten Arbeiten Teil der getesteten Basis sind. Diese Abhängigkeit ist wichtig, da weniger Pässe nur dann vorteilhaft sind, wenn die Regeln für Laden, Speichern und Übergang von Anhängen weiterhin gültig bleiben. Ein zu breiter Treffer kann Daten erhalten, die eigentlich aufgelöst oder gelöscht werden sollten. Der gemeldete Effekt ist eine Reduktion der Render-Pässe von einstelligen bis zu zweistelligen Zahlen für dieselben Spiele, die auch in der vorherigen Optimierungsarbeit verwendet wurden."
+    },
+    {
+      "type": "heading",
+      "text": "Die Leistungsüberprüfung muss einen exakten Frame-Vergleich beinhalten."
+    },
+    {
+      "type": "paragraph",
+      "text": "Spiele die referenzierte Dump-Sammlung auf Direct3D 12 ab, erfasse Render-Pass-, Barrier-, Copy- und GPU-Zeit-Zähler und vergleiche die Frames mit dem nicht optimierten Pfad. Erstelle Fälle, in denen sich nur die Farbe ändert, nur die Tiefe ändert und beides sich ändert, gefolgt von Draws, die den Zustand entweder wiederverwenden sollten oder nicht. Ein Rückgang der Pass-Anzahl ohne Pixel-Identität ist ein Rückschritt. Die Tests benötigen außerdem mehrere GPU-Anbieter, da sich das Verhalten der Treiber bei Render-Pässen und die Übergangskosten unterscheiden können."
+    },
+    {
+      "type": "callout",
+      "text": "Die Optimierung merkt sich einen Treffer für das, was als Nächstes kommt; sie verwendet niemals zukünftige Einsparungen, um eine Übergang zu überspringen, der durch den aktuellen Verbrauch erforderlich ist."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Lesen Sie die PCSX2 Ingenieurdiskussion und Quelländerungen"
+    }
+  ]
+}

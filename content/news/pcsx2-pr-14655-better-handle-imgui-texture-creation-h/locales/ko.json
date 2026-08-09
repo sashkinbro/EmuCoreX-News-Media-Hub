@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2은 크래시가 발생하기 전에 실패한 ImGui 텍스처 할당을 중단합니다.",
+  "summary": "생성, 업로드 및 파괴 경로는 이제 누락된 BackendUserData를 실제 상태로 처리하여 할당 실패가 네이티브 핸들 및 맵 작업으로 이어지는 것을 방지합니다.",
+  "heroAlt": "PCSX2 풀 리퀘스트 #14655의 소스 증거: GS: Imgui 텍스처 생성 위험을 더 잘 처리합니다.",
+  "searchKeywords": [
+    "PCSX2",
+    "ImGui 텍스처",
+    "할당 실패",
+    "GSTexture",
+    "크래시"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "그래픽",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Imgui 텍스처 생성 위험을 더 잘 처리합니다."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui는 GPU가 텍스처를 제공할 수 없을 때 텍스처를 요청할 수 있습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "폰트 아틀라스 및 기타 인터페이스 이미지는 WantCreate, WantUpdates 및 WantDestroy 상태를 거칩니다. 장치 손실, 리소스 압박, 지원되지 않는 크기 또는 다른 백엔드 오류로 인해 텍스처 할당이 실패할 수 있습니다. 이전 생성 분기는 실패를 보고했지만 GSTexture가 존재하는 것처럼 계속 진행하며 네이티브 핸들을 요청하고 업로드 코드로 넘어갔습니다. 따라서 진단은 널 참조 이전에 발생했으며 이를 포함하지 않았습니다."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate는 유효한 백엔드 데이터가 있는 경우에만 넘어갑니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #14655는 성공적인 포인터 분기에서 CreateTexture를 래핑합니다. 실제 텍스처만 전체 크기 업로드 코드가 진행되기 전에 ImTextureID와 BackendUserData를 받습니다. 실패 시 PCSX2는 pxFailRel을 출력하고 상태에서 벗어납니다. WantUpdates는 별도로 매핑(map) 또는 행 단위(row-by-row) 업데이트 작업 전에 BackendUserData를 확인하므로 이전 생성 실패가 초기화된 리소스로 오해될 수 없습니다."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy 또한 생성이 완료되지 않았을 수 있음을 허용합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "파괴 상태는 이제 BackendUserData가 null이 아닐 때만 텍스처를 재활용하고 무효화합니다. 이는 ImGui가 할당 실패 후 아틀라스 요청을 폐기하거나 상태 전환이 복구 로직과 경합할 때 중요합니다. 재활용 동작 자체는 동일 크기 아틀라스 재사용을 포함하여 유효한 텍스처에 대해서는 변경되지 않았습니다; 이 패치는 생명주기 그래프에 시작부터 끝까지 부재 자원 경로를 포함시킵니다."
+    },
+    {
+      "type": "heading",
+      "text": "실패 주입은 #14652 문제를 기다리는 것보다 강력합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "가능하다면 연결된 크래시 덤프를 재현한 후, 다음 ImGui CreateTexture가 null을 반환하도록 제어된 백엔드 훅을 추가합니다. OSD와 글꼴 렌더링은 충돌 없이 실패를 보고해야 하며, 픽셀 업로드나 잘못된 포인터 재활용은 없어야 합니다. 할당을 복원하고 나중에 아틀라스를 생성하고 표시할 수 있는지 확인합니다. 크기 조정, 글꼴 제거, 장치 재설정, 종료 중에도 반복적으로 실패를 재현하고 모든 하드웨어 백엔드에서 일반 OSD 테스트를 실행하여 보호 경로가 유효한 업데이트를 차단하지 않는지 확인합니다."
+    },
+    {
+      "type": "callout",
+      "text": "이 수정은 텍스처 상태 기계를 완성합니다: 할당 실패는 해당 요청에 대한 종단 분기이며, 일반 업로드 코드가 뒤따르는 경고가 아닙니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "PCSX2 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

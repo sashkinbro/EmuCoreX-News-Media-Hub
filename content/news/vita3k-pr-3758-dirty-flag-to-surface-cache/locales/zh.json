@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 使来宾内存写入使 Vulkan 表面失效",
+  "summary": "受保护的后备范围现在将缓存的颜色表面标记为脏，防止在 CPU 更改其内存后重用过时的 GPU 图像作为纹理。",
+  "heroAlt": "来自 Vita3K 拉取请求 #3758 的证据：renderer/vulkan：向表面缓存添加脏标志",
+  "searchKeywords": [
+    "Vita3K",
+    "Vulkan 表面缓存",
+    "脏标志",
+    "mprotect",
+    "来宾内存"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan：向表面缓存添加脏标志"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "在来宾更改其后备字节后，表面可以存在于 GPU 内存中"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K 将 Vita 颜色表面缓存为 Vulkan 资源。当游戏通过 CPU 写入相应的来宾内存时，缓存的图像可能不再代表该地址范围。将其作为纹理返回可能显示旧的帧或效果。一些线性格式在 CPU 读取它们时还需要 GPU 与来宾的同步，因此读取和写入故障具有相关但不同的含义。"
+    },
+    {
+      "type": "heading",
+      "text": "保护回调现在携带共享同步和脏状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull 请求 #3758 为每个 ColorSurfaceCacheInfo 提供了共享脏标志。protect_surface 将可安全保护的内部对齐到 4 KiB 页。支持同步的线性表面使用 MemPerm::None 来捕获读取和写入并捕获 need_surface_sync；其他表面使用只读来捕获写入。写入将标记为脏。对于小于一页的表面，不进行脏跟踪，因为同一受保护页上的不相关数据会产生错误的失效。"
+    },
+    {
+      "type": "heading",
+      "text": "缓存查找在 CPU 写入后拒绝 GPU 数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "当请求将一个彩色表面作为纹理时，一组脏标志不会返回缓存结果，这会迫使调用者远离陈旧的 GPU 内容。当相同的表面再次成为帧缓冲区时，Vita3K 可以重新启动保护，并在建立新的权威性使用后清除脏标志。重叠保护通过 most_restrictive_perm 组合，因此添加较弱的范围不会意外重新开放已被更强保护的内存。"
+    },
+    {
+      "type": "heading",
+      "text": "内存映射方法和页面重叠是关键测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "渲染到一个表面，采样它，从来宾 CPU 重写全部或部分，然后再次为线性和块状格式采样。包括对齐、不对齐、子页、重叠和共享页分配；确认小表面在不隐藏真实变化的情况下避免错误的脏标志。单独测试回读同步与写入失效。在本地缓冲区映射、双缓冲、NVIDIA 和非 NVIDIA 的 Linux 驱动、Android 和 savestate 恢复上重复测试。记录保护故障以捕捉循环或过度的热路径陷阱。"
+    },
+    {
+      "type": "callout",
+      "text": "缓存只有在其所有权证据是最新的情况下才是正确的；一次访客写入就足以撤销 GPU 表面对该内存的声明。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "阅读 Vita3K 工程讨论和源代码变更"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21788-detect-sprites-clip-them-slightly-to-a",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP targets GTA sprite seams at the geometry-to-texel boundary",
+  "summary": "A compatibility path recognizes two-triangle sprites and nudges their outer UV edge inward, reducing upscaling artifacts without globally weakening texture filtering.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21788: GTA sprite fix: Detect sprites, clip them slightly to avoid filtering artifacts",
+  "searchKeywords": [
+    "PPSSPP",
+    "GTA",
+    "sprite border",
+    "texture filtering",
+    "UV coordinates"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21788": "GTA sprite fix: Detect sprites, clip them slightly to avoid filtering artifacts"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Upscaling exposes pixels just beyond a sprite's intended rectangle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Many PSP interfaces and effects draw a rectangular sprite as two triangles. At native resolution, coordinates that land on texel boundaries can look correct. With higher internal resolution and linear filtering, samples near an outer edge may blend with a neighboring atlas region or transparent border. A global sampler change would affect every texture, including 3D surfaces that need ordinary filtering, so the correction must first prove that the submitted geometry is actually a sprite."
+    },
+    {
+      "type": "heading",
+      "text": "The detector reconstructs a quad from shared triangle vertices"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21788 examines adjacent triangle pairs in the software transform path. It finds the two indices shared by both triangles, identifies their opposite corners, and checks axis alignment plus corresponding UV relationships. Only the supported orientation becomes a valid sprite. The routine then derives the UV scale and applies a configurable SpriteBorderFix amount to the far edges in the correct gradient direction."
+    },
+    {
+      "type": "heading",
+      "text": "Position and UV move together to preserve pixel alignment"
+    },
+    {
+      "type": "paragraph",
+      "text": "The adjustment nudges both the selected texture coordinates and their screen-space positions. Moving UV alone could stretch the sprite or shift its sample footprint relative to the intended pixels. The code also avoids full-screen dimensions such as 480 by 272 and is gated by a compatibility value, limiting risk to known affected titles. Pure triangle lists and unsupported vertex orderings deliberately fall through rather than receiving a guessed correction."
+    },
+    {
+      "type": "heading",
+      "text": "Visual fixtures must include atlases and false positives"
+    },
+    {
+      "type": "paragraph",
+      "text": "Capture the affected GTA scenes at native and several upscaled resolutions using nearest and linear filtering. Add a synthetic atlas with strongly colored neighboring cells so one sampled border pixel is obvious. Test rotated quads, perspective geometry, full-screen effects, triangle strips, flipped UV gradients, clipped sprites, and odd vertex order. Confirm the compatibility flag stays title-scoped and zero is a true no-op. Compare geometry before and after to ensure the fix removes seams without shrinking visible artwork."
+    },
+    {
+      "type": "callout",
+      "text": "The correction is narrow by design: recognize sprite geometry, preserve its pixel relationship, and leave every unproven draw untouched."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21788",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

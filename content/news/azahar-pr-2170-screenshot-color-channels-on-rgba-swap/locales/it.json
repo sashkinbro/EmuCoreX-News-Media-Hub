@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar fa in modo che gli screenshot di Vulkan seguano l'ordine reale dei canali dello swapchain",
+  "summary": "QImage si aspetta byte BGRA, ma alcuni driver Vulkan presentano RGBA; passare il formato della superficie scelto in entrambi i percorsi di screenshot permette uno swizzle semplice rosso-blu solo dove necessario.",
+  "heroAlt": "Prove dalla fonte della pull request #2170 di Azahar: renderer_vulkan: Risolto il problema dei canali di colore negli screenshot sui formati swapchain RGBA",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan screenshot",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Risolto il problema dei canali di colore negli screenshot sui formati swapchain RGBA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il frame visualizzato può essere corretto mentre l'immagine salvata non lo è"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan seleziona un formato di swapchain dalle opzioni supportate dal driver. Alcune piattaforme preferiscono BGRA e altre RGBA. Gli shader di presentazione di Azahar gestivano il formato scelto, ma la memoria dello screenshot veniva passata a QImage::Format_RGB32, che si aspetta l'ordine dei byte BGRA. Su una swapchain RGBA, quindi, rosso e blu venivano scambiati solo nel file catturato, facendo apparire errato il renderer al di fuori della finestra attiva."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow espone il formato negoziato al codice di cattura"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2170 aggiunge GetSurfaceFormat alle implementazioni di present-window di Vulkan e lo verifica in entrambe le modalità di screenshot: cattura da staging-copy e cattura in memoria host. Quando il formato è eR8G8B8A8Unorm, Azahar scorre i pixel larghezza per altezza e scambia i byte zero e due. Una swapchain BGRA utilizza i byte esistenti senza modificarli, evitando una conversione su piattaforme già compatibili con QImage."
+    },
+    {
+      "type": "heading",
+      "text": "Il byte swizzling è più economico che cambiare il contratto dell'immagine del frontend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Modificare il formato QImage richiederebbe di trasferire ulteriormente le informazioni sull'ordine dei canali nel frontend e garantire che ogni consumatore le comprendesse. Lo swizzle locale mantiene il contratto RGB32 stabilito e costa uno scambio rosso-blu per pixel al momento dello screenshot, non per ogni frame visualizzato. L'autore ha forzato RGBA su un Mac che preferisce BGRA per testare, mentre Linux Mesa è stato identificato come una piattaforma probabilmente naturalmente interessata da confermare."
+    },
+    {
+      "type": "heading",
+      "text": "Sia i percorsi di cattura sia l'alpha necessitano di fixture a colore esatto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderizza un pattern di test contenente rosso puro, blu, verde, nero, bianco e alpha non banale, quindi catturalo attraverso i percorsi di staging e memoria host su swapchain nativi RGBA e BGRA. Confronta i byte salvati e l'output visualizzato. Ripeti a dimensioni strane, layout scalati e dopo la ricreazione dello swapchain. Un utente Linux interessato dovrebbe confermare il percorso del formato naturale. Lo swizzle deve avvenire esattamente una volta; una doppia conversione può far sembrare fissato un backend mentre un altro regredisce."
+    },
+    {
+      "type": "callout",
+      "text": "Il codice degli screenshot ora converte dal formato Vulkan effettivamente negoziato, invece di assumere che ogni driver presenti i pixel nell'ordine preferito da QImage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Leggi la discussione ingegneristica Azahar e le modifiche al codice sorgente"
+    }
+  ]
+}

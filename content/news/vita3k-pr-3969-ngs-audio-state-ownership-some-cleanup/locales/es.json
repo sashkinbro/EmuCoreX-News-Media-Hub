@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K separa cuatro tipos de estado dentro de su motor de audio NGS",
+  "summary": "Los bytes visibles para el invitado, los buffers temporales, la lógica reanudable y los objetos de tiempo de ejecución del host ahora tienen propietarios distintos, lo que facilita razonar sobre el enrutamiento de voz y la duración de los decodificadores.",
+  "heroAlt": "Evidencia de origen del pull request #3969 de Vita3K: ngs: refactorizar la propiedad del estado de ngs/audio y algunas limpiezas",
+  "searchKeywords": [
+    "Vita3K",
+    "audio NGS",
+    "ATRAC9",
+    "estado de voz",
+    "enrutamiento de audio"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: refactorizar la propiedad del estado de ngs/audio y algunas limpiezas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una voz de audio contiene estado con tiempos de vida muy diferentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "El sistema NGS de la Vita expone el estado de los módulos legible por el invitado, pero un emulador también necesita objetos decodificadores exclusivos del host, re-muestreadores, PCM temporal, historial de bucles y referencias de enrutamiento. Mantener esas piezas en miembros solo vagamente relacionados hace que el reinicio, la reutilización de voces, las devoluciones de llamada y la destrucción sean propensos a punteros obsoletos. Un bloque de memoria de invitado no debe poseer accidentalmente un decodificador del host, y un búfer temporal no debe confundirse con datos necesarios para reanudar la reproducción lógica."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData ahora nombra cada categoría de propiedad"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #3969 proporciona un module guest_state_data para los bytes visibles en ABI y scratch_data para trabajo temporal. Un logical_state polimórfico almacena información como el historial ADPCM o el historial de decodificador ATRAC9 exportado que debe sobrevivir a los límites de procesamiento. Un runtime_state separado posee recursos del host como decodificadores y re-muestreadores activos que pueden limpiarse o reconstruirse. Las fábricas de módulos crean cada capa e inicializan los datos de la voz a través de una interfaz."
+    },
+    {
+      "type": "heading",
+      "text": "Las rutas identifican voces sin mantener puntos finales crudos frágiles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los objetos de parche mantienen la fuente y el destino como índices de rack y de voz, y luego los resuelven a través del Sistema y la memoria emulada cuando es necesario. Esto evita que un parche siga ciegamente un puntero de Voz después de que un rack cambie. ATRAC9 carga el historial lógico del decodificador guardado en el decodificador en tiempo de ejecución antes del trabajo y lo exporta después. Los módulos del reproductor mantienen el historial ADPCM en estado lógico, mientras que los búferes de salida y remuestreo usan contenedores explícitos en tiempo de ejecución con operaciones claras y compactas."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de ciclo de vida deben interrumpir el audio en cada fase"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cree, enrute, inicie, pause, reanude, detenga, reinicie y destruya voces usando módulos PCM, ADPCM, ATRAC9, de salida y de remuestreo. Reutilice ranuras de rack y elimine cualquiera de los extremos mientras exista un parche. Active devoluciones de llamada de invitados, transiciones de bucle, vacíe búferes y cambios de configuración, luego compare la salida continua con la salida a través de una guardado de estado lógico y la reconstrucción en tiempo de ejecución. Los sanitizadores de hilos y direcciones deben cubrir los puntos de desbloqueo/rebloqueo del planificador, desmantelamiento y manejos de invitados malformados. Ningún puntero anfitrión debe ser recuperable a partir de los bytes de estado visibles para el invitado."
+    },
+    {
+      "type": "callout",
+      "text": "La corrección de audio mejora cuando el motor puede responder qué datos pertenecen a la ABI del invitado, el estado de señal reanudable, trabajo temporal y el tiempo de ejecución del decodificador del anfitrión."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Lea la discusión de ingeniería de Vita3K y los cambios de fuente"
+    }
+  ]
+}

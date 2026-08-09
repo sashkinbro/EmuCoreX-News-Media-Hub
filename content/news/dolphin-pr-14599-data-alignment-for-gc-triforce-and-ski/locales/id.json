@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin mengajarkan cakram Triforce yang diekstraksi tentang jendela alamat DIMM",
+  "summary": "DirectoryBlob sekarang menghindari rentang memori arcade yang tersembunyi dan menggunakan penyelarasan file yang lebih kecil dari Triforce alih-alih menerapkan asumsi tata letak GameCube dan Wii.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Dolphin #14599: DirectoryBlob: memperbaiki penyelarasan data untuk GC/Triforce dan melewati rentang memori DIMM Triforce",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "penyelarasan cakram"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Penyimpanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: memperbaiki penyelarasan data untuk GC/Triforce dan melewati rentang memori DIMM Triforce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cakram yang didukung direktori masih membutuhkan penempatan spesifik platform"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin dapat memasang file yang diekstrak melalui DirectoryBlob seolah-olah itu adalah citra cakram. Tata letak virtual itu menetapkan offset dan penyelarasan untuk setiap file. Menggunakan kembali aturan GameCube dan Wii untuk platform arcade Triforce milik Sega melewatkan perangkat keras yang terpasang pada AMMediaboard. Alamat di wilayah cakram tertentu ditutupi oleh SRAM dan mengembalikan isi DIMM, sehingga file host yang sepenuhnya valid bisa menjadi tidak dapat dibaca setelah ditempatkan di sana."
+    },
+    {
+      "type": "heading",
+      "text": "Flag Triforce mengubah dua keputusan tata letak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14599 mencatat apakah volume sumber adalah Triforce. Sebelum menempatkan file, DirectoryBlob memeriksa apakah rentang yang diusulkan tumpang tindih dengan 0x1F000000 hingga 0x1F800000. Jika demikian, offset meloncat ke 0x1F800000, menjaga file lengkap tetap berada di luar jendela yang ditutupi. File Triforce berikutnya selaras dengan 0x20 byte, bukan batas 0x8000-byte yang konservatif yang digunakan untuk cakram direktori GameCube dan Wii."
+    },
+    {
+      "type": "heading",
+      "text": "Menghindari tumpang tindih harus mempertimbangkan interval file secara keseluruhan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Memeriksa hanya alamat awal akan melewatkan file yang dimulai di bawah jendela dan meluas ke dalamnya. Kode membandingkan baik data_offset maupun data_offset ditambah ukuran entri, kemudian memindahkan seluruh entri. Penyesuaian 32-byte yang lebih kecil juga mencegah celah yang tidak perlu pada gambar arcade sambil mempertahankan granularitas yang diharapkan platform. Volume Non-Triforce tidak pernah masuk ke salah satu cabang, jadi penempatan mereka yang sudah ditetapkan tetap diatur byte-demi-byte oleh kebijakan lama."
+    },
+    {
+      "type": "heading",
+      "text": "Perlengkapan batas harus memeriksa setiap sisi lubang"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bangun pohon direktori yang menempatkan file berukuran nol, kecil, dan besar tepat sebelum, melintasi, di dalam, dan setelah kedua batas DIMM. Verifikasi offset FST yang dihasilkan, penyelarasan 0x20, konten file yang dibaca melalui AMMediaboard yang diemulasikan, dan ukuran gambar total. Ulangi pohon yang sama seperti GameCube dan Wii untuk membuktikan penyelarasan 0x8000 tidak berubah. Sertakan aritmatika akhir yang tepat dan offset yang sangat besar untuk menangkap overflow, kemudian boot judul Triforce yang representatif dari direktori yang diekstrak daripada hanya memeriksa metadata."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob adalah pembuat disc virtual; nama file yang benar tidak cukup ketika perangkat keras arcade mengubah rentang alamat fisik mana yang dapat mengembalikan data disc."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Baca diskusi rekayasa Dolphin dan perubahan sumber"
+    }
+  ]
+}

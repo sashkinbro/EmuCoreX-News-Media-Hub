@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 odstraňuje evidenci vyrovnávací paměti kreslení, když ji žádný batch nemůže použít",
+  "summary": "Zakázané nebo okamžitě nevyrovnatelné kresby již nekopírují a neobnovují prostředí GS, zatímco lokální odkazy nahrazují přenos ukazatelů přidaný do horkých renderovacích cest.",
+  "heroAlt": "Zdrojový důkaz z pull requestu PCSX2 #14729: GS: Optimalizace vyrovnávací paměti kreslení a logiky ukazatelů",
+  "searchKeywords": [
+    "PCSX2",
+    "vyrovnávací paměť kreslení",
+    "GS vlákno",
+    "horká cesta",
+    "výkon"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Optimalizace vyrovnávací paměti kreslení a logiky ukazatelů"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zakázaná optimalizace stále platila svou přípravnou cenu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vyrovnávání kreslení může kombinovat kompatibilní práci, ale PCSX2 jej může globálně deaktivovat nebo zjistit, že následující kresba nemůže být vyrovnána. Implementace stále zálohovala kreslící prostředí a obnovovala ho během flush operací, i když žádná budoucí dávka nemohla využít tuto snapshot. Při pracovní zátěži s vysokým podílem GS opakované kopírování přeměňuje neaktivní funkci na měřitelný CPU overhead."
+    },
+    {
+      "type": "heading",
+      "text": "Kopie prostředí nyní sledují skutečnou způsobilost vyrovnávání"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14729 zužuje operace zálohování a obnovy na cesty, kde vyrovnávání kreslení může uchovat následnou práci. Pokud je vyrovnávání zakázáno nebo kompatibilita okamžitě selže, renderer pokračuje v používání aktuálního kontextu bez vytváření kopie pro obnovu. To zachovává funkční chování flushu při odstraňování přenosu stavu, jehož jediným účelem bylo vrácení dávky, která nikdy neexistovala."
+    },
+    {
+      "type": "heading",
+      "text": "Lokální reference nahrazují sledování ukazatelů v nejvytíženějších cestách"
+    },
+    {
+      "type": "paragraph",
+      "text": "Původní implementace bufferování zaváděla ukazatele používané při celém procesu vykreslování, aby kód mohl přepínat mezi živým a bufferovaným stavem. Kde už tato indirekce není potřebná, patch používá lokální reference. Reference umožňují kompilátoru udržet často přistupovaný stav blíže k operaci a snížit opakované načítání ukazatelů, aniž by se měnila vlastnictví nebo životnost základního kontextu GS."
+    },
+    {
+      "type": "heading",
+      "text": "Testy propustnosti musí udržovat stav bufferování viditelný"
+    },
+    {
+      "type": "paragraph",
+      "text": "Použijte hry a dumpy náročné na GS k porovnání maximálního času FPS, GS vlákna a počtu kopií prostředí s povoleným, zakázaným a často odmítaným bufferováním. Očekává se, že slabší CPUs budou mít z toho prospěch. Stále je vyžadováno bezztrátové porovnání snímků, protože přeskočená záloha na jedné kompatibilní hranici by mohla uniknout modifikovaný stav do dalšího vykreslení. Profilujte reprezentativní příčiny vyprázdnění a ověřte, že zlepšení není pouze umělý případ běžce."
+    },
+    {
+      "type": "callout",
+      "text": "Optimalizace odstraňuje práci ze cest, které nemohou těžit z vyrovnávací paměti; neoslabuje obnovu stavu vyžadovanou skutečným dávkovým zpracováním s vyrovnávací pamětí."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

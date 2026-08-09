@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2은 양선형 깊이 리사이징을 실제 축소로 제한합니다",
+  "summary": "하나의 조건 텍스처 캐시 변경은 보간(interpolation)으로 깊이 값이 변경되어 그림자나 표면 아티팩트를 생성하는 복사본과 부드럽게 처리해야 하는 경우를 구분합니다.",
+  "heroAlt": "PCSX2 풀 리퀘스트 #14685의 시각적 증거: GS/TC: 축소된 경우에만 깊이 양선형 리사이즈",
+  "searchKeywords": [
+    "PCSX2",
+    "깊이 대상",
+    "양선형 리사이즈",
+    "GSTextureCache",
+    "네이티브 스케일링"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "그래픽",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: 축소된 경우에만 깊이 양선형 리사이즈"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "양선형 필터링은 크기가 줄어들지 않더라도 깊이 값을 새로 생성할 수 있습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "깊이 텍스처는 일반적인 컬러 이미지가 아닙니다. 인접 샘플을 보간하면 게임에서 작성되지 않은 값이 생성될 수 있으며, 이는 이후 비교를 변경하거나 잘못된 그림자나 기하학적 경계로 나타날 수 있습니다. PCSX2는 Native Scaling 사례에서 도움을 준 후 전반적으로 양선형 샘플링을 활성화했지만, 그 규칙은 크기가 동일하거나 확대한 깊이 복사본에도 적용되어 불필요하게 때로는 눈에 띄게 손상을 일으켰습니다."
+    },
+    {
+      "type": "heading",
+      "text": "새로운 결정은 깊이 대상이 실제로 축소되었는지 여부를 묻습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #14685는 GSTextureCache의 리사이즈 경로를 유지하지만 필터 선택을 좁힙니다. 깊이 대상이 더 작은 크기로 복사되지 않는 한 최단 샘플링이 사용됩니다; 오직 그 축소된 경우에만 양선형 필터링을 선택합니다. 이 구분은 픽셀이 직접 맵핑되거나 확대될 때 정확한 원본 값을 보존하면서, 내부의 더 큰 타겟이 게스트의 낮은 해상도 표현으로 반환될 때 샘플을 평균 내도록 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "킹덤 하츠와 제노사가트는 트레이드오프의 반대 측을 드러냅니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "킹덤 하츠는 보간(interpolation)이 필요하지 않은 깊이 복사본(depth copy)에 닿을 때 발 그림자 차이를 보여주었고, 크리스마스 악몽(The Nightmare Before Christmas)은 돌 표면 아티팩트를 드러냈습니다. 제노사가 에피소드 III(Xenosaga Episode III)는 양선형 깊이 축소(bilinear depth downscaling)가 존재하게 된 이유입니다. 네이티브 스케일링 경로(Native Scaling path)는 스무딩 없이 정상 해상도로 돌아올 때 시각적으로 좋지 않아 보였습니다. 수정된 조건은 하나의 게임을 선택하는 대신 두 가지 동작을 모두 유지하기 때문에 가치가 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "네이티브 및 확대된(upscaled) 비교는 외관뿐만 아니라 값도 확인해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "소스는 테스터에게 킹덤 하츠, 제노사가 에피소드 III, 그리고 크리스마스 악몽을 네이티브 및 확대된 해상도에서 비교하도록 요청합니다. 캡처는 장면과 렌더러를 일정하게 유지한 후 그림자 경계, 보고된 돌 영역, 제노사가의 수위선을 검사해야 합니다. 회귀 테스트(regression pass)는 또한 소스와 대상의 해상도를 기록하여 겉보기 개선이 예상된 가장 가까운(nearest) 또는 양선형(bilinear) 분기(branch)에 기인한 것인지, 혹은 우연한 장면 변동 때문인지를 확인해야 합니다."
+    },
+    {
+      "type": "callout",
+      "text": "규칙은 정확합니다: 이중선형 필터링은 깊이 대상의 축소 도구이지, 모든 크기 조정 형식 작업의 기본 값이 아닙니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "PCSX2 엔지니어링 논의 및 소스 변경 사항을 읽어보세요"
+    }
+  ]
+}

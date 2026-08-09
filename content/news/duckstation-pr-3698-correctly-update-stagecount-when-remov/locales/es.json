@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation mantiene la longitud de la cadena de posprocesamiento consistente después de la eliminación y limpieza",
+  "summary": "La persistencia corregida de StageCount distingue una cadena acortada, una cadena base explícitamente vacía y una anulación vacía por juego que debe eliminarse.",
+  "heroAlt": "Evidencia de origen del pull request #3698 de DuckStation: PostProcessing: Actualizar correctamente `StageCount` al eliminar/limpiar etapas",
+  "searchKeywords": [
+    "DuckStation",
+    "posprocesamiento",
+    "StageCount",
+    "configuración por juego",
+    "eliminación de sombreado"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Interfaz",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: Actualizar correctamente `StageCount` al eliminar/limpiar etapas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount es tanto una longitud como un marcador de anulación"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation almacena las etapas de post-procesamiento en la configuración junto con StageCount. En la configuración base, cero significa explícitamente que no hay etapas. En una capa por juego, eliminar el campo puede significar que el juego ya no sobrescribe la cadena global. Tratar esos casos de la misma manera causa etapas obsoletas o impide la herencia. Una eliminación que deja dos etapas debe escribir dos; una eliminación que deja ninguna puede necesitar borrar el campo por juego."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage ahora elimina solo la anulación por juego realmente vacía"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #3698 calcula new_stage_count y mantiene ese valor cuando aún quedan etapas. El campo se elimina solo cuando la interfaz de configuración no es la capa base y el recuento llega a cero, permitiendo que desaparezca una anulación específica del juego vacía. Anteriormente, la rama podía borrar StageCount después de cualquier eliminación por juego, perdiendo la longitud declarada de la cadena restante."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages corrige la rama opuesta de la capa base"
+    },
+    {
+      "type": "paragraph",
+      "text": "El camino claro tenía invertida su condición de base versus juego. El código corregido escribe StageCount = 0 para la configuración base, donde es significativo un chain global explícitamente vacío, y elimina el valor por juego para que la configuración global pueda fluir. Esta simetría es el núcleo de la corrección: acortar, limpiar globalmente y limpiar una sobreescritura son tres operaciones de persistencia distintas."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de ida y vuelta deberían cubrir cada capa y la cuenta restante"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cree una cadena global de tres etapas y una cadena por juego de tres etapas diferente. Elimine la etapa central por juego, reinicie y verifique que los dos supervivientes mantengan el orden y los parámetros. Elimine las dos últimas y confirme que la cadena global regresa. Luego limpie la cadena base y confirme que permanece vacía después del reinicio. Repita a través de Qt y FullscreenUI, inspeccione StageCount después de cada operación y pruebe agregar una etapa inmediatamente después de limpiar para detectar campos indexados obsoletos."
+    },
+    {
+      "type": "callout",
+      "text": "Una longitud de cadena de cero no siempre se almacena de la misma manera: la configuración base registra vacío, mientras que una capa vacía por juego debería dejar de sobrescribir la base."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Lea la discusión de ingeniería DuckStation y los cambios de código fuente"
+    }
+  ]
+}

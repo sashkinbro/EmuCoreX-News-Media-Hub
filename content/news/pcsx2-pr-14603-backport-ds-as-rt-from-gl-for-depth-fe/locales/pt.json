@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 troca Direct3D 11 cópias de profundidade por cópias mais rápidas de render-target",
+  "summary": "Um caminho de depth-as-render-target realiza mais operações de cópia, mas usa uma forma que Direct3D 11 lida mais rápido, focando em cenas com feedback intenso de AA1 e AAT quando o ROV está desabilitado.",
+  "heroAlt": "Evidência da fonte do pull request #14603 do PCSX2: GS/DX11: Backport ds como rt do GL para feedback de profundidade.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "feedback de profundidade",
+    "cópia de render target",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Backport ds como rt do GL para feedback de profundidade."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A contagem de cópias sozinha não prevê o custo de Direct3D 11"
+    },
+    {
+      "type": "paragraph",
+      "text": "O feedback de profundidade requer que PCSX2 disponibilize a informação de profundidade para um desenho posterior sem violar as regras de uso do alvo. Direct3D 11 pode realizar uma cópia de profundidade GPU, mas a fonte relata que essa operação é particularmente lenta. Uma solução com menos cópias, portanto, pode ser superada por um caminho que converte profundidade em forma de alvo de renderização e realiza cópias extras através de hardware e shaders otimizados para alvos semelhantes a cor."
+    },
+    {
+      "type": "heading",
+      "text": "A estratégia de profundidade-como-RT OpenGL é adaptada para DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14603 adiciona a conversão e a infraestrutura de dispositivo necessária para tratar o feedback de profundidade como cópias de alvo de renderização no Direct3D 11. Alterações no shader expõem o caminho de formato necessário, e GSDevice11 rastreia os recursos usados pela conversão. Direct3D 12 recebe ajustes compartilhados relacionados, mas o alvo de desempenho é DX11. O design é explicitamente testado sem ROV, então o feedback ordenado não oculta a diferença do caminho de cópia."
+    },
+    {
+      "type": "heading",
+      "text": "Mais operações ainda podem terminar mais cedo quando cada operação é mais barata"
+    },
+    {
+      "type": "paragraph",
+      "text": "O trade-off central do artigo é mensurável: a nova rota pode executar cópias adicionais, mas evita o comportamento caro de cópia de profundidade nativa. Não deve ser descrito como universalmente mais rápido apenas a partir da contagem de operações. Conversão de formato, largura de banda de memória, tamanho do alvo, fornecedor GPU e o número de eventos de feedback determinam o resultado. A correção também depende da preservação da precisão da profundidade através da representação do render target."
+    },
+    {
+      "type": "heading",
+      "text": "Os jogos AA1 e AAT fornecem o teste de estresse pretendido"
+    },
+    {
+      "type": "paragraph",
+      "text": "Faça benchmark de Final Fantasy X, Everybody's Golf e outros títulos AA1 ou AAT no Direct3D 11 com ROV desabilitado, mantendo a resolução e a cena constantes. Registre tipos de cópia, contagem, tempo GPU e saída de frames em relação ao caminho de cópia de profundidade anterior. Teste tamanhos nativos e ampliados e vários fornecedores. Compare efeitos dependentes da profundidade e ordenação em z pixel por pixel; um ganho de velocidade que introduza quantização ou profundidade desatualizada não é aceitável."
+    },
+    {
+      "type": "callout",
+      "text": "A otimização escolhe o primitivo mais barato para DX11, não a contagem menor: cópias extras de render-target podem superar uma única rota cara de cópia de profundidade."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

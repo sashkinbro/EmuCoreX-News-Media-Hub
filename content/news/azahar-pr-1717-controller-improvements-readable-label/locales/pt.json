@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar torna perfis de controle portáteis sem ocultar os controles específicos do dispositivo",
+  "summary": "Uma reformulação da entrada para desktop prefere o modelo de controle padronizado do SDL, mantém o fallback do joystick para botões incomuns e permite que os mapeamentos sejam aplicados a um dispositivo, um tipo de controle ou todos os controles.",
+  "heroAlt": "Solicitação de pull de hotkey do controle Azahar mostrando o trabalho de mapeamento de entrada e discussão da revisão",
+  "searchKeywords": [
+    "Azahar",
+    "perfis de controle",
+    "SDL GameController",
+    "hotkeys de controle",
+    "mapeamento de entrada"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Entrada",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Desktop: melhorias no controle - rótulos legíveis, hotkeys de controle, opção de aplicar perfis a todos os controles"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identificadores brutos de joystick dificultavam a leitura e a reutilização de mapeamentos"
+    },
+    {
+      "type": "paragraph",
+      "text": "O caminho mais antigo de desktop do Azahar dependia fortemente da API de Joystick do SDL. Ele podia identificar uma entrada física, mas as telas de configuração frequentemente exibiam valores técnicos dos botões em vez dos nomes dos botões que os usuários reconhecem. Perfis também estavam vinculados a um GUID do dispositivo e a uma porta, então mover o mesmo controlador para outro slot — ou compartilhar um layout com um controlador correspondente — poderia exigir outro mapeamento. O pull request #1717 trata esses dois problemas como uma única questão do modelo de entrada em vez de uma simples renomeação cosmética."
+    },
+    {
+      "type": "heading",
+      "text": "Primeiro GameController, Joystick somente quando o mapa padronizado se esgota"
+    },
+    {
+      "type": "paragraph",
+      "text": "A camada compartilhada SDL agora prefere a API GameController quando o SDL reconhece o dispositivo. Esse caminho fornece controles portáteis no estilo A/B/X/Y e rótulos legíveis no estilo Xbox ou PlayStation. O Azahar mantém a API de Joystick como fallback para controles fora do modelo padrão, incluindo botões de retorno e outras entradas específicas do dispositivo. Os parâmetros registram qual API produziu um mapeamento, evitando que um valor armazenado do GameController seja interpretado posteriormente como um índice bruto de joystick."
+    },
+    {
+      "type": "heading",
+      "text": "Três níveis de mapeamento resolvem diferentes problemas de perfil"
+    },
+    {
+      "type": "paragraph",
+      "text": "O novo tipo de mapa é explícito. “Este controlador” mantém o comportamento anterior de GUID e porta; “este tipo de controlador” usa o GUID sem fixar uma porta; e “todos os controladores” aceita controles correspondentes de qualquer dispositivo conectado. A escolha se aplica a perfis de entrada e atalhos de controlador. Isso preserva configurações precisas com múltiplos controladores, permitindo que um perfil de sala de estar sobreviva a trocas de cabos ou substituições de controles do mesmo modelo."
+    },
+    {
+      "type": "heading",
+      "text": "Atalhos de controlador são monitorados separadamente da entrada normal do jogo"
+    },
+    {
+      "type": "paragraph",
+      "text": "O Qt ganha uma página dedicada de atalhos de controle, um diálogo de captura e um HotkeyMonitor que verifica os controles atribuídos com um timer de 16 ms. Um atalho pode conter uma ou duas entradas de controle, incluindo eixos e botões não padrão. O registro armazena o QAction associado para que o monitor possa invocar o mesmo comando que um atalho de teclado. O estado normal do controle ainda está disponível para o jogo; se um botão for deliberadamente atribuído a ambos os papéis, ambas as ações ocorrem em vez de a camada de atalho consumir silenciosamente a entrada de jogo."
+    },
+    {
+      "type": "heading",
+      "text": "O mapeamento automático agora respeita a ordem de botões frente ao estilo Nintendo e Xbox"
+    },
+    {
+      "type": "paragraph",
+      "text": "O prompt na área de trabalho solicita o botão físico direito e mostra um ícone, correspondendo à intenção do fluxo móvel. Se SDL registra este pressionamento como A, Azahar o trata como uma escolha no layout Nintendo ou um mapeamento de rótulo visível intencional. Outros pressionamentos mantêm a arrumação familiar do estilo XInput. A decisão é baseada no controle capturado pelo usuário em vez de assumir que todo controle imprime as mesmas letras nas mesmas posições."
+    },
+    {
+      "type": "heading",
+      "text": "O teste de regressão deve incluir a ordem de anexos e entradas misturadas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Os registros de origem verificam no Windows, Linux e macOS, além de chapéus, gatilhos analógicos e conexão a quente do controlador após a inicialização. Um teste de acompanhamento duradouro também deve reabrir cada escopo de mapeamento, reconectar o dispositivo em uma porta diferente e verificar um atalho de dois botões enquanto ambos os botões permanecem mapeados no jogo. Os relatórios devem incluir o nome do dispositivo SDL, GUID, tipo de mapa selecionado e se a entrada veio pelo GameController ou pelo fallback do Joystick."
+    },
+    {
+      "type": "callout",
+      "text": "O ganho para o usuário não é apenas etiquetas mais bonitas: os perfis se tornam intencionalmente portáteis, enquanto controles incomuns ainda têm um caminho de escape específico do dispositivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Leia a arquitetura do controlador e a discussão de testes do Azahar"
+    }
+  ]
+}

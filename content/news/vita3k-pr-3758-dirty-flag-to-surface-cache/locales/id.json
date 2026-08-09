@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K membuat penulisan memori tamu menyebabkan permukaan Vulkan menjadi tidak valid",
+  "summary": "Rentang cadangan yang dilindungi sekarang menandai permukaan warna yang di-cache sebagai kotor, mencegah gambar GPU lama digunakan kembali sebagai tekstur setelah CPU mengubah memorinya.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Vita3K #3758: renderer/vulkan: Tambahkan tanda kotor ke cache permukaan",
+  "searchKeywords": [
+    "Vita3K",
+    "Cache permukaan Vulkan",
+    "tanda kotor",
+    "mprotect",
+    "memori tamu"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Tambahkan tanda kotor ke cache permukaan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sebuah permukaan dapat tetap ada di memori GPU setelah tamu mengubah byte cadangannya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K menyimpan permukaan warna Vita sebagai sumber daya Vulkan. Ketika sebuah game menulis memori tamu yang sesuai dari CPU, gambar yang di-cache mungkin tidak lagi mewakili rentang alamat tersebut. Mengembalikannya sebagai tekstur dapat menampilkan frame atau efek lama. Beberapa format linier juga memerlukan sinkronisasi GPU-ke-tamu saat CPU membacanya, sehingga kesalahan baca dan tulis memiliki makna yang terkait tetapi berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Callback perlindungan sekarang membawa sinkronisasi bersama dan status kotor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3758 memberikan setiap ColorSurfaceCacheInfo sebuah flag kotor bersama. protect_surface menyelaraskan bagian interior yang dapat dilindungi dengan aman ke halaman 4 KiB. Permukaan linier yang dapat disinkronisasi menggunakan MemPerm::None untuk menjebak baca dan tulis serta menangkap need_surface_sync; permukaan lain menggunakan ReadOnly untuk menjebak tulis. Tindakan menulis menandai kotor. Untuk permukaan yang lebih kecil dari satu halaman, pelacakan kotor ditunda karena data yang tidak terkait pada halaman yang sama yang dilindungi akan membuat invalidasi palsu."
+    },
+    {
+      "type": "heading",
+      "text": "Pencarian cache menolak data GPU setelah penulisan CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ketika permukaan warna diminta sebagai tekstur, setel bendera kotor mengembalikan tidak ada hasil yang di-cache, memaksa pemanggil menjauh dari konten GPU yang usang. Ketika permukaan yang sama menjadi framebuffer lagi, Vita3K dapat mengaktifkan kembali perlindungan dan membersihkan kotor setelah menetapkan penggunaan otoritatif baru. Perlindungan yang saling tumpang tindih digabungkan melalui most_restrictive_perm sehingga menambahkan rentang yang lebih lemah tidak dapat secara tidak sengaja membuka kembali memori yang sudah dijaga lebih kuat."
+    },
+    {
+      "type": "heading",
+      "text": "Metode pemetaan memori dan tumpang tindih halaman adalah uji utama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Render ke permukaan, ambil sampelnya, tulis ulang seluruh atau sebagian dari tamu CPU, kemudian ambil sampel lagi untuk format linear dan bertiled. Sertakan alokasi yang sejajar, tidak sejajar, sub-halaman, tumpang tindih, dan halaman bersama; konfirmasikan permukaan kecil menghindari bendera kotor palsu tanpa menyembunyikan perubahan nyata. Uji sinkronisasi bacaan secara terpisah dari pembatalan tulis. Ulangi pada pemetaan buffer asli, double buffering, driver Linux NVIDIA dan non-NVIDIA, pemulihan Android, dan savestate. Catat kesalahan perlindungan untuk menangkap loop atau pemrosesan jalur panas yang berlebihan."
+    },
+    {
+      "type": "callout",
+      "text": "Cache hanya benar saat bukti kepemilikannya masih berlaku; satu penulisan tamu cukup untuk membatalkan klaim permukaan GPU atas memori itu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Baca diskusi rekayasa Vita3K dan perubahan sumbernya"
+    }
+  ]
+}

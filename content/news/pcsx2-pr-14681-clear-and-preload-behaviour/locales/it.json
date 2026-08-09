@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 preserva i dati del render-target intatti durante le pulizie parziali",
+  "summary": "Il tracciamento di cancellazione e precaricamento ora distingue una sovrapposizione completa da un'operazione su metà target, prevenendo che righe valide vengano scartate e copiate indietro come dati corrotti.",
+  "heroAlt": "Evidenza visiva dalla pull request PCSX2 #14681: GS/TC: Migliorare il comportamento di cancellazione e precaricamento",
+  "searchKeywords": [
+    "PCSX2",
+    "cache delle texture",
+    "cancellazione parziale",
+    "precaricamento",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Migliorare il comportamento di cancellazione e precaricamento"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una cancellazione su metà target stava invalidando il frame precedente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 può cancellare solo la seconda metà di un render target mentre le prime 256 linee contengono già dati necessari per il frame successivo. PCSX2 aveva precedentemente contrassegnato il target più ampio come non valido, poi in seguito ha precaricato da un intervallo che aveva già dichiarato inutilizzabile. La copia era internamente coerente con la mappa di validità errata, producendo lampeggiamenti anche se il gioco non aveva mai cancellato la metà preservata."
+    },
+    {
+      "type": "heading",
+      "text": "Ora la cancellazione della validità richiede un target corrispondente o una sovrapposizione completa"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14681 modifica il momento in cui i canali RGB e alpha perdono il loro stato valido. Una cancellazione può scartare i contenuti tracciati solo quando il target corrisponde o copre completamente l'intervallo rilevante. La sovrapposizione parziale mantiene viva la porzione non toccata. Il renderer gestisce anche le cancellazioni di metà coppie in modo più deliberato e salta un normale draw di cancellazione quando un target si risolve a zero, evitando operazioni che non possono contribuire pixel."
+    },
+    {
+      "type": "heading",
+      "text": "La precarica segue la copertura sopravvissuta invece della vecchia etichetta del target"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le modifiche al preload del compagno sono importanti perché validità e ripristino sono due facce della stessa decisione della cache. Quando un bersaglio sovrapposto viene riutilizzato, PCSX2 deve copiare solo i dati noti per sopravvivere; altrimenti un clear corretto può comunque essere seguito da un preload obsoleto o indefinito. Il lavoro in GSRendererHW e GSTextureCache allinea questi passaggi, con gli helper di registro GS che forniscono le informazioni di copertura utilizzate dalla decisione."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 e X-Men Origins coprono diversi schemi di clear."
+    },
+    {
+      "type": "paragraph",
+      "text": "La fonte identifica il flicker di Gran Turismo 4 come il principale riproduttore e include acquisizioni prima e dopo per Time Crisis 3 e X-Men Origins. I test dovrebbero riesaminare gli stessi frame mentre si alterna tra rendering nativo e upscalato, quindi osservare diversi frame successivi per eventuali corruzioni ritardate. Anche l'illuminazione di Need for Speed è un altro controllo richiesto. Una traccia utile registra i limiti del bersaglio, la validità dei canali e i limiti del preload per ogni clear sovrapposto."
+    },
+    {
+      "type": "callout",
+      "text": "La correzione chiave è temporale: un cancellamento parziale non deve eliminare la conoscenza della cache sui pixel che l'ospite ha lasciato intenzionalmente per un fotogramma successivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

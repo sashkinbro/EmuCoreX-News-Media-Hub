@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 verschiebt die Richtlinie zur Texturumwandlung hinter GSDevice",
+  "summary": "StretchRectAuto, CreateCompatible und ShaderConvertSelector reorganisieren die Shader-Kopie- und Tiefenformat-Handhabung, sodass der Hardware-Renderer eine Umwandlung anfordern kann, ohne die Details der Pipelines jedes Backends zu kennen.",
+  "heroAlt": "Visueller Nachweis aus dem PCSX2 Pull Request #14477: GS/HW: Shader-Kopie und Texturformat-Handhabung überarbeiten.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "Texturumwandlung"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: Shader-Kopie und Texturformat-Handhabung überarbeiten."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache trug Entscheidungen, die zur Backend-Grenze gehören"
+    },
+    {
+      "type": "paragraph",
+      "text": "Shader-Kopien in PCSX2 müssen basierend auf dem Quellformat, Zielformat, emulierten Bits pro Pixel und Filterung eine Konvertierung auswählen. Vor Pull Request #14477 sahen GSTextureCache und GSRendererHW zu viel von dieser Mechanik. Die Umstrukturierung verlegt die Auswahl hinter GSDevice, sodass höherstufiger Rendering-Code die benötigte Kopie beschreibt, anstatt selbst Back-End-spezifische Shader-Details auszuwählen."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto und CreateCompatible drücken die Operation aus, nicht die API."
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto akzeptiert die zwei Texturen und Informationen über das emulierte Format und wählt dann den Konvertierungs-Shader innerhalb von GSDevice. CreateCompatible erstellt eine Textur, die dem Format einer bestehenden Textur entspricht. ShaderConvertSelector fügt Modifikator-Bits hinzu, die verwandte Konvertierungen darstellen können, ohne unzusammenhängende Shader-Einstiegspunkte zu vervielfachen. Gemeinsam bereiten sie die Tiefe, die als R32-Farbe gespeichert ist, und zukünftige Integer-Tiefenpfade vor, während die inaktive ROV-Tiefenfarbunterstützung hinter derselben Schnittstelle bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Umbenennungen machen die Absicht von Tiefe und Primitive-ID explizit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch bringt die OpenGL-Konvertierungs-Shader enger an Vulkan heran, benennt die Initialisierung von Stencil-Bildern in Primitive-ID-Initialisierung um und ändert das Label rgba8_16bits in rgb5a1_16bits. Float32 wird zu DepthColor, während die Selektor-Namen FLOAT32, FLOAT24 und FLOAT16 zu DEPTH32, DEPTH24 und DEPTH16 werden. Das bilineare Filtern ändert sich ebenfalls von einem Boolean zu einem Enum, was Platz für explizite Modi anstelle eines weiteren überladenen Flags lässt."
+    },
+    {
+      "type": "heading",
+      "text": "Ein reines Refactoring erfordert Tests mit Output-Identität auf jedem Renderer."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der angegebene Vertrag lautet identische Ausgabe zum vorherigen Code. Dump-Läufe sollten daher Frame-Ergebnisse über Direct3D, OpenGL, Vulkan und Metal mit unterschiedlichen Texturformaten, Tiefenkopien, nativer Auflösung und Upscaling vergleichen. Metal hat bereits einen gemeldeten Dump-Lauf-Check erhalten, aber die breite Dateiauswahl bedeutet, dass Shader-Kompilierung und Kopie-Auswahl auch auf den anderen Hardware-Backends getestet werden müssen. Jede Pixeldifferenz muss erklärt werden, bevor spätere ROV-Arbeiten den neuen Pfad verwenden."
+    },
+    {
+      "type": "callout",
+      "text": "Das für den Benutzer sichtbare Versprechen ist absichtlich konservativ: noch keine neuen Effekte, aber eine engere Renderer-/Backend-Grenze, die spätere Tiefenformate erweitern können, ohne die Konvertierungspolitik zu duplizieren."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "Lese die PCSX2 Ingenieurdiskussion und Quelländerungen"
+    }
+  ]
+}

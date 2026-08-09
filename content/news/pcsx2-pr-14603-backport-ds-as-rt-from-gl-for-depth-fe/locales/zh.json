@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 以更快的渲染目标复制交易 Direct3D 11 深度副本",
+  "summary": "深度作为渲染目标的路径执行更多的复制操作，但使用 Direct3D 11 更快速处理，针对在禁用 ROV 时反馈密集的 AA1 和 AAT 场景。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14603 的源证据：GS/DX11：将深度缓冲作为渲染目标从 GL 回移用于深度反馈。",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "深度反馈",
+    "渲染目标复制",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11：将深度缓冲作为渲染目标从 GL 回移用于深度反馈。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "仅复制次数无法预测 Direct3D 11 成本"
+    },
+    {
+      "type": "paragraph",
+      "text": "深度反馈要求 PCSX2 使深度信息可用于后续绘制，同时不违反目标使用规则。Direct3D 11 可以执行 GPU 深度拷贝，但来源报告该操作特别慢。因此，拷贝次数较少的解决方案可能不如将深度转换为渲染目标形式并通过为类似颜色目标优化的硬件和着色器执行额外拷贝的路径表现好。"
+    },
+    {
+      "type": "heading",
+      "text": "OpenGL 深度作为 RT 的策略已适应 DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14603 添加了将深度反馈视为 Direct3D 11 上的渲染目标拷贝所需的转换和设备管道。着色器更改暴露了所需的格式路径，GSDevice11 追踪转换使用的资源。Direct3D 12 接收相关共享调整，但性能目标是 DX11。该设计在无 ROV 的情况下进行了明确测试，因此有序反馈不会掩盖拷贝路径的差异。"
+    },
+    {
+      "type": "heading",
+      "text": "当每个操作更便宜时，更多操作仍然可以更快完成"
+    },
+    {
+      "type": "paragraph",
+      "text": "文章的核心权衡是可以衡量的：新路径可能会执行额外的拷贝，但可以避免昂贵的原生深度拷贝行为。仅从操作次数来看，不应描述其为普遍更快。结果取决于格式转换、内存带宽、目标大小、GPU供应商以及反馈事件的数量。正确性也依赖于通过渲染目标表示保持深度精度。"
+    },
+    {
+      "type": "heading",
+      "text": "AA1 和 AAT 游戏提供了预期的压力测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Direct3D 11 上对 Final Fantasy X、Everybody's Golf 以及其他 AA1 或 AAT 游戏进行基准测试，禁用 ROV，同时保持分辨率和场景不变。记录拷贝类型、数量、GPU 时间以及相对于以前深度拷贝路径的帧输出。测试原生和放大尺寸以及多个供应商。逐像素比较依赖深度的效果和 z 排序；引入量化或过时深度的加速是不被接受的。"
+    },
+    {
+      "type": "callout",
+      "text": "该优化为 DX11 选择更便宜的原语，而不是更少的数量：额外的渲染目标拷贝可以胜过单次昂贵的深度拷贝路径。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "阅读 PCSX2 的工程讨论和源代码变更"
+    }
+  ]
+}

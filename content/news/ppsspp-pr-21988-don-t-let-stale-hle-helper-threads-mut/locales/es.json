@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP detiene que los hilos auxiliares obsoletos dañen un savestate restaurado",
+  "summary": "El cargador savestate ahora separa los antiguos envoltorios de host sceUtility y PSMF antes de la destrucción, protegiendo los hilos del núcleo activos y la memoria que puede reutilizar los mismos identificadores.",
+  "heroAlt": "Evidencia fuente del pull request #21988 de PPSSPP: Savestate: no permitir que los hilos auxiliares obsoletos HLE modifiquen el estado del núcleo restaurado",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Estados guardados",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: no permitir que los hilos auxiliares obsoletos HLE modifiquen el estado del núcleo restaurado"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un destructor podría actuar sobre la generación incorrecta del estado del núcleo"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP mantiene wrappers HLEHelperThread del lado del host para trabajo asincrónico, como el acceso a datos guardados y la reproducción PSMF. Durante una carga, el emulador reemplaza esos wrappers con objetos provenientes del flujo serializado. Dos rutas destruían el wrapper previo a la carga normalmente, permitiendo que su destructor llamara a __KernelDeleteThread y liberara un bloque de entradas después de que el nuevo estado del kernel ya estuviera instalado. El IDs dentro del viejo wrapper ya no describía los objetos que se le permitía poseer."
+    },
+    {
+      "type": "heading",
+      "text": "La reutilización de identificadores convirtió el ruido de registro inofensivo en corrupción silenciosa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si el estado restaurado no contenía el ID de hilo obsoleto ni la asignación, el error producía un mensaje sobre un hilo inexistente o liberación inválida. El caso peligroso ocurría cuando el estado restaurado había reciclado alguno de estos valores. Entonces, el destructor podía terminar un hilo legítimo activo o liberar memoria usada por un objeto diferente. Cargar mientras el trabajo de datos guardados o un reproductor PSMF estaban activos hacía que este error de propiedad sensible al tiempo fuera mucho más fácil de alcanzar."
+    },
+    {
+      "type": "heading",
+      "text": "Forget separa la vida del envoltorio del host de la propiedad del invitado"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #21988 aplica el patrón ya utilizado por el manejo del estado de E/S de PPSSPP. sceUtility llama explícitamente a Forget, elimina su accessThread y limpia el puntero antes de que Do lo recree. En las lecturas de PSMF, el cargador recorre el mapa de reproductores existente y llama a Forget en cada finishThread antes de que la deserialización del mapa destruya a los reproductores. Forget no borra el estado restaurado del invitado; le indica al envoltorio de anfitrión obsoleto que ya no posee esos recursos del kernel."
+    },
+    {
+      "type": "heading",
+      "text": "La matriz de regresión debe ejercitar los IDs reciclados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pruebe guardados realizados antes, durante y después de las operaciones de datos guardados y la reproducción de PSMF, luego cargue cada uno desde una sesión con diferente actividad. Instrumente la eliminación de hilos y las liberaciones de BlockAllocator para demostrar que ningún envoltorio previo a la carga modifica la generación restaurada. Incluya ciclos de carga repetidos, rebobinado, cambio de ranura, estados fallidos y apagado después de una carga. Una prueba dirigida debería recrear deliberadamente el mismo ID de hilo y la dirección de bloque, porque el antiguo caso de registro inofensivo por sí solo no expondría una corrupción silenciosa."
+    },
+    {
+      "type": "callout",
+      "text": "Una restauración de savestate cambia la propiedad de generaciones; los destructores del host deben olvidar los manejadores de invitados obsoletos antes de que el kernel restaurado se convierta en autoritario."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Lea la discusión de ingeniería y los cambios de código de PPSSPP"
+    }
+  ]
+}

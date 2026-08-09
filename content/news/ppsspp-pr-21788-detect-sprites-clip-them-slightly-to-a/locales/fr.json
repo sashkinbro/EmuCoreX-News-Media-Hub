@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21788-detect-sprites-clip-them-slightly-to-a",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP cible les coutures des sprites GTA à la frontière géométrie-vers-texel",
+  "summary": "Un chemin de compatibilité reconnaît les sprites à deux triangles et pousse leur bord UV externe vers l'intérieur, réduisant les artefacts de mise à l'échelle sans affaiblir globalement le filtrage de texture.",
+  "heroAlt": "Preuve source de la pull request PPSSPP #21788 : Correction du sprite GTA : détecter les sprites, les découper légèrement pour éviter les artefacts de filtrage",
+  "searchKeywords": [
+    "PPSSPP",
+    "GTA",
+    "bordure de sprite",
+    "filtrage de texture",
+    "coordonnées UV"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21788": "Correction du sprite GTA : détecter les sprites, les découper légèrement pour éviter les artefacts de filtrage"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La mise à l'échelle met en évidence des pixels juste au-delà du rectangle prévu d'un sprite"
+    },
+    {
+      "type": "paragraph",
+      "text": "De nombreuses interfaces et effets PSP dessinent un sprite rectangulaire sous forme de deux triangles. À la résolution native, les coordonnées qui tombent sur les limites des texels peuvent sembler correctes. Avec une résolution interne plus élevée et un filtrage linéaire, les échantillons près d'un bord extérieur peuvent se mélanger avec une région d'atlas voisine ou une bordure transparente. Un changement global de l'échantillonneur affecterait chaque texture, y compris les surfaces 3D qui nécessitent un filtrage ordinaire, donc la correction doit d'abord prouver que la géométrie soumise est réellement un sprite."
+    },
+    {
+      "type": "heading",
+      "text": "Le détecteur reconstruit un quadrilatère à partir des sommets de triangles partagés"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21788 examine les paires de triangles adjacents dans le chemin de transformation logiciel. Elle trouve les deux indices partagés par les deux triangles, identifie leurs coins opposés, et vérifie l'alignement des axes ainsi que les relations UV correspondantes. Seule l'orientation supportée devient un sprite valide. La routine dérive ensuite l'échelle UV et applique un montant configurable de SpriteBorderFix aux bords éloignés dans la bonne direction de gradient."
+    },
+    {
+      "type": "heading",
+      "text": "La position et les UV se déplacent ensemble pour préserver l'alignement des pixels"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'ajustement pousse à la fois les coordonnées de texture sélectionnées et leurs positions dans l'espace de l'écran. Déplacer uniquement les UV pourrait étirer le sprite ou décaler son empreinte d'échantillonnage par rapport aux pixels prévus. Le code évite également les dimensions plein écran telles que 480 par 272 et est limité par une valeur de compatibilité, réduisant le risque pour les titres connus comme affectés. Les listes de triangles pures et les ordres de vertex non pris en charge tombent intentionnellement plutôt que de recevoir une correction estimée."
+    },
+    {
+      "type": "heading",
+      "text": "Les éléments visuels doivent inclure des atlas et des faux positifs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Capturez les scènes affectées de GTA à la résolution native et à plusieurs résolutions agrandies en utilisant le filtrage au plus proche et linéaire. Ajoutez un atlas synthétique avec des cellules voisines fortement colorées de sorte qu'un pixel de bord échantillonné soit évident. Testez les quads tournés, la géométrie en perspective, les effets plein écran, les bandes de triangles, les dégradés UV inversés, les sprites découpés et les ordres de vertex inhabituels. Confirmez que le drapeau de compatibilité reste limité au titre et que zéro est une véritable opération nulle. Comparez la géométrie avant et après pour s'assurer que la correction supprime les coutures sans réduire l'œuvre visible."
+    },
+    {
+      "type": "callout",
+      "text": "La correction est étroite par conception : reconnaître la géométrie du sprite, préserver sa relation de pixels, et laisser inchangé tout dessin non prouvé."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21788",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

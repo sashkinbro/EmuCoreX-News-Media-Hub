@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2要求在Qt可以取消暂停VM之前重置光盘切换",
+  "summary": "VMLock 的取消暂停事件正在覆盖一个延迟的重置状态；在发布重置后移动仿真视图的转换可以保留预期的虚拟机生命周期。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14720 的原始证据：Qt：修改更换光盘时重置 VM 的逻辑",
+  "searchKeywords": [
+    "PCSX2",
+    "光盘切换",
+    "VM 重置",
+    "VMLock",
+    "独立窗口"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "核心",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt：修复更换光盘时重置 VM 的逻辑"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "从游戏列表中更换光盘会交叉 UI 和 VM 生命周期"
+    },
+    {
+      "type": "paragraph",
+      "text": "启用“渲染到独立窗口”后，Qt 可以在一次用户操作中切换视图、锁定虚拟机、发布事件并请求重置。重置本身被延迟执行。MainWindow 在锁定范围结束时移动到仿真视图，而 VMLock 的析构函数发布了一个取消暂停事件。稍后的该事件可能在重置处理程序实际执行之前替代 VMState::Resetting。"
+    },
+    {
+      "type": "heading",
+      "text": "这里的竞态条件是事件顺序问题，而不是同步缺失"
+    },
+    {
+      "type": "paragraph",
+      "text": "VM 有一个有效的重置状态和一个旨在保护转换的锁。问题在于两个延迟的状态更改被排队在错误的顺序中。来自 UI 清理的已发布恢复运行被允许执行，好像重置已经完成。这就解释了为什么从特定前端路径更换光盘会失败，即使直接重置和普通的暂停/恢复操作都能正常工作。"
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView 现在遵循已发布的重置"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14720 将 MainWindow::switchToEmulationView 移动到重置事件发布之后。在建立重置请求时虚拟机未运行，视图切换不再会因过早取消暂停而让 VMLock 干扰重置。源码指出可能需要更广泛的虚拟机状态重设计，但此更改在不扩展范围的情况下修复了已知的顺序错误。"
+    },
+    {
+      "type": "heading",
+      "text": "单独窗口的光盘更改必须在每个状态下重复执行"
+    },
+    {
+      "type": "paragraph",
+      "text": "启用渲染到独立窗口，启动一个多光盘游戏，并在运行、暂停以及有模态 UI 打开的情况下，从游戏列表中选择另一张光盘。日志记录重置和取消暂停事件，并断言重置在完成前能够持续生效。在挂起、状态加载以及快速连续选择光盘后重复操作。标准的同窗口更改和手动重置为负控制；排序修复不能导致 VM 永久暂停或视图切换过晚。"
+    },
+    {
+      "type": "callout",
+      "text": "VM 重置已被请求；该修复确保在该请求生效之前，不允许任何 UI 清理事件恢复执行。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "阅读 PCSX2 工程讨论和源代码更改"
+    }
+  ]
+}

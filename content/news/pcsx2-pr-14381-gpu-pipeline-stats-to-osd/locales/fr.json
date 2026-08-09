@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 expose le nombre d'invocations de shader avant que l'overlay ne les modifie",
+  "summary": "Une métrique OSD optionnelle rapporte les invocations de shader de vertex et de pixel collectées avant le dessin d'ImGui, rendant les comparaisons de charge de travail du backend plus stables et plus faciles à lire.",
+  "heroAlt": "Preuve source du pull request PCSX2 #14381 : GS : Ajouter les statistiques de pipeline GPU à l'OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Statistiques de pipeline GPU",
+    "Invocations de vertex shader",
+    "Invocations de pixel shader",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Outils",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS : Ajouter les statistiques de pipeline GPU à l'OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le taux de rafraîchissement ne peut pas indiquer si une scène a étendu le travail de vertex ou de pixel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une régression de performance peut provenir d'un plus grand nombre de sommets soumis, de plus d'échantillons couverts, de passes supplémentaires ou de synchronisation. PCSX2 affichait déjà plusieurs métriques du moteur de rendu, mais manquait de comptages directs d'invocations du pipeline. La pull request #14381 ajoute VSI et PSI afin qu'un développeur puisse voir si le GPU a exécuté des milliers d'appels de vertex shader ou des millions d'appels de pixel shader dans l'intervalle mesuré."
+    },
+    {
+      "type": "heading",
+      "text": "Les requêtes sont implémentées dans toutes les API matérielles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les classes de périphériques Direct3D 11, Direct3D 12, OpenGL, Vulkan et Metal exposent des statistiques de pipeline aux métriques de performance courantes. Le paramètre apparaît dans la configuration OSD et le superposé formate les grands nombres avec les suffixes décimaux K, M et B. La collecte via des requêtes back-end est nécessaire car une estimation courante à partir des comptages de dessin manquerait le clipping, l'instancing, la couverture d'échantillons et l'exécution spécifique à l'API."
+    },
+    {
+      "type": "heading",
+      "text": "L'échantillonnage avant ImGui supprime le superposé de sa propre mesure"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les résultats initiaux variaient considérablement car la requête pouvait inclure le rendu OSD et ImGui. Le comportement final collecte les statistiques avant de dessiner la superposition, stabilisant les chiffres et rendant les comparaisons de scène plus significatives. Le rendu logiciel reste présent via Vulkan, donc les valeurs peuvent y apparaître mais décrivent la présentation plutôt que la charge de travail GS du logiciel ; la source avertit que ces chiffres ne doivent pas être interprétés comme des statistiques de rendu matériel."
+    },
+    {
+      "type": "heading",
+      "text": "Une comparaison valide fixe la scène et l'intervalle de requête"
+    },
+    {
+      "type": "paragraph",
+      "text": "Activez l'affichage des statistiques du pipeline GPU et maintenez une scène immobile à travers les backends, en vérifiant que VSI et PSI apparaissent et évoluent de manière plausible lorsque la résolution ou la géométrie change. Basculez l'OSD lui-même et confirmez que les valeurs mesurées ne sautent pas en comptant ses pixels. Testez la réinitialisation de la requête, la perte de périphérique, la pause et le changement de backend. Les comptages cross-API peuvent encore différer car les spécifications et la prise en compte des échantillons varient, il faut donc diagnostiquer les tendances au sein d'un backend avant de prétendre à une parité exacte."
+    },
+    {
+      "type": "callout",
+      "text": "L'OSD rapporte les résultats de la requête matérielle, pas une vérité universelle cross-API ; prendre l'échantillon avant ImGui le rend utile sans que le compteur ne se mesure lui-même."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les changements de source"
+    }
+  ]
+}

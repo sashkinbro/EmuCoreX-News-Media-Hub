@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3703-loongarch64-support",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation ottiene un ricompilatore nativo LoongArch64 e un runtime host",
+  "summary": "Il porting va oltre l'emissione delle istruzioni per coprire il recupero dagli errori, salti rapidi, rilevamento dell'architettura, dipendenze, test e un assemblatore/disassemblatore LoongArch riutilizzabile.",
+  "heroAlt": "Prova sorgente dalla pull request DuckStation #3703: Aggiungi supporto LoongArch64",
+  "searchKeywords": [
+    "DuckStation",
+    "LoongArch64",
+    "ricompilatore",
+    "laguna",
+    "errori di pagina"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "Cpu",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3703": "Aggiungi supporto LoongArch64"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un backend CPU necessita anche del runtime che circonda il codice generato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aggiungere una nuova architettura host a un emulatore non è solo una tabella di istruzioni guest. I blocchi ricompilati devono saltare indietro al C++ in sicurezza, riprendersi dai guasti di memoria protetta, seguire la convenzione di chiamata della piattaforma e essere selezionati dalla build. La pull request #3703 tratta LoongArch64 come un port completo host, accoppiando il suo ricompilatore con il rilevamento dell'architettura, il supporto fastjmp, la gestione dei page-fault e la configurazione delle dipendenze."
+    },
+    {
+      "type": "heading",
+      "text": "Lagoon fornisce assembly e disassembly LoongArch come layer autonomo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il port introduce Lagoon, un assembler e disassembler generico LoongArch64 creato per questo lavoro ma mantenuto come libreria separata. DuckStation lo usa per codificare le istruzioni native anziché spargere opcode grezzi attraverso il ricompilatore. I moduli CMake e i target di dipendenza integrano la libreria, mentre i file sorgente e di licenza rimangono espliciti. Questo confine rende il codice emesso revisionabile e offre ad altri progetti LoongArch un componente riutilizzabile."
+    },
+    {
+      "type": "heading",
+      "text": "Il codice di supporto aveva assunzioni sull'architettura al di fuori del ricompilatore"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica regola anche il codice ImGui e rapidyaml in modo che le build LoongArch vengano riconosciute, aggiorna la funzione blend32() non-SIMD ed estende i test sui vettori. Questi dettagli prevengono che un backend CPU tecnicamente completo fallisca nel frontend o nello strato di utilità comune. Il contesto dei fault, la preservazione dei registri, il flush della cache e la larghezza dei puntatori devono tutti rispettare l'ABI; un'unica assunzione solo per x86 o ARM può invalidare una traduzione guest altrimenti corretta."
+    },
+    {
+      "type": "heading",
+      "text": "La convalida deve combinare i test guest con i percorsi di eccezione dell'host."
+    },
+    {
+      "type": "paragraph",
+      "text": "Una build LoongArch64 dovrebbe eseguire i test CPU tra interprete e ricompilatore, carichi di lavoro GTE, transizioni fastjmp e fault di memoria protetta che lasciano intenzionalmente il codice generato. I test vettoriali comuni devono coprire il blend non-SIMD corretto. Costruire sia la configurazione di debug sia quella ottimizzata e testare la compilazione degli shader, i salvataggi di stato e l'avvio del frontend in modo che le correzioni delle dipendenze non siano solo di compilazione. Le misurazioni delle prestazioni sono utili dopo la verifica della correttezza, ma un backend più veloce che gestisce male un fault o un registro salvato non è pronto."
+    },
+    {
+      "type": "callout",
+      "text": "Il lavoro significativo è il confine della piattaforma: la generazione delle istruzioni, l'ABI, i guasti, i salti, le dipendenze e i test devono tutti riconoscere insieme LoongArch64."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3703",
+      "label": "Leggi la discussione ingegneristica DuckStation e le modifiche al codice sorgente"
+    }
+  ]
+}

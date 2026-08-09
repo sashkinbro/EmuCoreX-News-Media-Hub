@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K distinguishes SPIR-V object IDs from vector lane numbers",
+  "summary": "Vector-shuffle construction now tags source vectors as IDs and component selectors as literals, preventing lane zero from becoming an invalid SPIR-V ID.",
+  "heroAlt": "Source evidence from Vita3K pull request #4074: shader: Fix one case of 'ids can't be 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "shader recompiler",
+    "uniform block"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Fix one case of 'ids can't be 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The same integer type can represent two different SPIR-V concepts"
+    },
+    {
+      "type": "paragraph",
+      "text": "SPIR-V instructions reference previously defined objects by numeric ID, and some also contain literal numbers. OpVectorShuffle takes two vector IDs followed by component selectors. A selector of zero means the first lane of the first vector; an object ID of zero is forbidden. Passing every operand through a vector typed only as spv::Id therefore loses the distinction exactly where a valid lane number shares the sentinel value of an invalid ID."
+    },
+    {
+      "type": "heading",
+      "text": "The builder now receives an explicit kind for every operand"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #4074 changes the two shuffle operand lists to spv::IdImmediate. Loads of dest and dest_friend and the vector being copied are marked as IDs. Loop-generated lane indices are marked as immediate values, whether they are zero, four plus i, or an offset derived from start modulo four. createOp can then encode each word according to the instruction grammar instead of inferring its meaning from a C++ alias."
+    },
+    {
+      "type": "heading",
+      "text": "The affected path joins uniform data across vec4 boundaries"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register handles a range that spans the current destination vector and its neighbor. It constructs complementary shuffles so preserved destination lanes and incoming source lanes land in the right positions. Starts aligned to a vec4 take a simpler route; misaligned starts exercise the two-list logic. The correction does not change which lane formula is chosen. It makes the already calculated selectors legal literals."
+    },
+    {
+      "type": "heading",
+      "text": "Validator-driven fixtures should enumerate every starting lane"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generate uniform copies beginning at offsets zero through three with lengths that remain within one vec4 and cross into the next. Inspect emitted OpVectorShuffle words, run spirv-val, and execute shaders with uniquely colored or numbered source lanes. Include selectors zero, three, four, seven, and any undef sentinel the builder supports. Test Vulkan drivers with strict validation and compare rendered output across vendors. A regression test should assert operand kinds in addition to final pixels."
+    },
+    {
+      "type": "callout",
+      "text": "In a binary shader language, zero can be a perfectly valid lane and an impossible object ID; the builder must know which one the instruction expects."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

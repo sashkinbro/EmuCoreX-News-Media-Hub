@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Las compuertas PCSX2 configuran la disposición de retroalimentación de profundidad Vulkan según la capacidad que la legaliza",
+  "summary": "La toma de muestras de solo lectura de profundidad ahora vuelve a la disposición GENERAL cuando las barreras de textura están desactivadas, evitando una disposición de bucle de retroalimentación seleccionada sin sus bits de función Vulkan requeridos.",
+  "heroAlt": "Evidencia de origen del pull request #14817 de PCSX2: GS:VK: Solo usar la disposición de bucle de retroalimentación para profundidad si se admite la barrera de textura.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "disposición de bucle de retroalimentación",
+    "barrera de textura",
+    "capa de validación"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Solo usar la disposición de bucle de retroalimentación para profundidad si se admite la barrera de textura."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una disposición de imagen solo es válida cuando su contrato de función está habilitado"
+    },
+    {
+      "type": "paragraph",
+      "text": "El diseño de bucle de retroalimentación de adjuntos de Vulkan describe una imagen utilizada a través de una relación de retroalimentación. PCSX2 agrega el bit de capacidad correspondiente solo cuando la barrera de texturas o el soporte de retroalimentación de profundidad están activos. No obstante, la ruta de muestreo de solo lectura de profundidad podría elegir ese diseño después de que se forzaran las barreras, creando una contradicción: la grabación de comandos reclamaba una función que la configuración del dispositivo no había habilitado deliberadamente."
+    },
+    {
+      "type": "heading",
+      "text": "La retroalimentación de profundidad no soportada ahora usa el diseño GENERAL"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14817 hace que la selección del diseño dependa de la misma prueba de soporte que controla los bits de capacidad. Las rutas admitidas conservan el diseño especializado de bucle de retroalimentación. Cuando la función no está disponible o está Fuerza Deshabilitada, el muestreo de profundidad usa GENERAL, un recurso legal con requisitos de sincronización más amplios. El cambio mantiene el estado de la imagen y las características del dispositivo derivadas de una única decisión en lugar de comprobaciones optimistas independientes."
+    },
+    {
+      "type": "heading",
+      "text": "Los errores de validación exponen un fallo real de portabilidad antes de que fallen los píxeles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un controlador puede aceptar una combinación de disposición ilegal sin un artefacto visual inmediato, especialmente fuera del modo de depuración. Las capas de validación Vulkan marcan la discrepancia de manera determinista, convirtiéndolas en la evidencia adecuada para este parche. Evitar la advertencia no es una limpieza estética de registros: asegura que el flujo de comandos se mantenga dentro del contrato requerido entre distintos proveedores y versiones del controlador en lugar de depender de un comportamiento permisivo."
+    },
+    {
+      "type": "heading",
+      "text": "La volcado de origen prueba la ruta exacta cuando la capacidad está desactivada."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ejecute el volcado adjunto de Time Crisis 3 GunCon en Vulkan con Barreras de Textura Anuladas configuradas en Forzar Desactivado y Dispositivo de Depuración habilitado. La ruta corregida no debería emitir ningún error de validación de diseño de bucle de retroalimentación y debe preservar el cuadro. Repita con barreras compatibles para verificar que el diseño especializado todavía aparece, luego pruebe solo lectura de profundidad, retroalimentación de color, reinicio del backend y varios GPUs. Capture las transiciones de imagen para que una advertencia ausente no pueda ocultar el uso de la sincronización incorrecta GENERAL."
+    },
+    {
+      "type": "callout",
+      "text": "El diseño y la capacidad son un solo contrato: si PCSX2 no habilita el soporte de retroalimentación de profundidad, no debe anunciar ese soporte a través del diseño de la imagen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Lea la discusión de ingeniería de PCSX2 y los cambios en el código fuente"
+    }
+  ]
+}

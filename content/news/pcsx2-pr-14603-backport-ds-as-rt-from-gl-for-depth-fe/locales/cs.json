@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 vyměňuje kopie hloubky Direct3D 11 za rychlejší kopie cílových bufferů pro vykreslení",
+  "summary": "Cesta hloubky jako cílového bufferu vykonává více kopií, ale používá formu Direct3D 11, která je rychlejší, zaměřuje se na scény s intenzivní zpětnou vazbou AA1 a AAT, když je ROV vypnuto.",
+  "heroAlt": "Důkaz ze zdroje z žádosti o stažení PCSX2 #14603: GS/DX11: Přenést ds jako rt z GL pro zpětnou vazbu hloubky.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "zpětná vazba hloubky",
+    "kopie cílového bufferu pro vykreslení",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Přenést ds jako rt z GL pro zpětnou vazbu hloubky."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Počet kopií sám o sobě nepředpovídá náklady Direct3D 11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hloubková zpětná vazba vyžaduje, aby PCSX2 zpřístupnil informace o hloubce pro pozdější vykreslování, aniž by byla porušena pravidla používání cíle. Direct3D 11 může provést kopii hloubky GPU, ale zdroj tuto operaci uvádí jako zvláště pomalou. Řešení s menším počtem kopírování proto může být pomalejší než cesta, která převádí hloubku do formy renderovacího cíle a provádí další kopie pomocí hardwaru a shaderů optimalizovaných pro cíle podobné barvám."
+    },
+    {
+      "type": "heading",
+      "text": "Strategie OpenGL hloubka-jako-RT je přizpůsobena pro DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14603 přidává převod a propojení zařízení potřebné k tomu, aby byla hloubková zpětná vazba považována za kopie renderovacího cíle na Direct3D 11. Změny shaderu odhalují potřebnou cestu formátu a GSDevice11 sleduje zdroje použité převodem. Direct3D 12 dostává související sdílené úpravy, ale výkonovým cílem je DX11. Design je explicitně testován bez ROV, takže uspořádaná zpětná vazba neskrývá rozdíl v kopírovací cestě."
+    },
+    {
+      "type": "heading",
+      "text": "Další operace mohou stále skončit dříve, když je každá operace levnější"
+    },
+    {
+      "type": "paragraph",
+      "text": "Centrální kompromis článku je měřitelný: nová cesta může provádět další kopie, ale vyhýbá se nákladnému chování nativní hloubkové kopie. Neměla by být popisována jako univerzálně rychlejší pouze na základě počtu operací. Výsledek určuje formát konverze, šířka pásma paměti, velikost cíle, dodavatel GPU a počet zpětnovazebních událostí. Správnost také závisí na zachování přesnosti hloubky přes reprezentaci render-targetu."
+    },
+    {
+      "type": "heading",
+      "text": "Hry AA1 a AAT poskytují zamýšlený zátěžový test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Otestujte benchmarky Final Fantasy X, Everybody's Golf a další tituly AA1 nebo AAT na Direct3D 11 s vypnutým ROV při zachování rozlišení a scény konstantní. Zaznamenejte typy kopií, počet, čas GPU a výstup snímků proti předchozí cestě hloubkové kopie. Otestujte nativní a zvětšené velikosti a několik dodavatelů. Porovnejte efekty závislé na hloubce a řazení z pixelu na pixel; zrychlení, které zavádí kvantizaci nebo zastaralou hloubku, není přijatelné."
+    },
+    {
+      "type": "callout",
+      "text": "Optimalizace volí pro DX11 levnější primitivum, ne menší počet: dodatečné kopie render-targetů mohou překonat jednu drahou cestu kopírování hloubky."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdrojového kódu"
+    }
+  ]
+}

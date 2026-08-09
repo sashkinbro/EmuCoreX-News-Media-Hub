@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar inizializza le mappature dei pulsanti PlayStation prima di abilitare il movimento",
+  "summary": "Riorganizzare e deduplicare l'attivazione del movimento SDL rimuove un rischio di threading all'avvio specifico per DualShock 4 e DualSense nella configurazione del controller HIDAPI.",
+  "heroAlt": "Prove sorgente dalla pull request #2345 di Azahar: Correzione del bug per il blocco del controller ps4/ps5 all'avvio",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "input di movimento"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Correzione del bug per il blocco del controller ps4/ps5 all'avvio"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'avvio del movimento stava entrando in SDL prima che la mappatura del controller fosse pronta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar consente l'input del giroscopio e dell'accelerometro tramite il percorso del controller di SDL. Per i dispositivi PS4 e PS5 che utilizzano HIDAPI, chiamare EnableMotion prima che esistessero le mappature dei pulsanti poteva causare un problema di threading e talvolta bloccare l'emulatore all'avvio. La vecchia API Joystick non seguiva questo percorso, il che spiega perché il problema è apparso solo dopo che l'inizializzazione del controller è stata spostata alla moderna API."
+    },
+    {
+      "type": "heading",
+      "text": "L'inizializzazione ora crea la mappatura prima di una chiamata motion"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2345 rimuove le invocazioni duplicate di EnableMotion da SDLState e CreateControllerButtonMap e mantiene l'attivazione in SDLJoystick dopo che lo stato di costruzione è stato stabilito. Il cambiamento importante è l'ordine e l'unicità, non un ritardo: la mappatura dei pulsanti viene completata, quindi il supporto motion viene abilitato una sola volta. Ciò previene che callback o il lavoro HIDAPI osservino un oggetto controller parzialmente inizializzato."
+    },
+    {
+      "type": "heading",
+      "text": "Le chiamate duplicate rendevano più difficile ragionare sulla competizione"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'attivazione del movimento da diversi livelli può sembrare innocua se SDL la tratta come idempotente, ma ogni chiamata può entrare nel codice del dispositivo, allocare sensori o prendere lock. Rimuovere punti di accesso ridondanti chiarisce la proprietà e riduce il numero di schedulazioni che possono causare deadlock. I pulsanti standard e l'input analogico si inizializzano ancora normalmente, e i controller senza movimento dovrebbero passare attraverso la stessa sequenza senza inventare un sensore."
+    },
+    {
+      "type": "heading",
+      "text": "I loop di avvio devono includere casi di hot-plug e di movimento disabilitato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avviare a freddo Azahar ripetutamente con DualShock 4 e DualSense connessi via USB e Bluetooth, con movimento abilitato e disabilitato. Aggiungere hot-plug durante l'avvio, ricollegare dopo che l'emulazione è iniziata e inizializzare più controller. Registrare il completamento della mappa e l'unica attivazione del movimento. Testare un dispositivo Joystick legacy come controllo negativo. La correzione deve rimuovere i blocchi senza perdere dati del giroscopio, etichette dei pulsanti o mappature, e la chiusura deve terminare pulitamente i thread di HIDAPI."
+    },
+    {
+      "type": "callout",
+      "text": "La configurazione del controller ha ora un proprietario e un ordine: mappa prima gli input, poi lascia che SDL avvii l'hardware di movimento."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Leggi la discussione ingegneristica su Azahar e le modifiche al codice sorgente"
+    }
+  ]
+}

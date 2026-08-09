@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar guards Vulkan color fill when a 3GX plugin arrives before the framebuffer",
+  "summary": "A startup order exposed by PokeReader can call FillScreen before the target image exists; the renderer now treats that missing image as a deferred setup state instead of crashing.",
+  "heroAlt": "Source evidence from Azahar pull request #2241: video_core: vulkan: Fix crash on color fill before framebuffer setup",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Fix crash on color fill before framebuffer setup"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A plugin can request screen color before Vulkan owns an image"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enabling the 3GX loader with PokeReader produced a consistent Windows crash on the reporter's AMD Vulkan system after FillScreen was implemented. Logs and a git bisect placed the regression at that implementation. The key order is unusual but valid for the frontend: plugin startup reaches color-fill configuration before the framebuffer texture's Vulkan image has been created."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture now checks the resource, not the intent"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2241 adds a narrow guard in RendererVulkan::ConfigureFramebufferTexture. If texture.image is absent, the function returns before configuring or filling the framebuffer. A later call with a valid image follows the normal path. The fix does not create a dummy image or assume dimensions, avoiding a placeholder resource whose layout and lifetime could disagree with the real framebuffer."
+    },
+    {
+      "type": "heading",
+      "text": "The failure may explain reports beyond one GPU, but evidence stays scoped"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source cites PokeReader, Windows, Vulkan, and potentially AMD as the reproducible combination and links several issues with possibly related behavior. Those reports are leads, not confirmed fixes. The one proven invariant is that no Vulkan operation may use a framebuffer image before it exists. Other crashes need their own logs to establish whether they reach the same early FillScreen state."
+    },
+    {
+      "type": "heading",
+      "text": "Regression testing should force both early and normal fill order"
+    },
+    {
+      "type": "paragraph",
+      "text": "Launch with 3GX support off and on, with PokeReader selected, across AMD, NVIDIA, and mobile Vulkan where available. Instrument image creation and FillScreen order, verify the early call returns without validation errors, and confirm a later initialized fill still clears the screen. Repeat plugin unload, game restart, surface recreation, and backend switch. An absent crash is insufficient if the guard leaves a permanently unfilled or stale framebuffer."
+    },
+    {
+      "type": "callout",
+      "text": "The renderer now distinguishes a requested fill from an initialized target; Vulkan work begins only after the image actually exists."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

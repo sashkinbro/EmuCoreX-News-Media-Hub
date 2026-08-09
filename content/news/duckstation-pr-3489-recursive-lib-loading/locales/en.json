@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation follows nested PSF libraries to the program's real entry point",
+  "summary": "A two-line recursion change makes the deepest first-parent _lib provide PC and SP, fixing a loader that stopped the entry-point search one level too early.",
+  "heroAlt": "Source evidence from DuckStation pull request #3489: PSFLoader: Fix recursive _lib loading",
+  "searchKeywords": [
+    "DuckStation",
+    "PSF loader",
+    "_lib",
+    "program counter",
+    "stack pointer"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Fix recursive _lib loading"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A PSF can inherit executable state through more than one library"
+    },
+    {
+      "type": "paragraph",
+      "text": "Portable Sound Format files may reference a parent through _lib, and that parent may reference another first library. Loading the data recursively is not sufficient if the loader chooses PC and SP from the wrong level. The format guidance cited by the change says the first _lib chain must be followed to its deepest member; that executable context initializes playback after all inherited sections have been assembled."
+    },
+    {
+      "type": "heading",
+      "text": "The old depth check consumed the entry-point flag too early"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader previously created lib_use_pc_sp from depth == 0. That allowed the first parent library to claim the program counter and stack pointer, then prevented deeper recursion from doing so. Pull request #3489 instead passes the caller's use_pc_sp flag into LoadLibraryPSF recursively and sets it false only after that first-library call returns. The deepest first-parent receives the flag before any shallower level consumes it."
+    },
+    {
+      "type": "heading",
+      "text": "Only the first-library chain owns PC and SP selection"
+    },
+    {
+      "type": "paragraph",
+      "text": "Clearing use_pc_sp during unwind preserves another PSF rule: later libraries can contribute data without repeatedly replacing the initial registers. The patch does not flatten every _lib into one unordered list. It distinguishes the recursive first-parent path that establishes execution from siblings loaded afterward, keeping the smallest possible change in psf_loader.cpp rather than rewriting the container format."
+    },
+    {
+      "type": "heading",
+      "text": "A regression fixture needs at least three nested levels"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construct a PSF whose root, first parent, and deepest first parent each declare different PC and SP values, plus a secondary library with another pair. DuckStation should load all required data but start from the deepest first-parent registers; changing a non-first library must not move the entry point. Compare playback and logged registers with Mednafen or another format-conforming loader, then test missing, cyclic, and unreadable library references for clean errors rather than unbounded recursion."
+    },
+    {
+      "type": "callout",
+      "text": "The fix is about recursion order: data may come from many libraries, but initial PC and SP belong to the deepest member of the first _lib chain."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

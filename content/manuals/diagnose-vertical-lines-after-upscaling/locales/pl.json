@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zdiagnozuj pionowe szwy, które pojawiają się tylko po skalowaniu PS2",
+  "summary": "Zmapuj pierwszy mnożnik rozdzielczości, który ujawnia szwy, odróżnij wyrównanie sprite'ów od przeciekania atlasu tekstur i zachowaj tylko udokumentowaną korektę dla każdej gry, która pozostawia HUD i geometrię nienaruszone.",
+  "heroAlt": "Przechwycenie Tekken 5 PCSX2 z wąskimi pionowymi szwami spowodowanymi niewyrównaniem sprite'ów podczas skalowania",
+  "searchKeywords": [
+    "Pionowe linie PS2 podczas skalowania",
+    "Czarne szwy EmuCoreX",
+    "wyrównaj sprite",
+    "przeciekanie atlasu tekstur",
+    "artefakt rozdzielczości wewnętrznej"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Dokładność"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 wyjaśnienie nieprawidłowych próbek i czarnych pionowych linii ponad natywną rozdzielczość",
+    "pcsx2-gsdx-progress": "PCSX2 przykłady i zakres korekty Wyrównania Sprite"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Określ, czy każda linia przebiega wzdłuż granicy sprite'a"
+    },
+    {
+      "type": "paragraph",
+      "text": "Skalowanie w górę może ujawnić luki, które nie istnieją w natywnej siatce pikseli PS2. W niektórych grach sąsiednie sprite'y są umieszczone tak, że ich krawędzie stykają się dokładnie w natywnej rozdzielczości; po skalowaniu zaokrąglenia mogą pozostawić niepokrytą kolumnę jednego piksela. Inna usterka występuje, gdy próbkowanie przechodzi z jednej komórki atlasu tekstur do następnej. Zacznij od sceny zawierającej zarówno linie, jak i stabilne obiekty odniesienia: interfejs 2D (HUD), płaskie tło i zwykłą geometrię 3D. Zarejestruj numer seryjny gry, renderer, sterownik, proporcje obrazu, mnożnik rozdzielczości wewnętrznej, filtrowanie tekstur oraz każdą ręczną poprawkę sprzętową. Położenie defektu jest ważniejsze niż jego kolor: linia, która podąża za panelami w kafelkach, różni się od linii przymocowanej do fizycznego wyświetlacza."
+    },
+    {
+      "type": "callout",
+      "text": "Nie maskuj szwów za pomocą rozciągania, przycinania, overscanu ani powiększenia wyświetlacza. Te zmiany mogą ukryć najbardziej zewnętrzne kolumny, pozostawiając jednocześnie nieprawidłowe próbkowanie aktywne w całym obrazie."
+    },
+    {
+      "type": "heading",
+      "text": "Zbuduj drabinę rozdzielczości z jednej zamrożonej kompozycji"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zapis w grze przed statycznym menu, areną, niebem lub tłem, w którym przynajmniej trzy szwy można łatwo wskazać.",
+        "Bezpośrednie zrzuty ekranu w natywnej rozdzielczości oraz przy obecnie preferowanym współczynniku skalowania; fotografie z aparatu nie nadają się jako dowód na poziomie pojedynczych pikseli.",
+        "Zamiana tekstur, wyostrzanie, post-processing, poprawki dla szerokiego ekranu i skalowanie wyświetlacza zewnętrznego wyłączone dla pierwszego przebiegu.",
+        "Wybrano sterownik systemowy GPU i jedno obsługiwane API sprzętowe, z zapisanym profilem graficznym dla każdej gry.",
+        "Prosta mapa defektów wskazująca, czy każda linia przecina HUD, podąża za powtarzającą się krawędzią sprite’a, czy porusza się wraz z kamerą."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zlokalizuj próg skalowania przed testowaniem wyrównania"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Uruchom grę od zimnego startu w natywnej rozdzielczości wewnętrznej i przechwyć wybraną kompozycję bez ładowania stanu zapisu emulatora.",
+        "2. Zwiększ wewnętrzną rozdzielczość o jeden mnożnik, odtwórz identyczną scenę i zaznacz pierwszy krok, w którym każdy odwzorowany szew staje się widoczny.",
+        "3. Wróć do pierwszego niesprawnego mnożnika i zmień tylko interfejs sprzętowy API; jeśli pozycje linii pozostaną identyczne, traktuj matematyczne kwestie rozdzielczości jako silniejszy dowód niż błąd sterownika specyficzny dla API.",
+        "4. Sprawdź, czy szwy znajdują się między prostokątnymi sprite’ami czy mozaikowanymi tłami. Dla tego wzorca testuj tylko udokumentowaną korekcję wyrównania sprite’ów udostępnioną przez emulator dla danej gry.",
+        "5. Jeśli linie zawierają kolor z sąsiedniej komórki atlasu, przywróć wyrównanie i przetestuj udokumentowaną korekcję zaokrągleń lub przesunięcia tekstury osobno.",
+        "6. Po każdej pozornej naprawie sprawdź mały tekst, paski zdrowia, kafelki mapy, billboardy cząstek i pełnoekranowe zanikanie pod kątem przesuniętych lub obciętych elementów.",
+        "7. Zwiększ rozdzielczość o kolejny stopień i ponownie sprawdź drugą scenę; korekta działająca tylko przy jednym mnożniku nie jest stabilnym ogólnym profilem.",
+        "8. Zachowaj najmniejszą skuteczną zmianę dla każdej gry, wraz z numerem seryjnym i przetestowanym mnożnikiem, zamiast stosować ją w całej bibliotece."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafika PS2 Graphics Synthesizer działa w oparciu o model adresowania i próbkowania zaprojektowany wokół siatki wyjściowej konsoli. Skalowanie po stronie hosta zwiększa liczbę rastrowych pikseli bez zmiany każdego współrzędnego dostarczonego przez grę. Może to ujawnić luki między sąsiednimi prymitywami lub zażądać próbki tuż poza zamierzonym obszarem teksteli. Wyrównanie sprite'ów i korekty zaokrągleń dotyczą różnych obliczeń, więc włączenie obu jednocześnie niszczy wartość diagnostyczną testu. Czysta natywna klatka plus powtarzalny próg awarii wykazują, że zrzut i scena mogą renderować poprawnie oraz że wada jest wprowadzana przez ścieżkę skalowania."
+    },
+    {
+      "type": "heading",
+      "text": "Dowody akceptacji usuwania szwów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zachowaj poprawkę tylko wtedy, gdy zamyka ona przypisane luki, nie przesuwając przy tym innych warstw ekranu."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Każda wcześniej zaznaczona kolumna pionowa pozostaje ciągła zarówno podczas nieruchomego obrazu, jak i podczas poziomego ruchu kamery.",
+        "Glify HUD, ramki portretów i separatory menu pozostają wyraźne i nie są przeciągane o jeden piksel w bok.",
+        "Kafelki tła łączą się czysto przy pierwszym niedziałającym mnożniku i przy następnym mnożniku powyżej niego.",
+        "Ta sama scena pozostaje poprawna po pełnym ponownym uruchomieniu aplikacji, a nie tylko po przełączeniu w trakcie sesji.",
+        "Drugi poziom z różnymi wymiarami sprite'ów przechodzi, a pacing klatek pozostaje w granicach pomiaru przed prefiksem."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Wzory, które odrzucają diagnozę wyrównania"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Kolumna pozostaje w tej samej fizycznej pozycji ekranu nad menu oraz Android UI: sprawdź panel wyświetlacza, kabel lub ścieżkę przechwytywania.",
+        "Linie istnieją przy natywnej rozdzielczości i w renderowaniu programowym: zweryfikuj obraz i porównaj go z wiarygodnym odniesieniem oryginalnego wyjścia.",
+        "Tylko wymienione tekstury pokazują kolorowe obramowania: wyłącz pakiet i sprawdź jego padding w atlasie zamiast zmieniać wyrównanie GS.",
+        "Poprawka usuwa przerwy, ale psuje czcionki lub cząstki: cofnij ją i przetestuj inną gałąź próbkowania z nową bazą."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Wróć do ostatniego czystego stopnia skalowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyłącz testowaną wartość wyrównania lub zaokrąglenia, przywróć domyślne przesunięcia tekstury i filtrowanie, zamknij grę i ponownie uchwyć niepowodzenie mnożnika. Jeśli żadna wąska poprawka nie przechodzi przez wszystkie sceny, obniż wewnętrzną rozdzielczość do najwyższego stopnia, który pozostał czysty, i zachowaj mapę defektów do raportu zgodności."
+    },
+    {
+      "type": "heading",
+      "text": "Specyficzna dla danego tytułu poprawka szwu nie jest presetem jakości obrazu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Historyczne przykłady Align Sprite odnoszą się do rozpoznawalnego zachowania silnika, a nie do każdej pionowej linii w każdej grze. Wersje emulatora mogą już stosować poprawki bazy danych dla znanych numerów seryjnych. Potwierdź wadę przy ustawieniach domyślnych przed dodaniem ręcznego nadpisania i usuń to nadpisanie, gdy nowsza wersja automatycznie poprawi ścieżkę."
+    },
+    {
+      "type": "link",
+      "text": "Przeczytaj techniczne wyjaśnienie próbkowania upscale PCSX2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

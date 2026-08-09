@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP documents bit-exact PSP rules for VFPU multiply and divide",
+  "summary": "Reference helpers spell out denormal, underflow, rounding, sign, infinity, and NaN behavior so host JIT paths can be measured against the PSP's actual results.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21815: Implement (hopefully) bitwise-exact vmul/vdiv",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "floating point",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "Cpu",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implement (hopefully) bitwise-exact vmul/vdiv"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 still leaves room for hardware-specific edge behavior"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ordinary float multiplication and division look portable until inputs approach denormals, underflow, infinity, or NaN. The PSP VFPU behaves like float32 round-to-nearest-ties-to-even with denormals treated as zero and tiny outputs flushed to zero, plus a specific NaN payload and sign rule. Host x86, ARM, and compiler settings can differ at exactly those boundaries, causing rare game logic or graphics discrepancies."
+    },
+    {
+      "type": "heading",
+      "text": "The reference works from raw bits before and after arithmetic"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21815 adds explicit vfpu_mul and vfpu_div helpers for reference. They read operands as uint32 values, collapse subnormal inputs to signed zero, perform the arithmetic, and inspect the result bits. Outputs at or below the measured flush threshold are recomputed in double precision to decide whether to retain the smallest normal result or return signed zero. Any NaN is canonicalized to the VFPU-specific 0x7F800001 payload with operand-derived sign."
+    },
+    {
+      "type": "heading",
+      "text": "The threshold captures a boundary that host FTZ flags may not share"
+    },
+    {
+      "type": "paragraph",
+      "text": "The observed flush cutoff is FLT_MIN minus one quarter of FLT_TRUE_MIN. That appears to match the tested x86 flush-to-zero boundary but is not assumed to match every ARM host. Encoding the behavior in a readable reference gives JIT backends a truth source even if their fastest implementation uses control-register modes, vector instructions, or corrective branches. The helpers are reference material rather than a claim that scalar C++ is the final hot path."
+    },
+    {
+      "type": "heading",
+      "text": "Exhaustive boundary vectors should drive backend conformance"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test positive and negative zero, every subnormal class, values around the flush threshold, largest finite numbers, infinities, quiet and signaling NaNs, and operand sign combinations. Compare interpreter, x86, ARM64, and other JIT results bit for bit for vmul and vdiv, not with an epsilon. Randomized differential tests should concentrate exponent pairs near overflow and underflow. Compiler fast-math must not erase canonicalization, and fused operations must be checked separately because they have different rounding points."
+    },
+    {
+      "type": "callout",
+      "text": "Bit-exact emulation starts where approximate numerical equality stops: signed zero, one underflow bit, or a NaN payload can be observable guest state."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

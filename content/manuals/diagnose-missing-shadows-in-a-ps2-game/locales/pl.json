@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnozuj brakujące cienie bez stosowania hacków graficznych",
+  "summary": "Przechwyć jedną scenę z dużą ilością cieni w natywnej rozdzielczości, zidentyfikuj, czy brakująca warstwa to geometria, głębia czy mieszanie, porównaj API sprzętu i referencję programową, a następnie zachowaj tylko najmniejszą poprawkę dla każdej gry.",
+  "heroAlt": "PCSX2 porównanie przechwycenia z poprawki dokładności grafiki w scenie gry z cieniami",
+  "searchKeywords": [
+    "PS2 brakujące cienie",
+    "EmuCoreX poprawka cieni",
+    "dokładność grafiki",
+    "porównanie renderera programowego",
+    "mieszanie głębi"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Dokładność"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 liczniki grafiki i wskaźniki ustawień",
+    "pcsx2-report": "PCSX2 punkt wejścia do zgłaszania problemów"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Udowodnij, która warstwa cienia jest nieobecna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cień może być teksturą rzutowaną, przezroczystym przejściem bufora klatki, zwykłą ciemną geometrią lub efektem połączonym z testowaniem głębokości. Dlatego użyteczne pierwsze pytanie nie brzmi, którego triku użyć, ale czy gra w ogóle rysuje tę warstwę. Wybierz miejsce, w którym ten sam bohater, światło i kamera mogą być przywrócone niezawodnie. Zanim dotkniesz profilu, zanotuj numer seryjny gry, aktywny renderer, sterownik GPU, wewnętrzną rozdzielczość, ustawienie mieszania oraz wszelkie dziedziczone poprawki dla danej gry."
+    },
+    {
+      "type": "callout",
+      "text": "Nie oceniaj zmiany na podstawie innej pory dnia, kąta kamery, stanu zapisu ani klatki animacji. Dynamiczne oświetlenie może sprawić, że dwie poprawne klatki będą wyglądały jak regresja renderera."
+    },
+    {
+      "type": "heading",
+      "text": "Przygotuj punkt kontrolny cienia"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normalny zapis w grze tuż przed powtarzalną sceną świetlną.",
+        "Jedno podstawowe zrzut ekranu z widoczną razem postacią i ziemią.",
+        "Rodzima wewnętrzna rozdzielczość i wyłączone przetwarzanie końcowe dla pierwszego porównania.",
+        "Wybrany sterownik systemowy GPU; niestandardowe sterowniki to osobny eksperyment.",
+        "Pisana kopia globalnych i per-gry ustawień graficznych."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Oddzielne zachowanie rysowania, mieszania i głębi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Uruchom tytuł na zimno i uchwyć punkt kontrolny bazowy bez ładowania stanu zapisu emulatora.",
+        "2. Zresetuj ręczne poprawki GS dla tego tytułu, wybierz natywną rozdzielczość wewnętrzną i powtórz tę samą ścieżkę ruchu.",
+        "3. Przełączaj się tylko między obsługiwanymi API sprzętowymi, zamykając grę między uruchomieniami, aby renderer inicjalizował się czysto.",
+        "4. Jeśli obie ścieżki sprzętowe pomijają warstwę, użyj krótkotrwale renderowania programowego jako odniesienia poprawności i uchwyć identyczną kamerę.",
+        "5. Gdy oprogramowanie pokaże cień, wróć do bardziej stabilnego API sprzętowego i podnieś dokładność mieszania o jeden poziom.",
+        "6. Jeśli mieszanie nic nie zmienia, przywróć je i przetestuj udokumentowaną korektę związaną z głębią odpowiednią do tytułu zamiast łączyć przypuszczenia.",
+        "7. Powtórz drugą scenę cieniową, która używa innej powierzchni lub źródła światła.",
+        "8. Podgrzej urządzenie przez dziesięć minut i potwierdź, że wybrana korekta pozostaje wystarczająco szybka do faktycznej gry."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Wynik oprogramowania jest dowodem diagnostycznym, a nie obietnicą grywalnej prędkości. Poprawna klatka oprogramowania pokazuje, że obraz dysku i kod gry mogą wywołać efekt, podczas gdy awaria występująca tylko na sprzęcie zawęża poszukiwania do zachowania renderera. Zmiana mieszania, która przywraca półprzezroczysty cień, różni się od poprawki głębokości, która przywraca geometrię ukrytą przez kolejność. Utrzymywanie tych gałęzi oddzielnie sprawia, że wynik jest wytłumaczalny i odwracalny."
+    },
+    {
+      "type": "heading",
+      "text": "Akceptacja korekty cienia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Akceptuj profil tylko wtedy, gdy warstwa jest stabilna w więcej niż jednej klatce oryginalnego testu."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Pozycja cienia podąża za poruszającym się obiektem, zamiast pozostawać jako statyczny prostokąt.",
+        "Nieprzezroczystość przypomina referencję oprogramowania i nie zaciemnia całego przejścia terenu.",
+        "Bliskie naklejki, mgła i przezroczystość HUD pozostają nienaruszone.",
+        "Efekt przetrwa zimny rozruch oraz późniejsze przejście między obszarami.",
+        "Utrzymana prędkość i rytm klatek pozostają w granicach zarejestrowanego budżetu bazowego."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Dowody wskazujące gdzie indziej"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Cień jest również nieobecny w oprogramowaniu: zweryfikuj obraz i potwierdź, że oryginalna scena faktycznie go zawiera.",
+        "Tylko ładowanie stanu zapisanego w emulatorze powoduje problemy: przetestuj ponownie na zapisanej grze i odrzuć niekompatybilny stan.",
+        "Każda ciemna powierzchnia znika: zresetuj szerokie pomijanie rysowania lub ręczne nadpisania GS.",
+        "Poprawka działa raz, ale zawodzi po wznowieniu: zarejestruj szczegóły renderera i sterownika do raportu cyklu życia."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Powróć do zmierzonego standardu graficznego"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przywróć automatyczne mieszanie, wyłącz testowaną korekcję głębi, ponownie wybierz oryginalny renderer i sterownik systemowy oraz uruchom checkpoint od czystego startu. Zachowaj zrzuty przed i po z ich ustawieniami, ale usuń tymczasowe stany zapisu, które nie mogą konsekwentnie odtworzyć sceny."
+    },
+    {
+      "type": "heading",
+      "text": "Nie publikuj danych zapisów ani danych z płyt objętych prawami autorskimi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Raport wsparcia może zawierać numer seryjny, ustawienia, logi i zrzuty ekranu tworzone przez użytkownika, jeśli jest to dozwolone. Nie dołączaj obrazu gry, oprogramowania układowego, materiałów szyfrujących ani zapisu zawierającego treści dystrybuowane przez osoby trzecie jedynie w celu pokazania cienia."
+    },
+    {
+      "type": "link",
+      "text": "Przeczytaj przewodnik dowodów wydajności PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

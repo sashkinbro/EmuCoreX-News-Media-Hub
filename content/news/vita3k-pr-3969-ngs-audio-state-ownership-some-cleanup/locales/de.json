@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K trennt vier Arten von Zuständen innerhalb seiner NGS Audio-Engine",
+  "summary": "Für Gäste sichtbare Bytes, temporäre Speicherpuffer, wiederaufnehmbare Logik und Host-Laufzeitobjekte haben jetzt unterschiedliche Besitzer, was das Nachvollziehen der Sprachweiterleitung und der Decoder-Lebensdauer erleichtert.",
+  "heroAlt": "Quellenbeleg aus dem Vita3K Pull Request #3969: ngs: Vereinfachung der Eigentümerschaft des ngs/audio-Zustands & einige Bereinigungen",
+  "searchKeywords": [
+    "Vita3K",
+    "NGS Audio",
+    "ATRAC9",
+    "Sprachzustand",
+    "Audio-Routing"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: Vereinfachung der Eigentümerschaft des ngs/audio-Zustands & einige Bereinigungen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Audio-Stimme enthält Zustand mit sehr unterschiedlichen Lebensdauern"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das NGS-System der Vita legt den vom Gast lesbaren Modulzustand offen, aber ein Emulator benötigt auch Host-exklusive Decoder-Objekte, Resampler, temporäres PCM, Loop-Historie und Routing-Referenzen. Wenn diese Komponenten in locker zusammenhängenden Mitgliedern aufbewahrt werden, machen Zurücksetzen, Sprachwiederverwendung, Callbacks und Zerstörung anfällig für veraltete Zeiger. Ein Gast-Speicherblock sollte nicht versehentlich einen Host-Decoder besitzen, und ein temporärer Puffer sollte nicht mit Daten verwechselt werden, die für die logische Wiedergabe fortgesetzt werden müssen."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData benennt nun jede Eigentumskategorie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #3969 stellt ein module guest_state_data für die ABI-sichtbaren Bytes und scratch_data für temporäre Arbeit bereit. Ein polymorpher logical_state speichert Informationen wie ADPCM-Historie oder exportierte ATRAC9-Decoder-Historie, die über Verarbeitungsgrenzen hinweg erhalten bleiben müssen. Ein getrenntes runtime_state besitzt Host-Ressourcen wie aktive Decoder und Resampler, die gelöscht oder neu aufgebaut werden können. Modul-Fabriken erstellen jede Schicht und initialisieren die Sprachdaten über eine Schnittstelle."
+    },
+    {
+      "type": "heading",
+      "text": "Routen identifizieren Stimmen, ohne fragile rohe Endpunkte zu speichern"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch-Objekte behalten Quelle und Ziel als Rack- und Voice-Indizes, dann lösen sie diese bei Bedarf über das System und den emulierten Speicher auf. Dies verhindert, dass ein Patch einem Voice-Zeiger blind folgt, nachdem sich ein Rack geändert hat. ATRAC9 lädt vor der Arbeit die gespeicherte logische Decoder-Historie in den Laufzeitdecoder und exportiert sie danach. Spieler-Module behalten ADPCM-Historie im logischen Zustand, während Ausgabe- und Resampling-Puffer explizite Laufzeit-Container mit klaren und kompakten Operationen verwenden."
+    },
+    {
+      "type": "heading",
+      "text": "Lebenszyklustests müssen die Audioausgabe in jeder Phase unterbrechen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen, routen, starten, pausieren, fortsetzen, stoppen, zurücksetzen und zerstören von Stimmen mithilfe von PCM-, ADPCM-, ATRAC9-, Ausgabe- und Resampling-Modulen. Rack-Slots wiederverwenden und einen Endpunkt entfernen, während ein Patch existiert. Gast-Callbacks auslösen, Übergänge wiederholen, Puffer leeren und Konfigurationsänderungen durchführen und dann kontinuierliche Ausgabe mit der Ausgabe über eine logische Zustands-Speicherung und Laufzeit-Wiederherstellung vergleichen. Thread- und Adress-Sanitizer sollten Scheduler-Entsperr-/Wiederverriegelungspunkte, Abbau und fehlerhafte Gast-Handles abdecken. Kein Host-Pointer sollte aus gast-sichtbaren Statusbytes rekonstruierbar sein."
+    },
+    {
+      "type": "callout",
+      "text": "Die Audiokorrektheit verbessert sich, wenn die Engine beantworten kann, welche Daten zum Gast-ABI, zum wiederaufnehmbaren Signalzustand, zu temporären Arbeiten und zur Host-Dekoder-Laufzeit gehören."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Lesen Sie die Vita3K-Engineering-Diskussion und Quellcode-Änderungen"
+    }
+  ]
+}

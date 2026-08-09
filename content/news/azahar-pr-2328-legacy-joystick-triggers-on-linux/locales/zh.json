@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 校准旧版触发器中心，而不是假设为零",
+  "summary": "在 SDL 的摇杆 API 下，Steam Deck 的触发器轴可以在接近 -32767 的位置静止；记录初始中心可以恢复原有映射，否则 L 和 R 会被报告为按下状态。",
+  "heroAlt": "来自 Azahar 拉取请求 #2328 的源证据：BUGFIX：Linux 上的旧版摇杆触发器",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL 摇杆",
+    "触发器校准",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "输入",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX：Linux 上的旧版摇杆触发器"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "触发器的中性值取决于 SDL API 和设备映射"
+    },
+    {
+      "type": "paragraph",
+      "text": "通过 EmuDeck 的 Steam Deck 用户报告 L 和 R 按钮持续按下。他们的旧版配置文件通过 SDL 的操纵杆 API 使用扳机轴，其中静止值可能是 -32767 而不是零。较新的直接状态实现不再保留历史样本，因此重新使用了适用于某些设备的零中心假设，但将此中立位置视为完全按下。"
+    },
+    {
+      "type": "heading",
+      "text": "初始化时捕获设备的实际静止中心"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2328 为旧版操纵杆层添加了每轴校准。当设备初始化时，Azahar 会记录当前中心，并将后续值与之比较。映射然后从观察到的中立点测量移动，而不是硬编码的 SDL 范围解释。这对于向后兼容尤其合适，因为旧的保存绑定可能引用原始操纵杆轴。"
+    },
+    {
+      "type": "heading",
+      "text": "新映射通常使用 SDL 控制器，并避免旧版的歧义"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar 的现代默认控制器 API 标准化了触发器语义，并不是此次修复的目标。因此，用户现在映射控制器应该不会看到任何变化。该补丁保留了传统的操纵杆配置文件以及仍然不在标准化 API 之外的特殊控制。保持行为的作用范围可以防止校准启发式方法改变已经正确报告标准化控制器触发器的后台。"
+    },
+    {
+      "type": "heading",
+      "text": "测试需要同时使用零中心和负中心的轴"
+    },
+    {
+      "type": "paragraph",
+      "text": "从释放触发器开始每个设备，确认校准中心，然后缓慢完全地按下并释放。测试 Steam Deck、使用传统 API 的桌面控制器、热插拔、挂起/恢复，以及在触发器按下时连接的设备。现有配置文件必须在不重新映射的情况下恢复，而新的控制器 API 配置文件保持不变。初始化时按住触发器的情况需要有文档化的恢复路径，以确保一个坏样本不会成为会话的永久中心。"
+    },
+    {
+      "type": "callout",
+      "text": "校准恢复了缺失的参考点：原始触发值意味着仅相对于该设备观察到的中性位置被按下。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "阅读 Azahar 工程讨论和源代码更改"
+    }
+  ]
+}

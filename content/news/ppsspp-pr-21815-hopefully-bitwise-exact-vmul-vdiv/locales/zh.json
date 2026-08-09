@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 文档记录了 VFPU 乘法和除法的位精确 PSP 规则",
+  "summary": "参考辅助工具说明了非规格化、下溢、舍入、符号、无穷大和 NaN 的行为，以便主机 JIT 路径可以与 PSP 的实际结果进行对比。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21815 的原始证据：实现（希望是）位精确 vmul/vdiv",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "浮点数",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "实现（希望是）位精确 vmul/vdiv"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 仍然留有硬件特定边缘行为的空间"
+    },
+    {
+      "type": "paragraph",
+      "text": "普通浮点数的乘法和除法在输入接近非正规数、下溢、无穷大或NaN之前看起来是可移植的。PSP VFPU的行为类似于float32的最近舍入-向偶数舍入模式，将非正规数视为零，并将极小的输出冲洗为零，同时具有特定的NaN负载和符号规则。主机x86、ARM以及编译器设置在这些边界上可能不同，从而导致罕见的游戏逻辑或图形差异。"
+    },
+    {
+      "type": "heading",
+      "text": "参考实现基于算术运算前后的原始位操作工作。"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21815 为参考实现添加了显式 vfpu_mul 和 vfpu_div 辅助函数。它们将操作数作为 uint32 读取，将次正规输入折叠为带符号零，执行算术运算，并检查结果位。在输出小于或等于测量的冲洗阈值时，会用双精度重新计算，以决定是保留最小的正规结果还是返回带符号零。任何 NaN 都会被规范化为 VFPU 特定的 0x7F800001 负载，并带有从操作数派生的符号。"
+    },
+    {
+      "type": "heading",
+      "text": "该阈值表示主机 FTZ 标志可能不共享的边界。"
+    },
+    {
+      "type": "paragraph",
+      "text": "观察到的清零阈值是 FLT_MIN 减去 FLT_TRUE_MIN 的四分之一。这似乎与测试过的 x86 清零边界相匹配，但不能假定与每个 ARM 主机都匹配。在可读的参考中编码该行为，为 JIT 后端提供一个真实性来源，即使它们最快的实现使用控制寄存器模式、向量指令或纠正分支。辅助工具是参考材料，而不是声称标量 C++ 是最终的热点路径。"
+    },
+    {
+      "type": "heading",
+      "text": "详尽的边界向量应推动后端一致性"
+    },
+    {
+      "type": "paragraph",
+      "text": "测试正零和负零、每种次正数类别、清零阈值附近的值、最大有限数、无穷大、安静 NaN 和信号 NaN 以及操作数符号组合。对 vmul 和 vdiv，将解释器、x86、ARM64 和其他 JIT 的结果逐位比较，而不是使用容差。随机差分测试应集中在接近溢出和下溢的指数对上。编译器的快速数学优化不能删掉规范化操作，并且融合操作必须单独检查，因为它们有不同的舍入点。"
+    },
+    {
+      "type": "callout",
+      "text": "位精确模拟从近似数值相等停止的地方开始：有符号零、一次下溢位或 NaN 负载都可能是可观察的客户状态。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "阅读 PPSSPP 工程讨论和源代码变更"
+    }
+  ]
+}

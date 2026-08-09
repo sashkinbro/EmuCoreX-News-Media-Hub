@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP kieruje dane wejściowe platformy przez pętlę zdarzeń UI",
+  "summary": "Wywołania zwrotne dotyku, klawisza i osi teraz umieszczają dane w kolejce do uporządkowanej obsługi w wątku UI, usuwając niesynchronizowane metody ekranowe i szeroki blok rekurencyjny.",
+  "heroAlt": "Dowody źródłowe z pull requestu PPSSPP #21857: Przerób kolejkę wejściową dla UI, usuń zdarzenia Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "kolejka wejściowa",
+    "ScreenManager",
+    "dotyk",
+    "kontroler"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Wejście",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Przerób kolejkę wejściową dla UI, usuń zdarzenia Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wywołania zwrotne wejścia i zmiana ekranu dzieliły delikatną granicę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Backendy desktopowe i mobilne mogą raportować zdarzenia dotykowe, klawiatury i kontrolera z kontekstów, które nie posiadają aktualnego stosu ekranów PPSSPP. Wcześniejszy projekt łączył rekurencyjny blokadę wejścia z punktami wejścia UnsyncTouch, UnsyncKey i UnsyncAxis, które mogły bezpośrednio przemieszczać się po widokach. Zmiany ekranów, nakładki i dystrybucja zdarzeń zależały zatem od dużej blokady oraz od tego, aby wywołujący wiedzieli, która metoda niesynchronizowana jest bezpieczna."
+    },
+    {
+      "type": "heading",
+      "text": "Wywołania zwrotne teraz wykonują tylko krótką operację kolejki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21857 definiuje typowane zdarzenia w kolejce dla wejść dotykowych, klawiszy i osi. Wywołania zwrotne ScreenManager kopiują zdarzenie i dodają je podczas trzymania eventQueueLock. Podczas aktualizacji wątek UI przenosi całą deque do zmiennej lokalnej, zwalnia mutex i przekazuje zdarzenia w kolejności. Sekcja krytyczna nie uruchamia kodu widoku, więc obsługiwacze nie mogą wydłużać opóźnienia wywołań zwrotnych platformy ani rekurencyjnie zdobywać blokady kolejki."
+    },
+    {
+      "type": "heading",
+      "text": "Specjalne zasady dostawy pozostają jawne"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wszystkie zdarzenia dotykowe typu release-all nadal docierają do każdej warstwy ekranu, a zdarzenia key-up nadal rozprzestrzeniają się, więc warstwa tła nie może zatrzymać wciśniętego klawisza po zmianach stosu. Zwykłe wejście trafia na przedni ekran, podczas gdy nakładka otrzymuje najpierw zdarzenie touch-down, aby mogła się zamknąć i obsłużyć zdarzenie. Konwersja nawigacji fokusowej staje się zwykłym helperem KeyEventToFocusMoves, a wiele metod Unsync znika, ponieważ dispatch teraz odbywa się w wątku właściciela."
+    },
+    {
+      "type": "heading",
+      "text": "Kolejność i przejścia ekranów to trudne testy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generuj przeplatające się zdarzenia dotykowe, klawiszowe i osiowe podczas otwierania i zamykania wyskakujących okienek, przełączania ekranów, obracania urządzenia, ponownego łączenia kontrolerów i przytrzymywania przycisków podczas przejścia. Potwierdź kolejność FIFO oraz to, że zdarzenia release czyszczą każdy stan wciśnięty. Obciąż producentów z wielu wątków i używaj ThreadSanitizer wokół dostępu do kolejki i stosu ekranów. Zdefiniuj zachowanie, gdy ekran zmienia się po zakolejkowaniu zdarzenia, ale przed aktualizacją; implementacja świadomie celuje w aktualny stos w momencie dispatch, więc testy muszą zagwarantować ten kontrakt."
+    },
+    {
+      "type": "callout",
+      "text": "Wywołania zwrotne platformy teraz raportują dane wejściowe; wątek UI decyduje, gdzie one należą, gdy przetwarza uporządkowaną kolejkę."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Przeczytaj dyskusję inżynierską PPSSPP i zmiany w kodzie źródłowym"
+    }
+  ]
+}

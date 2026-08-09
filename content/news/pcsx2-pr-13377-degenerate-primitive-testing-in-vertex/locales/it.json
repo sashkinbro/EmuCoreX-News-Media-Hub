@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13377-degenerate-primitive-testing-in-vertex",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 giudica le primitive degeneri in base ai pixel che possono effettivamente coprire",
+  "summary": "L'arrotondamento di punti e linee più l'antialiasing ora partecipano ai test di area zero condivisi dal vertex kick e dal renderer software, allineando i limiti con i casi limite della rasterizzazione.",
+  "heroAlt": "Prove sorgente dal pull request PCSX2 #13377: GS: Migliorare i test delle primitive degeneri nel vertex kick e nel calcolo della bounding box SW. Altre correzioni minori.",
+  "searchKeywords": [
+    "PCSX2",
+    "primitiva degenerata",
+    "antialiasing",
+    "renderer software",
+    "bounding box"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13377": "GS: Migliorare i test delle primitive degeneri nel vertex kick e nel calcolo della bounding box SW. Altre correzioni minori."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un'area matematica zero non significa sempre zero pixel rasterizzati"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una linea o un punto possono sembrare degenerati nelle coordinate dei vertici eppure coprire comunque dei pixel dopo che GS applica le regole di dimensione del punto, arrotondamento della linea o antialiasing. Al contrario, una primitiva che supera un semplice test di coordinate potrebbe non contribuire a nulla all'interno dello scissor. PCSX2 utilizzava controlli di degenerazione sia nel vertex kick sia nel rendering software, e un disaccordo nei casi limite potrebbe eliminare lavoro visibile o inviare lavoro vuoto più a fondo nella pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "Arrotondamento e AA diventano input per un test coerente"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #13377 aggiorna il test vertex-kick per tener conto dell'arrotondamento e dell'antialiasing di linee e punti, quindi applica la stessa correzione al renderer software. Condividere la regola è importante perché la preparazione hardware e la rasterizzazione software non dovrebbero essere in disaccordo sul fatto che il guest abbia inviato una primitiva disegniabile. La patch semplifica anche i calcoli della bounding-box e dello scissor in modo che la decisione di copertura e i limiti che produce seguano la stessa geometria."
+    },
+    {
+      "type": "heading",
+      "text": "L'ottimizzazione delle linee orizzontali e la pulizia delle asserzioni restano secondarie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il rasterizzatore software ottiene una piccola ottimizzazione per le linee orizzontali, e un'asserzione viene regolata per evitare falsi positivi. Questi sono pulizia correlata attorno ai limiti corretti, non prova di una riscrittura generale delle prestazioni. L'obiettivo dichiarato è l'accuratezza, con poco cambiamento delle prestazioni previsto. Il problema #8677 è il caso limite concreto, mentre la discussione dei lavori precedenti ha fornito scenari aggiuntivi."
+    },
+    {
+      "type": "heading",
+      "text": "Le immagini di regressione necessitano di combinazioni subpixel, scissor e AA"
+    },
+    {
+      "type": "paragraph",
+      "text": "Punti di test, linee orizzontali, verticali e a lunghezza quasi zero a coordinate frazionarie con AA abilitato e disabilitato. Muovili attraverso ogni bordo dello scissor e confronta l'output hardware e software a risoluzioni native e ingrandite. Includi primitive che dovrebbero scomparire completamente e quelle che guadagnano un singolo pixel coperto tramite arrotondamento. I dump dei frame dovrebbero mostrare decisioni di accettazione/rifiuto identiche; i controlli sulle prestazioni devono solo confermare che il nuovo test e il percorso veloce orizzontale non introducono regressioni misurabili."
+    },
+    {
+      "type": "callout",
+      "text": "La degenerazione è una questione di rasterizzazione, non solo una questione di geometria: l'arrotondamento e l'AA possono trasformare una primitiva matematicamente sottile in una reale copertura di pixel."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13377",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar remove a ambiguidade de estouro com sinal do alias de memória do Luma",
+  "summary": "Uma máscara de bit 31 sem sinal torna a detecção de alias em C++ definida, enquanto retornos antecipados e ramos improváveis MMIO dão aos caminhos de memória comuns um fluxo de instrução mais direto.",
+  "heroAlt": "Evidência da fonte do pull request Azahar #2202: core/memory: Corrigir comportamento indefinido e otimizar caminho de alias do Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias do Luma",
+    "comportamento indefinido",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Core",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Corrigir comportamento indefinido e otimizar caminho de alias do Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O bit 31 estava sendo formado por meio de aritmética com sinal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS expõe um formulário de endereço de alias cujo bit mais alto indica ao Azahar para ignorar as tabelas de páginas normais para FCRAM ou MMIO. O código testava e limpava esse bit com 1 << 31. Quando int tem 32 bits, deslocar um valor assinado para a posição de sinal é comportamento indefinido, dando ao compilador otimizado permissão para transformar o código ao redor de maneiras que não preservam a máscara pretendida."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u torna ambas as operações de teste e limpeza definidas"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #2202 declara LUMA_ALIAS_BIT como o literal sem sinal 0x80000000u. Os caminhos de leitura e escrita testam vaddr em relação a essa constante e derivam paddr limpando-a. A mudança é pequena, mas arquitetural: a manipulação de endereços deve usar o tipo sem sinal que representa um VAddr, não depender do resultado escolhido pelo compilador para aritmética com excesso em valores assinados."
+    },
+    {
+      "type": "heading",
+      "text": "Retornos precoces separam FCRAM da rota fria MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "O alias FCRAM continua sendo o caminho principal útil e termina com um retorno imediato. MMIO é verificado posteriormente e marcado como improvável, assim como a própria entrada de alias em relação ao acesso ordinário à tabela de páginas. Achatar a cadeia anterior de else-if permite que o Clang coloque o fluxo comum de forma mais linear e mantém o código raro do manipulador personalizado afastado do caminho do cache de instruções usado pela maioria das leituras e gravações."
+    },
+    {
+      "type": "heading",
+      "text": "A reivindicação de otimização exige cobertura do compilador e de alias"
+    },
+    {
+      "type": "paragraph",
+      "text": "Execute leituras e gravações de alias do Luma para FCRAM, MMIO de 32 bits válido, um endereço de alias fora de ambos os intervalos e endereços normais de tabela de páginas. Compare Clang e GCC em múltiplos níveis de otimização com o UBSan habilitado, verificando que não haja relatório de deslocamento assinado e resultados idênticos. Inspecione o código gerado para os retornos antecipados pretendidos, mas priorize a correção. Larguras do MMIO diferentes da rota estritamente suportada de 32 bits ainda devem passar adiante ou falhar de acordo com a semântica existente."
+    },
+    {
+      "type": "callout",
+      "text": "O caminho mais rápido começa com comportamento definido: um flag de endereço deve ser uma máscara de bits sem sinal antes que dicas de ramificação ou forma de assembly possam ser confiáveis."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Leia a discussão de engenharia Azahar e as alterações de código-fonte"
+    }
+  ]
+}

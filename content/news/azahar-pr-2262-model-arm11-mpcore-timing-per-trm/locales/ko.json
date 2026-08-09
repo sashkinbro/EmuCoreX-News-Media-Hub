@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 모델은 레거시 탈출 경로를 유지하면서 ARM11 명령어 타이밍을 모델링합니다",
+  "summary": "TRM 기반의 사이클 테이블은 모든 명령어에 대해 한 틱씩 계산하는 대신 파이프라인 플러시, 예측된 복귀, 주소 지정 모드, 전송 및 VFP 연산을 구분합니다.",
+  "heroAlt": "Azahar 풀 리퀘스트 #2262의 소스 증거: core/arm: TRM별 ARM11 MPCore 타이밍 모델링",
+  "searchKeywords": [
+    "Azahar",
+    "ARM11 MPCore",
+    "명령어 타이밍",
+    "Dynarmic",
+    "LEGO 시티 언더커버"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: TRM별 ARM11 MPCore 타이밍 모델링"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "틱당 한 명령어는 파이프라인 및 전송 차이를 숨깁니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nintendo 3DS CPU는 모든 ARM 명령을 동일한 지연시간으로 실행하지 않습니다. 8단계 파이프라인을 플러시하는 분기, 예측된 반환, 이동된 레지스터 주소, 그리고 다중 레지스터 또는 VFP 전송은 서로 다른 비용을 가집니다. Azahar의 이전 단순 타이밍은 인터럽트나 게임 로직을 CPU 작업과 상대적으로 이동시킬 수 있었으며, 특히 이벤트가 언제 나타나는지에 따라 동작이 달라지는 순서에서 그렇습니다."
+    },
+    {
+      "type": "heading",
+      "text": "이 표는 임의의 게임 지연이 아니라 ARM11 MPCore 메커니즘을 따릅니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2262는 arm_tick_counts를 7사이클 파이프라인 플러시 모델, 간접 분기에 대한 낮은 평균, PC로의 MOV 또는 로드 특별 처리, 이동 레지스터 주소 비용, 주기당 2레지스터 다중 전송, 그리고 VFP 전송 수와 함께 확장합니다. 비트 필드 추출 헬퍼는 명령 인코딩을 적절한 타이밍 함수에 맞추는 과정에서 수정되었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "예측된 반환은 구조화되지 않은 제어 흐름과 다릅니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr 및 스택 기반의 PC 로드는 반환 예측을 사용하여 더 저렴한 결과를 얻을 수 있는 반면, 다른 PC 쓰기나 점프 테이블 로드는 리필 페널티를 부담합니다. 이러한 구분은 일반 함수 반환에 대해 광범위한 분기 상수가 과다 청구되는 것을 방지하고, 예측 불가능한 리디렉션에 대해 과소 청구되는 것을 방지합니다. 이 모델은 호스트에서 에뮬레이션된 게스트 사이클을 설명하며, Dynarmic가 휴대폰이나 데스크탑에서 번역된 블록을 얼마나 빨리 실행하는지와는 무관합니다."
+    },
+    {
+      "type": "heading",
+      "text": "레거시 토글은 검증 중에 호환성 위험을 포함합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "CPU 설정을 디버그하면 타이밍에 민감한 게임의 경우 이전의 명령어 당 한 틱 동작을 복원할 수 있습니다; LEGO City Undercover의 추격 시퀀스가 인용된 예입니다. 테스트는 CPU 벤치마크, 인터럽트, 오디오, 입력 폴링 및 해당 추격 장면에서 두 모드를 비교해야 합니다. TRM 사례 및 목표 명령 루프에 대해 사이클 수를 검증해야 합니다. 토글은 결정적으로 전환되고 지속되어야 하며, 새로운 회귀는 조사되어야 하며 모든 타이틀을 영구적으로 레거시 타이밍 뒤에 숨기는 방법으로는 안 됩니다."
+    },
+    {
+      "type": "callout",
+      "text": "새 테이블은 명령이 왜 서로 다른 게스트 사이클을 사용하는지 모델링합니다; 기존 스위치는 그 모델이 성숙하는 동안 타이밍에 민감한 소프트웨어를 테스트 가능하게 유지합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Azahar 엔지니어링 논의와 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3621-shader-enable-disable-toggle",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation lets a post-processing stage sleep without forgetting its tuning",
+  "summary": "Per-shader enable switches preserve chain order and custom parameters, separating temporary bypass from destructive removal in both Qt and FullscreenUI.",
+  "heroAlt": "Source evidence from DuckStation pull request #3621: Qt, FullscreenUI, PostProcessing: Add shader enable/disable toggle.",
+  "searchKeywords": [
+    "DuckStation",
+    "post-processing",
+    "shader chain",
+    "parameters",
+    "FullscreenUI"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3621": "Qt, FullscreenUI, PostProcessing: Add shader enable/disable toggle."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Removing a shader was the only way to bypass it"
+    },
+    {
+      "type": "paragraph",
+      "text": "A post-processing chain often contains several effects whose parameters were tuned together. Before pull request #3621, temporarily checking the image without one stage meant removing it, then recreating the shader and its values later. That turns a simple comparison into configuration work and makes it easy to lose a carefully tuned preset or restore the effect in the wrong position."
+    },
+    {
+      "type": "heading",
+      "text": "Enabled state becomes part of the stage, not an empty replacement"
+    },
+    {
+      "type": "paragraph",
+      "text": "The shared post-processing representation now records whether an individual shader executes. A disabled stage remains in the chain with its parameter values and ordering intact; the renderer simply skips its work. Re-enabling it therefore restores the same effect rather than creating a default instance. This differs from removing a stage, which remains the correct operation when the user wants the chain definition itself to change."
+    },
+    {
+      "type": "heading",
+      "text": "Qt and FullscreenUI expose the same non-destructive control"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation spans the post-processing utility layer, the Qt settings widget, and FullscreenUI settings. That ensures the enabled flag is not a frontend-only decoration: either interface edits the state the renderer consumes. It also lets users configure the same chain from a desktop window or controller-first display without one side silently dropping the new property."
+    },
+    {
+      "type": "heading",
+      "text": "Persistence and chain-order tests matter more than one screenshot"
+    },
+    {
+      "type": "paragraph",
+      "text": "Create a chain with several shaders, modify multiple parameters, and disable a stage in the middle. Output should match a chain that skips that effect while later stages remain in the same order. Save settings, restart, and confirm the disabled state and parameters survive; then re-enable and compare against the original capture. Test both frontends, preset import, stage removal, and rapid toggling. GPU timing should fall only by the work of the bypassed stage."
+    },
+    {
+      "type": "callout",
+      "text": "Disable is now a reversible execution choice; remove remains a structural edit to the post-processing chain."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3621",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

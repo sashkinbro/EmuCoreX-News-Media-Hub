@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin establece límites estrictos alrededor de la descompresión de guardados de NetPlay",
+  "summary": "La decodificación segura LZO, la acumulación verificada y la validación exacta del tamaño final evitan que los bloques de guardado remotos sobrepasen la memoria o dirijan la asignación sin control.",
+  "heroAlt": "Evidencia de la fuente del pull request Dolphin #14740: NetPlay: limitar la salida de descompresión LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Guardado de NetPlay",
+    "descompresión",
+    "seguridad del buffer"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Seguridad",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: limitar la salida de descompresión LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La sincronización comprimida cruza un límite de tamaño hostil"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay puede transferir archivos o carpetas guardadas desde otro par antes de jugar. Cada bloque LZO comprimido y el tamaño final declarado provienen de la red. La ruta anterior invocaba el decodificador sin verificar sin establecer la capacidad de salida, por lo que los datos comprimidos malformados podrían escribirse más allá del destino. Una ruta de búfer también se asignaba directamente desde el tamaño proporcionado por el par, lo que permitía que la propia reclamación generara presión de memoria antes de que la descompresión demostrara algo."
+    },
+    {
+      "type": "heading",
+      "text": "Ahora cada bloque recibe una capacidad de destino real"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14740 cambia a lzo1x_decompress_safe. La salida de archivos inicializa new_len con el tamaño fijo del búfer de salida y verifica que el bloque decodificado quepa en el total declarado restante antes de escribir. La salida de carpetas en memoria se decodifica en un bloque temporal limitado, verifica tanto la resta del tamaño declarado como la aritmética de max_size del vector, luego agrega solo los bytes producidos con éxito. El total remoto ya no se usa como una solicitud de asignación inmediata."
+    },
+    {
+      "type": "heading",
+      "text": "El total final debe ser exacto, no simplemente estar por debajo de un límite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aceptar menos bytes de los declarados podría dejar un guardado truncado que se analiza de manera impredecible, mientras que aceptar más cruzaría el límite de formato declarado por el remitente. Ambos, ruta de archivo y de búfer, acumulan un conteo de 64 bits y requieren igualdad al final. Los errores del decodificador, las condiciones de desbordamiento aritmético, la salida más allá de lo reclamado o un desajuste regresan todos un fallo con una alerta controlada en lugar de entregar contenido parcial para una extracción posterior."
+    },
+    {
+      "type": "heading",
+      "text": "Un corpus de descompresión debe probar el uso de recursos así como las escrituras."
+    },
+    {
+      "type": "paragraph",
+      "text": "Alimente transferencias válidas vacías, de un solo bloque, de múltiples bloques y máximas normales; luego flujos corruptos, bombas de expansión, bloques truncados, bloques finales, reclamaciones de cero, reclamaciones enormes y totales justo por encima o por debajo de la salida real. Ejecute bajo AddressSanitizer y límites de memoria, verificando que el fallo elimina archivos parciales y no deja una sesión esperando indefinidamente. Pruebe versiones de remitente y receptor entre sí, carpetas de guardado con muchas entradas y redes interrumpidas. Aún podría ser deseable un máximo a nivel de protocolo más allá de los límites de seguridad de memoria."
+    },
+    {
+      "type": "callout",
+      "text": "La descompresión segura requiere tres acuerdos: cada bloque encaja en su búfer, los bytes acumulados no pueden desbordarse y el flujo completado equivale a la carga útil declarada."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Lee la discusión de ingeniería Dolphin y los cambios en el código fuente"
+    }
+  ]
+}

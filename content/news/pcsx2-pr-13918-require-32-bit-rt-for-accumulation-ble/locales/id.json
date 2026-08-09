@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menolak penggabungan akumulasi pada target 16-bit dengan akurasi maksimum",
+  "summary": "Penjaga presisi menonaktifkan optimisasi yang urutan pembulatannya dapat melebihi tangga warna 16-bit yang dapat direpresentasikan, menyelaraskan keluaran perangkat keras berakurat tinggi dengan referensi perangkat lunak.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #13918: GS/HW: Memerlukan RT 32 bit untuk penggabungan akumulasi pada campuran maksimum.",
+  "searchKeywords": [
+    "PCSX2",
+    "penggabungan akumulasi",
+    "target render 16-bit",
+    "campuran maksimum",
+    "dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Memerlukan RT 32 bit untuk penggabungan akumulasi pada campuran maksimum."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Perubahan akumulasi menentukan nilai mana yang menerima pembulatan 16-bit"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 dapat mengoptimalkan beberapa campuran dengan mengakumulasi melalui target render host. Pada target 32-bit, presisi tambahan umumnya kompatibel dengan hasil yang diinginkan. Target 16-bit GS mengkuantisasi warna secara berbeda: menerapkan pembulatan setelah intermediate yang salah dapat menghasilkan RGB 255 meskipun tangga yang dimaksudkan format tersebut hanya sampai sekitar 240. Gambar mungkin terlihat mirip sementara pola dither dan nuansa tepatnya berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Presisi maksimum sekarang membutuhkan target 32-bit untuk jalur cepat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #13918 menambahkan satu kondisi di GSRendererHW. Saat akurasi campuran diatur ke maksimum, akumulasi blending tetap tersedia hanya jika target render adalah 32-bit. Target 16-bit kembali ke jalur non-akumulasi yang menghormati kuantisasi-nya. Mode presisi rendah dapat terus membuat kompromi performa yang telah didokumentasikan; perubahan ini menyelaraskan pengaturan paling ketat dengan janji presisinya."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity memperlihatkan perbedaan dalam detail dither"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbandingan Vulkan yang disediakan menggunakan frame 16-bit dari Sonic Riders: Zero Gravity dan menyertakan rendering perangkat lunak sebagai referensi kebenaran. Pada ukuran normal, perubahan mungkin sulit terlihat, tetapi memperbesar pola dither mengungkap tangga warna yang berbeda. Inilah sebabnya mengapa gambar referensi tingkat piksel penting: tangkapan layar kompatibilitas luas bisa melewatkan kesalahan numerik yang memang dimaksudkan untuk dihindari pada pengaturan maksimum."
+    },
+    {
+      "type": "heading",
+      "text": "Pemeriksaan regresi harus mencakup kedua kedalaman target dan mode campuran"
+    },
+    {
+      "type": "paragraph",
+      "text": "Putar ulang dump sumber pada Vulkan dan backend perangkat keras lainnya, bandingkan piksel tanpa kehilangan dengan output perangkat lunak, dan verifikasikan bahwa jalur akumulasi hanya ditolak untuk target 16-bit di bawah campuran maksimum. Target 32-bit harus mempertahankan optimisasi tersebut. Catat routing gambar dan waktu GPU, karena menonaktifkan optimisasi dapat mengurangi kinerja meskipun koreksi output terlihat transparan. Uji beberapa pola dithering dan persamaan akumulasi daripada hanya satu tekstur dasar."
+    },
+    {
+      "type": "callout",
+      "text": "Akurasi campuran maksimum sekarang memperlakukan presisi target sebagai bagian dari algoritme: permukaan 16-bit tidak dapat dengan aman menggunakan jalan pintas akumulasi 32-bit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Baca diskusi teknis PCSX2 dan perubahan sumbernya"
+    }
+  ]
+}

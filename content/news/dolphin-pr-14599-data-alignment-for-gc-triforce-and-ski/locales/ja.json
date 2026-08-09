@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphinは抽出されたTriforceディスクにDIMMアドレスウィンドウについて教えます",
+  "summary": "DirectoryBlobは現在、影になったアーケードメモリ範囲を避け、GameCubeおよびWiiのレイアウトの仮定を適用する代わりにTriforceのより小さいファイルアラインメントを使用します。",
+  "heroAlt": "Dolphinプルリクエスト#14599からのソース証拠: DirectoryBlob: GC/Triforce用のデータアラインメントを修正し、Triforce DIMMメモリ範囲をスキップ",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "ディスクアラインメント"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "ストレージ",
+    "emulation": "エミュレーション"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: GC/Triforce用のデータアラインメントを修正し、Triforce DIMMメモリ範囲をスキップ"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ディレクトリバックのディスクは依然としてプラットフォーム固有の配置が必要です"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin は、抽出されたファイルをディスクイメージのように DirectoryBlob を通じてマウントすることができます。その仮想レイアウトは、すべてのファイルにオフセットとアライメントを割り当てます。Sega の Triforce アーケードプラットフォームに対して GameCube と Wii のルールを再利用する際に、AMMediaboard に接続されたハードウェアが見落とされました。特定のディスク領域のアドレスは SRAM によってシャドウされ、DIMM の内容を返すため、完全に有効なホストファイルでも、そこに配置されると読み取り不能になることがあります。"
+    },
+    {
+      "type": "heading",
+      "text": "Triforceフラグは、2つのレイアウトの決定を変更します"
+    },
+    {
+      "type": "paragraph",
+      "text": "プルリクエスト #14599 は、ソースボリュームが Triforce かどうかを記録します。ファイルを配置する前に、DirectoryBlob は提案された範囲が 0x1F000000 から 0x1F800000 の間と重なっているかを確認します。もし重なっている場合、オフセットは 0x1F800000 にジャンプし、ファイル全体を影付きウィンドウの外に保持します。その後の Triforce ファイルは、GameCube や Wii のディレクトリディスクで使用されていた保守的な 0x8000 バイト境界ではなく、0x20 バイトに揃えられます。"
+    },
+    {
+      "type": "heading",
+      "text": "重なりを避けるには、ファイル全体の間隔を考慮する必要があります"
+    },
+    {
+      "type": "paragraph",
+      "text": "開始アドレスだけをチェックすると、ウィンドウの下から始まりウィンドウ内に伸びるファイルを見逃してしまいます。コードは data_offset と data_offset にエントリサイズを加えた値の両方を比較し、エントリ全体を移動させます。32バイトの小さいアライメントも、プラットフォームの期待される粒度を維持しながら、アーケードイメージに不要な隙間が生じるのを防ぎます。非 Triforce ボリュームはどちらの分岐にも入らないため、既定の配置は古いポリシーによってバイト単位で維持されます。"
+    },
+    {
+      "type": "heading",
+      "text": "境界の固定具は穴のすべての側面を探るべきです。"
+    },
+    {
+      "type": "paragraph",
+      "text": "ゼロ長、非常に小さい、または大きなファイルを DIMM の両方の境界の直前、横断、内部、直後に配置するディレクトリツリーを構築します。生成された FST オフセット、0x20 のアライメント、エミュレートされた AMMediaboard を通して読み取ったファイル内容、および合計イメージサイズを検証します。同じツリーを GameCube と Wii でも繰り返し、0x8000 アライメントが変わらないことを証明します。オーバーフローを検出するために正確な終端の算術演算と非常に大きなオフセットも含め、抽出したディレクトリから代表的な Triforce タイトルを起動して、メタデータの確認だけに留めないようにします。"
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlobは仮想ディスクビルダーです。アーケードハードウェアがどの物理アドレス範囲でディスクデータを返すかが変わる場合、正しいファイル名だけでは不十分です。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Dolphinのエンジニアリングディスカッションとソースの変更を読んでください"
+    }
+  ]
+}

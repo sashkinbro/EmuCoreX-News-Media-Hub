@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14768-close-menus-on-resume-hide-osd-while-o",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 reconciles FullscreenUI with resume actions coming from Qt",
+  "summary": "External unpause now dismisses controller-first menus, while OSD visibility follows whether any FullscreenUI window is open rather than drawing over both menu and game layers.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14768: FullscreenUI: Close menus on resume, hide OSD while open",
+  "searchKeywords": [
+    "PCSX2",
+    "FullscreenUI",
+    "external resume",
+    "OSD",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14768": "FullscreenUI: Close menus on resume, hide OSD while open"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A game could resume behind a menu that still looked modal"
+    },
+    {
+      "type": "paragraph",
+      "text": "FullscreenUI owns its own pause-oriented settings and achievement windows, but Qt's toolbar can resume emulation without going through those menu actions. The game began running while the FullscreenUI window remained visible, creating a mismatch between UI state and VM state. Users could believe they were still in a blocking menu while gameplay and audio continued underneath."
+    },
+    {
+      "type": "heading",
+      "text": "Resume from outside the menu closes the stale window state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14768 detects when emulation resumes through another frontend path and dismisses open FullscreenUI menus. It does not close a menu merely because it draws over a paused frame; the trigger is the external transition back to running. Returning directly to gameplay makes the visible layer agree with the VM and avoids requiring a second controller action to escape a window that no longer owns the pause."
+    },
+    {
+      "type": "heading",
+      "text": "OSD is hidden for every FullscreenUI window"
+    },
+    {
+      "type": "paragraph",
+      "text": "Performance counters, status messages, and other OSD elements previously appeared over Big Picture and menu content. The new visibility rule suppresses OSD rendering while any FullscreenUI window is open, then restores it in gameplay. This treats the controller-first UI as its own presentation surface rather than another transparent overlay where unrelated diagnostics can obscure labels or compete for attention."
+    },
+    {
+      "type": "heading",
+      "text": "Testing must combine Qt actions with several menu types"
+    },
+    {
+      "type": "paragraph",
+      "text": "Open settings and achievements through FullscreenUI, then press the Qt unpause toolbar button. Each menu should close and gameplay should resume with OSD visible only after the UI is gone. Test Big Picture, pause menu, modal dialogs, keyboard shortcuts, controller resume, and external achievements events. Pause again and verify menu state is freshly constructed rather than silently retained. OSD suppression must not hide messages during ordinary gameplay or a non-FullscreenUI Qt window."
+    },
+    {
+      "type": "callout",
+      "text": "Visible UI now follows actual VM state: an external resume dismisses pause menus, and OSD belongs to gameplay rather than controller-first windows."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14768",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

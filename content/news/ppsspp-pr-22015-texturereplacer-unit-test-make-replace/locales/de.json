@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22015-texturereplacer-unit-test-make-replace",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP gibt der Texturersetzung ein eigenständiges Testgerüst",
+  "summary": "Ein synthetisches Paket und ein expliziter Testeingangspunkt prüfen Hashes, Bereiche, Filterung, Mipmaps und fehlende Einträge, ohne den Renderer des Emulators zu starten.",
+  "heroAlt": "Quellenbeleg aus dem PPSSPP Pull Request #22015: TextureReplacer Unit-Test hinzufügen; Replacer eigenständig testbar machen",
+  "searchKeywords": [
+    "PPSSPP",
+    "Texturersetzung",
+    "Unit-Test",
+    "textures.ini",
+    "Mipmaps"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Werkzeuge",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22015": "TextureReplacer Unit-Test hinzufügen; Replacer eigenständig testbar machen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Texture-Pakete kombinieren mehrere Regeln, die leicht rückgängig gemacht werden können"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Ersatz wird nicht nur anhand des Dateinamens ausgewählt. PPSSPP liest textures.ini, interpretiert erfundene oder berechnete Hashes, wendet Hash-Bereiche an, wählt Mip-Level aus, beachtet Filteranweisungen und behandelt fehlende oder ignorierte Einträge. Tests durch simples Starten eines Spiels führen dazu, dass Fehler von der Ausführung bestimmter Draws, der Unterstützung des Backend-Formats, dem Zustand des Dateisystems und der menschlichen Bildvergleichung abhängen. Das ist langsam und lässt viele negative Fälle unentdeckt."
+    },
+    {
+      "type": "heading",
+      "text": "Der Ersetzer kann nun außerhalb des Renderers konstruiert werden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #22015 erlaubt ein null DrawContext. In diesem Modus melden komprimierte GPU-Formate einfach \"nicht unterstützt\", anstatt auf ein Backend zuzugreifen. LoadPackForTesting akzeptiert ein Basiverzeichnis, aktiviert den Ersatz, deaktiviert das Speichern und parst dieses Pack direkt, anstatt die globale Konfiguration oder die ID eines laufenden Spiels zu konsultieren. Lookup- und Filterfunktionen verwenden den replaceEnabled-Zustand der Instanz, was das Verhalten des isolierten Objekts deterministisch macht."
+    },
+    {
+      "type": "heading",
+      "text": "Ein synthetisches Pack liefert lesbare, kontrollierte Beweise"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die neue TestTextureReplacer-Fixierung erstellt textures.ini mit erkennbaren erfundenen Hashes und echten PNG-Dateien. Assertions decken direkten Lookup, Filterentscheidungen, Hash-Bereiche, Mip-Ebenen sowie fehlende und ignorierte Einträge ab. Da jede Datei zweckmäßig erstellt wurde, kann eine fehlgeschlagene Assertion die genaue Regel benennen, die verletzt wurde. Der Test ist in CMake und Android-Unit-Test-Quellen eingebunden, sodass plattformbedingte Build-Unterschiede das Parserverhalten weniger wahrscheinlich verschleiern."
+    },
+    {
+      "type": "heading",
+      "text": "Zukünftige Abdeckung sollte fehlerhafte und plattformabhängige Pakete einschließen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Erweitern Sie die Fixtures um doppelte Schlüssel, ungültige Hashes, überlappende Bereiche, fehlende Mip-Ebenen, Pfade mit gemischten Groß- und Kleinbuchstaben, Unicode-Namen, Pfadtrennzeichen, nicht unterstützte komprimierte Formate, fehlerhafte PNG-Daten und Konfigurationsneuladungen. Führen Sie Tests auf Desktop- und Android-Dateisystemen durch und stellen Sie sicher, dass temporäre Verzeichnisse isoliert sind. Assertions sollten sowohl die gewählte Ersatzoption als auch den Grund für die Ablehnung eines Kandidaten überprüfen. Ein null DrawContext muss eine explizite Testfähigkeit bleiben und darf nicht versehentlich dazu führen, dass Produktionscode die Formatunterstützung ignoriert."
+    },
+    {
+      "type": "callout",
+      "text": "Eine Ersatzpipeline wird wartbar, wenn Pack-Regeln mit einem winzigen deterministischen Dateisystem anstelle einer vollständigen Spielsitzung nachgewiesen werden können."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22015",
+      "label": "Lesen Sie die PPSSPP-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

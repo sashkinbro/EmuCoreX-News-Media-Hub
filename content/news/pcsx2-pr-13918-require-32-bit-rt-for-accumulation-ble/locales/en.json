@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 refuses accumulation blending on 16-bit targets at maximum accuracy",
+  "summary": "A precision guard disables an optimization whose rounding order can exceed the representable 16-bit color ladder, aligning high-accuracy hardware output with the software reference.",
+  "heroAlt": "Source evidence from PCSX2 pull request #13918: GS/HW: Require 32 bit RT for accumulation blend on max blend.",
+  "searchKeywords": [
+    "PCSX2",
+    "accumulation blend",
+    "16-bit render target",
+    "maximum blend",
+    "dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Require 32 bit RT for accumulation blend on max blend."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Accumulation changes which value receives 16-bit rounding"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 can optimize some blends by accumulating through a host render target. On a 32-bit target the extra precision is generally compatible with the intended result. A 16-bit GS target quantizes color differently: applying rounding after the wrong intermediate can produce RGB 255 even though the format's intended ladder tops out around 240. The image may look close while its dither pattern and exact shades diverge."
+    },
+    {
+      "type": "heading",
+      "text": "Maximum accuracy now requires a 32-bit target for the fast path"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #13918 adds one condition in GSRendererHW. When blend accuracy is set to maximum, accumulation blending remains available only if the render target is 32-bit. A 16-bit target falls back to the non-accumulation route that respects its quantization. Lower accuracy modes can continue making their documented performance tradeoffs; the change aligns the strictest setting with its accuracy promise."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity exposes the difference in dither detail"
+    },
+    {
+      "type": "paragraph",
+      "text": "The supplied Vulkan comparison uses a 16-bit frame from Sonic Riders: Zero Gravity and includes software rendering as ground truth. At normal size the change can be difficult to see, but zooming into the dither pattern reveals the different color ladder. This is why pixel-level reference images matter: a broad compatibility screenshot could miss the numerical error the maximum setting is specifically intended to avoid."
+    },
+    {
+      "type": "heading",
+      "text": "Regression checks should cover both target depths and blend modes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Replay the source dump on Vulkan and other hardware backends, compare lossless pixels with software output, and verify that the accumulation path is rejected only for 16-bit targets under maximum blend. A 32-bit target should retain the optimization. Record draw routing and GPU time, because disabling an optimization may cost performance even when the output correction is transparent. Test several dithering patterns and accumulation equations rather than one ground texture."
+    },
+    {
+      "type": "callout",
+      "text": "Maximum blend accuracy now treats target precision as part of the algorithm: a 16-bit surface cannot safely use the 32-bit accumulation shortcut."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

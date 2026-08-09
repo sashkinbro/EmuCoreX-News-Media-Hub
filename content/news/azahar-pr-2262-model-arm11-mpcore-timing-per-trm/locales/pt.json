@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Modelos Azahar instruem o tempo ARM11 mantendo uma saída de emergência legada",
+  "summary": "Uma tabela de ciclos baseada em TRM distingue descartes de pipeline, retornos previstos, modos de endereçamento, transferências e operações VFP em vez de cobrar um tick por cada instrução.",
+  "heroAlt": "Evidência de fonte do pull request #2262 do Azahar: core/arm: modelar ARM11 MPCore timing por TRM",
+  "searchKeywords": [
+    "Azahar",
+    "MPCore ARM11",
+    "tempo de instrução",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: modelar ARM11 MPCore timing por TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma instrução por tick esconde diferenças de pipeline e transferências"
+    },
+    {
+      "type": "paragraph",
+      "text": "O Nintendo 3DS CPU não executa todas as instruções ARM com latência idêntica. Um desvio que limpa um pipeline de oito estágios, um retorno previsto, um endereço de registrador deslocado e uma transferência de múltiplos registradores ou VFP têm custos diferentes. O Azahar, anteriormente com temporização simples, podia mover interrupções ou lógica de jogo em relação ao trabalho CPU, particularmente em sequências cujo comportamento depende de quando um evento se torna visível."
+    },
+    {
+      "type": "heading",
+      "text": "A tabela segue os mecanismos do ARM11 MPCore, não atrasos arbitrários em jogos."
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #2262 expande arm_tick_counts com um modelo de limpeza de pipeline de sete ciclos, uma média menor para desvios indiretos, tratamento especial para MOV ou carregamento no PC, custo de endereço de registrador deslocado, várias transferências de dois registradores por ciclo e contagens de transferência VFP. Os auxiliares de extração de campos de bits são corrigidos como parte da correspondência de codificações de instruções com a função de temporização apropriada."
+    },
+    {
+      "type": "heading",
+      "text": "Retornos previstos diferem do fluxo de controle não estruturado."
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr e cargas baseadas na pilha no PC podem usar a previsão de retorno e receber um resultado mais barato, enquanto outras gravações no PC ou cargas de tabela de saltos pagam uma penalidade de recarga. Essa distinção evita que uma constante de branch ampla cobre demais os retornos normais de função e cobre de menos redirecionamentos imprevisíveis. O modelo descreve ciclos de convidados emulados pelo host; é independente de quão rapidamente Dynarmic executa o bloco traduzido no telefone ou desktop."
+    },
+    {
+      "type": "heading",
+      "text": "Um alternador legado contém risco de compatibilidade durante a validação"
+    },
+    {
+      "type": "paragraph",
+      "text": "As configurações de depuração CPU podem restaurar o comportamento antigo de um tick por instrução para jogos sensíveis ao tempo; a sequência de perseguição de LEGO City Undercover é o exemplo citado. Testes devem comparar ambos os modos em benchmarks CPU, interrupções, áudio, polling de entrada e aquela perseguição. Valide a contagem de ciclos contra casos TRM e loops de instrução alvo. O alternador deve mudar de forma determinística e persistente, mas novas regressões devem ser investigadas em vez de ocultar permanentemente todos os títulos atrás do tempo legado."
+    },
+    {
+      "type": "callout",
+      "text": "Os novos modelos de tabela explicam por que as instruções levam ciclos de convidados diferentes; o switch legado mantém o software sensível ao tempo testável enquanto esse modelo amadurece."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Leia a discussão de engenharia Azahar e as alterações de código-fonte"
+    }
+  ]
+}

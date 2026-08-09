@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation segue le librerie PSF annidate fino al vero punto di ingresso del programma",
+  "summary": "Una modifica ricorsiva di due righe fa sì che il _lib del genitore più profondo fornisca PC e SP, correggendo un loader che fermava la ricerca del punto di ingresso un livello troppo presto.",
+  "heroAlt": "Prove sorgente dalla pull request DuckStation #3489: PSFLoader: Fix recursive _lib loading",
+  "searchKeywords": [
+    "DuckStation",
+    "Loader PSF",
+    "_lib",
+    "contatore del programma",
+    "puntatore dello stack"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Memorizzazione",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Fix recursive _lib loading"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un PSF può ereditare lo stato eseguibile tramite più di una libreria"
+    },
+    {
+      "type": "paragraph",
+      "text": "I file Portable Sound Format possono riferirsi a un genitore tramite _lib, e quel genitore può riferirsi a un'altra prima libreria. Caricare i dati in modo ricorsivo non è sufficiente se il caricatore sceglie PC e SP dal livello sbagliato. La guida al formato citata dalla modifica dice che la prima catena _lib deve essere seguita fino al suo membro più profondo; quel contesto eseguibile inizializza la riproduzione dopo che tutte le sezioni ereditate sono state assemblate."
+    },
+    {
+      "type": "heading",
+      "text": "Il vecchio controllo di profondità consumava il flag del punto di ingresso troppo presto"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader precedentemente creava lib_use_pc_sp da depth == 0. Questo permetteva alla prima libreria genitore di rivendicare il programma contatore e il puntatore dello stack, poi impediva alla ricorsione più profonda di farlo. La pull request #3489 invece passa il flag use_pc_sp del chiamante in LoadLibraryPSF in modo ricorsivo e lo imposta su falso solo dopo che la chiamata alla prima libreria ritorna. Il primo genitore più profondo riceve il flag prima che qualsiasi livello più superficiale lo consumi."
+    },
+    {
+      "type": "heading",
+      "text": "Solo la catena della prima libreria possiede la selezione di PC e SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cancellare use_pc_sp durante l'unwind preserva un'altra regola PSF: librerie successive possono contribuire dati senza sostituire ripetutamente i registri iniziali. La patch non appiattisce ogni _lib in un'unica lista non ordinata. Distingue il percorso ricorsivo del primo genitore che stabilisce l'esecuzione dai fratelli caricati successivamente, mantenendo la modifica più piccola possibile in psf_loader.cpp anziché riscrivere il formato del contenitore."
+    },
+    {
+      "type": "heading",
+      "text": "Un fixture di regressione necessita di almeno tre livelli annidati"
+    },
+    {
+      "type": "paragraph",
+      "text": "Costruisci un PSF il cui root, primo genitore e il più profondo primo genitore dichiarino ciascuno valori PC e SP differenti, più una libreria secondaria con un'altra coppia. DuckStation dovrebbe caricare tutti i dati richiesti ma partire dai registri del primo genitore più profondo; modificare una libreria non primaria non deve spostare il punto di ingresso. Confronta la riproduzione e i registri registrati con Mednafen o un altro loader conforme al formato, poi testa riferimenti a librerie mancanti, ciclici e illeggibili per errori chiari piuttosto che ricorsione illimitata."
+    },
+    {
+      "type": "callout",
+      "text": "La correzione riguarda l'ordine di ricorsione: i dati possono provenire da molte librerie, ma il PC e lo SP iniziali appartengono al membro più profondo della prima catena _lib."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Leggi la discussione ingegneristica DuckStation e le modifiche al codice sorgente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21788-detect-sprites-clip-them-slightly-to-a",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP mira nas emendas de sprites do GTA na fronteira entre geometria e texel",
+  "summary": "Um caminho de compatibilidade reconhece sprites de dois triângulos e desloca sua borda UV externa para dentro, reduzindo artefatos de upscaling sem enfraquecer globalmente a filtragem de textura.",
+  "heroAlt": "Evidência de origem do pull request PPSSPP #21788: Correção de sprite do GTA: Detectar sprites, recortá-los ligeiramente para evitar artefatos de filtragem",
+  "searchKeywords": [
+    "PPSSPP",
+    "GTA",
+    "borda do sprite",
+    "filtragem de textura",
+    "coordenadas UV"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21788": "Correção de sprite do GTA: Detectar sprites, recortá-los ligeiramente para evitar artefatos de filtragem"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O upscaling expõe pixels logo além do retângulo pretendido de um sprite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Muitas interfaces e efeitos do PSP desenham um sprite retangular como dois triângulos. Na resolução nativa, coordenadas que caem nas bordas dos texels podem parecer corretas. Com resolução interna mais alta e filtragem linear, amostras próximas à borda externa podem se misturar com uma região do atlas vizinha ou com a borda transparente. Uma alteração global no sampler afetaria todas as texturas, incluindo superfícies 3D que precisam de filtragem comum, então a correção deve primeiro provar que a geometria enviada é realmente um sprite."
+    },
+    {
+      "type": "heading",
+      "text": "O detector reconstrói um quadrilátero a partir de vértices de triângulos compartilhados"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21788 examina pares de triângulos adjacentes no caminho de transformação de software. Ele encontra os dois índices compartilhados por ambos os triângulos, identifica seus cantos opostos e verifica o alinhamento de eixo, além das correspondentes relações de UV. Apenas a orientação suportada se torna um sprite válido. A rotina então deriva a escala de UV e aplica uma quantidade configurável de SpriteBorderFix às bordas distantes na direção de gradiente correta."
+    },
+    {
+      "type": "heading",
+      "text": "Posição e UV se movem juntos para preservar o alinhamento de pixels"
+    },
+    {
+      "type": "paragraph",
+      "text": "O ajuste move suavemente tanto as coordenadas de textura selecionadas quanto suas posições no espaço da tela. Mover apenas o UV poderia esticar o sprite ou deslocar sua amostra em relação aos pixels pretendidos. O código também evita dimensões de tela cheia como 480 por 272 e é controlado por um valor de compatibilidade, limitando o risco a títulos conhecidos afetados. Listas puras de triângulos e ordenações de vértices não suportadas deliberadamente não recebem uma correção estimada."
+    },
+    {
+      "type": "heading",
+      "text": "Os elementos visuais devem incluir atlas e falsos positivos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Capture as cenas afetadas de GTA em resoluções nativas e várias resoluções aumentadas usando filtros nearest e linear. Adicione um atlas sintético com células vizinhas fortemente coloridas para que um pixel de borda amostrado seja óbvio. Teste quads rotacionados, geometria em perspectiva, efeitos de tela cheia, tiras de triângulos, gradientes UV invertidos, sprites recortados e ordens de vértices incomuns. Confirme que a flag de compatibilidade permanece limitada ao título e que zero é uma operação nula verdadeira. Compare a geometria antes e depois para garantir que o ajuste remova as emendas sem reduzir a arte visível."
+    },
+    {
+      "type": "callout",
+      "text": "A correção é estreita por design: reconheça a geometria do sprite, preserve sua relação de pixels e deixe todo desenho não comprovado sem alterações."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21788",
+      "label": "Leia a discussão de engenharia PPSSPP e as alterações de código-fonte"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP evita que threads auxiliares obsoletos danifiquem um savestate restaurado",
+  "summary": "O carregador savestate agora desliga antigos invólucros de host sceUtility e PSMF antes da destruição, protegendo threads e memória do kernel ativos que podem reutilizar os mesmos identificadores.",
+  "heroAlt": "Evidência da fonte do pull request #21988 do PPSSPP: Savestate: não deixe que threads auxiliares HLE obsoletos alterem o estado do kernel restaurado",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: não deixe que threads auxiliares HLE obsoletos alterem o estado do kernel restaurado"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um destruidor poderia agir sobre a geração errada do estado do kernel"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP mantém wrappers HLEHelperThread no lado do host para trabalho assíncrono, como acesso a dados salvos e reprodução de PSMF. Durante um carregamento, o emulador substitui esses wrappers por objetos do stream serializado. Dois caminhos destruíam o wrapper pré-carregamento normalmente, permitindo que seu destruidor chamasse __KernelDeleteThread e liberasse um bloco de entrada depois que o novo estado do kernel já havia sido instalado. Os IDs dentro do antigo wrapper não descreviam mais os objetos que ele estava autorizado a possuir."
+    },
+    {
+      "type": "heading",
+      "text": "O reuso de identificadores transformou ruído de log inofensivo em corrupção silenciosa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se o estado restaurado não continha o ID de thread ou alocação obsoleta, o erro produzia uma mensagem sobre thread ausente ou liberação inválida. O caso perigoso ocorria quando o estado restaurado tinha reciclado qualquer um desses valores. O destruidor poderia então terminar uma thread legítima ativa ou liberar memória usada por um objeto diferente. Carregar enquanto o trabalho de dados salvos ou um player PSMF estava ativo tornava esse bug de propriedade sensível ao tempo muito mais fácil de acontecer."
+    },
+    {
+      "type": "heading",
+      "text": "Forget separa a vida útil do wrapper do host da propriedade do guest"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21988 aplica o padrão já usado pelo gerenciamento de estado de I/O de PPSSPP. sceUtility chama explicitamente Forget, exclui seu accessThread e limpa o ponteiro antes de Do recriá-lo. Em leituras PSMF, o carregador percorre o mapa de players existente e chama Forget em cada finishThread antes que a desserialização do mapa destrua os players. Forget não apaga o estado de convidado restaurado; ele informa ao wrapper host obsoleto que ele não possui mais esses recursos do kernel."
+    },
+    {
+      "type": "heading",
+      "text": "A matriz de regressão deve exercitar IDs reciclados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Teste saves feitos antes, durante e depois das operações de savedata e reprodução de PSMF, e então carregue cada um a partir de uma sessão com atividade diferente. Instrumente a exclusão de threads e libere BlockAllocator para provar que nenhum wrapper pré-carregamento altera a geração restaurada. Inclua ciclos de carregamento repetidos, rebobinar, troca de slot, estados falhos e desligamento após o carregamento. Um teste direcionado deve recriar deliberadamente o mesmo ID de thread e endereço de bloco, porque o caso antigo de log inofensivo sozinho não exporia corrupção silenciosa."
+    },
+    {
+      "type": "callout",
+      "text": "Um savestate restaurar altera a propriedade de gerações; os destruidores do host devem esquecer os manipuladores de convidados obsoletos antes que o kernel restaurado se torne autorizador."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Leia a discussão de engenharia PPSSPP e as alterações de código-fonte"
+    }
+  ]
+}

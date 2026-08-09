@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticar sombras ausentes sin acumular trucos gráficos",
+  "summary": "Captura una escena con muchas sombras a resolución nativa, identifica si la capa ausente es geometría, profundidad o mezcla, compara APIs de hardware y una referencia de software, luego conserva solo la corrección más pequeña por juego.",
+  "heroAlt": "PCSX2 captura de comparación de una corrección de precisión gráfica en una escena de juego con sombras",
+  "searchKeywords": [
+    "PS2 sombras ausentes",
+    "EmuCoreX corrección de sombras",
+    "precisión gráfica",
+    "comparación con renderizador de software",
+    "mezcla de profundidad"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisión"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "Contadores de gráficos PCSX2 e indicadores de configuración",
+    "pcsx2-report": "Punto de entrada para reporte de problemas PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Demostra qué capa de sombra está ausente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una sombra puede ser una textura proyectada, un paso de framebuffer translúcido, geometría oscura ordinaria o un efecto combinado con la prueba de profundidad. Por lo tanto, la primera pregunta útil no es qué truco habilitar, sino si el juego dibuja la capa en absoluto. Elija un lugar donde el mismo personaje, luz y cámara puedan restaurarse de manera confiable. Registre el número de serie del juego, el renderizador activo, el controlador GPU, la resolución interna, la configuración de mezcla y cualquier corrección por juego heredada antes de tocar el perfil."
+    },
+    {
+      "type": "callout",
+      "text": "No juzgue el cambio por una diferente hora del día, ángulo de cámara, estado guardado o fotograma de animación. La iluminación dinámica puede hacer que dos fotogramas válidos parezcan una regresión del renderizador."
+    },
+    {
+      "type": "heading",
+      "text": "Preparar un punto de control sombra"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida normal dentro del juego justo antes de una escena repetible iluminada.",
+        "Una captura de pantalla base con el personaje y el suelo visibles juntos.",
+        "Resolución interna nativa y posprocesamiento desactivado para la primera comparación.",
+        "El controlador del sistema GPU seleccionado; los controladores personalizados son un experimento aparte.",
+        "Una copia escrita de las sobrescrituras gráficas globales y por juego."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separar el comportamiento de dibujo, mezcla y profundidad"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Arranca en frío el título y captura el punto de control base sin cargar un estado guardado del emulador.",
+        "2. Restablece las correcciones manuales GS para este título, selecciona la resolución interna nativa y repite el mismo camino de movimiento.",
+        "3. Cambia únicamente entre las API de hardware compatibles, cerrando el juego entre ejecuciones para que el renderizador se inicialice de manera limpia.",
+        "4. Si ambos caminos de hardware omiten la capa, usa la renderización por software brevemente como referencia de corrección y captura la misma cámara.",
+        "5. Cuando el software muestre la sombra, vuelve a la API de hardware más estable y aumenta la precisión de mezcla solo un nivel.",
+        "6. Si la mezcla no cambia nada, restáurala y prueba la corrección documentada relacionada con la profundidad apropiada para el título en lugar de combinar suposiciones.",
+        "7. Repite una segunda escena de sombra que use una superficie o fuente de luz diferente.",
+        "8. Calienta el dispositivo durante diez minutos y confirma que la corrección seleccionada sigue siendo lo suficientemente rápida para la reproducción real."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La salida del software es evidencia diagnóstica, no una promesa de velocidad jugable. Un fotograma de software correcto muestra que la imagen del disco y el código del juego pueden producir el efecto, mientras que un fallo solo de hardware reduce la búsqueda al comportamiento del renderizador. Un cambio de mezcla que restaura una sombra translúcida es diferente de una corrección de profundidad que restaura geometría oculta por el orden. Mantener esas ramas separadas hace que el resultado sea explicable y reversible."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación de corrección de sombra"
+    },
+    {
+      "type": "paragraph",
+      "text": "Acepta el perfil solo cuando la capa sea estable en más fotogramas que el fotograma de prueba original."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La posición de la sombra sigue al sujeto en movimiento en lugar de permanecer como un rectángulo estático.",
+        "La opacidad se asemeja a la referencia del software y no oscurece todo el pase del suelo.",
+        "Los calcomanías cercanas, la niebla y la transparencia del HUD permanecen intactas.",
+        "El efecto sobrevive a un arranque en frío y a una transición de área posterior.",
+        "La velocidad sostenida y la cadencia de fotogramas permanecen dentro del presupuesto base registrado."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Evidencia que apunta a otro lugar"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La sombra también está ausente en el software: verifica la imagen y confirma que la escena original realmente contiene una.",
+        "Solo la carga de estados guardados del emulador lo rompe: vuelve a probar desde un guardado dentro del juego y descarta el estado incompatible.",
+        "Cada superficie oscura desaparece: reinicia la omisión amplia de dibujo o realiza anulaciones manuales de GS.",
+        "La corrección funciona una vez pero falla al reanudar: captura los detalles del renderizador y del controlador para un informe de ciclo de vida."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Regresa a la línea base gráfica medida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restaurar la mezcla automática, desactivar la corrección de profundidad probada, volver a seleccionar el renderizador original y el controlador del sistema, y arrancar en frío el punto de control. Mantener las capturas de antes y después con sus configuraciones, pero eliminar los estados de guardado temporales que no pueden reproducir la escena de manera consistente."
+    },
+    {
+      "type": "heading",
+      "text": "No publique datos de guardado o de disco con derechos de autor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un informe de soporte puede incluir el número de serie, configuraciones, registros y capturas de pantalla creadas por el usuario donde esté permitido. No adjunte una imagen del juego, firmware, material de encriptación ni un guardado que contenga contenido distribuido por terceros solo para demostrar la sombra."
+    },
+    {
+      "type": "link",
+      "text": "Lea la guía de evidencia de rendimiento PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

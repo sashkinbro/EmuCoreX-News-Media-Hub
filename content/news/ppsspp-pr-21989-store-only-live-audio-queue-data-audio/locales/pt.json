@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP reduz savestates armazenando apenas amostras de áudio ao vivo",
+  "summary": "Um formato de fila compacto serializa as amostras que ainda podem ser reproduzidas, em vez de copiar todos os nove buffers de áudio de capacidade fixa em cada estado.",
+  "heroAlt": "Evidência da fonte do pull request PPSSPP #21989: Savestate: armazenar apenas dados da fila de áudio ao vivo (seção AudioChannel v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "fila de áudio",
+    "tamanho do savestate",
+    "retroceder",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: armazenar apenas dados da fila de áudio ao vivo (seção AudioChannel v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A capacidade fixa estava sendo confundida com estado significativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada canal sceAudio usa um FixedSizeQueue com espaço para 32768 vezes oito valores de 16 bits, um armazenamento de apoio de 512 KB. Existem nove filas de canais. O serializador anterior copiava cada byte desses arrays, mesmo que apenas uma pequena fatia lógica entre head e count pudesse ser removida. Consequentemente, cerca de 4,6 MB de dados na maior parte inúteis entraram em salvamentos manuais, slots de salvamento, entrada de compressão e em cada snapshot periódico de retrocesso na memória."
+    },
+    {
+      "type": "heading",
+      "text": "A forma compacta preserva a ordem da fila através do wraparound"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21989 introduz DoStateCompact como um formato opcional. Quando a região ativa é contígua, ele escreve um array bruto. Quando head mais count ultrapassa o fim do armazenamento, ele escreve a cauda e o começo como duas partes na ordem de pop. O POD DoArray escreve bytes brutos sem um cabeçalho por chamada, então essas partes formam o mesmo fluxo que uma única leitura linear consome. O carregamento posiciona a sequência no índice zero e deriva a nova cauda a partir do count."
+    },
+    {
+      "type": "heading",
+      "text": "O versionamento protege estados mais antigos e outros chamadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "A seção AudioChannel avança para um novo nível de formato e seleciona apenas a serialização compacta nesse nível. Níveis de seção mais antigos ainda usam o método de armazenamento completo original, portanto, os saves existentes permanecem legíveis. A função antiga do FixedSizeQueue não é alterada porque seu layout de bytes não é intercambiável e outro chamador pode depender dela. O carregador também rejeita uma contagem fora do intervalo de zero até a capacidade com SetError, prevenindo que um arquivo danificado desincronize todos os campos que se seguem."
+    },
+    {
+      "type": "heading",
+      "text": "Filas empacotadas, vazias e cheias são os testes essenciais"
+    },
+    {
+      "type": "paragraph",
+      "text": "Crie filas determinísticas que estejam vazias, parcialmente preenchidas, exatamente cheias e empacotadas em vários deslocamentos da cabeça. Salve e carregue-as, depois compare cada amostra extraída com a ordem original. Teste todos os nove canais durante o jogo, limites de subfluxo e excesso de áudio, rotação de retrocesso, taxas de compressão e compatibilidade com estados antigos. Corrompa a contagem armazenada para confirmar uma falha limpa de carregamento. Meça o tempo de salvamento e a pressão de memória separadamente; espera-se uma carga menor, mas a corretude continua sendo o principal critério."
+    },
+    {
+      "type": "callout",
+      "text": "Capacidade é um detalhe de implementação; um savestate precisa da sequência de áudio ao vivo e metadados suficientes para reconstruir uma fila equivalente."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Leia a discussão de engenharia PPSSPP e as alterações de código-fonte"
+    }
+  ]
+}

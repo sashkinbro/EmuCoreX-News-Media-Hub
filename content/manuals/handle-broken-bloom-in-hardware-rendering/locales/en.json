@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Restore broken bloom in hardware rendering without overexposing the scene",
+  "summary": "Use paired bright and dark checkpoints to identify a missing or misaligned framebuffer pass, compare a software reference, and find the least expensive blending or native-scaling correction.",
+  "heroAlt": "God of War PCSX2 capture showing an incorrectly rendered bright bloom and fog pass",
+  "searchKeywords": [
+    "PS2 broken bloom",
+    "EmuCoreX overbright glow",
+    "hardware rendering bloom",
+    "framebuffer blending",
+    "native scaling ghosting"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "accuracy": "Accuracy"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 description of blending, framebuffer reads, and native scaling for bloom",
+    "pcsx2-july-august-2015": "PCSX2 before-and-after bloom and fog accuracy examples"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Classify the bloom as absent, displaced, clipped, or excessive"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloom is usually assembled from more than one pass: the game isolates bright information, filters or downsamples it, and composites the result over the scene. A hardware renderer can therefore fail in several visibly different ways. Missing bloom leaves light sources hard-edged; displaced bloom produces a ghost offset from the source; clipped bloom becomes a rectangle; excessive bloom washes out nearby geometry. Select one checkpoint with a strong isolated lamp or spell and another with small highlights against a dark background. Record the game's serial, internal resolution, renderer, GPU driver, blending accuracy, native-scaling status, and whether manual framebuffer or skip-draw fixes are active."
+    },
+    {
+      "type": "callout",
+      "text": "Do not evaluate bloom from a single overexposed phone photograph. Auto-exposure and HDR tone mapping can erase detail that is present in the emulator's actual frame."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare two bloom scenes with luminance references"
+    },
+    {
+      "type": "list",
+      "items": [
+        "An in-game save before a repeatable bright effect with visible geometry immediately around it.",
+        "A second dark scene containing small emissive details, so a setting cannot pass merely by dimming the entire output.",
+        "Direct screenshots from native hardware output and a brief software-rendered correctness reference.",
+        "Post shaders, reshade layers, display HDR conversion, texture replacement, and custom color controls disabled.",
+        "A warm-session performance sample from the bright scene and a backup of the title's graphics profile."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separate composition accuracy from upscale alignment"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-start the bright checkpoint at native internal resolution with automatic blending and capture the source plus surrounding detail.",
+        "2. Render the same moment briefly in software mode and compare bloom radius, center, occlusion, and whether foreground objects correctly block the glow.",
+        "3. Return to hardware mode and compare supported graphics APIs without altering the driver or resolution; retain the path that most closely preserves the reference.",
+        "4. When bloom is missing or clips into a solid shape at native resolution, raise blending accuracy one tier, restart the scene, and stop at the first tier that restores composition.",
+        "5. When native hardware is correct but bloom separates from its light only after upscaling, restore automatic blending and test the emulator's documented native-scaling correction instead.",
+        "6. Replay the dark checkpoint and confirm that small highlights glow without lifting black backgrounds or whitening character textures.",
+        "7. Warm the device, measure the effects-heavy sequence, and compare barrier, render-pass, or readback counters if the build exposes them.",
+        "8. Save only the successful branch in this game's profile and annotate whether it addresses blending at native output or post-process alignment while upscaled."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Blending accuracy governs how faithfully hardware rendering reproduces interactions with previous framebuffer contents, while native scaling targets post-process passes that were authored to operate at the PS2's original scale. They solve related-looking symptoms at different stages. Software rendering supplies a composition reference because it can reproduce GS behavior more directly, but its speed is not the acceptance target. The two-scene test prevents a false fix where reducing brightness makes one blown-out lamp appear better while deleting intended glow elsewhere."
+    },
+    {
+      "type": "heading",
+      "text": "Bloom profile acceptance"
+    },
+    {
+      "type": "paragraph",
+      "text": "The selected profile must preserve the effect's shape, depth relationship, tonal range, and playability."
+    },
+    {
+      "type": "list",
+      "items": [
+        "The glow is centered on the emitting object and follows it during camera or character movement.",
+        "Foreground geometry occludes bloom where the software reference shows an obstruction.",
+        "Bright surfaces retain texture detail instead of collapsing into a uniform white patch.",
+        "The dark checkpoint preserves black areas and still displays its small intended highlights.",
+        "Sustained frame pacing remains acceptable after thermal stabilization and no unrelated transparency regresses."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Bloom results that require another investigation"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Software output has the same abnormal glow: confirm the scene reference and remove game patches or texture modifications.",
+        "Only the physical display blooms while direct screenshots are balanced: audit HDR, color range, panel enhancement, and camera exposure.",
+        "A higher blending tier fixes the lamp but corrupts shadows or fog: revert it and collect a title-specific rendering report.",
+        "The effect drifts only at one unusual custom resolution: use a supported integer multiplier before adding any manual offset."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Undo the expensive framebuffer experiment"
+    },
+    {
+      "type": "paragraph",
+      "text": "Set blending to Automatic, disable the tested native-scaling or offset override, restore the original API, and restart the application. Replay both checkpoints to confirm the previous symptom is reproducible; then choose the last lower tier that passed performance or return to native resolution until a precise correction exists."
+    },
+    {
+      "type": "heading",
+      "text": "Intentional glare can be visually aggressive"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some PS2 games deliberately use broad, bright bloom. The goal is fidelity to a trustworthy reference, not uniformly subdued lighting. Avoid publishing a global recommendation from one title, because framebuffer formats, blend equations, and post-process scaling differ between engines and even between scenes."
+    },
+    {
+      "type": "link",
+      "text": "Review the PCSX2 explanation of modern blending and native scaling",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

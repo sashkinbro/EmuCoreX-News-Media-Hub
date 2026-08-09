@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar mueve lentamente las solicitudes del sistema de archivos 3DS fuera del hilo de emulación sin hacer que FS_USER sea concurrente",
+  "summary": "Una cola dedicada de un solo trabajador permite que los hilos invitados continúen durante operaciones de almacenamiento costosas mientras se preserva la serialización requerida por el servicio no seguro para hilos FS_USER de Azahar.",
+  "heroAlt": "Azahar solicitud de extracción asincrónica del sistema de archivos mostrando el diseño del trabajador FS_USER dedicado",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "sistema de archivos asincrónico",
+    "ThreadWorker",
+    "Android tartamudeo de almacenamiento"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Almacenamiento",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "núcleo: Agregar operaciones asincrónicas del sistema de archivos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una pausa en el almacenamiento del anfitrión no debería congelar todos los hilos de aplicaciones emuladas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Algunas llamadas al sistema de archivos de 3DS pueden tardar lo suficiente en el host como para volverse visibles como tartamudeo, especialmente a través de los proveedores de almacenamiento Android utilizados por la compilación de Google Play. Ejecutar la operación en línea bloquea el hilo de emulación incluso cuando otro trabajo del invitado podría continuar. La solicitud de extracción #2098 cambia ese límite de programación: el IPC del sistema de archivos puede poner a dormir el hilo del invitado que lo llama mientras la operación del host se ejecuta en otro lugar."
+    },
+    {
+      "type": "heading",
+      "text": "Un trabajador de un solo hilo soluciona la restricción de seguridad FS_USER"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar no podía simplemente enviar cada solicitud al grupo de hilos general porque FS_USER y su estado de archivo no son seguros para hilos. El cambio proporciona al servicio un ThreadWorker dedicado que contiene exactamente un hilo trabajador. Las solicitudes son asíncronas con respecto a la emulación, pero serializadas entre sí. Eso preserva las suposiciones de orden del servicio sin forzar a que los hilos emulados no relacionados esperen por el sistema de archivos del host."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker separa el trabajo del host de la respuesta IPC"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext obtiene un ayudante que envuelve la operación de almacenamiento en una tarea empaquetada, la pone en cola en el trabajador elegido y mantiene un futuro para la finalización. El hilo del cliente invitado duerme mientras se ejecuta la tarea. Una vez completada, Azahar despierta ese hilo y construye el resultado del IPC en el lado del emulador. Permanece disponible un respaldo sincrónico para el modo de operación asincrónica determinista y para los casos en que la configuración esté deshabilitada."
+    },
+    {
+      "type": "heading",
+      "text": "El parche evita pagar el costo de la cola por cada lectura pequeña"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación es selectiva. Abrir, eliminar, renombrar archivos, directorios y rutas relacionadas con FS_USER pueden usar el trabajador dedicado. Las operaciones de archivos en caché siguen la ruta asíncrona cuando los datos no están listos, mientras que muchas lecturas y escrituras pequeñas no en caché permanecen sincrónicas porque la comunicación entre hilos podría costar más que la E/S. Cerrar archivos y cambiar de tamaño también respeta la configuración, y el destructor de FS_USER espera a que se completen las solicitudes en cola antes de que el servicio desaparezca."
+    },
+    {
+      "type": "heading",
+      "text": "Menos tartamudeo puede intercambiarse por tiempos de carga ligeramente más largos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permitir que otros hilos de invitados se ejecuten cambia cuándo el progreso es visible, no qué tan rápido termina el dispositivo de almacenamiento del anfitrión. Por lo tanto, la fuente espera una gran reducción en los bloqueos relacionados con el sistema de archivos, pero reconoce que algunas cargas pueden tardar marginalmente más. La opción está habilitada por defecto en la configuración de almacenamiento Android y Qt, haciendo que la compensación sea visible y reversible en lugar de enterrarla en una compilación específica de la plataforma."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de corrección deben durar más que la operación y el servicio."
+    },
+    {
+      "type": "paragraph",
+      "text": "Un punto de referencia útil registra los tiempos de fotogramas y la duración de la carga con la opción activada y desactivada usando la misma ubicación de almacenamiento. La cobertura de corrección debe abarcar aperturas, lecturas de directorio, solicitudes de renombrar y eliminar; cerrar un título mientras hay trabajo en cola; y verificar los hashes de los datos guardados después. El almacenamiento de documentos lento Android es el caso principal de rendimiento, pero las rutas locales de escritorio y con respaldo en red son valiosas para exponer regresiones de orden, cierre y propagación de errores."
+    },
+    {
+      "type": "callout",
+      "text": "La elección clave de diseño es asincronía serializada: un trabajador FS_USER elimina los bloqueos del hilo de emulación sin pretender que el servicio de sistema de archivos sea seguro para el acceso en paralelo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Revisar el trabajador FS_USER, la activación por IPC y la implementación de configuración de almacenamiento de Azahar"
+    }
+  ]
+}

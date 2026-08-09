@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3621-shader-enable-disable-toggle",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation pozwala etapowi post-processingu usnąć bez zapominania jego ustawień",
+  "summary": "Przełączniki włączania dla pojedynczych shaderów zachowują kolejność łańcucha i niestandardowe parametry, rozdzielając tymczasowe obejście od destrukcyjnego usunięcia zarówno w Qt, jak i FullscreenUI.",
+  "heroAlt": "Dowody źródłowe z pull requestu DuckStation #3621: Qt, FullscreenUI, PostProcessing: Dodaj przełącznik włączania/wyłączania shaderów.",
+  "searchKeywords": [
+    "DuckStation",
+    "post-processing",
+    "łańcuch shaderów",
+    "parametry",
+    "FullscreenUI"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3621": "Qt, FullscreenUI, PostProcessing: Dodaj przełącznik włączania/wyłączania shaderów."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Usunięcie shaderu było jedynym sposobem na jego ominięcie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łańcuch post-processingu często zawiera kilka efektów, których parametry były dostosowywane razem. Przed pull request #3621 chwilowe sprawdzenie obrazu bez jednego etapu oznaczało jego usunięcie, a następnie ponowne utworzenie shaderu i jego wartości później. Zamykało to prostą porównawczą czynność w pracę konfiguracyjną i łatwo było stracić starannie dostrojony preset lub przywrócić efekt w niewłaściwej pozycji."
+    },
+    {
+      "type": "heading",
+      "text": "Stan włączenia staje się częścią etapu, a nie pustą zastępczą wartością"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wspólna reprezentacja post-processingu teraz zapisuje, czy dany shader jest wykonywany. Wyłączony etap pozostaje w łańcuchu z jego wartościami parametrów i kolejnością nienaruszoną; renderer po prostu pomija jego działanie. Ponowne włączenie go przywraca więc ten sam efekt zamiast tworzyć domyślną instancję. Różni się to od usunięcia etapu, co pozostaje prawidłową operacją, gdy użytkownik sam chce zmienić definicję łańcucha."
+    },
+    {
+      "type": "heading",
+      "text": "Qt i FullscreenUI udostępniają tę samą niedestrukcyjną kontrolę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementacja obejmuje warstwę narzędzi post-processingu, widżet ustawień Qt oraz ustawienia FullscreenUI. To zapewnia, że włączona flaga nie jest wyłącznie dekoracją interfejsu: każde z nich modyfikuje stan, który wykorzystuje renderer. Pozwala to również użytkownikom konfigurować tę samą sekwencję zarówno z okna pulpitu, jak i wyświetlacza z kontrolerem, bez ryzyka, że jedna strona cicho odrzuci nową właściwość."
+    },
+    {
+      "type": "heading",
+      "text": "Testy trwałości i kolejności sekwencji są ważniejsze niż jeden zrzut ekranu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utwórz sekwencję z kilkoma shaderami, zmodyfikuj wiele parametrów i wyłącz etap w środku. Wynik powinien odpowiadać sekwencji pomijającej ten efekt, podczas gdy późniejsze etapy pozostają w tej samej kolejności. Zapisz ustawienia, uruchom ponownie i potwierdź, że stan wyłączonego oraz parametry przetrwały; następnie włącz ponownie i porównaj z pierwotnym zrzutem. Przetestuj oba frontendy, import presetów, usuwanie etapów i szybkie przełączanie. Czas GPU powinien spaść tylko o prace pominiętego etapu."
+    },
+    {
+      "type": "callout",
+      "text": "Wyłączenie jest teraz odwracalnym wyborem wykonania; usunięcie pozostaje edycją strukturalną w ciągu post-processingu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3621",
+      "label": "Przeczytaj dyskusję inżynierską DuckStation i zmiany w źródle"
+    }
+  ]
+}

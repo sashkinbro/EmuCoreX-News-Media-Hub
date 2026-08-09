@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin lehrt sein JIT, ob ein lebendes Register gelesen oder überschrieben wird",
+  "summary": "Getrennte Future-Read- und Future-Write-Masken ermöglichen es den x64- und ARM64-Caches, sicherere und genauere Preload- und Flush-Entscheidungen zu treffen als eine einzelne In-Use-Flag.",
+  "heroAlt": "Quellenbeweis aus dem Dolphin-Pull-Request #14278: PPCAnalyst: Teile die In-Use-Analyse in Lese- und Schreibzugriffe auf",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "Register-Cache",
+    "Lebensdaueranalyse",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "CPU",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Teile die In-Use-Analyse in Lese- und Schreibzugriffe auf"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Lebendig zu sein sagt nicht, was die nächste Anweisung tun wird"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Gastregister kann für den verbleibenden Block relevant sein, weil eine zukünftige Instruktion seinen aktuellen Wert liest, weil eine zukünftige Instruktion ihn überschreibt, oder beides. Dolphin ältere Maske im Gebrauch hat diese Fälle zusammengeführt. Ein JIT-Register-Cache hatte dann nur begrenzte Informationen, wenn er entschied, ob ein Gastwert vorgeladen, ein Dirty Host-Wert zurückgeschrieben, eine Zuordnung verworfen oder über eine Fallback-Grenze gelassen werden sollte."
+    },
+    {
+      "type": "heading",
+      "text": "Zwei Future-Use-Sets machen den Datenfluss explizit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14278 propagiert gprWillBeRead und gprWillBeWritten, mit entsprechenden Masken für Gleitkomma- und Condition-Register. Preloading berücksichtigt Register, die in beide Richtungen teilnehmen, während verwerfbare Eingänge weiterhin ausgeschlossen werden. Full flusht Zielwerte, die von nachfolgenden Operationen nicht mehr verwendet werden. Ausgaben, die später nicht mehr geschrieben werden, erhalten eine separate Behandlung, sodass ihr aktueller Dirty-Wert den Gaststatus erreicht, bevor der Cache sie als sauber markiert."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty behält eine nützliche Abbildung nach dem Committing seines Werts"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Umbenennung beschreibt das Flush-Verhalten genau. Full schreibt schmutzige Daten und entfernt die Zuordnung. MaintainState bewahrt den bestehenden Zustand, wo erforderlich. Der neue Undirty-Modus schreibt einen schmutzigen Wert, behält jedoch die Host-Register-Zuordnung als sauber bei. Das ist nützlich, wenn eine Ausgabe an einer Grenze extern kohärent sein muss, aber später noch gelesen werden kann. Sowohl x64 als auch ARM64 Pfade übernehmen das Vokabular, einschließlich langsamer Speicherzugriffe und Interpreter-Fallback-Stellen."
+    },
+    {
+      "type": "heading",
+      "text": "Differenzielle Blocktests müssen sich auf umständliche Kontrollflüsse konzentrieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vergleiche Interpreter, JIT64 und JITARM64 über generierte Blöcke mit nur-lese, nur-schreibe, lese-dann-schreibe, schreibe-dann-lese, verworfene, unmittelbare, Gleitkomma- und Bedingungsregister-Mustern. Füge Ausnahmen, Speicherfehler, Gather-Pipeline-Prüfungen, Verzweigungen, Fallback-Instruktionen und Blockaustritte an jeder Position hinzu. Instrumentiere Host-Spills und Gast-Rückschreiben, um zu überprüfen, dass die Optimierung tatsächlich Arbeit reduziert, ohne den Zustand zu ändern. Randomisierte differenzielle Ausführung sollte nach jeder erzwungenen Grenze alle architektonischen Register vergleichen."
+    },
+    {
+      "type": "callout",
+      "text": "Die Registrierungsliveness wird nur dann handlungsrelevant, wenn der JIT weiß, ob die Zukunft den heutigen Wert benötigt oder lediglich den Registernamen für ein späteres Überschreiben braucht."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Lesen Sie die Dolphin-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

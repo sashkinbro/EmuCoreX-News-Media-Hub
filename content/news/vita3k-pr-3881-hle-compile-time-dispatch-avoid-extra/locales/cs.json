@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K přesouvá HLE volání argumentů z runtime do šablon",
+  "summary": "Rozvržení argumentů a ukazatele na funkce v době kompilace ARM snižují množství mechanismů mostu při každém importu a současně zachovávají explicitní převody pro skalární hodnoty, varargs a návratové hodnoty.",
+  "heroAlt": "Zdrojový důkaz z pull requestu Vita3K #3881: modul/most: HLE kompilace při volání, vyhnout se další dereferenci ukazatele",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE most",
+    "ARM ABI",
+    "šablony",
+    "volání funkcí"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Jádro",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "modul/most: HLE kompilace při volání, vyhnout se další dereferenci ukazatele"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Každý import hostitele překračuje stejnou hranici převodu ABI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Volání funkce Vita přichází s argumenty rozdělenými mezi obecné registry ARM, registry s plovoucí desetinnou čárkou a zásobník. Most HLE v Vita3K je musí najít, převést ukazatele a reprezentace hostitele na hostitelské typy, vyvolat správný export a zapsat návratovou hodnotu zpět. Starší most sestavoval stav rozvržení a zachytil ukazatel exportu a jeho název ve std::function, přidávající obecně vybavenou runtime logiku do cesty, kterou využívá téměř každý emulovaný servisní volání."
+    },
+    {
+      "type": "heading",
+      "text": "Exportovaná funkce se stává součástí typu mostu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3881 zavádí make_bridge s ExportFn jako netypovým šablonovým parametrem. lay_out běží jako constexpr pro balíček argumentů exportu, vytvářející pevné položky ArgLayout a stav varargs. Generovaná funkce bez zachycení čte každý argument přes read_bridged_arg, volá ExportFn přímo a podmíněně zapisuje výsledek, pokud návratový typ není void. ImportFn proto může být obyčejný ukazatel na funkci."
+    },
+    {
+      "type": "heading",
+      "text": "Typy mostu si zachovávají kontrakt hosta vůči hostiteli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rozvržení v době kompilace neznamená reinterpretovat registry do libovolných objektů C++. BridgeTypes vybírá reprezentaci ARM každého argumentu a převede ji pomocí emulované paměti, pokud je to nutné. module::vargs nese svůj vypočítaný stav místo toho, aby předstíral, že je jedním skalárním argumentem. Tracy scopes stále přijímají exportní název prostřednictvím statického úložiště, čímž se zachovává profilování na úrovni funkcí a odstraňuje předchozí zachycení closure."
+    },
+    {
+      "type": "heading",
+      "text": "Shoda s ABI vyžaduje testy v době kompilace i za běhu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instanciujte mosty pro nulové argumenty, čtyři a pět celých čísel, 64bitově zarovnané hodnoty, floaty, ukazatele, struktury reprezentované typy mostu, varargs, návraty void a chybové kódy. Porovnejte umístění v registrech a na zásobníku s ABI Vita a předchozí implementací. Kompilujte každý generovaný modul na podporovaných překladačích, zkoumejte velikost kódu a tvar volání a benchmarkujte pracovní zátěže s velkým množstvím importů. Neplatné nebo nepodporované typy by měly selhat během kompilace s jasnou diagnostikou místo tichého výběru nesprávného rozvržení."
+    },
+    {
+      "type": "callout",
+      "text": "Optimalizace funguje, protože exportní podpis již obsahuje fakta ABI; šablony mohou tato fakta převést na pevný most před zahájením emulace."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu Vita3K"
+    }
+  ]
+}

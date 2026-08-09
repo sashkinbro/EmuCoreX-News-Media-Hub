@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar memindahkan permintaan sistem file 3DS yang lambat dari thread emulasi tanpa membuat FS_USER berjalan bersamaan",
+  "summary": "Antrian pekerja tunggal yang didedikasikan memungkinkan thread tamu terus berjalan selama operasi penyimpanan yang mahal sambil tetap menjaga serialisasi yang diperlukan oleh layanan FS_USER non-thread-safe Azahar.",
+  "heroAlt": "Permintaan tarik sistem file asinkron Azahar menunjukkan desain pekerja FS_USER yang didedikasikan",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "sistem file asinkron",
+    "ThreadWorker",
+    "Android gangguan penyimpanan"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Penyimpanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "core: Tambahkan operasi sistem file asinkron"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pause penyimpanan host seharusnya tidak membekukan setiap thread aplikasi yang diemulasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Beberapa panggilan sistem berkas 3DS bisa memakan waktu cukup lama di host sehingga terlihat seperti tersendat, terutama melalui penyedia penyimpanan Android yang digunakan oleh build Google Play. Menjalankan operasi secara langsung memblokir thread emulasi bahkan ketika pekerjaan tamu lain bisa berlanjut. Pull request #2098 mengubah batas penjadwalan itu: IPC sistem berkas dapat membuat thread tamu pemanggilnya tidur sementara operasi host berjalan di tempat lain."
+    },
+    {
+      "type": "heading",
+      "text": "Satu worker thread menyelesaikan batasan keamanan FS_USER"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar tidak bisa begitu saja mengirim setiap permintaan ke thread pool umum karena FS_USER dan status arsipnya tidak aman untuk thread. Perubahan ini memberi layanan ThreadWorker khusus yang berisi tepat satu thread worker. Permintaan bersifat asinkron relatif terhadap emulasi, tetapi diserialkan relatif satu sama lain. Itu mempertahankan asumsi urutan layanan tanpa memaksa thread emulasi yang tidak terkait menunggu sistem berkas host."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker memisahkan pekerjaan host dari balasan IPC"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext memperoleh bantuan yang membungkus operasi penyimpanan dalam tugas yang dikemas, mengantri tugas tersebut pada pekerja yang dipilih, dan menyimpan future untuk penyelesaian. Thread klien tamu tidur sementara tugas berjalan. Setelah selesai, Azahar membangunkan thread itu dan membangun hasil IPC di sisi emulator. Metode fallback sinkron tetap tersedia untuk mode operasi asinkron deterministik dan untuk kasus di mana pengaturan dinonaktifkan."
+    },
+    {
+      "type": "heading",
+      "text": "Patch ini menghindari biaya antrian untuk setiap pembacaan kecil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementasinya bersifat selektif. Membuka arsip, menghapus, mengganti nama, direktori, dan jalur FS_USER terkait dapat menggunakan pekerja khusus. Operasi file yang di-cache mengikuti jalur asinkron ketika data belum siap, sementara banyak pembacaan dan penulisan kecil yang tidak di-cache tetap sinkron karena komunikasi thread bisa lebih mahal dibanding I/O. Penutupan dan pengubahan ukuran file juga menghormati pengaturan ini, dan destruktor FS_USER menunggu permintaan yang telah diantri sebelum layanan hilang."
+    },
+    {
+      "type": "heading",
+      "text": "Lebih sedikit stutter bisa ditukar dengan waktu pemuatan yang sedikit lebih lama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mengizinkan thread tamu lain untuk berjalan mengubah kapan kemajuan terlihat, bukan seberapa cepat perangkat penyimpanan host menyelesaikan tugas. Oleh karena itu, sumber mengharapkan pengurangan besar pada jeda terkait filesystem tetapi mengakui bahwa beberapa beban mungkin memerlukan waktu lebih lama sedikit. Opsi ini diaktifkan secara default di pengaturan penyimpanan Android dan Qt, sehingga pertukaran ini terlihat dan dapat dibalikkan daripada disembunyikan dalam build khusus platform."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian kebenaran harus bertahan lebih lama dari operasi dan layanan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Benchmark yang berguna mencatat waktu frame dan durasi beban dengan opsi diaktifkan dan dimatikan menggunakan lokasi penyimpanan yang sama. Cakupan kebenaran harus mencakup pembukaan file, pembacaan direktori, permintaan ganti nama dan hapus; menutup judul sementara pekerjaan masih antre; dan memverifikasi hash data simpanan setelahnya. Penyimpanan dokumen Android yang lambat merupakan kasus utama kinerja, tetapi jalur lokal desktop dan yang didukung jaringan juga berharga untuk memperlihatkan regresi urutan, penutupan, dan propagasi kesalahan."
+    },
+    {
+      "type": "callout",
+      "text": "Pilihan desain kunci adalah asinkronisasi berseri: satu pekerja FS_USER menghilangkan jeda thread-emulasi tanpa berpura-pura bahwa layanan sistem berkas aman untuk akses paralel."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Tinjau pekerja FS_USER, bangun-bangun IPC, dan implementasi pengaturan penyimpanan Azahar"
+    }
+  ]
+}

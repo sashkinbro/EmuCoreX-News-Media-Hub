@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ordena o reset da troca de disco antes que o Qt possa despausar a VM",
+  "summary": "Um estado de reset adiado estava sendo ignorado pelo evento de despausa do VMLock; mover a transição da visualização de emulação após o envio do reset preserva o ciclo de vida pretendido da VM.",
+  "heroAlt": "Evidência de origem do pull request PCSX2 #14720: Qt: Corrigir a lógica para resetar a VM ao trocar discos",
+  "searchKeywords": [
+    "PCSX2",
+    "troca de disco",
+    "Reset da VM",
+    "VMLock",
+    "janela separada"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Core",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Corrigir a lógica para resetar a VM ao trocar discos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Trocar um disco da lista de jogos cruza os ciclos de vida da UI e da VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Com a opção 'Renderizar em Janela Separada' ativada, o Qt pode alternar visualizações, bloquear a VM, postar eventos e solicitar um reset em uma única ação do usuário. O próprio reset foi adiado. A MainWindow se moveu em direção à visualização de emulação enquanto o escopo do bloqueio terminava, e o destruidor do VMLock postou um despausar. Esse evento posterior poderia substituir VMState::Resetting antes que o manipulador de reset realmente fosse executado."
+    },
+    {
+      "type": "heading",
+      "text": "A corrida é a ordenação de eventos, não a sincronização ausente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O VM tinha um estado de reinicialização válido e um bloqueio destinado a proteger a transição. O problema era que duas alterações de estado adiadas estavam na fila na ordem errada. Uma retomada postada a partir da limpeza do UI foi permitida para rodar como se a reinicialização tivesse terminado. Isso explica por que trocar discos de um caminho específico do frontend falhou, mesmo que a reinicialização direta e a pausa/retomada ordinária funcionassem."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView agora segue o reset postado"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14720 move MainWindow::switchToEmulationView após o evento de reset ser postado. A VM não está rodando enquanto o pedido de reset está sendo estabelecido, e a transição de visualização não pode mais fazer com que o VMLock interfira no Resetting com um unpause antecipado. A fonte observa que um redesenho mais amplo do estado da VM é possível, mas esta mudança corrige a falha conhecida de ordenação sem expandir o escopo."
+    },
+    {
+      "type": "heading",
+      "text": "As alterações de disco em janela separada devem ser repetidas em cada estado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilite Renderizar em Janela Separada, inicialize um título de vários discos e selecione outro disco da lista de jogos enquanto estiver executando, pausado e com um UI modal aberto. O log registrou eventos de redefinição e retomada e assegurou que a redefinição persiste até a conclusão da redefinição. Repita após suspensão, carregamento de estado e seleções consecutivas rápidas de discos. Alterações padrão na mesma janela e redefinições manuais são controles negativos; a correção da ordem não deve deixar o VM permanentemente pausado nem mudar de visualização tarde demais."
+    },
+    {
+      "type": "callout",
+      "text": "A redefinição VM já foi solicitada; a correção garante que nenhum evento de limpeza UI seja permitido retomar a execução antes que essa solicitação entre em vigor."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações do código-fonte"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar supprime l'ambiguïté du dépassement signé de l'alias mémoire de Luma",
+  "summary": "Un masque de bit 31 non signé rend la détection des alias définie en C++, tandis que les retours anticipés et les branches peu probables MMIO donnent aux chemins mémoire courants un flux d'instruction plus direct.",
+  "heroAlt": "Preuve source provenant de la pull request Azahar #2202 : core/memory : Corriger le comportement indéfini et optimiser le chemin d'alias de Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias de Luma",
+    "comportement indéfini",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Noyau",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory : Corriger le comportement indéfini et optimiser le chemin d'alias de Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le bit 31 était formé via l'arithmétique signée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS expose une forme d'adresse d'alias dont le bit le plus haut indique à Azahar de contourner les tables de pages normales pour FCRAM ou MMIO. Le code testait et effaçait ce bit avec 1 << 31. Lorsque int est de 32 bits, décaler un un signé dans la position de signe est un comportement indéfini, donnant au compilateur optimisant la permission de transformer le code environnant de manière à ne pas préserver le masque prévu."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u rend les opérations de test et d'effacement toutes deux définies"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2202 déclare LUMA_ALIAS_BIT comme le littéral non signé 0x80000000u. Les chemins de lecture et d'écriture testent vaddr par rapport à cette constante et dérivent paddr en l'effaçant. Le changement est petit mais architectural : la manipulation des adresses devrait utiliser le type non signé qui représente un VAddr, et ne pas dépendre du résultat choisi par le compilateur pour l'arithmétique signée débordante."
+    },
+    {
+      "type": "heading",
+      "text": "Les retours précoces séparent FCRAM de la route froide MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'alias FCRAM reste le chemin principal utile et se termine par un retour immédiat. MMIO est vérifié par la suite et marqué comme improbable, tout comme l'entrée alias elle-même par rapport à l'accès ordinaire à la table des pages. Aplatir l'ancienne chaîne else-if permet à Clang de placer le flux commun de manière plus linéaire et de maintenir le code rare du gestionnaire personnalisé à l'écart du chemin du cache d'instructions utilisé par la plupart des lectures et écritures."
+    },
+    {
+      "type": "heading",
+      "text": "Les affirmations d'optimisation nécessitent une couverture du compilateur et de l'alias"
+    },
+    {
+      "type": "paragraph",
+      "text": "Exécutez les lectures et écritures de l'alias Luma pour FCRAM, le MMIO 32 bits valide, une adresse alias en dehors des deux plages et des adresses normales de la table des pages. Comparez Clang et GCC à plusieurs niveaux d'optimisation avec UBSan activé, en vérifiant qu'il n'y a aucun rapport de décalage signé et des résultats identiques. Inspectez le code généré pour les retours précoces prévus, mais priorisez la correction. Les largeurs MMIO autres que la voie strictement prise en charge de 32 bits doivent encore passer ou échouer conformément à la sémantique existante."
+    },
+    {
+      "type": "callout",
+      "text": "Le chemin le plus rapide commence par un comportement défini : un drapeau d'adresse doit être un masque de bits non signé avant que les indices de branchement ou la forme de l'assemblage puissent être fiables."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications de source"
+    }
+  ]
+}

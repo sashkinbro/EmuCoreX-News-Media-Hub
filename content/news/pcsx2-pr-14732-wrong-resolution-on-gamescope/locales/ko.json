@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2은 Gamescope의 두 단계 시작 크기 변경 문제를 640x480으로 되돌리지 않고 해결합니다.",
+  "summary": "지연된 크기 조정 이벤트가 더 새로운 1280x800 창 쿼리보다 오래 지속될 수 있습니다. 상태 순서를 올바르게 수정하면 최종 Steam Deck 뷰포트가 Gamescope가 실제로 선택한 크기로 유지됩니다.",
+  "heroAlt": "PCSX2 풀 리퀘스트 #14732의 소스 증거: Qt: Gamescope에서 잘못된 해상도 수정",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "크기 조정 디바운스",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "프런트엔드",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Gamescope에서 잘못된 해상도 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope는 실제 표시 크기 전에 임시 창을 보고합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "SteamOS 게임 모드는 Qt가 PCSX2를 640x480에서 열고 즉시 Steam Deck의 1280x800 화면으로 크기를 조정하게 할 수 있습니다. 두 이벤트 모두 서로 다른 순간에는 정상적입니다. 버그는 첫 번째 크기 조정이 디바운스 타이머를 시작했지만, 이후 DisplaySurface 쿼리가 기억된 치수를 최종 크기로 업데이트하면서 발생했습니다. 그런 다음 지연된 콜백이 오래된 640x480 의도로 실행되었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "이전 타이머가 최신 창 정보를 덮어쓸 수 있었습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "디바운스는 일반적으로 리사이즈 폭풍 동안 고비용 뷰포트 작업을 방지합니다. 여기서는 순서 위험으로 작용했습니다: m_last_window 치수는 이미 1280x800으로 되어 있었지만, 대기 중인 콜백은 여전히 이전 목표를 적용했습니다. Big Picture는 창 시스템 수준에서는 전체 화면을 유지했지만 렌더러는 작은 뷰포트를 사용하여 왼쪽 하단에 특징적인 640x480 이미지를 생성했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "이 수정은 시작 시퀀스 전반에서 크기 조정 상태를 단조롭게 만듭니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #14732는 Qt 디스플레이 크기 조정 로직을 조정하여, getWindowInfo가 실제 표면을 관찰한 후 오래된 디바운스 이벤트가 우선하지 않도록 합니다. 이는 고정된 Steam Deck 해상도를 특별 처리하는 것이 아니라 두 크기 소스 간의 경쟁을 목표로 합니다. 이것은 다른 Gamescope 장치, 외부 디스플레이, 그리고 최종 크기가 1280x800과 다른 향후 패널에도 중요합니다."
+    },
+    {
+      "type": "heading",
+      "text": "반복적인 콜드 런칭이 의미 있는 회귀 테스트입니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Steam Deck 또는 다른 Gamescope 세션에서, -bigpicture -fullscreen 옵션으로 PCSX2을 반복 실행하고 OpenGL도 실행하며, 매번 시작 후 뷰포트를 확인합니다. 창 모드에서 전체 화면 전환, 외부 모니터 변경, 일시 중지/재개, 여러 렌더러 백엔드도 추가합니다. 모든 리사이즈 이벤트, 디바운스 대상, getWindowInfo 결과, 적용된 뷰포트를 기록합니다. 최종 콜백은 최신 크기를 사용해야 하며, 일반 단일 리사이즈는 여전히 디바운스를 기다린 후 올바르게 적용됩니다."
+    },
+    {
+      "type": "callout",
+      "text": "이 버그는 잘못된 해상도 상수가 아니었고, 새로운 표면 크기가 이미 권위 있는 상태가 된 후 오래된 타이머가 승리한 것이 문제였습니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "PCSX2 엔지니어링 토론 및 소스 변경 사항을 읽으십시오"
+    }
+  ]
+}

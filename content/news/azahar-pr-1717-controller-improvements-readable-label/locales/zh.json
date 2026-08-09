@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 使控制器配置文件可移植，同时不隐藏特定设备的控制",
+  "summary": "桌面输入全面改造偏好 SDL 的标准化控制器模型，保留对于不寻常按钮的摇杆回退，并允许映射针对单个设备、单个控制器类型或所有控制器。",
+  "heroAlt": "Azahar 控制器快捷键拉取请求，展示输入映射工作及审查讨论",
+  "searchKeywords": [
+    "Azahar",
+    "控制器配置文件",
+    "SDL 游戏控制器",
+    "控制器快捷键",
+    "输入映射"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "输入",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "桌面：控制器改进 - 可读标签、控制器快捷键、将配置文件应用于所有控制器的选项"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "原始摇杆标识符使得有用映射难以阅读和复用"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar的旧桌面路径严重依赖SDL的摇杆（Joystick）API。它可以识别物理输入，但配置屏幕经常显示技术按钮值，而不是用户熟知的正面按钮名称。配置文件也绑定在设备GUID和端口上，因此将相同的控制器移动到另一个插槽——或者与匹配的控制器共享布局——可能需要重新映射。拉取请求#1717将这两个问题视为一个输入模型问题，而不是简单的重命名。"
+    },
+    {
+      "type": "heading",
+      "text": "优先使用GameController，摇杆仅在标准化映射用尽时使用"
+    },
+    {
+      "type": "paragraph",
+      "text": "共享的SDL层现在在SDL知道该设备时优先使用GameController API。该路径提供可移植的A/B/X/Y风格控制和可读的Xbox或PlayStation风格标签。Azahar保留摇杆API作为标准模型之外控制的备用方案，包括背部按钮和其他设备特定输入。参数记录了哪个API生成了映射，从而防止存储的GameController值随后被解释为原始摇杆索引。"
+    },
+    {
+      "type": "heading",
+      "text": "三种映射范围解决不同的配置文件问题"
+    },
+    {
+      "type": "paragraph",
+      "text": "新的映射类型是显式的。“此控制器”保持以前的 GUID 和端口行为；“此控制器类型”使用 GUID 而不固定端口；“所有控制器”接受来自任何已连接设备的匹配控制。此选择适用于输入配置文件和控制器热键。这在保持精确的多控制器设置的同时，也允许客厅配置文件在更换相同型号的线缆或手柄时仍然可用。"
+    },
+    {
+      "type": "heading",
+      "text": "控制器热键与正常游戏输入是分开监控的"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt 增加了一个专用的控制器热键页面、捕获对话框以及一个每 16 毫秒检查已分配控制的 HotkeyMonitor。快捷键可以包含一个或两个控制器输入，包括轴和非标准按钮。注册表存储了关联的 QAction，以便监视器能够调用与键盘快捷键相同的命令。正常的控制器状态仍然对游戏可用；如果一个按钮被故意分配给两个角色，则两个动作都会发生，而热键层不会悄悄消耗游戏输入。"
+    },
+    {
+      "type": "heading",
+      "text": "自动映射现在遵循 Nintendo 风格和 Xbox 风格的面部按钮顺序"
+    },
+    {
+      "type": "paragraph",
+      "text": "桌面提示要求按下物理右侧面按钮并显示一个图标，这与移动端流程的意图相匹配。如果 SDL 报告该按键为 A，Azahar 会将其视为 Nintendo 布局选择或故意的可见标签映射。其他按键保持熟悉的 XInput 风格排列。此决策基于用户捕获的控制情况，而不是假设每个控制器在相同位置打印相同字母。"
+    },
+    {
+      "type": "heading",
+      "text": "回归测试必须包括附件顺序和混合绑定"
+    },
+    {
+      "type": "paragraph",
+      "text": "该源记录在 Windows、Linux 和 macOS 上的检查，以及帽子开关、模拟触发器和启动后的控制器热插拔。持久的后续测试还应重新打开每个映射范围，在不同端口重新连接设备，并在两枚按钮在游戏中仍保持映射的情况下验证双按钮热键。报告应包括 SDL 设备名称、GUID、所选映射类型以及输入是否来自 GameController 或 Joystick 回退。"
+    },
+    {
+      "type": "callout",
+      "text": "面向用户的收益不仅是更美观的标签：配置文件变得有意可移植，同时不寻常的控制仍有设备特定的逃生途径。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "阅读 Azahar 的控制器架构和测试讨论"
+    }
+  ]
+}

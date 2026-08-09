@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 da solicitudes CDVD inválidas una salida de estado de unidad definida",
+  "summary": "Las lecturas de longitud cero, negativas y fuera de fin ahora actualizan el estado de listo, estado, error e interrupción de manera coherente, junto con las transiciones corregidas de CdStop y bandeja.",
+  "heroAlt": "Evidencia de la fuente del pull request #5174 de PCSX2: CDVD: Manejo de algunos errores, cambios en las banderas de Estado+Listo y corrección de CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "conteo de sectores",
+    "estado de la unidad",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Almacenamiento",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Manejo de algunos errores, cambios en las banderas de Estado+Listo y corrección de CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Varios juegos envían comandos de disco que son incómodos pero observables"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, la prueba de la princesa Aberanbou, la demostración de Evergrace y el sector de ejercicios de batalla de animación cuentan o dirigen a direcciones que el flujo CDVD anterior de PCSX2 no completó correctamente. Un conteo cero o negativo podría mantener una ruta de lectura activa, mientras que una dirección más allá del disco carecía de una transición de error consistente. El resultado varió desde comportamiento inválido de LSN hasta fallos de TLB, arranque fallido o bloqueos de películas posteriores."
+    },
+    {
+      "type": "heading",
+      "text": "Ready y Status se convierten en asignaciones explícitas del estado de la unidad"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #5174 distingue los bits listos, ocupados, listos para datos, conectados al dispositivo y de error en lugar de repetir ORing o borrar una bandera en su lugar. cdvdUpdateStatus registra el estado actual y persistente, mientras que la finalización del comando utiliza una ruta común IRQ. Por lo tanto, las devoluciones de llamada de apertura, cierre, búsqueda, lectura, pausa, detención, interrupción y nuevo disco del cajetín publican un par coherente de valores de estado y disponibilidad en lugar de dejar bits de una operación anterior."
+    },
+    {
+      "type": "heading",
+      "text": "Los conteos inválidos y los límites del disco ahora terminan el comando"
+    },
+    {
+      "type": "paragraph",
+      "text": "La unidad registra MaxSector del disco montado y verifica una lectura antes de continuar más allá de él. Una solicitud fuera de rango genera un error de pista más externa, vuelve a pausa, borra la espera de DMA y provoca la interrupción de comando. Un conteo de sectores igual o inferior a cero de igual manera se completa y retorna a listo en lugar de programar otra transferencia. CdStop y el resultado de SCMD en la contabilidad se corrigen dentro de la misma limpieza de la máquina de estados."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de estado guardado y multijuego deben inspeccionar las banderas, no solo el arranque"
+    },
+    {
+      "type": "paragraph",
+      "text": "El cambio de disposición del estado requirió un incremento de versión savestate, por lo que la gestión de estados antiguos y nuevos necesita cobertura explícita. Reproduce los juegos mencionados y registra comando, LSN, conteo, Listo, Estado, Error, IRQ y estado de DMA. Prueba cambios de bandeja, detener, romper, lecturas válidas al final del disco y solicitudes deliberadamente inválidas. Algunos casos de origen todavía requerían parches de juego separados o tenían bloqueos posteriores de FMV; esos límites deben seguir documentados en lugar de atribuirse a esta limpieza de estado."
+    },
+    {
+      "type": "callout",
+      "text": "La mejora es una ruta de salida completa: incluso una solicitud de disco malformada debe hacer que la unidad, el motor DMA y el controlador de interrupciones estén de acuerdo sobre lo que sucedió."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

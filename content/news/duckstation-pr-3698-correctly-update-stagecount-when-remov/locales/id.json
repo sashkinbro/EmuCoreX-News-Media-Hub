@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation menjaga panjang rantai pemrosesan pasca tetap konsisten setelah penghapusan dan pembersihan",
+  "summary": "Ketahanan StageCount yang telah dikoreksi membedakan rantai yang dipersingkat, rantai dasar yang secara eksplisit kosong, dan penggantian per-game yang kosong yang seharusnya dihapus.",
+  "heroAlt": "Bukti sumber dari permintaan tarik DuckStation #3698: PostProcessing: Memperbarui `StageCount` dengan benar saat menghapus/membersihkan tahapan",
+  "searchKeywords": [
+    "DuckStation",
+    "Pemrosesan pasca",
+    "StageCount",
+    "Pengaturan per-game",
+    "Penghapusan shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Antarmuka depan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: Memperbarui `StageCount` dengan benar saat menghapus/membersihkan tahapan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount adalah baik panjang maupun penanda penggantian"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation menyimpan tahapan pasca-pemrosesan di pengaturan bersamaan dengan StageCount. Dalam pengaturan dasar, nol secara eksplisit berarti tidak ada tahapan. Dalam lapisan per-game, menghapus bidang tersebut dapat berarti game tidak lagi menimpa rantai global. Memperlakukan kasus-kasus tersebut sama menyebabkan tahapan menjadi usang atau mencegah pewarisan. Penghapusan yang meninggalkan dua tahapan harus menulis dua; penghapusan yang tidak meninggalkan apa pun mungkin perlu menghapus bidang per-game."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage sekarang hanya menghapus override per-game yang benar-benar kosong"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3698 menghitung new_stage_count dan menyimpan nilai itu ketika tahapan tetap ada. Bidang hanya dihapus ketika antarmuka pengaturan bukan lapisan dasar dan jumlah mencapai nol, memungkinkan override khusus game yang kosong untuk hilang. Sebelumnya cabang bisa menghapus StageCount setelah penghapusan per-game apa pun, kehilangan panjang rantai yang tersisa yang telah dideklarasikan."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages memperbaiki cabang lapisan dasar yang sebaliknya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalur yang jelas memiliki kondisi dasar-versus-permainan yang dibalik. Kode yang diperbaiki menulis StageCount = 0 untuk pengaturan dasar, di mana rantai global kosong yang eksplisit bermakna, dan menghapus nilai per-permainan sehingga konfigurasi global dapat mengalir. Simetri ini adalah inti dari perbaikan: pendekkan, bersihkan secara global, dan hapus override adalah tiga operasi persistensi yang berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Uji trip-dan-kembali harus mencakup setiap lapisan dan sisa hitungan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat rantai global tiga tahap dan rantai per-permainan tiga tahap yang berbeda. Hapus tahap per-permainan tengah, mulai ulang, dan verifikasi dua tahap yang tersisa tetap menjaga urutan dan parameternya. Hapus dua terakhir dan konfirmasi rantai global kembali. Kemudian bersihkan rantai dasar dan pastikan tetap kosong setelah restart. Ulangi melalui Qt dan FullscreenUI, periksa StageCount setelah setiap operasi, dan uji menambahkan tahap segera setelah pembersihan untuk menangkap bidang indeks yang usang."
+    },
+    {
+      "type": "callout",
+      "text": "Panjang rantai nol tidak selalu disimpan dengan cara yang sama: pengaturan dasar mencatat kekosongan, sementara lapisan per-game yang kosong seharusnya menghentikan penggantian terhadap dasar."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Baca diskusi rekayasa DuckStation dan perubahan sumber"
+    }
+  ]
+}

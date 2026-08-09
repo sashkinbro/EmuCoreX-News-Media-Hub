@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar moves slow 3DS filesystem requests off the emulation thread without making FS_USER concurrent",
+  "summary": "A dedicated single-worker queue lets guest threads continue during expensive storage operations while preserving the serialization required by Azahar's non-thread-safe FS_USER service.",
+  "heroAlt": "Azahar asynchronous filesystem pull request showing the dedicated FS_USER worker design",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "asynchronous filesystem",
+    "ThreadWorker",
+    "Android storage stutter"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "core: Add async filesystem operations"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A host storage pause should not freeze every emulated application thread"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some 3DS filesystem calls can take long enough on the host to become visible stutter, especially through Android storage providers used by the Google Play build. Running the operation inline blocks the emulation thread even when other guest work could continue. Pull request #2098 changes that scheduling boundary: filesystem IPC may sleep its calling guest thread while the host operation runs elsewhere."
+    },
+    {
+      "type": "heading",
+      "text": "A one-thread worker solves the FS_USER safety constraint"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar could not simply send every request to the general thread pool because FS_USER and its archive state are not thread-safe. The change gives the service a dedicated ThreadWorker containing exactly one worker thread. Requests are asynchronous relative to emulation, but serialized relative to one another. That preserves the service's ordering assumptions without forcing unrelated emulated threads to wait for the host filesystem."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker splits host work from the IPC reply"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext gains a helper that wraps the storage operation in a packaged task, queues it on the chosen worker and keeps a future for completion. The guest client thread sleeps while the task runs. Once complete, Azahar wakes that thread and constructs the IPC result on the emulator side. A synchronous fallback remains available for deterministic asynchronous-operation mode and for cases where the setting is disabled."
+    },
+    {
+      "type": "heading",
+      "text": "The patch avoids paying queue overhead for every tiny read"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation is selective. Archive open, delete, rename, directory and related FS_USER paths can use the dedicated worker. Cached file operations follow the asynchronous path when data is not ready, while many small uncached reads and writes stay synchronous because thread communication could cost more than the I/O. File close and resize also respect the setting, and the FS_USER destructor waits for queued requests before the service disappears."
+    },
+    {
+      "type": "heading",
+      "text": "Less stutter can trade against slightly longer loading"
+    },
+    {
+      "type": "paragraph",
+      "text": "Allowing other guest threads to run changes when progress is visible, not how quickly the host storage device finishes. The source therefore expects a large reduction in filesystem-related stalls but acknowledges that some loads may take marginally longer. The option is enabled by default in Android and Qt storage settings, making the trade-off visible and reversible instead of burying it in a platform-specific build."
+    },
+    {
+      "type": "heading",
+      "text": "Correctness testing must outlive the operation and the service"
+    },
+    {
+      "type": "paragraph",
+      "text": "A useful benchmark records frametimes and load duration with the option on and off using the same storage location. Correctness coverage should overlap opens, directory reads, rename and delete requests; close a title while work is queued; and verify save-data hashes afterward. Slow Android document storage is the primary performance case, but desktop local and network-backed paths are valuable for exposing ordering, shutdown and error-propagation regressions."
+    },
+    {
+      "type": "callout",
+      "text": "The key design choice is serialized asynchrony: one FS_USER worker removes emulation-thread stalls without pretending the filesystem service is safe for parallel access."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Review Azahar's FS_USER worker, IPC wake-up, and storage-setting implementation"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP trims savestates by storing only live audio samples",
+  "summary": "A compact queue format serializes the samples that can still be played, rather than copying all nine fixed-capacity audio buffers into every state.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21989: Savestate: store only live audio queue data (AudioChannel section v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "audio queue",
+    "savestate size",
+    "rewind",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: store only live audio queue data (AudioChannel section v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Fixed capacity was being mistaken for meaningful state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Each sceAudio channel uses a FixedSizeQueue with space for 32768 times eight 16-bit values, a 512 KB backing store. There are nine channel queues. The earlier serializer copied every byte of those arrays even though only a small logical slice between head and count could ever be popped. Consequently, about 4.6 MB of mostly dead data entered manual saves, save slots, compression input, and every periodic in-memory rewind snapshot."
+    },
+    {
+      "type": "heading",
+      "text": "The compact form preserves queue order across wraparound"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21989 introduces DoStateCompact as an opt-in format. When the live region is contiguous, it writes one raw array. When head plus count crosses the end of storage, it writes the tail and beginning as two pieces in pop order. POD DoArray writes raw bytes without a per-call header, so those pieces form the same stream that a single linear read consumes. Loading places the sequence at index zero and derives the new tail from count."
+    },
+    {
+      "type": "heading",
+      "text": "Versioning protects older states and other callers"
+    },
+    {
+      "type": "paragraph",
+      "text": "The AudioChannel section advances to a new format level and selects compact serialization only there. Older section levels still use the original full-storage method, so existing saves remain readable. FixedSizeQueue's old function is untouched because its byte layout is not interchangeable and another caller may rely on it. The loader also rejects a count outside zero through capacity with SetError, preventing a damaged file from desynchronizing every field that follows."
+    },
+    {
+      "type": "heading",
+      "text": "Wrapped, empty, and full queues are the essential tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Create deterministic queues that are empty, partially filled, exactly full, and wrapped at several head offsets. Save and load them, then compare every popped sample with the original order. Exercise all nine channels during gameplay, audio underflow and overflow boundaries, rewind churn, compression ratios, and old-state compatibility. Corrupt the stored count to confirm a clean load failure. Measure save time and memory pressure separately; a smaller payload is expected, but correctness remains the primary gate."
+    },
+    {
+      "type": "callout",
+      "text": "Capacity is an implementation detail; a savestate needs the live audio sequence and enough metadata to reconstruct an equivalent queue."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

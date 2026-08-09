@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3703-loongarch64-support",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation gains a native LoongArch64 recompiler and host runtime",
+  "summary": "The port reaches beyond instruction emission to cover fault recovery, fast jumps, architecture detection, dependencies, tests, and a reusable LoongArch assembler/disassembler.",
+  "heroAlt": "Source evidence from DuckStation pull request #3703: Add LoongArch64 support",
+  "searchKeywords": [
+    "DuckStation",
+    "LoongArch64",
+    "recompiler",
+    "lagoon",
+    "page faults"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "Cpu",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3703": "Add LoongArch64 support"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A CPU backend also needs the runtime that surrounds generated code"
+    },
+    {
+      "type": "paragraph",
+      "text": "Adding a new host architecture to an emulator is not only a table of guest instructions. Recompiled blocks must jump back to C++ safely, recover from protected-memory faults, follow the platform calling convention, and be selected by the build. Pull request #3703 treats LoongArch64 as a full host port, coupling its recompiler with architecture detection, fastjmp support, page-fault handling, and dependency configuration."
+    },
+    {
+      "type": "heading",
+      "text": "Lagoon supplies LoongArch assembly and disassembly as a standalone layer"
+    },
+    {
+      "type": "paragraph",
+      "text": "The port introduces lagoon, a generic LoongArch64 assembler and disassembler created for this work but maintained as a separate library. DuckStation uses it to encode native instructions rather than scattering raw opcodes through the recompiler. CMake modules and dependency targets integrate the library, while source and licensing files remain explicit. That boundary makes emitted code reviewable and gives other LoongArch projects a reusable component."
+    },
+    {
+      "type": "heading",
+      "text": "Supporting code had architecture assumptions outside the recompiler"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change also adjusts ImGui and rapidyaml code so LoongArch builds are recognized, updates non-SIMD blend32(), and extends vector tests. Those details prevent a technically complete CPU backend from failing in the frontend or common utility layer. Fault context, register preservation, cache flushing, and pointer width all need to agree with the ABI; a single x86- or ARM-only assumption can invalidate otherwise correct guest translation."
+    },
+    {
+      "type": "heading",
+      "text": "Validation must combine guest tests with host exception paths"
+    },
+    {
+      "type": "paragraph",
+      "text": "A LoongArch64 build should run interpreter-versus-recompiler CPU tests, GTE workloads, fastjmp transitions, and protected-memory faults that deliberately leave generated code. Common vector tests must cover the corrected non-SIMD blend. Build both debug and optimized configurations and exercise shader compilation, save states, and frontend startup so dependency fixes are not merely compile-only. Performance measurements are useful after correctness, but a faster backend that mishandles a fault or saved register is not ready."
+    },
+    {
+      "type": "callout",
+      "text": "The significant work is the platform boundary: instruction generation, ABI, faults, jumps, dependencies, and tests must all recognize LoongArch64 together."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3703",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

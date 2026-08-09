@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mendiagnosis jahitan vertikal yang muncul hanya setelah peningkatan skala PS2",
+  "summary": "Peta pengali resolusi pertama yang memperlihatkan jahitan, bedakan penyelarasan sprite dari bocornya tekstur-atlas, dan simpan hanya koreksi per-game yang terdokumentasi yang menjaga HUD dan geometri tetap utuh.",
+  "heroAlt": "Tangkap Tekken 5 PCSX2 dengan jahitan vertikal sempit yang disebabkan oleh kesalahan penyelarasan sprite saat peningkatan skala",
+  "searchKeywords": [
+    "Peningkatan skala garis vertikal PS2",
+    "Jahitan hitam EmuCoreX",
+    "menyelaraskan sprite",
+    "bocornya tekstur atlas",
+    "artefak resolusi internal"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafis",
+    "accuracy": "Akurasi"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 penjelasan tentang sampel yang tidak valid dan garis vertikal hitam di atas resolusi asli",
+    "pcsx2-gsdx-progress": "PCSX2 contoh dan lingkup koreksi Align Sprite"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifikasi apakah setiap garis mengikuti batas sprite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembesaran dapat mengungkap celah yang sebenarnya tidak ada di grid piksel asli PS2. Dalam beberapa permainan, sprite yang berdekatan ditempatkan sehingga tepinya tepat bertemu pada resolusi asli; setelah diskalakan, pembulatan dapat menyisakan satu kolom piksel yang tidak tertutup. Kegagalan berbeda terjadi ketika sampel melintasi dari satu sel atlas tekstur ke sel berikutnya. Mulailah dengan adegan yang berisi garis-garis dan objek referensi yang stabil: HUD 2D, latar belakang datar, dan geometri 3D biasa. Catat nomor seri permainan, renderer, driver, rasio aspek, pengali resolusi internal, penyaringan tekstur, dan setiap perbaikan perangkat keras manual. Posisi cacat lebih penting daripada warnanya: garis yang mengikuti panel berubin berbeda dari garis yang tetap pada tampilan fisik."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan menutupi sambungan dengan stretch, crop, overscan, atau display zoom. Perubahan tersebut dapat menyembunyikan kolom paling luar sekaligus membuat sampel yang salah tetap aktif di seluruh gambar."
+    },
+    {
+      "type": "heading",
+      "text": "Buat tangga resolusi dari satu komposisi yang dibekukan"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Sebuah penyimpanan dalam game sebelum menu statis, arena, langit, atau latar belakang di mana setidaknya tiga sambungan mudah dikenali.",
+        "Ambil tangkapan layar pada resolusi asli dan pengganda upscale yang saat ini disukai; foto kamera tidak cocok untuk bukti satu piksel.",
+        "Penggantian tekstur, penajaman, pasca-pemrosesan, patch layar lebar, dan penskalaan tampilan eksternal dinonaktifkan untuk lintasan pertama.",
+        "Driver sistem GPU dan satu API perangkat keras yang didukung dipilih, dengan profil grafis per-game dicadangkan.",
+        "Peta cacat sederhana yang mencatat apakah setiap garis melintasi HUD, mengikuti tepi sprite yang berulang, atau bergerak bersama kamera."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Temukan ambang penskalaan sebelum menguji penyelarasan"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Nyalakan game dari cold-boot pada resolusi internal asli dan tangkap komposisi yang dipilih tanpa memuat save state emulator.",
+        "2. Tingkatkan resolusi internal dengan satu pengganda, putar ulang adegan yang sama, dan tandai langkah pertama di mana setiap jahitan yang terpetakan menjadi terlihat.",
+        "3. Kembali ke pengganda pertama yang gagal itu dan ganti hanya API hardware; jika posisi garis tetap identik, anggap perhitungan resolusi sebagai bukti yang lebih kuat daripada kesalahan driver spesifik API.",
+        "4. Periksa apakah jahitan berada di antara sprite persegi panjang atau latar belakang bersusun. Untuk pola itu, uji hanya koreksi penyelarasan sprite yang didokumentasikan yang diekspos oleh emulator untuk judul tersebut.",
+        "5. Jika garis-garisnya justru berisi warna dari sel atlas tetangga, kembalikan penyelarasan dan uji koreksi pembulatan atau offset tekstur yang terdokumentasi secara terpisah.",
+        "6. Setelah perbaikan yang tampak, periksa teks kecil, bilah kesehatan, ubin peta, papan partikel, dan layar penuh memudar untuk elemen yang bergeser atau terpotong.",
+        "7. Tingkatkan resolusi satu langkah lebih jauh dan kunjungi kembali adegan kedua; koreksi yang bekerja hanya pada satu pengganda bukanlah profil umum yang stabil.",
+        "8. Simpan perubahan terkecil yang berhasil per permainan, dengan nomor seri dan pengganda yang diuji, daripada menerapkannya ke seluruh perpustakaan."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafis Synthesizer PS2 bekerja dengan model alamat dan sampling yang dirancang di sekitar grid output konsol. Upscaling di sisi host meningkatkan jumlah piksel raster tanpa mengubah setiap koordinat yang diberikan oleh game. Hal itu dapat menimbulkan celah di antara primitif yang berdekatan atau meminta sampel tepat di luar wilayah texel yang dimaksud. Penyesuaian dan pembulatan sprite menangani aritmetika yang berbeda, sehingga mengaktifkan keduanya sekaligus menghancurkan nilai diagnostik dari tes. Frame asli yang bersih ditambah ambang kegagalan yang dapat diulang menunjukkan bahwa dump dan adegan dapat dirender dengan benar dan bahwa cacat diperkenalkan oleh jalur upscaling."
+    },
+    {
+      "type": "heading",
+      "text": "Bukti penerimaan penghapusan seam"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pertahankan koreksi hanya jika menutup celah yang dipetakan tanpa menggeser lapisan layar lainnya."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Setiap kolom vertikal yang sebelumnya ditandai tetap berkelanjutan baik saat diam maupun saat pergerakan kamera horizontal.",
+        "Glyph HUD, bingkai potret, dan pemisah menu tetap tajam dan tidak bergeser satu piksel ke samping.",
+        "Tile latar belakang bertemu dengan rapi pada pengali pertama yang gagal dan pada pengali berikutnya di atasnya.",
+        "Adegan yang sama tetap benar setelah aplikasi dimulai ulang sepenuhnya, bukan hanya setelah toggle dalam sesi.",
+        "Tingkat kedua dengan dimensi sprite yang berbeda lulus, dan pengaturan frame tetap berada dalam ukuran pra-fix."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Pola yang menolak diagnosis penyelarasan"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Kolom tetap berada di posisi layar fisik yang sama di atas menu dan Android UI: periksa panel tampilan, kabel, atau jalur tangkapan.",
+        "Garis ada pada resolusi asli dan dalam rendering perangkat lunak: verifikasi gambar dan bandingkan dengan referensi output asli yang dapat diandalkan.",
+        "Hanya tekstur yang diganti yang menunjukkan tepi berwarna: nonaktifkan paket dan audit padding atlasnya alih-alih mengubah penyelarasan GS.",
+        "Perbaikan ini menghilangkan celah tetapi merusak font atau partikel: kembalikan dan uji cabang sampling lain dengan baseline baru."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Kembalilah ke tangga skala terakhir yang bersih"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nonaktifkan nilai alignment atau pembulatan yang diuji, kembalikan offset tekstur dan filter ke default, tutup game, dan tangkap kembali multiplier yang gagal. Jika tidak ada koreksi sempit yang berhasil di semua adegan, turunkan resolusi internal ke tangga tertinggi yang tetap bersih dan simpan peta cacat untuk laporan kompatibilitas."
+    },
+    {
+      "type": "heading",
+      "text": "Perbaikan seam spesifik judul bukanlah preset kualitas gambar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Contoh Sprite Align historis berlaku untuk perilaku mesin yang dapat dikenali, bukan untuk setiap garis vertikal di setiap game. Versi emulator mungkin sudah menerapkan perbaikan database untuk serial yang diketahui. Pastikan cacatnya dengan pengaturan default sebelum menambahkan penggantian manual, dan hapus penggantian itu ketika versi berikutnya memperbaiki jalur secara otomatis."
+    },
+    {
+      "type": "link",
+      "text": "Baca penjelasan teknis PCSX2 tentang sampling upscale",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

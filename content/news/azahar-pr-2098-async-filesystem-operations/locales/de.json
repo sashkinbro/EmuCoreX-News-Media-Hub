@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar verschiebt langsame 3DS-Dateisystemanfragen vom Emulations-Thread, ohne FS_USER gleichzeitig auszuführen",
+  "summary": "Eine dedizierte Single-Worker-Queue ermöglicht es Gast-Threads, während teurer Speicheroperationen weiterzulaufen, während die von Azahar benötigte Serialisierung des nicht Thread-sicheren FS_USER-Dienstes erhalten bleibt.",
+  "heroAlt": "Azahar asynchrone Dateisystem-Pull-Anfrage, die das Design des dedizierten FS_USER-Workers zeigt",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "asynchrones Dateisystem",
+    "ThreadWorker",
+    "Android Speicherstottern"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Speicher",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "core: Asynchrone Dateisystemoperationen hinzufügen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Pause des Host-Speichers sollte keinen jeden emulierten Anwendungsthread einfrieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Einige 3DS-Dateisystemaufrufe können auf dem Host so lange dauern, dass sie spürbare Ruckler verursachen, insbesondere über Android-Speicheranbieter, die vom Google Play-Build verwendet werden. Das Ausführen der Operation inline blockiert den Emulationsthread, selbst wenn andere Gastaufgaben weiterhin ausgeführt werden könnten. Pull Request #2098 ändert diese Planungsgrenze: Das Dateisystem-IPC kann seinen aufrufenden Gastthread schlafen legen, während die Host-Operation an anderer Stelle ausgeführt wird."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Ein-Thread-Worker löst die FS_USER-Sicherheitsbeschränkung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar konnte nicht einfach jede Anfrage an den allgemeinen Thread-Pool senden, weil FS_USER und dessen Archivzustand nicht threadsicher sind. Die Änderung gibt dem Service einen dedizierten ThreadWorker, der genau einen Worker-Thread enthält. Anfragen sind asynchron in Bezug auf die Emulation, aber relativ zueinander serialisiert. Das bewahrt die Reihenfolgevoraussetzungen des Service, ohne dass nicht zusammenhängende emulierte Threads auf das Host-Dateisystem warten müssen."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker trennt die Host-Arbeit von der IPC-Antwort"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext erhält einen Helfer, der die Speicheroperation in einer verpackten Aufgabe einbindet, sie im ausgewählten Worker einreiht und ein Future für den Abschluss bereithält. Der Gast-Client-Thread schläft, während die Aufgabe ausgeführt wird. Nach Abschluss weckt Azahar diesen Thread und erstellt das IPC-Ergebnis auf der Emulatior-Seite. Ein synchroner Fallback bleibt für den deterministischen asynchronen Betriebsmodus und für Fälle, in denen die Einstellung deaktiviert ist, verfügbar."
+    },
+    {
+      "type": "heading",
+      "text": "Der Patch vermeidet, dass bei jedem kleinen Lesevorgang Warteschlangen-Overhead anfällt."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Implementierung ist selektiv. Archiv öffnen, löschen, umbenennen, Verzeichnis und verwandte FS_USER-Pfade können den dedizierten Worker nutzen. Zwischengespeicherte Dateioperationen folgen dem asynchronen Pfad, wenn Daten nicht bereit sind, während viele kleine nicht zwischengespeicherte Lese- und Schreiboperationen synchron bleiben, da die Thread-Kommunikation mehr kosten könnte als die I/O. File Close und Resize respektieren ebenfalls die Einstellung, und der FS_USER-Destruktor wartet auf die Warteschlangenanfragen, bevor der Service verschwindet."
+    },
+    {
+      "type": "heading",
+      "text": "Weniger Ruckeln kann gegen leicht längere Ladezeiten getauscht werden."
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Zulassen anderer Gast-Threads zur Ausführung ändert, wann Fortschritt sichtbar ist, nicht wie schnell das Host-Speichergerät fertigstellt. Die Quelle erwartet daher eine große Reduzierung von Dateisystem-bedingten Verzögerungen, erkennt jedoch an, dass einige Ladezeiten marginal länger sein können. Die Option ist standardmäßig in Android- und Qt-Speichereinstellungen aktiviert, wodurch der Kompromiss sichtbar und umkehrbar wird, anstatt ihn in einem plattformspezifischen Build zu vergraben."
+    },
+    {
+      "type": "heading",
+      "text": "Korrektheitstests müssen länger bestehen als die Operation und der Dienst."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein nützliches Benchmark zeichnet Frameraten und Ladezeiten mit aktivierter und deaktivierter Option unter Verwendung desselben Speicherorts auf. Die Abdeckung der Korrektheit sollte sich auf Öffnungen, Verzeichnislesungen, Umbenennen- und Löschanfragen erstrecken; einen Titel schließen, während Arbeiten in der Warteschlange sind; und anschließend Save-Data-Hashes überprüfen. Langsamer Android-Dokumentenspeicher ist der primäre Leistungsfall, aber lokale Desktop- und netzwerkgestützte Pfade sind wertvoll, um Reihenfolge-, Shutdown- und Fehlerfortpflanzungs-Regressionen aufzudecken."
+    },
+    {
+      "type": "callout",
+      "text": "Die entscheidende Designwahl ist serialisierte Asynchronität: Ein FS_USER-Worker beseitigt Emulations-Thread-Staus, ohne vorzugeben, dass der Dateisystemdienst sicher für parallelen Zugriff ist."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Überprüfen Sie Azahars FS_USER-Worker, IPC-Weckfunktion und Implementierung der Speicher-Einstellungen"
+    }
+  ]
+}

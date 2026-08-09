@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar označuje OpenGL práci s operací vykreslovače, která ji způsobila",
+  "summary": "Pojmenované DebugScopes kolem cest kreslení a textury za běhu proměňují zachycení GPU na hierarchii předefinování, vymazání, kopírování, nahrávání, stahování, mipmapování a škálování práce.",
+  "heroAlt": "Zdrojový důkaz z pull requestu Azahar #2133: renderer_gl: Přidat `DebugScopes` do rasterizátoru a textury za běhu",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL ladění",
+    "DebugScope",
+    "RenderDoc",
+    "textura za běhu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "Nástroje",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl: Přidat `DebugScopes` do rasterizátoru a textury za běhu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Stream příkazů GL ztrácí důvod C++ za každým voláním"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debuggery GPU mohou zobrazovat glBindTexture, glFramebufferTexture, vykreslování a kopírování, ale dlouhý záznam automaticky neříká, která operace Azahar je vyprodukovala. Diagnostika chyby rendereru tedy vyžaduje manuální korelaci pořadí API s trasami CPU. Pull request #2133 přidává strukturované štítky na rozhraních rasterizátoru a texture-runtime, kde emulátor stále zná sémantickou operaci."
+    },
+    {
+      "type": "heading",
+      "text": "Scopy zahrnují parametry, které rozlišují podobné operace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch pojmenovává RasterizerOpenGL::Draw a reinterpretaci textury, clear s nebo bez FBO, kopírování, blit, generování mipmap, kopírování rukově, upload, vlastní upload, stahování, připojení, zvětšení a blit-škálování cesty. Štítky zahrnují formáty pixelů, barvy clearu, počty kopií nebo hodnoty škálování, kde je to užitečné. Záznam tedy může oddělit dvě vizuálně podobné kopie, které pocházely z různých rozhodnutí o formátu nebo škálování."
+    },
+    {
+      "type": "heading",
+      "text": "Hloubka scopu je účtována pouze při povoleném ladění rendereru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hloubka rozsahu sampleru se zvyšuje podmíněně podle Settings::values.renderer_debug. Normální hraní by nemělo udržovat diagnostické vnoření, nikdy se neexportuje. Když je povoleno, hierarchie může být využita debug značkami a nástroji pro zachycení, které spojí skupinu GL volání s jedním zásobníkem volání C++. Tyto rozsahy nezmění synchronizaci ani přímo neopravují vykreslování; umožňují přesné pozdější vyšetření."
+    },
+    {
+      "type": "heading",
+      "text": "Validace zachycení by měla zahrnovat vnoření a zakázanou režii"
+    },
+    {
+      "type": "paragraph",
+      "text": "Povolte ladění rendereru, zachyťte scény, které nahrávají, reinterpretují, vymazávají, kopírují, škálují a stahují textury, a ověřte, že každá GL skupina má správný název a parametry s vyváženým vnořením. Vyvoljte předčasné ukončení nebo selhání operace, aby se zajistilo, že RAII uzavře rozsah. Zakážete ladění a ověřte, že značky a přírůstky hloubky zmizí, poté změřte režii CPU. Štítky musí identifikovat skutečně vykonávající operaci, a ne jen kopírovaná jména, která vytvářejí falešné důkazy."
+    },
+    {
+      "type": "callout",
+      "text": "Ladicí rozsahy nemění pixely; mění, zda zachycení může odpovědět, která operace Azahar tyto pixely vytvořila."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu Azahar"
+    }
+  ]
+}

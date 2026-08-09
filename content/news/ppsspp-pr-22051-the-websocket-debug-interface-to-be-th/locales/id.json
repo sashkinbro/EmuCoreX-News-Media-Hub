@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP memindahkan pekerjaan debugging WebSocket ke thread CPU",
+  "summary": "Jembatan tugas sinkron menggantikan penguncian debugger terdistribusi, dan disassembler menghapus operasi makro yang digabung yang membuat ukuran langkah tidak jelas.",
+  "heroAlt": "Bukti sumber dari PPSSPP pull request #22051: Memperbaiki antarmuka debug websocket agar aman untuk thread, menghapus \"macro ops\" dalam disasm",
+  "searchKeywords": [
+    "PPSSPP",
+    "Debugger WebSocket",
+    "Thread CPU",
+    "Titik henti",
+    "Disassembly"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Alat",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Memperbaiki antarmuka debug websocket agar aman untuk thread, menghapus \"macro ops\" dalam disasm"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Permintaan debugger jarak jauh melewati batas kepemilikan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debugger WebSocket berjalan pada thread jaringan, tetapi breakpoint, stepping, akses register, dan sebagian besar memori yang diemulasikan dimiliki oleh thread eksekusi CPU. Melindungi fungsi individu dengan kunci yang tidak terkait membuat kebenaran tergantung pada urutan kunci dan pada setiap handler di masa depan yang mengingat aturan yang sama. Ini terutama rapuh saat inti dihentikan, karena sebuah permintaan mungkin membutuhkan status thread CPU tepat saat kemajuan frame biasa berhenti."
+    },
+    {
+      "type": "heading",
+      "text": "Sebuah jembatan menyerialisasikan operasi yang dimiliki CPU pada loop run"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #22051 menambahkan Core_RunOnCPUThread. Pemanggil mengemas sebuah fungsi dalam tugas bersama, mendorongnya di bawah mutex antrian, dan menunggu pada variabel kondisi. Core_RunLoopUntil mengosongkan antrian di bagian atas loopnya, mengeksekusi fungsi pada thread CPU, menandainya selesai di bawah mutex, dan membangunkan yang menunggu. Panggilan yang sudah ada di thread CPU dieksekusi secara langsung, menghindari deadlock diri sendiri. Loop mengosongkan terus menerus saat stepping atau berhenti dan setidaknya sekali per frame host saat berjalan."
+    },
+    {
+      "type": "heading",
+      "text": "Pembongkaran kini menjaga ukuran langkah dalam satu unit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pekerjaan yang sama menghapus operasi makro pembongkar yang menggabungkan pola instruksi seperti lui plus ori menjadi satu baris presentasi. Meskipun nyaman untuk dibaca, operasi gabungan membingungkan apakah ukuran langkah berarti byte, instruksi tamu, atau baris tampilan. Kontrak baru memperlakukan stepSize sebagai jumlah instruksi MIPS empat-byte, dan perhitungan alamat breakpoint dikalikan sesuai. Tampilan kemudian dapat menambahkan petunjuk visual tanpa mengubah unit eksekusi yang mendasarinya."
+    },
+    {
+      "type": "heading",
+      "text": "Tes konkruensi membutuhkan kasus yang dijeda dan dapat diulang"
+    },
+    {
+      "type": "paragraph",
+      "text": "Issue pembacaan, penulisan, perubahan breakpoint, pemindaian memori, dan langkah-langkah tunggal secara bersamaan saat permainan berjalan, dijeda, dan berpindah antara status. Putuskan koneksi klien saat tugas menunggu, hentikan inti dengan antrean yang tidak kosong, dan panggil jembatan dari utas CPU itu sendiri. ThreadSanitizer seharusnya melaporkan tidak ada konflik debugger. Verifikasi setiap permintaan menerima penyelesaian atau kesalahan shutdown yang terkendali, dan bandingkan alamat disassembly di sekitar pola makro sebelumnya sehingga langkah tidak pernah melewatkan atau mengulangi instruksi tamu."
+    },
+    {
+      "type": "callout",
+      "text": "Debugger tidak lagi meminta banyak kunci untuk meniru kepemilikan CPU; ia mengirim operasi ke utas yang sudah memiliki status."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Baca diskusi teknik PPSSPP dan perubahan sumber"
+    }
+  ]
+}

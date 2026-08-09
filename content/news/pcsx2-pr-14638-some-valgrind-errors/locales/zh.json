@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 消除了 Valgrind 发现的两种未初始化状态决策来源",
+  "summary": "调试器表格几何从零开始，音频设置比较字段而不是原始结构字节，从而消除了受未写入内存和填充影响的分支。",
+  "heroAlt": "来自 PCSX2 Pull Request #14638 的源证据：杂项：修复一些 valgrind 错误",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "未初始化读取",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "工具",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "杂项：修复一些 valgrind 错误"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "调试器使用没有定义初始值的成员进行绘制"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind 跟踪到 MemoryViewTable::DrawTable 中的一个条件分支，该分支依赖于未初始化声明的行数、位置、选择状态和地址成员。正常的调整大小或设置路径通常会在绘制前为它们赋值，这使得该缺陷呈间歇性出现。然而，如果绘制事件提前到达，仍可能读取不确定的整数，并根据对象所占位的任意位选择布局行为。"
+    },
+    {
+      "type": "heading",
+      "text": "零初始化为第一次绘制提供了有效的空表"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14638 在声明时初始化了 rowCount、rowVisible、rowHeight、value 和 text 轴、第一行位置、start 和 selected 地址以及 selectedIndex。零表示在实际尺寸到来之前的安全预布局状态。此更改不猜测默认地址或选择；它确保早期事件看到的是刻意为空的模型，而不是未定义的数据。"
+    },
+    {
+      "type": "heading",
+      "text": "memcmp 曾比较音频字段和不可见的填充字节"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters 通过比较 sizeof(struct) 的原始字节实现了相等性。C++ 成员之间的填充不是一个字段，并且可能保留未定义的值，因此两个逻辑上相同的配置可能比较不相等。这导致在设置更改期间以及 savestate 加载期间到达 SPU2 配置检查。该补丁将自定义的 == 和 != 替换为默认的三向比较，该比较根据类型比较声明的成员，并且从不将填充视为配置。"
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind 和行为测试应涵盖事件顺序和状态加载"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 VM 启动前后，通过 Valgrind 运行调试器，同时打开、调整大小、绘制、选择和关闭内存视图。然后加载 savestates 并重复应用相同的音频设置，确认没有出现虚假的重启，也没有未经初始化的比较报告。更改一个实际的音频字段以确保不等仍然有效。使用不同结构填充的编译器和 sanitizer 构建非常有价值，因为在一种布局上的干净结果并不能证明移除的 memcmp 在其他地方是安全的。"
+    },
+    {
+      "type": "callout",
+      "text": "这两种修复都将意外的内存内容替换为语言级别的状态：UI 布局的初始化字段和音频配置的字段级相等性。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "阅读 PCSX2 的工程讨论和源码变更"
+    }
+  ]
+}

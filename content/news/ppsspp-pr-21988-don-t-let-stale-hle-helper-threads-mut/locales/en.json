@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP stops stale helper threads from damaging a restored savestate",
+  "summary": "The savestate loader now detaches old sceUtility and PSMF host wrappers before destruction, protecting live kernel threads and memory that may reuse the same identifiers.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21988: Savestate: don't let stale HLE helper threads mutate restored kernel state",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: don't let stale HLE helper threads mutate restored kernel state"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A destructor could act on the wrong generation of kernel state"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP keeps host-side HLEHelperThread wrappers for asynchronous work such as savedata access and PSMF playback. During a load, the emulator replaces those wrappers with objects from the serialized stream. Two paths destroyed the pre-load wrapper normally, allowing its destructor to call __KernelDeleteThread and free an entry block after the new kernel state was already installed. The IDs inside the old wrapper no longer described the objects it was allowed to own."
+    },
+    {
+      "type": "heading",
+      "text": "Identifier reuse turned harmless log noise into silent corruption"
+    },
+    {
+      "type": "paragraph",
+      "text": "If the restored state did not contain the stale thread ID or allocation, the mistake produced an error about a missing thread or invalid free. The dangerous case occurred when the restored state had recycled either value. The destructor could then terminate a legitimate live thread or release memory used by a different object. Loading while savedata work or a PSMF player was active made this timing-sensitive ownership bug much easier to reach."
+    },
+    {
+      "type": "heading",
+      "text": "Forget separates host wrapper lifetime from guest ownership"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21988 applies the pattern already used by PPSSPP's I/O state handling. sceUtility explicitly calls Forget, deletes its accessThread, and clears the pointer before Do recreates it. On PSMF reads, the loader walks the existing player map and calls Forget on every finishThread before map deserialization destroys the players. Forget does not erase restored guest state; it tells the obsolete host wrapper that it no longer owns those kernel resources."
+    },
+    {
+      "type": "heading",
+      "text": "The regression matrix must exercise recycled IDs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test saves made before, during, and after savedata operations and PSMF playback, then load each from a session with different activity. Instrument thread deletion and BlockAllocator frees to prove no pre-load wrapper mutates the restored generation. Include repeated load cycles, rewind, slot switching, failed states, and shutdown after a load. A targeted test should deliberately recreate the same thread ID and block address, because the old harmless-log case alone would not expose silent corruption."
+    },
+    {
+      "type": "callout",
+      "text": "A savestate restore changes ownership generations; host destructors must forget stale guest handles before the restored kernel becomes authoritative."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP, eski yardımcı iş parçacıklarının geri yüklenen savestate durumuna zarar vermesini engeller",
+  "summary": "savestate yükleyicisi artık yok etmeden önce eski sceUtility ve PSMF ana bilgisayar sarmalayıcılarını ayırıyor, böylece aynı tanımlayıcıları yeniden kullanabilecek canlı çekirdek iş parçacıkları ve belleği koruyor.",
+  "heroAlt": "PPSSPP çekme isteğinden #21988 kaynak kanıtı: Savestate: eski HLE yardımcı iş parçacıklarının geri yüklenen çekirdek durumunu değiştirmesine izin verme",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: eski HLE yardımcı iş parçacıklarının geri yüklenen çekirdek durumunu değiştirmesine izin verme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bir yıkıcı, yanlış nesil çekirdek durumunda işlem yapabilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP, kaydedilen veri erişimi ve PSMF oynatma gibi eşzamansız işler için host tarafı HLEHelperThread sarmalayıcılarını tutar. Bir yükleme sırasında, emülatör bu sarmalayıcıları serileştirilmiş akıştan gelen nesnelerle değiştirir. İki yol, ön yükleme sarmalayıcısını normal şekilde yok etti ve yıkıcı fonksiyonunun __KernelDeleteThread çağırmasına ve yeni çekirdek durumu kurulduktan sonra bir giriş bloğunu serbest bırakmasına izin verdi. Eski sarmalayıcı içindeki IDs artık sahip olmasına izin verilen nesneleri tanımlamıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Kimlik yeniden kullanımı zararsız günlük gürültüsünü sessiz bozulmaya dönüştürdü"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eğer geri yüklenen durumda eski ID iş parçacığı veya tahsis bulunmuyorsa, hata eksik bir iş parçacığı veya geçersiz serbest bırakma hakkında bir hata üretti. Tehlikeli durum, geri yüklenen durumda herhangi bir değerin geri dönüştürülmüş olması durumunda meydana geldi. Yıkıcı işlev, o zaman meşru bir canlı iş parçacığını sonlandırabilir veya farklı bir nesne tarafından kullanılan belleği serbest bırakabilirdi. Kaydedilmiş veri üzerinde çalışma sırasında veya bir PSMF oyuncusu aktifken yükleme yapmak, bu zamanlamaya duyarlı sahip olma hatasına ulaşmayı çok daha kolay hale getirdi."
+    },
+    {
+      "type": "heading",
+      "text": "Forget, host sarmalayıcı ömrünü konuk sahipliğinden ayırır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21988, PPSSPP'in G/Ç durum yönetiminde zaten kullanılan deseni uygular. sceUtility, Forget'i açıkça çağırır, accessThread'ını siler ve Do onu yeniden yaratmadan önce işaretçiyi temizler. PSMF okumalarında, yükleyici mevcut oyuncu haritasında dolaşır ve map serileştirmesi oyuncuları yok etmeden önce her finishThread üzerinde Forget'i çağırır. Forget, geri yüklenen misafir durumunu silmez; artık o çekirdek kaynaklara sahip olmadığını eski ana bilgisayar sarmalayıcısına bildirir."
+    },
+    {
+      "type": "heading",
+      "text": "Regresyon matrisi geri dönüştürülmüş IDs'i kullanmalıdır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kaydedilen veriler üzerinde ve PSMF oynatımı sırasında ve sonrasında yapılan test kayıtlarını kaydedin, ardından her birini farklı bir etkinliğe sahip bir oturumdan yükleyin. Ön yükleme sarmalayıcısının geri yüklenen nesli değiştirmediğini kanıtlamak için araç ipliği silme ve BlockAllocator serbest bırakmalarını inceleyin. Tekrarlanan yükleme döngülerini, geri sarma, slot değiştirme, başarısız durumlar ve bir yüklemeden sonra kapatmayı dahil edin. Hedeflenmiş bir test, eski zararsız günlük vakası yalnızca sessiz bozulmayı ortaya çıkarmayacağı için bilinçli olarak aynı ID iş parçacığını ve blok adresini yeniden oluşturmalıdır."
+    },
+    {
+      "type": "callout",
+      "text": "Bir savestate geri yüklemesi mülkiyeti nesiller boyunca değiştirir; ana bilgisayar yok edicileri, geri yüklenen çekirdek yetkili hale gelmeden önce geçersiz konuk tutamaçlarını unutmalıdır."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "PPSSPP mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

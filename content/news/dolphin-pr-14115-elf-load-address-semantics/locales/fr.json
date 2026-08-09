@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin sépare l'adresse de chargement d'un segment ELF de son adresse virtuelle",
+  "summary": "Le chargeur préfère désormais p_paddr comme adresse mémoire de chargement du segment et utilise p_vaddr seulement lorsqu'aucune adresse physique n'est fournie.",
+  "heroAlt": "Preuves provenant de la demande de tirage Dolphin #14115 : Core/Boot : Correction de la sémantique de l'adresse de chargement ELF",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot : Correction de la sémantique de l'adresse de chargement ELF"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF les en-têtes de programme peuvent décrire deux adresses différentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un segment ELF chargeable inclut p_vaddr, l'adresse utilisée par le programme lors de l'exécution, et p_paddr, généralement considérée dans les environnements embarqués comme l'adresse de chargement en mémoire. De nombreux binaires les égalent, ce qui masque les loaders qui confondent ces champs. Les homebrews, composants de démarrage ou images de développement peuvent intentionnellement les séparer. Dolphin copiait auparavant les octets du segment vers p_vaddr de manière inconditionnelle, ignorant le placement physique codé par le fichier."
+    },
+    {
+      "type": "heading",
+      "text": "Le loader donne maintenant la priorité au champ physique non nul"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14115 journalise les deux valeurs et initialise writeAddr depuis p_paddr. Une adresse physique non nulle est mappée dans la région virtuelle PowerPC en activant le bit 0x80000000. Si p_paddr vaut zéro, Dolphin utilise p_vaddr comme solution de compatibilité. La vérification exclusive à MEM1 passe également à l'adresse d'écriture choisie, de sorte que le filtrage évalue l'endroit où les octets seront écrits plutôt qu'un autre champ d'en-tête."
+    },
+    {
+      "type": "heading",
+      "text": "Il s'agit d'une correction sémantique du loader, et non d'un repositionnement arbitraire"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin ne calcule pas un nouvel emplacement et ne réécrit pas les références à l'intérieur du binaire. Il suit l'adresse de chargement fournie par l'en-tête du programme et conserve la convention de mappage virtuel établie. Cette distinction est importante pour les segments copiés à un endroit avant que le flux de contrôle ou le code de démarrage ne les utilise à un autre. Elle empêche également qu'un p_paddr nul, courant dans les fichiers qui ne distinguent pas les adresses, se retrouve accidentellement mappé au début de la mémoire."
+    },
+    {
+      "type": "heading",
+      "text": "Les fixations doivent couvrir les plages égales, séparées, nulles et invalides."
+    },
+    {
+      "type": "paragraph",
+      "text": "Créez un petit ELFs dont p_paddr est égal à p_vaddr, est zéro, diffère mais reste dans MEM1, atterrit près d'une limite, ou pointe en dehors du RAM émulé inscriptible. Remplissez chaque segment avec un motif unique et vérifiez la destination exacte, le nettoyage de BSS, l'exécution de l'entrée et la gestion des chevauchements. Exercez le filtrage only_in_mem1 contre writeAddr et inspectez les journaux pour les deux champs. Le vrai homebrew devrait être testé aux côtés de fichiers malformés afin que la sémantique améliorée ne devienne pas des écritures en mémoire invité non contrôlées."
+    },
+    {
+      "type": "callout",
+      "text": "Lorsqu'un ELF intégré fournit une adresse de mémoire de charge, le chargeur doit la respecter ; l'adresse virtuelle décrit l'exécution, pas toujours l'endroit où les octets appartiennent en premier."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Lisez la discussion technique et les modifications de source du Dolphin"
+    }
+  ]
+}

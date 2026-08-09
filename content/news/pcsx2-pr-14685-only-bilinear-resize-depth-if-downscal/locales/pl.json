@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ogranicza dwuliniowe zmienianie rozdzielczości głębi do rzeczywistego zmniejszania",
+  "summary": "Zmiana w pamięci podręcznej tekstur na jedno warunkowe rozróżnia przypadki wymagające wygładzania od kopiowania, gdzie interpolacja zmienia wartości głębi i powoduje artefakty cieni lub powierzchni.",
+  "heroAlt": "Dowody wizualne z pull request PCSX2 #14685: GS/TC: Dwuliniowo zmieniaj rozdzielczość głębi tylko przy zmniejszaniu",
+  "searchKeywords": [
+    "PCSX2",
+    "cel głębi",
+    "dwuliniowa zmiana rozdzielczości",
+    "GSTextureCache",
+    "skalowanie natywne"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: Dwuliniowo zmieniaj rozdzielczość głębi tylko przy zmniejszaniu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Filtrowanie dwuliniowe może wymyślać wartości głębi nawet gdy rozmiar się nie zmniejsza"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tekstury głębi nie są zwykłymi obrazami kolorowymi. Interpolacja sąsiednich próbek generuje wartości, które nigdy nie zostały zapisane przez grę, co może zmieniać późniejsze porównania i objawiać się jako niepoprawne cienie lub krawędzie geometrii. PCSX2 szeroko włączył próbkowanie bilinearne po tym, jak pomogło to w przypadkach Native Scaling, ale ta zasada dotyczyła także kopii głębi o tym samym rozmiarze i powiększonych, gdzie wygładzanie było niepotrzebne, a czasem widocznie szkodliwe."
+    },
+    {
+      "type": "heading",
+      "text": "Nowa decyzja pyta, czy cel głębi jest faktycznie skalowany w dół."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14685 utrzymuje ścieżkę zmiany rozmiaru w GSTextureCache, ale zawęża wybór filtra. Używane jest próbkowanie najbliższego sąsiada, chyba że cel głębi jest kopiowany do mniejszych wymiarów; tylko w tym przypadku w dół wybierane jest filtrowanie bilinearne. To rozróżnienie zachowuje dokładne wartości źródłowe, gdy piksele są mapowane bezpośrednio lub powiększane, przy jednoczesnym uśrednianiu próbek, gdy większy wewnętrzny cel musi zostać przekształcony do reprezentacji o niższej rozdzielczości klienta."
+    },
+    {
+      "type": "heading",
+      "text": "Kingdom Hearts i Xenosaga pokazują przeciwne strony kompromisu."
+    },
+    {
+      "type": "paragraph",
+      "text": "Kingdom Hearts pokazało różnice w cieniach stóp, gdy interpolacja dotykała kopii głębokości, która tego nie wymagała, a The Nightmare Before Christmas ujawniło artefakt na powierzchni kamienia. Xenosaga Episode III jest powodem, dla którego istniał dwuliniowy downscaling głębokości: jej ścieżka Native Scaling wyglądała źle po powrocie do normalnej rozdzielczości bez wygładzania. Skorygowany warunek jest wartościowy, ponieważ utrzymuje oba zachowania zamiast wybierać jedną grę kosztem drugiej."
+    },
+    {
+      "type": "heading",
+      "text": "Porównania natywne i w rozdzielczości powiększonej muszą sprawdzać zarówno wartości, jak i wygląd"
+    },
+    {
+      "type": "paragraph",
+      "text": "Źródło prosi testerów o porównanie Kingdom Hearts, Xenosaga Episode III i The Nightmare Before Christmas w natywnej i powiększonej rozdzielczości. Zrzuty powinny utrzymywać scenę i renderer w stałym stanie, a następnie sprawdzać granice cieni, zgłoszony obszar kamienia oraz linię wody w Xenosadze. Test regresji powinien również zapisywać wymiary źródłowe i docelowe, aby pozorne ulepszenie można było powiązać z oczekiwaną gałęzią najbliższą lub dwuliniową, a nie przypadkową zmianą sceny."
+    },
+    {
+      "type": "callout",
+      "text": "Zasada jest precyzyjna: filtrowanie bilinearne jest narzędziem do skalowania w dół celów głębi, a nie domyślne dla każdej operacji zmieniającej rozmiar."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

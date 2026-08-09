@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "verify-free-space-before-a-ps2-library-migration",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Calculer l'espace de travail avant une migration de bibliothèque PS2",
+  "summary": "Mesurer les octets source, les octets libres de destination, les limites de fichiers les plus volumineux, l'espace de vérification temporaire et la marge de sécurité avant la copie ; vérifier par lots pour qu'une destination pleine ne produise pas de troncature silencieuse.",
+  "heroAlt": "Écran des paramètres d'image de l'Utilitaire de disque macOS montrant les choix de destination et de format avant une opération sur une grande image disque",
+  "searchKeywords": [
+    "Espace libre de la bibliothèque PS2",
+    "Capacité de migration de EmuCoreX",
+    "Marge de stockage de copie ISO",
+    "Vérifier un transfert volumineux",
+    "Stockage Android plein"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "storage": "Stockage",
+    "migration": "Migration"
+  },
+  "sourceLabels": {
+    "android-storage": "Android catégories de stockage",
+    "microsoft-filesystems": "Contraintes de capacité du système de fichiers"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Budget pour la source, la destination et la preuve"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une migration nécessite plus que le total de la bibliothèque affiché. La destination doit contenir les fichiers, la surcharge du système de fichiers, tous les compagnons cue/bin, et assez d'espace libre pour que Android et le fournisseur de stockage fonctionnent normalement. Les rapports de vérification et une copie de la source conservée occupent également de l'espace ailleurs. Calculez les octets exacts à partir d'un inventaire récursif plutôt qu'en ajoutant des étiquettes en gigaoctets arrondies."
+    },
+    {
+      "type": "callout",
+      "text": "Ne commencez pas lorsque le plan nécessite la suppression de la source en cours de route pour terminer la destination. Cela supprime le seul retour arrière avant que la copie n'ait été prouvée."
+    },
+    {
+      "type": "heading",
+      "text": "Créez une feuille de calcul de capacité"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Total exact en octets et nombre de fichiers pour chaque racine source planifiée.",
+        "Taille du fichier individuel le plus grand et limite du système de fichiers de destination.",
+        "Octets libres de la destination mesurés immédiatement avant la copie.",
+        "Une marge de sécurité pour la surcharge du système de fichiers et le fonctionnement normal de Android.",
+        "Espace séparé pour les rapports de hachage, journaux et source conservée."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Approuver les lots de migration par rapport à la capacité restante"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Générer un inventaire trié contenant le chemin relatif, les octets et SHA-256.",
+        "2. Soustraire les archives exclues, les sauvegardes et les fichiers en quarantaine qui ne doivent jamais entrer dans la racine active.",
+        "3. Comparer l'image la plus grande avec la taille maximale de fichier unique de la destination.",
+        "4. Définir un seuil d'arrêt au-dessus de zéro octets libres ; utiliser les recommandations de stockage de l'appareil et laisser une marge de manœuvre opérationnelle pratique.",
+        "5. Diviser l'inventaire en lots dont le total reste inférieur à l'espace disponible après le seuil.",
+        "6. Copiez le premier lot sans déplacer les fichiers source, puis vérifiez les comptes, les octets et les hachages.",
+        "7. Re-mesurez l'espace libre de destination au lieu de supposer la valeur prédite.",
+        "8. Continuez uniquement tant que l'espace restant mesuré prend en charge le lot suivant plus la marge."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "L'allocation parcimonieuse, les caches du fournisseur, les dossiers de corbeille et les blocs réservés du système de fichiers peuvent faire en sorte que les totaux du gestionnaire de fichiers diffèrent de l'arithmétique simple. Le résultat mesuré après le lot corrige la feuille de calcul. Si la compression est utilisée uniquement pour la sauvegarde, sa taille ne doit pas être substituée à l'exigence de lecture extraite."
+    },
+    {
+      "type": "heading",
+      "text": "Acceptation de la capacité et de l'intégrité"
+    },
+    {
+      "type": "paragraph",
+      "text": "La destination complétée doit avoir à la fois un inventaire correspondant et suffisamment de capacité restante pour un fonctionnement stable."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Le nombre de fichiers de destination et le total des octets correspondent à l'inventaire approuvé.",
+        "Chaque hachage de destination correspond à son enregistrement source.",
+        "Les plus gros fichiers n'ont franchi aucune limite du système de fichiers ni été tronqués.",
+        "L'espace libre restant reste au-dessus du seuil d'arrêt prévu après le remontage.",
+        "Deux titres du lot final démarrent à froid avant que la source ne soit retirée."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modèles d'avertissement liés à l'espace"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La copie signale un succès mais les octets diffèrent : considérer la destination comme incomplète.",
+        "L'espace libre diminue plus vite que prévu : inspecter la corbeille, le cache du fournisseur et les frais généraux du système de fichiers cachés.",
+        "Un gros fichier échoue tandis que les petits fichiers se copient : vérifier la limite pour un seul fichier.",
+        "Android ralentit ou d'autres applications échouent près de la capacité : arrêter et restaurer la marge de manœuvre opérationnelle."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Supprimer uniquement le dernier lot incomplet"
+    },
+    {
+      "type": "paragraph",
+      "text": "En utilisant les chemins de destination explicites de la feuille de calcul, supprimez ou mettez en quarantaine uniquement les fichiers du lot échoué, re-mesurez l'espace et conservez toutes les données sources. Supprimez l'autorisation du dossier incomplet de EmuCoreX afin qu'un ensemble partiel ne puisse pas collecter de profils ou de sauvegardes."
+    },
+    {
+      "type": "heading",
+      "text": "La capacité annoncée n'est pas la capacité utilisable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les fournisseurs de stockage utilisent des unités décimales, les systèmes d'exploitation peuvent afficher des unités binaires, et les systèmes de fichiers réservent de l'espace pour les métadonnées. Enregistrez les octets pour les calculs et les unités lisibles par l'homme uniquement comme étiquettes."
+    },
+    {
+      "type": "link",
+      "text": "Examinez les directives de stockage de Android",
+      "url": "https://developer.android.com/training/data-storage"
+    }
+  ]
+}

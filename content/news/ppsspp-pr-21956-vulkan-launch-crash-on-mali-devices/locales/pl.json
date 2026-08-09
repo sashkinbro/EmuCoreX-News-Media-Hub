@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP naprawia pułapkę tworzenia urządzenia Vulkan na sprzęcie Mali",
+  "summary": "Wrapper libretro teraz wybiera dokładnie jeden kanał funkcji Vulkan, spełniając regułę, że pEnabledFeatures musi być null, gdy VkPhysicalDeviceFeatures2 jest łańcuchowo powiązany.",
+  "heroAlt": "Dowód źródłowy z pull request PPSSPP #21956: Libretro: naprawa awarii uruchamiania Vulkan na urządzeniach Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: naprawa awarii uruchamiania Vulkan na urządzeniach Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sterowniki tolerancyjne ukryły nieprawidłową kombinację create-info"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan oferuje wskaźnik legacy pEnabledFeatures oraz rozszerzalną strukturę VkPhysicalDeviceFeatures2 w pNext. Gdy obecny jest Features2, specyfikacja wymaga, aby wskaźnik legacy był nullem. Wrapper libretro dla PPSSPP mógł wypełniać oba, dodając dodatkowe funkcje wymagane przez frontend. Niektóre sterowniki akceptowały nieprawidłowe żądanie urządzenia, ale Mali zwracało VK_ERROR_INITIALIZATION_FAILED, więc rdzeń renderowany przez Vulkan zawodził zanim rozpoczęła się gra."
+    },
+    {
+      "type": "heading",
+      "text": "Wrapper teraz wykrywa, którą ścieżkę funkcji wybrał rdzeń"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21956 przechodzi przez łańcuch pNext tworzony przy tworzeniu urządzenia i rejestruje, czy zawiera on VkPhysicalDeviceFeatures2. Jeśli zostanie znalezione, funkcje wymagane przez frontend są scalane w tej strukturze, a newInfo.pEnabledFeatures jest jawnie ustawiane na null. Jeśli nieobecne, wrapper zachowuje dotychczasowe zachowanie legacy poprzez kopiowanie lub tworzenie VkPhysicalDeviceFeatures i przypisanie wskaźnika. Dwie legalne ścieżki Vulkan są zatem wzajemnie wykluczające się."
+    },
+    {
+      "type": "heading",
+      "text": "Walidacja obejmowała zarówno rygorystyczne, jak i tolerancyjne mobilne GPUs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor testował renderowanie sprzętowe na Android 14 z urządzeniem Mali-G615 oraz na Android 13 z urządzeniem Snapdragon 865 Adreno. Oba uruchomiły się i działały. W systemie Mali, pomyślne utworzenie urządzenia ujawniło osobny problem z pojemnością wirtualnego swapchain, obsługiwany przez inną zmianę; zachowanie tego rozróżnienia jest istotne, ponieważ rozwiązanie jednej przeszkody startowej nie powinno prowadzić do twierdzenia, że Hub przypisuje każdą późniejszą awarię Vulkan do tej samej przyczyny."
+    },
+    {
+      "type": "heading",
+      "text": "Testy łańcucha funkcji powinny sprawdzać własność struktury"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przechwycić VkDeviceCreateInfo z warstwami walidacji dla starszego rdzenia, rdzenia Features2, łańcuchów z dodatkowymi strukturami funkcji oraz przy braku opcjonalnych funkcji. Powtórzyć na Mali, Adreno, desktop Vulkan oraz na wielu wersjach RetroArch. Sprawdzić, czy wymagane bity są zachowane, a nie nadpisywane, wskaźniki pNext pozostają ważne podczas vkCreateDevice, a pEnabledFeatures jest nullem tylko w przypadku Features2. Przetestować również ścieżki oprogramowania i OpenGL, aby upewnić się, że inicjalizacja wrappera nie zakłada Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "Negocjacja funkcji Vulkan ma dwie legalne ścieżki; ich połączenie może działać na łagodniejszych sterownikach, ale nadal jest nieprawidłowe i nie działa na bardziej rygorystycznym sprzęcie."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Przeczytaj dyskusję inżynierską PPSSPP i zmiany źródłowe"
+    }
+  ]
+}

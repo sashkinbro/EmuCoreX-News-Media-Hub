@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostica le ombre mancanti senza accumulare trucchi grafici",
+  "summary": "Cattura una scena con molte ombre alla risoluzione nativa, identifica se il livello assente è geometria, profondità o fusione, confronta le API hardware con un riferimento software, quindi mantieni solo la correzione minima per gioco.",
+  "heroAlt": "PCSX2 cattura di confronto da una correzione di precisione grafica in una scena di gioco ombreggiata",
+  "searchKeywords": [
+    "PS2 ombre mancanti",
+    "EmuCoreX correzione delle ombre",
+    "precisione grafica",
+    "confronto con il renderer software",
+    "fusione di profondità"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "accuracy": "Precisione"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 contatori grafici e indicatori di impostazione",
+    "pcsx2-report": "PCSX2 punto di accesso per la segnalazione dei problemi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dimostrare quale livello di ombra è assente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un'ombra può essere una texture proiettata, un passaggio di framebuffer traslucido, una geometria scura ordinaria o un effetto combinato con il test di profondità. La prima domanda utile non è quindi quale trucco abilitare, ma se il gioco disegna il livello. Scegli un punto in cui lo stesso personaggio, luce e telecamera possono essere ripristinati in modo affidabile. Registrare il seriale del gioco, il renderer attivo, il driver GPU, la risoluzione interna, l'impostazione di blending e tutte le correzioni ereditate per gioco prima di toccare il profilo."
+    },
+    {
+      "type": "callout",
+      "text": "Non giudicare il cambiamento da un momento diverso della giornata, angolo di telecamera, stato di salvataggio o fotogramma dell'animazione. L'illuminazione dinamica può far sembrare due fotogrammi validi come una regressione del renderer."
+    },
+    {
+      "type": "heading",
+      "text": "Preparare un checkpoint ombra"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio normale nel gioco subito prima di una scena ripetibile illuminata.",
+        "Uno screenshot di base con il personaggio e il terreno visibili insieme.",
+        "Risoluzione interna nativa e post-processing disattivati per il primo confronto.",
+        "Driver del sistema GPU selezionato; i driver personalizzati sono un esperimento separato.",
+        "Una copia scritta delle sovrascritture grafiche globali e per singolo gioco."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Comportamento separato di disegno, fusione e profondità"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avvia a freddo il titolo e cattura il checkpoint di base senza caricare uno stato di salvataggio dell'emulatore.",
+        "2. Reimposta le correzioni manuali GS per questo titolo, seleziona la risoluzione interna nativa e ripeti lo stesso percorso di movimento.",
+        "3. Passa solo tra le API hardware supportate, chiudendo il gioco tra le esecuzioni in modo che il renderer si inizializzi correttamente.",
+        "4. Se entrambe le strade hardware omettono il livello, usa brevemente il rendering software come riferimento di correttezza e cattura la stessa fotocamera.",
+        "5. Quando il software mostra l'ombra, torna all'API hardware più stabile e aumenta l'accuratezza del blending di un solo livello.",
+        "6. Se la fusione non cambia nulla, ripristinala e testa la correzione documentata relativa alla profondità appropriata al titolo invece di combinare ipotesi.",
+        "7. Ripeti una seconda scena d'ombra che utilizza una superficie o una fonte di luce diversa.",
+        "8. Riscalda il dispositivo per dieci minuti e conferma che la correzione selezionata rimane sufficientemente veloce per il gioco effettivo."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "L'output del software è una prova diagnostica, non una promessa di velocità giocabile. Un frame corretto del software mostra che l'immagine del disco e il codice del gioco possono produrre l'effetto, mentre un fallimento solo dell'hardware restringe la ricerca al comportamento del renderer. Una modifica di blending che ripristina un'ombra traslucida è diversa da una correzione di profondità che ripristina la geometria nascosta dall'ordinamento. Mantenere separate queste diramazioni rende il risultato spiegabile e reversibile."
+    },
+    {
+      "type": "heading",
+      "text": "Accettazione della correzione delle ombre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Accettare il profilo solo quando il livello è stabile in più frame rispetto al test originale."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La posizione dell'ombra segue il soggetto in movimento piuttosto che rimanere come un rettangolo stagnante.",
+        "L'opacità assomiglia al riferimento del software e non scurisce l'intero passaggio del terreno.",
+        "Decalcomanie vicine, nebbia e trasparenza dell'HUD rimangono intatti.",
+        "L'effetto sopravvive a un avvio a freddo e a una successiva transizione dell'area.",
+        "La velocità sostenuta e il pacing dei frame rimangono entro il budget di base registrato."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Prove che indicano altrove"
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'ombra è assente anche nel software: verifica l'immagine e conferma che la scena originale ne contenga una.",
+        "Solo il caricamento dello stato salvato dell'emulatore lo rompe: ritestare da un salvataggio in gioco e scartare lo stato incompatibile.",
+        "Ogni superficie scura scompare: resettare il salto di disegno ampio o le sovrascritture manuali GS.",
+        "La correzione funziona una volta ma fallisce dopo la ripresa: catturare i dettagli del renderer e del driver per un rapporto sul ciclo di vita."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ritornare alla baseline grafica misurata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ripristina la fusione automatica, disabilita la correzione della profondità testata, reseleziona il renderer originale e il driver di sistema, e avvia a freddo il checkpoint. Conserva le catture prima e dopo con le loro impostazioni, ma elimina gli stati di salvataggio temporanei che non possono riprodurre la scena in modo coerente."
+    },
+    {
+      "type": "heading",
+      "text": "Non pubblicare dati di salvataggio o dischi protetti da copyright"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un report di supporto può includere il numero di serie, le impostazioni, i log e gli screenshot creati dall'utente dove consentito. Non allegare un'immagine del gioco, firmware, materiale di crittografia o un salvataggio contenente contenuti distribuiti da terzi solo per mostrare l'ombra."
+    },
+    {
+      "type": "link",
+      "text": "Leggi la guida alle evidenze delle prestazioni PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

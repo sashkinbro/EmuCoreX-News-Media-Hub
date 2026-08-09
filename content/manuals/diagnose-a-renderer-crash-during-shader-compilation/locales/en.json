@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-a-renderer-crash-during-shader-compilation",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnose a renderer crash during shader compilation",
+  "summary": "Distinguish expected first-run shader work from a repeatable driver crash by comparing cold and warm launches, restoring the system driver, changing one API, and preserving the exact scene and log that triggers compilation.",
+  "heroAlt": "PCSX2 warning dialog identifying an outdated graphics driver during renderer troubleshooting",
+  "searchKeywords": [
+    "EmuCoreX shader compile crash",
+    "Vulkan crash first launch",
+    "GPU driver renderer",
+    "shader cache",
+    "device lost"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "crash": "Crash"
+  },
+  "sourceLabels": {
+    "pcsx2-windows": "PCSX2 Vulkan/OpenGL crash causes",
+    "pcsx2-vulkan": "PCSX2 renderer and shader-cache development"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Separate a slow first compile from a failed renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "A cold launch can pause while new shader variants are compiled, but it should eventually complete and later launches should reuse cache. A renderer crash instead terminates the session, reports device loss or compiler failure, or repeats at the same draw. Record whether the app closes, Android kills it, the screen freezes, or only the progress indicator stalls."
+    },
+    {
+      "type": "callout",
+      "text": "Do not delete all app data to clear a graphics cache. Memory cards, profiles, saves, and firmware references are outside the disposable shader-cache boundary."
+    },
+    {
+      "type": "heading",
+      "text": "Preserve the failing initialization state"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A normal in-game save before the exact effect or area that triggers compilation.",
+        "System GPU driver package and any custom driver identity recorded.",
+        "Cold-launch and warm-launch timestamps.",
+        "Renderer log or Android crash record captured without private file contents.",
+        "A backup of title profiles and user save data."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Test cache, driver, and API as independent branches"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot the title and wait through one measured compile window without repeatedly relaunching.",
+        "2. If it completes, close normally and repeat the same scene to determine whether the warm path is stable.",
+        "3. When it crashes, restore the system GPU driver before changing the renderer API.",
+        "4. Retry the scene twice on the system driver and record the first compiler or device-loss message.",
+        "5. Select the other supported hardware API with resolution and accuracy unchanged.",
+        "6. Clear only the emulator's documented disposable shader cache once, then compare the next cold and warm runs.",
+        "7. Restart Android to remove stale driver process state and repeat the smallest reproduction.",
+        "8. Keep the stable API per game while preserving the failing log for a driver or emulator report."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Shader variants depend on renderer, driver, game draws, and graphics settings. A cache rebuild should create one slower run followed by stable reuse. A crash that follows a custom driver but disappears on the system package implicates that branch; a scene-specific crash across drivers and APIs needs a minimal emulator report."
+    },
+    {
+      "type": "heading",
+      "text": "Compilation-stability acceptance"
+    },
+    {
+      "type": "paragraph",
+      "text": "A recovery must pass repeated cold and warm behavior, not one lucky launch."
+    },
+    {
+      "type": "list",
+      "items": [
+        "One cold compile finishes without app termination.",
+        "Two later warm launches reach the same scene without rebuilding everything.",
+        "No device-lost or shader-compiler error appears in the accepted path.",
+        "Unrelated titles still initialize under the selected driver and API.",
+        "User saves and profiles remain untouched by cache maintenance."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Crash patterns to preserve for escalation"
+    },
+    {
+      "type": "list",
+      "items": [
+        "The same shader scene kills both APIs on the system driver: collect a minimal report.",
+        "Only a custom package crashes: retire it from the active profile.",
+        "Every launch recompiles the same variants: inspect cache persistence and storage health.",
+        "Android kills the process under memory pressure: separate resource exhaustion from compiler failure."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Return to system driver and retained cache policy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disable the custom driver, restore the prior stable API, stop clearing cache, and cold-boot a known-good title. Reimport the saved per-game profile only after confirming it does not restore the crash-triggering combination."
+    },
+    {
+      "type": "heading",
+      "text": "Warm success can hide a broken cold path"
+    },
+    {
+      "type": "paragraph",
+      "text": "A cached shader may let later launches pass while a fresh install or driver update still crashes. Preserve at least one controlled cold-cache test before declaring the configuration portable."
+    },
+    {
+      "type": "link",
+      "text": "Review PCSX2 graphics-driver crash guidance",
+      "url": "https://pcsx2.net/docs/troubleshooting/windows/"
+    }
+  ]
+}

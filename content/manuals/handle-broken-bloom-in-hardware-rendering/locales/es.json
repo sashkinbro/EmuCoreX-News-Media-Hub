@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Restaurar el resplandor roto en la renderización por hardware sin sobreexponer la escena",
+  "summary": "Usar puntos de control brillantes y oscuros emparejados para identificar un paso de framebuffer faltante o desalineado, comparar con una referencia de software y encontrar la corrección de mezcla o escalado nativo menos costosa.",
+  "heroAlt": "God of War PCSX2 captura que muestra un resplandor brillante y un paso de niebla renderizados incorrectamente",
+  "searchKeywords": [
+    "PS2 resplandor roto",
+    "EmuCoreX brillo excesivo",
+    "resplandor en la renderización por hardware",
+    "mezcla de framebuffer",
+    "fantasmas por escalado nativo"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisión"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 descripción de la combinación, lecturas del framebuffer y escalado nativo para el resplandor",
+    "pcsx2-july-august-2015": "PCSX2 ejemplos de precisión del resplandor y la niebla antes y después"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Clasificar el resplandor como ausente, desplazado, recortado o excesivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El bloom generalmente se ensambla a partir de más de un paso: el juego aísla la información brillante, la filtra o reduce su resolución, y compone el resultado sobre la escena. Por lo tanto, un renderizador de hardware puede fallar de varias formas visiblemente diferentes. La ausencia de bloom deja las fuentes de luz con bordes duros; el bloom desplazado produce un efecto fantasma desplazado de la fuente; el bloom recortado se convierte en un rectángulo; el bloom excesivo desvanece la geometría cercana. Selecciona un punto de control con una lámpara o hechizo aislado y fuerte y otro con pequeños reflejos sobre un fondo oscuro. Registra el número de serie del juego, la resolución interna, el renderizador, el controlador GPU, la precisión de mezcla, el estado de escalado nativo y si están activas las correcciones manuales de framebuffer o de omisión de dibujo."
+    },
+    {
+      "type": "callout",
+      "text": "No evalúes el resplandor a partir de una sola fotografía sobreexpuesta tomada con un teléfono. La exposición automática y el mapeo de tonos HDR pueden borrar detalles que están presentes en el fotograma real del emulador."
+    },
+    {
+      "type": "heading",
+      "text": "Prepara dos escenas de resplandor con referencias de luminancia."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida guardada dentro del juego antes de un efecto brillante repetible, con geometría visible inmediatamente alrededor.",
+        "Una segunda escena oscura que contenga pequeños detalles emisivos, de modo que un ajuste no pueda aprobarse simplemente atenuando toda la salida.",
+        "Capturas de pantalla directas de la salida del hardware nativo y una breve referencia de corrección generada por software.",
+        "Shaders posteriores, capas de reshade, visualización de conversión HDR, reemplazo de texturas y controles de color personalizados desactivados.",
+        "Una muestra de rendimiento de sesión cálida de la escena brillante y una copia de seguridad del perfil gráfico del título."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separar la precisión de la composición de la alineación de escalado"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Iniciar en frío el punto de control brillante a resolución interna nativa con fusión automática y capturar la fuente más el detalle circundante.",
+        "2. Renderizar el mismo momento brevemente en modo software y comparar el radio del resplandor, el centro, la oclusión y si los objetos en primer plano bloquean correctamente el resplandor.",
+        "3. Vuelve al modo de hardware y compara las API de gráficos compatibles sin alterar el controlador o la resolución; conserva la ruta que más se acerque a preservar la referencia.",
+        "4. Cuando el bloom falte o se recorte en una forma sólida a resolución nativa, aumenta la precisión de fusión un nivel, reinicia la escena y detente en el primer nivel que restaure la composición.",
+        "5. Cuando el hardware nativo sea correcto pero el bloom se separe de su luz solo después de escalar, restaura la fusión automática y prueba la corrección de escalado nativo documentada del emulador.",
+        "6. Reproduce el punto de control oscuro y confirma que los pequeños reflejos brillen sin levantar los fondos negros ni blanquear las texturas de los personajes.",
+        "7. Calienta el dispositivo, mide la secuencia pesada en efectos y compara los contadores de barrera, render-pass o readback si la compilación los muestra.",
+        "8. Guarda solo la rama exitosa en el perfil de este juego y anota si aborda el mezclado en la salida nativa o la alineación posterior al proceso mientras se aumenta la escala."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La precisión de mezcla gobierna qué tan fielmente el renderizado por hardware reproduce las interacciones con contenidos previos del framebuffer, mientras que el escalado nativo apunta a las pasadas de post-proceso que fueron creadas para operar a la escala original del PS2. Ellos solucionan síntomas que parecen relacionados en diferentes etapas. El renderizado por software proporciona una referencia de composición porque puede reproducir el comportamiento del GS de manera más directa, pero su velocidad no es el objetivo de aceptación. La prueba de dos escenas evita una corrección falsa donde reducir el brillo hace que una lámpara sobreexpuesta parezca mejor mientras se elimina el resplandor intencional en otro lugar."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación del perfil de resplandor"
+    },
+    {
+      "type": "paragraph",
+      "text": "El perfil seleccionado debe preservar la forma del efecto, la relación de profundidad, el rango tonal y la jugabilidad."
+    },
+    {
+      "type": "list",
+      "items": [
+        "El resplandor está centrado en el objeto emisor y lo sigue durante el movimiento de la cámara o del personaje.",
+        "La geometría del primer plano oculta el resplandor donde la referencia del software muestra una obstrucción.",
+        "Las superficies brillantes conservan el detalle de la textura en lugar de colapsar en un parche blanco uniforme.",
+        "El punto de control oscuro conserva las áreas negras y aún muestra sus pequeños reflejos deseados.",
+        "El ritmo de cuadros sostenido sigue siendo aceptable después de la estabilización térmica y no hay regresión de transparencia no relacionada."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Resultados de bloom que requieren otra investigación"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La salida del software tiene el mismo resplandor anormal: confirme la referencia de la escena y elimine parches del juego o modificaciones de texturas.",
+        "Solo el bloom de la pantalla física aparece mientras las capturas de pantalla directas están equilibradas: audite HDR, rango de color, mejora del panel y exposición de la cámara.",
+        "Un nivel de mezcla más alto corrige la lámpara pero corrompe las sombras o la niebla: réstauralo y recopila un informe de renderizado específico del título.",
+        "El efecto solo se desplaza en una resolución de costumbre inusual: use un multiplicador entero compatible antes de agregar cualquier compensación manual."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Deshaga el experimento costoso de framebuffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Configure la mezcla en Automático, desactive la escala nativa o la compensación probada, restaure la API original y reinicie la aplicación. Reproduzca ambos puntos de control para confirmar que el síntoma anterior es reproducible; luego elija el último nivel inferior que haya pasado el rendimiento o vuelva a la resolución nativa hasta que exista una corrección precisa."
+    },
+    {
+      "type": "heading",
+      "text": "El deslumbramiento intencional puede ser visualmente agresivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Algunos juegos PS2 utilizan deliberadamente un resplandor amplio y brillante. El objetivo es la fidelidad a una referencia confiable, no una iluminación uniformemente apagada. Evita publicar una recomendación global a partir de un solo título, porque los formatos de framebuffer, las ecuaciones de mezcla y el escalado post-proceso difieren entre motores e incluso entre escenas."
+    },
+    {
+      "type": "link",
+      "text": "Revisa la explicación de PCSX2 sobre la mezcla moderna y el escalado nativo",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

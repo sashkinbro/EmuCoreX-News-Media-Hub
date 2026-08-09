@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation opravuje jeden nesprávný hostitelský registr v časování GTE RISC-V",
+  "summary": "EndAndLinkBlock spočítal správný dokončovací tik v RARG2, ale uložil RARG1, jednonásobné nesoulad instrukce, který mohl přenést nesprávnou připravenost koprocesoru do dalšího přeprogramovaného bloku.",
+  "heroAlt": "Zdrojový důkaz z pull requestu DuckStation #3702: CPU/RISCV64: Opravit uložení gte_completion_tick v EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "rekompilátor",
+    "dokončovací tik"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Opravit uložení gte_completion_tick v EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Výpočet byl správný až do konečného uložení"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation sleduje, kdy dokončí Práce PlayStation Geometry Transformation Engine, takže podle instrukcí CPU sledujte správné časování závislostí. V cestě EndAndLinkBlock překladu RISC-V 64 byl nově vypočtený dokončovací údaj již uložen do RARG2. Emitované uložení však používalo RARG1, zapisujíc jiný registr argumentu do globálního stavu načasování GTE těsně před tím, než se kontrola přesunula do jiného bloku."
+    },
+    {
+      "type": "heading",
+      "text": "Jedna náhrada registru synchronizuje RISC-V s ostatními překladači"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3702 mění instrukci SW tak, aby uložila RARG2 do g_state.gte_completion_tick. Žádné změny časovacího vzorce nebo dekodéru instrukcí hosta. Důkazem je datový tok v tomto přesném bodě a shodné chování ostatních backendů architektury. Malé záplaty tohoto typu jsou cenné právě proto, že nesprávný registr může přežít překlad, produkovat platný strojový kód a selhat pouze na jedné hostitelské platformě."
+    },
+    {
+      "type": "heading",
+      "text": "Zastaralý dokončovací tick mění, kdy pozdější instrukce považují GTE za připravený"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud je nesprávná hodnota dříve než vypočítaný takt, může hostitelský kód výsledky geometrie spotřebovat příliš brzy; pokud později, DuckStation může vložit zbytečné čekání. Každý směr může ovlivnit hry, které střídají práci CPU s příkazy GTE, i když je samotná transformovaná aritmetika správná. Chyba se přenáší přes hranici bloku, takže test omezený na instrukce uvnitř jednoho generovaného bloku ji může přehlédnout."
+    },
+    {
+      "type": "heading",
+      "text": "Testy by měly vynutit dokončovací hodnotu přes EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cílený test rekompilátoru by měl vydat příkaz GTE, ukončit blok, zatímco jednotka je stále zaneprázdněná, propojit kód, který čte nebo závisí na výsledku, a porovnat interpreter, RISC-V a jiný backend rekompilátoru. Zaznamenejte vypočítanou hodnotu RARG2 a uložený globální takt. Zahrňte podmíněné výstupy a různé případy nového PC, které vyřizuje EndAndLinkBlock. Existující GTE časovací testy spouštějte opakovaně na nativním hardwaru RISC-V, aby byly vyzkoušeny rozdíly při alokaci registrů nebo konvencích volání."
+    },
+    {
+      "type": "callout",
+      "text": "Záplata je jeden operand, ale invariant je architektonický: každý hostitelský backend musí přenášet vypočítaný čas dokončení GTE přes spojení bloku."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu DuckStation"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 将 WebSocket 调试工作移到 CPU 线程",
+  "summary": "同步任务桥取代了分布式调试器锁定，反汇编器去掉了使单步大小不明确的合并宏操作。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #22051 的源代码证据：重构 websocket 调试接口以线程安全，去掉反汇编中的“宏操作”",
+  "searchKeywords": [
+    "PPSSPP",
+    "WebSocket 调试器",
+    "CPU 线程",
+    "断点",
+    "反汇编"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "工具",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "重构 websocket 调试接口以线程安全，去掉反汇编中的“宏操作”"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "远程调试器请求跨越了所有权边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "WebSocket 调试器运行在网络线程上，但断点、单步执行、寄存器访问以及大部分仿真内存都由 CPU 执行线程管理。用无关的锁保护单个函数会使正确性依赖于锁的顺序，以及每个未来的处理程序记住相同的规则。在核心暂停时尤其脆弱，因为某些请求可能正好在普通帧进程已停止时需要 CPU 线程状态。"
+    },
+    {
+      "type": "heading",
+      "text": "一个桥接器在运行循环中序列化 CPU 拥有的操作"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #22051 添加了 Core_RunOnCPUThread。调用者将一个函数打包在共享任务中，在队列互斥锁下推入队列，并在条件变量上等待。Core_RunLoopUntil 在其循环顶部清空队列，在 CPU 线程上执行函数，在互斥锁下标记它们为完成，并唤醒等待者。已经在 CPU 线程上的调用会立即执行，避免自身死锁。循环在单步或暂停时连续清空队列，运行时至少在每个主机帧执行一次。"
+    },
+    {
+      "type": "heading",
+      "text": "反汇编现在将步长保持为一个单位"
+    },
+    {
+      "type": "paragraph",
+      "text": "相同的工作移除了将指令模式（如lui加上ori）合并为一行显示的反汇编宏操作。虽然便于阅读，但合并操作模糊了步长是指字节、客户指令还是显示行。新的约定将stepSize视为四字节MIPS指令的计数，并相应地对断点地址计算进行乘法。视图可以在不改变底层执行单元的情况下，稍后添加视觉提示。"
+    },
+    {
+      "type": "heading",
+      "text": "并发测试需要暂停和可重新进入的情况"
+    },
+    {
+      "type": "paragraph",
+      "text": "在游戏运行、暂停以及状态转换时，同时执行 WebSocket 读取、写入、断点更改、内存扫描和单步操作。在任务等待时断开客户端连接，在队列非空时停止核心，并从 CPU 线程本身调用桥。ThreadSanitizer 应报告没有调试器竞争。验证每个请求都收到完成或受控关闭错误，并比较以前宏模式周围的反汇编地址，以确保单步操作从不跳过或重复执行客户机指令。"
+    },
+    {
+      "type": "callout",
+      "text": "调试器不再请求许多锁以模拟 CPU 所有权；它将操作发送给已拥有该状态的线程。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "阅读 PPSSPP 工程讨论和源代码变更"
+    }
+  ]
+}

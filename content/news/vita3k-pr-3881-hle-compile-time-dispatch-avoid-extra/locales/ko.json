@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K는 HLE 인수 디스패치를 런타임에서 템플릿으로 이동합니다.",
+  "summary": "컴파일 타임 ARM 인수 레이아웃과 일반 함수 포인터는 스칼라, 가변 인수, 반환 값 변환을 명시적으로 유지하면서 가져오기당 브리지 장치를 줄입니다.",
+  "heroAlt": "Vita3K 풀 리퀘스트 #3881의 소스 증거: module/bridge: HLE 컴파일 타임 디스패치, 추가 포인터 간접 참조 방지",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE 브리지",
+    "ARM ABI",
+    "템플릿",
+    "함수 디스패치"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "코어",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge: HLE 컴파일 타임 디스패치, 추가 포인터 간접 참조 방지"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "모든 게스트 가져오기는 동일한 ABI 변환 경계를 통과합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita 함수 호출이 ARM 일반 레지스터, 부동 소수점 레지스터 및 스택에 분산된 인수와 함께 도착합니다. Vita3K의 HLE 브리지는 이를 찾고, 게스트 포인터와 표현을 호스트 타입으로 변환하며, 올바른 export를 호출하고, 반환 값을 다시 씁니다. 기존 브리지는 레이아웃 상태를 구축하고 std::function에 export 포인터와 이름을 캡처하여, 거의 모든 에뮬레이션된 서비스 호출에서 사용되는 경로에 일반 목적의 런타임 메커니즘을 추가했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "Export 함수는 브리지 타입의 일부가 됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3881은 ExportFn을 비타입 템플릿 매개변수로 갖는 make_bridge를 도입합니다. lay_out는 export의 인수 패키지에 대해 constexpr로 실행되어 고정된 ArgLayout 항목과 가변 인수 상태를 생성합니다. 생성된 논캡처 함수는 read_bridged_arg를 통해 각 인수를 읽고, ExportFn을 직접 호출하며, 반환 타입이 void가 아닌 경우 결과를 조건부로 씁니다. 따라서 ImportFn은 일반 함수 포인터일 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "브리지 타입은 게스트-호스트 계약을 유지합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "컴파일 타임 레이아웃은 레지스터를 임의의 C++ 객체로 재해석 캐스팅하는 것을 의미하지 않습니다. BridgeTypes는 각 인수의 ARM 표현을 선택하고 필요한 경우 에뮬레이션된 메모리를 사용하여 변환합니다. module::vargs는 하나의 스칼라 인수인 척하지 않고 계산된 상태를 전달합니다. Tracy 스코프는 여전히 정적 저장소를 통해 내보낸 이름을 받아 각 함수별 프로파일링을 유지하면서 이전의 클로저 캡처를 제거합니다."
+    },
+    {
+      "type": "heading",
+      "text": "ABI 준수는 컴파일 타임과 실행 테스트가 필요합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "인수가 없는 경우, 정수 네 개 및 다섯 개, 64비트 정렬 값, 플로트, 포인터, 브리지 타입으로 표현된 구조체, 가변 인수, void 반환 및 오류 코드에 대한 브리지를 인스턴스화합니다. 레지스터와 스택 위치를 Vita ABI 및 이전 구현과 비교합니다. 지원되는 모든 컴파일러에서 생성된 모듈을 컴파일하고 코드 크기 및 호출 형태를 검사하며, 인트포트가 많은 작업 부하를 벤치마크합니다. 잘못되었거나 지원되지 않는 타입은 잘못된 레이아웃을 조용히 선택하지 않고 명확한 진단과 함께 컴파일 중 실패해야 합니다."
+    },
+    {
+      "type": "callout",
+      "text": "최적화는 내보내기 서명이 이미 ABI 정보를 포함하고 있기 때문에 작동합니다; 템플릿은 에뮬레이션이 시작되기 전에 그 정보를 고정 브리지로 바꿀 수 있습니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Vita3K 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

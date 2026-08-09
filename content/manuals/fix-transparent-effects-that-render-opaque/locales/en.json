@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Repair transparent PS2 effects that render as solid surfaces",
+  "summary": "Use a repeatable glass, water, smoke, or menu overlay to distinguish missing alpha blending from texture or draw-order faults, increase accuracy one step at a time, and test unrelated translucent layers before saving the override.",
+  "heroAlt": "PCSX2 graphics comparison image showing a corrected framebuffer effect",
+  "searchKeywords": [
+    "PS2 transparency opaque",
+    "EmuCoreX alpha blending",
+    "solid smoke fix",
+    "water renderer issue",
+    "transparent HUD"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "accuracy": "Accuracy"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 blending-cost guidance",
+    "pcsx2-performance": "PCSX2 accurate blending indicator"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Classify the solid layer before changing accuracy"
+    },
+    {
+      "type": "paragraph",
+      "text": "An opaque effect is useful evidence only when its intended appearance is known. Pick one object whose transparency is obvious during normal play: a glass panel should reveal geometry behind it, smoke should have soft layered edges, and a menu overlay should preserve the scene below. Capture the broken output at native resolution and note whether the layer is the correct shape and color. Correct geometry with wrong opacity points toward blending; a blank rectangle or scrambled texture needs a different investigation."
+    },
+    {
+      "type": "callout",
+      "text": "Maximum blending accuracy is not a universal quality preset. It can add substantial GPU work and can hide which lower tier actually fixes the title."
+    },
+    {
+      "type": "heading",
+      "text": "Lock a translucent-effect test"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A checkpoint that reaches the same effect within one minute.",
+        "A reference from software rendering, original hardware capture, or reliable title-specific documentation.",
+        "Native internal resolution with texture replacements and shaders disabled.",
+        "Performance counters or a repeatable speed measurement.",
+        "A clean per-game profile backup."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Find the minimum blending tier"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Replay the checkpoint on the system driver and capture the opaque layer at the same animation moment.",
+        "2. Compare Vulkan and OpenGL with all other values unchanged; record if one path already composites the effect correctly.",
+        "3. If both fail, obtain a short software-rendered reference and inspect what should remain visible through the layer.",
+        "4. Return to the chosen hardware API and raise blending accuracy exactly one level.",
+        "5. Cold-start the checkpoint after each change; do not evaluate multiple tiers inside one resumed session.",
+        "6. Stop at the first tier that restores translucency, then measure the effects-heavy section after the device is warm.",
+        "7. Inspect a separate alpha feature such as fog, shadows, particles, or pause-menu dimming.",
+        "8. Save the value only in this title's profile and document the checkpoint that justified it."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 effects may read from, write to, and blend with previous framebuffer contents. The host GPU path can approximate those operations at different accuracy and cost levels. The smallest working tier is valuable because it satisfies the observed dependency without paying for unrelated behavior on every draw. A renderer API that fixes the pass at the baseline tier can be preferable to a much heavier blending setting on another API."
+    },
+    {
+      "type": "heading",
+      "text": "Transparency pass criteria"
+    },
+    {
+      "type": "paragraph",
+      "text": "The correction must restore both appearance and composition order."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Background geometry remains visible through the intended portions of the effect.",
+        "Layer edges are stable and do not flash between opaque and transparent.",
+        "Foreground HUD elements still appear above the effect.",
+        "A second translucent scene behaves correctly.",
+        "Warm-session speed does not fall below the title's playable target."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Stop conditions during blending tests"
+    },
+    {
+      "type": "list",
+      "items": [
+        "The shape is corrupt at every tier: investigate texture or geometry output instead.",
+        "Only higher internal resolution breaks opacity: isolate an upscaling-specific path.",
+        "Menus become transparent with the game world: reset the last tier and capture the regression.",
+        "Correctness costs unsustainable speed: keep the lower baseline and document software rendering as reference only."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Remove the isolated alpha experiment"
+    },
+    {
+      "type": "paragraph",
+      "text": "Set blending back to Automatic, restore the earlier renderer, close the emulation session, and verify that the original opaque symptom returns at the recorded checkpoint. This confirms the changed variable before you archive or replace the test profile."
+    },
+    {
+      "type": "heading",
+      "text": "Display contrast is not alpha accuracy"
+    },
+    {
+      "type": "paragraph",
+      "text": "OLED black level, HDR conversion, television range, and accessibility contrast can make a translucent layer look darker, but they do not change its draw order. Validate the framebuffer result in a screenshot before adjusting the external display chain."
+    },
+    {
+      "type": "link",
+      "text": "Review PCSX2 hardware requirements",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

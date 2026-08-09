@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar makes Vulkan screenshots follow the swapchain's real channel order",
+  "summary": "QImage expects BGRA bytes, but some Vulkan drivers present RGBA; passing the chosen surface format into both screenshot paths enables a cheap red-blue swizzle only where required.",
+  "heroAlt": "Source evidence from Azahar pull request #2170: renderer_vulkan: Fix screenshot color channels on RGBA swapchain formats",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan screenshot",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Fix screenshot color channels on RGBA swapchain formats"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The displayed frame can be correct while the saved image is not"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan selects a swapchain format from driver-supported options. Some platforms prefer BGRA and others RGBA. Azahar's presentation shaders handled the chosen format, but screenshot memory was passed to QImage::Format_RGB32, which expects BGRA byte order. On an RGBA swapchain, red and blue were therefore exchanged only in the captured file, making the renderer appear wrong outside the live window."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow exposes the negotiated format to capture code"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2170 adds GetSurfaceFormat to the Vulkan present-window implementations and checks it in both screenshot routes: staging-copy capture and host-memory capture. When the format is eR8G8B8A8Unorm, Azahar walks width times height pixels and swaps bytes zero and two. A BGRA swapchain uses the existing bytes unchanged, avoiding a conversion on platforms already matching QImage."
+    },
+    {
+      "type": "heading",
+      "text": "Byte swizzling is cheaper than changing the frontend image contract"
+    },
+    {
+      "type": "paragraph",
+      "text": "Changing QImage format would require passing channel-order information further into the frontend and ensuring every consumer understood it. The local swizzle keeps the established RGB32 contract and costs one red-blue exchange per pixel at screenshot time, not per displayed frame. The author forced RGBA on a BGRA-preferring Mac to test, while Linux Mesa was identified as a likely naturally affected platform needing confirmation."
+    },
+    {
+      "type": "heading",
+      "text": "Both capture routes and alpha need exact-color fixtures"
+    },
+    {
+      "type": "paragraph",
+      "text": "Render a test pattern containing pure red, blue, green, black, white, and nontrivial alpha, then capture through staging and host-memory paths on native RGBA and BGRA swapchains. Compare saved bytes and displayed output. Repeat at odd dimensions, scaled layouts, and after swapchain recreation. An affected Linux user should confirm the natural format route. The swizzle must occur exactly once; double conversion can make one backend look fixed while another regresses."
+    },
+    {
+      "type": "callout",
+      "text": "Screenshot code now converts from the format Vulkan actually negotiated, rather than assuming every driver presents pixels in QImage's preferred order."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

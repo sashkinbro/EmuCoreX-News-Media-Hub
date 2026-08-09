@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar는 Luma 메모리 별칭에서 서명된 오버플로우 모호성을 제거합니다.",
+  "summary": "부호 없는 31비트 마스크는 별칭 감지를 정의된 C++로 만들고, 조기 반환과 거의 발생하지 않는 MMIO 분기는 일반적인 메모리 경로에 더 직선적인 명령어 흐름을 제공합니다.",
+  "heroAlt": "Azahar 풀 리퀘스트 #2202의 소스 증거: core/memory: 정의되지 않은 동작 수정 및 Luma 별칭 경로 최적화",
+  "searchKeywords": [
+    "Azahar",
+    "Luma 별칭",
+    "정의되지 않은 동작",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "코어",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: 정의되지 않은 동작 수정 및 Luma 별칭 경로 최적화"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "비트 31은 부호 있는 산술을 통해 형성되고 있었습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS는 상위 비트가 Azahar에게 FCRAM 또는 MMIO에 대한 일반 페이지 테이블을 우회하도록 지시하는 별칭 주소 형식을 노출합니다. 코드에서는 1 << 31로 해당 비트를 테스트하고 지웠습니다. int가 32비트일 때, 서명된 1을 부호 위치로 이동시키는 것은 정의되지 않은 동작이며, 이는 최적화 컴파일러가 주변 코드를 의도한 마스크를 보존하지 않는 방식으로 변형하도록 허용합니다."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u는 테스트와 클리어 연산 모두를 정의합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #2202는 LUMA_ALIAS_BIT를 부호 없는 리터럴 0x80000000u로 선언합니다. 읽기 및 쓰기 경로는 해당 상수에 대해 vaddr을 검사하고, 이를 지워서 paddr을 파생합니다. 변경 내용은 작지만 구조적입니다: 주소 조작은 부호 있는 산술 오버플로우에 대한 컴파일러의 선택 결과에 의존하지 않고, VAddr을 나타내는 부호 없는 타입을 사용해야 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "조기 반환은 FCRAM를 차가운 MMIO 경로와 구분합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "FCRAM 별칭은 여전히 주요 유용 경로로 남아 있으며 즉시 반환으로 끝납니다. MMIO는 그 다음에 확인되며 가능성이 낮다고 표시되며, 일반 페이지 테이블 접근과 비교하여 별칭 항목 자체도 마찬가지입니다. 이전의 else-if 체인을 단순화하면 Clang이 일반적인 흐름을 더 선형적으로 배치할 수 있고, 대부분의 읽기 및 쓰기에 사용되는 명령어 캐시 경로에서 드문 사용자 정의 핸들러 코드를 분리할 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "최적화 주장에는 컴파일러 및 별칭 범위가 필요합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "FCRAM에 대해 Luma 별칭 읽기 및 쓰기를 실행하고, 유효한 32비트 MMIO, 두 범위 밖의 별칭 주소, 정상 페이지 테이블 주소를 테스트합니다. UBSan이 활성화된 상태에서 여러 최적화 수준에서 Clang과 GCC를 비교하여 부호 있는 시프트 보고서가 없고 결과가 동일한지 확인합니다. 의도된 조기 반환을 위해 생성된 코드를 검사하지만, 우선순위는 정확성에 둡니다. 엄격히 지원되는 32비트 경로 이외의 MMIO 너비는 여전히 기존 의미론에 따라 계속 진행되거나 실패해야 합니다."
+    },
+    {
+      "type": "callout",
+      "text": "더 빠른 경로는 정의된 동작에서 시작됩니다: 분기 힌트나 어셈블리 형태를 신뢰하기 전에 주소 플래그는 부호 없는 비트 마스크여야 합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Azahar 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

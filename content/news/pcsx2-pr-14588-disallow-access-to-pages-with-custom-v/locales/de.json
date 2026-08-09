@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 blockiert PINE-Clients daran, threadgebundene MMIO-Handler zu erreichen",
+  "summary": "Die externe Speicheroberfläche verweigert nun VTLB-Seiten, die von benutzerdefinierten Geräte-Callbacks bereitgestellt werden, und beschränkt deren direkte Lesezugriffe auf Speicher, der außerhalb des Emulationsthreads sicher ist.",
+  "heroAlt": "Quellnachweis aus dem PCSX2-Pull-Request #14588: PINE: Zugriff auf Seiten mit benutzerdefinierten VTLB-Handlern nicht erlaubt",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "Thread-Sicherheit"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Sicherheit",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Zugriff auf Seiten mit benutzerdefinierten VTLB-Handlern nicht erlaubt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Gastadresse kann RAM oder ein aktives Hardware-Register darstellen"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE macht Speicheroperationen für externe Werkzeuge zugänglich. Durch PCSX2s virtuelle Übersetzungsschicht zeigen einige Adressen auf normalen, vom Host unterstützten RAM, während andere über benutzerdefinierte Handler für MMIO-Register und emulierte Peripheriegeräte geleitet werden. Das Aufrufen eines benutzerdefinierten Handlers ist kein passives Lesen: Es kann den Gerätezustand ändern, eine Reihenfolge der Emulator-Threads erfordern oder Komponenten betreffen, die für einen beliebigen Server-Thread keine Synchronisation haben."
+    },
+    {
+      "type": "heading",
+      "text": "Seiten mit benutzerdefinierten Handlern werden vor dem Zugriff abgelehnt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14588 ändert den VTLB-Pfad von PINE, um Seiten zu erkennen, deren Zugriff von einem benutzerdefinierten Handler implementiert wird, und verweigert diesen. Direkt zugeordneter Speicher bleibt den Clients verfügbar. Die Grenze basiert darauf, wie die Seite bereitgestellt wird, nicht auf einer anfälligen, hartkodierten Liste von Registerbereichen, sodass neu registrierte MMIO-Handler den Schutz ohne ein weiteres PINE-spezifisches Adress-Update übernehmen."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead wird um die gleiche sicherere Unterscheidung herum neu geschrieben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch richtet außerdem die Deklaration und Definition der vtlb_ramRead-Vorlage aus und vereinfacht deren Implementierung. Ein Mikrobenchmark auf dem Rechner des Autors zeigte eine geringe Geschwindigkeitsverbesserung, aber das ist zweitrangig. Die primäre Garantie ist die Besitzregel für Threads: PINE darf nicht zulassen, dass die GS, SPU, CDVD oder ein anderes Peripheriegerät Callbacks auf einem Thread ausführen, der den VM-Scheduler umgeht."
+    },
+    {
+      "type": "heading",
+      "text": "Clients benötigen klare Fehlerszenarien und RAM-Regressionstests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testen Sie bestehende PINE-Debugger mit normalem RAM, Scratchpad oder anderen explizit unterstützten direkten Mappings, Seiten grenzwerten und nicht zugeordneten Adressen. Versuchen Sie Lese- und Schreibzugriffe auf repräsentative MMIO-Seiten und bestätigen Sie einen sauberen Protokollfehler ohne Nebeneffekte an Peripheriegeräten oder Absturz. Wiederholen Sie dies, während die VM läuft, pausiert, zurückgesetzt wird und herunterfährt. Dies wird als anfängliche Fehlerbehebung beschrieben, die auf umfassendere Designarbeiten wartet, daher sollten Clients keinen sicheren Zugriff auf Geräte-Register versprochen bekommen, bis ein Mechanismus für marshallierte Emulator-Threads existiert."
+    },
+    {
+      "type": "callout",
+      "text": "PINE bleibt eine Speicher-Schnittstelle, kein zweiter Hardware-Ausführungs-Thread; benutzerdefinierte VTLB-Handler werden verweigert, bis sie sicher verwaltet werden können."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und die Quellcode-Änderungen"
+    }
+  ]
+}

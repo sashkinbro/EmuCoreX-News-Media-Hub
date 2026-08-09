@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3736-decrease-cdrommaxreadspeedupcycles-for",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation 缩小了《生化危机2》的 CD-ROM 加速在时序边界上的范围",
+  "summary": "二十个特定序列的 GameDB 条目在较高值在启动和门转换时挂起后，从 70,000 次加速读取周期移至 65,000 次。",
+  "heroAlt": "来自 DuckStation 的拉取请求 #3736 的来源证据：GameDB：降低《生化危机2》的 `cdromMaxReadSpeedupCycles`",
+  "searchKeywords": [
+    "DuckStation",
+    "生化危机2",
+    "CD-ROM 加速",
+    "GameDB",
+    "门转换"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "存储",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3736": "GameDB：降低《生化危机2》的 `cdromMaxReadSpeedupCycles`"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "在指令缓存执行后，优化阈值的含义发生了变化"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation 可以加速模拟光盘读取，但游戏仍然会观察这些操作周围的时序关系。《生化危机 2》可以容忍 cdromMaxReadSpeedupCycles 值为 70,000，直到 ForceRecompilerICache 改变了周围的执行行为。此时，相同的 GameDB 设置可能在启动时或特定门过渡后卡住，这表明兼容性加速是时序模型的一部分，而不是免费的主机优化。"
+    },
+    {
+      "type": "heading",
+      "text": "该修正减少了上限，而不是禁用加速。"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3736 将该值降低到 65,000。这在保持大部分加载优势的同时，也低于新暴露的失败点。该补丁不会改变核心 CD-ROM 代码，也不会让每个游戏更保守；它在 GameDB 中记录了特定标题的上限。当一个游戏的同步依赖于读取延迟缩短的激进程度时，这是正确的范围。"
+    },
+    {
+      "type": "heading",
+      "text": "二十个序列保持区域和光盘版本的一致性。"
+    },
+    {
+      "type": "paragraph",
+      "text": "此差异将相同的值应用于日本 SLPS 条目、欧洲 SLES 和 SLED 版本以及北美 SLUS 发行版，包括多光盘。一起更新整个系列可以避免修复了一个报告却让另一个地区仍然出现相同的卡死。注释也变得更精确，命名启动和门转换失败，而不仅仅描述随机卡死。"
+    },
+    {
+      "type": "heading",
+      "text": "测试必须反复跨越门，而不是在成功启动后停止。"
+    },
+    {
+      "type": "paragraph",
+      "text": "启动每个受影响的地区和光盘，并启用 CD-ROM 加速，在几次门转换前加载存档，并重复每条路径足够次数以暴露间歇性的时间问题。对比 65,000、70,000 和禁用加速的情况，同时保持重编译器和缓存设置固定。还要验证 FMV、音频流、换盘和存档加载。成功的阈值应避免卡死，同时不引入欠载或悄悄回退到正常速度。"
+    },
+    {
+      "type": "callout",
+      "text": "GameDB 保留优化，但尊重游戏的时间上限；加速只有在进度不会停止的情况下才有用。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3736",
+      "label": "阅读 DuckStation 工程讨论和源代码更改"
+    }
+  ]
+}

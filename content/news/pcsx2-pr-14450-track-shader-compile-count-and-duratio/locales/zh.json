@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14450-track-shader-compile-count-and-duratio",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 的着色器通知现在显示实际完成了多少工作",
+  "summary": "该覆盖层用着色器数量和总毫秒数替换了模糊的编译信息，在 Metal、Vulkan、OpenGL、Direct3D 11 和 Direct3D 12 中使用一个简化的指示器。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14450 的源证据: GS: 跟踪 OSD 的着色器编译数量和持续时间",
+  "searchKeywords": [
+    "PCSX2",
+    "着色器编译",
+    "OSD",
+    "着色器缓存",
+    "编译持续时间"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "工具",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14450": "GS: 跟踪 OSD 的着色器编译数量和持续时间"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "编译着色器解释了暂停，而没有测量它"
+    },
+    {
+      "type": "paragraph",
+      "text": "当游戏或渲染器遇到未缓存的管线时，PCSX2 可能会花费可见时间来编译着色器。旧的叠加显示编译正在进行，但无法判断是涉及两个着色器还是数百个着色器，也无法判断工作是只持续几毫秒还是导致启动时的长时间停顿。这使得性能报告依赖于观察，并且难以比较缓存或后端的行为。"
+    },
+    {
+      "type": "heading",
+      "text": "一个指标会累计计数和实际耗时"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14450 清理了 GSShaderCompileIndicator，并将最终消息更改为“在 y 毫秒内编译了 x 个着色器”。计数用于标识突发的规模，而耗时用于捕捉其即时成本。删除了 GSMTLDeviceInfo 中错误的 ScopedCompilation 使用，因此 Metal 遵循预期的通用生命周期，而不是应用可能扭曲指标状态的额外范围。"
+    },
+    {
+      "type": "heading",
+      "text": "结果会在工作完成后报告，并且仍然会正常消退"
+    },
+    {
+      "type": "paragraph",
+      "text": "叠加层仍然与现有的 GPU 使用显示行为绑定，并在报告完成的突发后淡出。它是诊断性的，而不是持久的基准面板。作者测试了 Metal、Vulkan、OpenGL、Direct3D 12 和 Direct3D 11，这一点很重要，因为每个后端都会创建不同的管线对象，而用户应看到一致的消息格式。"
+    },
+    {
+      "type": "heading",
+      "text": "冷缓存和热缓存运行应呈现不同的情况。"
+    },
+    {
+      "type": "paragraph",
+      "text": "删除着色器缓存或启动未播放游戏并启用相关的 OSD 选项，然后记录计数、毫秒数和淡出行为。再次使用热缓存查看相同场景，并预期突发较小或不存在。测试后端切换、并行编译、暂停和关闭时指示器处于激活状态。将报告的持续时间与追踪时间进行比较，但不应将其视为总帧卡顿时间，因为其他管线和 I/O 工作可能是重叠的。"
+    },
+    {
+      "type": "callout",
+      "text": "该消息现在是证据：着色器计数和经过时间可以进行比较、报告，并与冷缓存事件关联。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14450",
+      "label": "阅读 PCSX2 工程讨论和源代码更改"
+    }
+  ]
+}

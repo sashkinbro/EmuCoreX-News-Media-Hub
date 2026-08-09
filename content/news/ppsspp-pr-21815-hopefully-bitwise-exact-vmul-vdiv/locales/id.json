@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dokumen PPSSPP mencatat aturan PSP bit-exact untuk VFPU perkalian dan pembagian",
+  "summary": "Bantuan referensi menjelaskan perilaku denormal, underflow, pembulatan, tanda, tak hingga, dan NaN sehingga jalur host JIT dapat diukur terhadap hasil sebenarnya dari PSP.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21815: Mengimplementasikan (semoga) vmul/vdiv yang bitwise-exact",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "floating point",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Mengimplementasikan (semoga) vmul/vdiv yang bitwise-exact"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 masih menyisakan ruang untuk perilaku tepi spesifik perangkat keras"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perkalian dan pembagian float biasa terlihat portabel sampai input mendekati denormal, underflow, tak hingga, atau NaN. PSP VFPU berperilaku seperti float32 round-to-nearest-ties-to-even dengan denormal dianggap sebagai nol dan output sangat kecil dibersihkan ke nol, plus payload NaN khusus dan aturan tanda. Host x86, ARM, dan pengaturan compiler dapat berbeda tepat di batas tersebut, menyebabkan perbedaan logika game atau grafik yang jarang terjadi."
+    },
+    {
+      "type": "heading",
+      "text": "Referensi bekerja dari bit mentah sebelum dan sesudah aritmetika"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21815 menambahkan helper vfpu_mul dan vfpu_div eksplisit untuk referensi. Mereka membaca operand sebagai nilai uint32, meruntuhkan input subnormal menjadi nol bertanda, melakukan aritmetika, dan memeriksa bit hasilnya. Output pada atau di bawah ambang flush yang diukur dihitung ulang dalam presisi ganda untuk memutuskan apakah mempertahankan hasil normal terkecil atau mengembalikan nol bertanda. Setiap NaN dikanonisasi ke payload spesifik VFPU 0x7F800001 dengan tanda yang berasal dari operand."
+    },
+    {
+      "type": "heading",
+      "text": "Ambang ini menangkap batas yang mungkin tidak dibagikan oleh flag FTZ host"
+    },
+    {
+      "type": "paragraph",
+      "text": "Batas flush yang diamati adalah FLT_MIN dikurangi seperempat dari FLT_TRUE_MIN. Itu tampaknya cocok dengan batas flush-to-zero yang diuji pada x86 tetapi tidak diasumsikan cocok untuk setiap host ARM. Mengodekan perilaku ini dalam referensi yang dapat dibaca memberikan JIT backend sumber kebenaran bahkan jika implementasi tercepat mereka menggunakan mode register kontrol, instruksi vektor, atau cabang korektif. Pembantu ini adalah materi referensi daripada klaim bahwa C++ skalar adalah jalur utama terakhir."
+    },
+    {
+      "type": "heading",
+      "text": "Vektor batas yang ekstensif harus mendorong kepatuhan backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uji nol positif dan negatif, setiap kelas subnormal, nilai di sekitar ambang flush, angka finite terbesar, tak hingga, NaN diam dan sinyal, serta kombinasi tanda operan. Bandingkan interpreter, x86, ARM64, dan hasil JIT lainnya bit per bit untuk vmul dan vdiv, bukan dengan epsilon. Tes diferensial acak harus memfokuskan pasangan eksponen di dekat overflow dan underflow. Fast-math compiler tidak boleh menghapus kanonisasi, dan operasi gabungan harus diperiksa secara terpisah karena mereka memiliki titik pembulatan yang berbeda."
+    },
+    {
+      "type": "callout",
+      "text": "Emulasi bit-eksak dimulai di mana kesetaraan numerik perkiraan berhenti: nol bertanda, satu bit underflow, atau payload NaN dapat menjadi status tamu yang dapat diamati."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Baca diskusi teknik PPSSPP dan perubahan sumber"
+    }
+  ]
+}

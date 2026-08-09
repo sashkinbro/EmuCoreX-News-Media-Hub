@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 odmawia mieszania akumulacyjnego na 16-bitowych celach przy maksymalnej dokładności",
+  "summary": "Strażnik precyzji dezaktywuje optymalizację, której kolejność zaokrągleń może przekroczyć reprezentowalną 16-bitową skalę kolorów, wyrównując wyjście sprzętowe o wysokiej dokładności z odniesieniem w oprogramowaniu.",
+  "heroAlt": "Dowody źródłowe z pull request PCSX2 #13918: GS/HW: Wymagaj 32-bitowego RT dla mieszania akumulacyjnego przy maksymalnym blendzie.",
+  "searchKeywords": [
+    "PCSX2",
+    "mieszanie akumulacyjne",
+    "16-bitowy cel renderowania",
+    "maksymalny blend",
+    "deserowanie"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Wymagaj 32-bitowego RT dla mieszania akumulacyjnego przy maksymalnym blendzie."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zmiany akumulacji, które wartości otrzymują 16-bitowe zaokrąglenie"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 może optymalizować niektóre mieszanki poprzez akumulację za pomocą docelowego renderowania hosta. Na 32-bitowym celu dodatkowa precyzja jest zazwyczaj zgodna z zamierzonym wynikiem. 16-bitowy cel GS kwantyzuje kolor inaczej: zastosowanie zaokrąglania po niewłaściwym pośrednim etapie może spowodować RGB 255, mimo że zamierzona skala formatu kończy się około 240. Obraz może wyglądać podobnie, podczas gdy wzór ditheringu i dokładne odcienie różnią się."
+    },
+    {
+      "type": "heading",
+      "text": "Maksymalna dokładność wymaga teraz 32-bitowego celu dla szybkiej ścieżki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #13918 dodaje jeden warunek w GSRendererHW. Gdy dokładność mieszania jest ustawiona na maksymalną, mieszanie akumulacyjne pozostaje dostępne tylko jeśli docelowy render jest 32-bitowy. 16-bitowy cel wraca do trybu bez akumulacji, który respektuje jego kwantyzację. Tryby o niższej dokładności mogą nadal dokonywać swoich udokumentowanych kompromisów wydajności; zmiana ta wyrównuje najsurowsze ustawienie z obietnicą dokładności."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity ujawnia różnicę w szczegółach ditheringu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dostarczone porównanie Vulkan używa 16-bitowej ramki z Sonic Riders: Zero Gravity i obejmuje renderowanie programowe jako punkt odniesienia. W normalnym rozmiarze zmiana może być trudna do zauważenia, ale powiększając wzór ditheringu ujawnia się różna drabinka kolorów. Dlatego obrazy referencyjne na poziomie pikseli mają znaczenie: szeroki zrzut ekranu kompatybilności mógłby pominąć błąd liczbowy, którego ustawienie maksymalne było specjalnie przeznaczone do uniknięcia."
+    },
+    {
+      "type": "heading",
+      "text": "Sprawdzenia regresji powinny obejmować zarówno docelowe głębokości, jak i tryby mieszania."
+    },
+    {
+      "type": "paragraph",
+      "text": "Odtwórz źródłowy dump na Vulkan i innych backendach sprzętowych, porównaj piksele bezstratnie z wynikiem programu i zweryfikuj, że ścieżka akumulacji jest odrzucana tylko dla celów 16-bitowych przy maksymalnym mieszaniu. Cel 32-bitowy powinien zachować optymalizację. Zarejestruj trasowanie rysowania i czas GPU, ponieważ wyłączenie optymalizacji może kosztować wydajność, nawet gdy korekta wyjścia jest przejrzysta. Przetestuj kilka wzorów ditheringu i równań akumulacji, zamiast jednej tekstury odniesienia."
+    },
+    {
+      "type": "callout",
+      "text": "Maksymalna dokładność mieszania teraz traktuje precyzję docelową jako część algorytmu: powierzchnia 16-bitowa nie może bezpiecznie korzystać ze skrótu akumulacji 32-bitowej."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródłach"
+    }
+  ]
+}

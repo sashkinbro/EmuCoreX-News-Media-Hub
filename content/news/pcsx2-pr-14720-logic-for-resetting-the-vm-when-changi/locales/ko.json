@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2는 Qt가 VM 일시 중지를 해제하기 전에 디스크 스위치 리셋을 명령합니다",
+  "summary": "지연된 리셋 상태가 VMLock의 일시 중지 해제 이벤트에 의해 무시되고 있었습니다; 리셋 후 에뮬레이션 뷰 전환을 이동하면 의도된 VM 수명 주기를 유지할 수 있습니다.",
+  "heroAlt": "PCSX2 풀 리퀘스트 #14720의 소스 증거: Qt: 디스크 변경 시 VM 리셋 로직 수정",
+  "searchKeywords": [
+    "PCSX2",
+    "디스크 스위치",
+    "VM 리셋",
+    "VMLock",
+    "별도 창"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "코어",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: 디스크 변경 시 VM 리셋 로직 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "게임 목록에서 디스크를 변경하면 UI와 VM 수명 주기를 넘어섭니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "별도 창에 렌더링(Render To Separate Window) 옵션이 활성화되어 있을 때, Qt는 한 번의 사용자 동작으로 뷰를 전환하고, VM을 잠그며, 이벤트를 게시하고, 리셋을 요청할 수 있습니다. 리셋 자체는 지연되었습니다. MainWindow는 에뮬레이션 뷰 쪽으로 이동했고, 락 범위가 끝나면서 VMLock의 소멸자가 언페이즈(unpause)를 게시했습니다. 그 후 이벤트는 리셋 핸들러가 실제로 실행되기 전에 VMState::Resetting을 대체할 수 있었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "문제의 경쟁 조건은 이벤트 순서이지, 동기화 누락이 아닙니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "VM은 유효한 리셋 상태와 전환을 보호하기 위한 락을 가지고 있었습니다. 문제는 두 개의 지연된 상태 변경이 잘못된 순서로 큐에 들어간 것이었습니다. UI 클린업에서 게시된 언페이즈가 리셋이 끝난 것처럼 실행될 수 있었습니다. 이것이 특정 프런트엔드 경로에서 디스크를 변경했을 때 실패한 이유를 설명합니다. 직접 리셋을 하거나 일반적인 일시 정지/재개는 정상적으로 작동했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView는 이제 게시된 리셋을 따릅니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #14720은 MainWindow::switchToEmulationView를 리셋 이벤트가 게시된 후로 이동합니다. 리셋 요청이 설정되는 동안 VM은 실행되지 않으며, 뷰 전환은 더 이상 VMLock이 조기 언패즈로 Resetting을 훼손하지 않습니다. 소스에서는 더 넓은 VM 상태 재설계가 가능하다고 언급하지만, 이 변경은 범위를 확장하지 않고 알려진 순서 오류를 수정합니다."
+    },
+    {
+      "type": "heading",
+      "text": "분리 창 디스크 변경은 모든 상태에서 반복되어야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "분리 창 렌더링을 활성화하고, 멀티디스크 타이틀을 부팅한 후, 실행 중, 일시정지 상태, 모달 UI가 열려 있는 상태에서 게임 목록에서 다른 디스크를 선택합니다. 게시된 리셋 및 언패즈 이벤트를 기록하고 Resetting이 리셋 완료까지 유지되는지 확인합니다. 일시중지, 상태 불러오기, 빠른 연속 디스크 선택 후 반복합니다. 일반적인 동일 창 변경 및 수동 리셋은 부정 대조군이며; 순서 수정으로 VM이 영구적으로 일시정지되거나 뷰 전환이 너무 늦게 발생해서는 안 됩니다."
+    },
+    {
+      "type": "callout",
+      "text": "VM 재설정은 이미 요청되었습니다; 이 수정 사항은 해당 요청이 적용되기 전에 어떠한 UI 정리 이벤트도 실행을 재개할 수 없도록 보장합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "PCSX2 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

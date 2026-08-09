@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 区分 SPIR-V 对象 IDs 与向量通道编号",
+  "summary": "向量混洗构造现在将源向量标记为 IDs，并将组件选择器标记为字面量，从而防止通道零成为无效的 SPIR-V ID。",
+  "heroAlt": "来自 Vita3K 拉取请求 #4074 的源证据：shader：修复 \"ids 不能为 0\" 的一种情况",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "着色器重新编译器",
+    "uniform 块"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader：修复 \"ids 不能为 0\" 的一种情况"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "同一种整数类型可以表示两种不同的 SPIR-V 概念"
+    },
+    {
+      "type": "paragraph",
+      "text": "SPIR 指令通过数字 ID 引用之前定义的对象，有些还包含字面数字。OpVectorShuffle 接受两个向量 IDs，随后是组件选择器。选择器为零表示第一个向量的第一个通道；一个值为零的对象 ID 是禁止的。将每个操作数通过仅类型为 spv::Id 的向量传递，因此会在有效通道号与无效 ID 的哨兵值相同的位置丢失区分。"
+    },
+    {
+      "type": "heading",
+      "text": "构建器现在为每个操作数接收一个显式类型"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #4074 将两个 shuffle 操作数列表更改为 spv::IdImmediate。目标和 dest_friend 以及被复制的向量的加载都标记为 IDs。循环生成的通道索引被标记为立即值，无论它们是零、四加 i，还是从 start 模四获得的偏移。然后 createOp 可以根据指令语法对每个字编码，而不是从 C++ 别名中推断其含义。"
+    },
+    {
+      "type": "heading",
+      "text": "受影响的路径在 vec4 边界上合并统一数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register 处理跨越当前目标向量及其邻近向量的范围。它构建互补的 shuffle 操作，以确保保留的目标通道和即将进入的源通道落在正确的位置。对齐到 vec4 开始时采取更简单的路径；未对齐的开始会使用双列表逻辑。修正不会改变选择哪个通道公式。它使已计算的选择器成为合法字面值。"
+    },
+    {
+      "type": "heading",
+      "text": "由验证器驱动的夹具应枚举每一个起始通道"
+    },
+    {
+      "type": "paragraph",
+      "text": "生成从偏移量零到三开始的统一拷贝，长度保持在一个 vec4 内并跨入下一个 vec4。检查生成的 OpVectorShuffle 指令，运行 spirv-val，并执行使用唯一颜色或编号源通道的着色器。包括选择器零、三、四、七，以及构建器支持的任何未定义哨兵。使用严格验证的 Vulkan 驱动程序进行测试，并对不同厂商的渲染输出进行比较。回归测试应断言操作数类型以及最终像素。"
+    },
+    {
+      "type": "callout",
+      "text": "在二进制着色器语言中，零可以是一个完全有效的通道，也可以是一个不可能的对象ID；构建器必须知道指令期望哪一个。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "阅读 Vita3K 工程讨论和源代码变更"
+    }
+  ]
+}

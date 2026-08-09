@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar calibra los centros de gatillo heredados en lugar de asumir cero",
+  "summary": "Los ejes de los gatillos de Steam Deck pueden descansar cerca de -32767 bajo la API de Joystick de SDL; registrar el centro inicial restaura los mapeos antiguos que de otra manera reportarían L y R como presionados.",
+  "heroAlt": "Evidencia fuente del pull request #2328 de Azahar: BUGFIX: Gatillos de joystick heredados en Linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "calibración de gatillos",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Entrada",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Gatillos de joystick heredados en Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El valor neutral de un gatillo depende de la API de SDL y del mapeo del dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los usuarios de Steam Deck a través de EmuDeck informaron que L y R permanecían presionados permanentemente. Sus perfiles heredados usaban ejes de gatillo a través de la API de Joystick de SDL, donde el valor en reposo podría ser -32767 en lugar de cero. Una implementación más nueva de estado directo dejó de retener muestras históricas y, por lo tanto, reutilizó una suposición de cero en el centro que era válida para algunos dispositivos, pero trataba esta posición neutral como una pulsación completa."
+    },
+    {
+      "type": "heading",
+      "text": "La inicialización captura el centro de reposo real del dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #2328 añade calibración por eje a la capa de joystick heredada. Cuando el dispositivo se inicializa, Azahar registra el centro actual y compara los valores posteriores contra él. El mapeo luego mide el movimiento desde el punto neutral observado en lugar de codificar de manera rígida una interpretación de rango de SDL. Esto es especialmente apropiado para la compatibilidad hacia atrás porque los antiguos bindings guardados pueden referirse a ejes de joystick en bruto."
+    },
+    {
+      "type": "heading",
+      "text": "Los nuevos mapeos normalmente usan SDL Controller y evitan la ambigüedad heredada"
+    },
+    {
+      "type": "paragraph",
+      "text": "El estándar moderno de la API de Controlador de Azahar estandariza la semántica de los gatillos y no es el objetivo de esta corrección. Por lo tanto, los usuarios que estén asignando un controlador ahora no deberían notar ningún cambio. El parche preserva los perfiles de Joystick heredados y los controles inusuales que permanecen fuera de la API estandarizada. Mantener el comportamiento acotado evita que las heurísticas de calibración alteren un backend que ya informa correctamente los gatillos del controlador normalizados."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas necesitan ejes centrados en cero y centrados en negativo."
+    },
+    {
+      "type": "paragraph",
+      "text": "Inicie cada dispositivo con los gatillos liberados, confirme el centro calibrado, luego presione y suelte lentamente y completamente. Pruebe Steam Deck, un controlador de escritorio usando la API heredada, conexión en caliente, suspensión/reanudación, y un dispositivo conectado mientras se mantiene presionado un gatillo. Los perfiles existentes deben recuperarse sin reasignación, mientras que los nuevos perfiles de la API de Controlador permanecen idénticos. Un caso de gatillo sostenido en la inicialización necesita una ruta de recuperación documentada para que una muestra incorrecta no se convierta en el centro permanente de la sesión."
+    },
+    {
+      "type": "callout",
+      "text": "La calibración restaura el punto de referencia que falta: un valor de activación en bruto significa presionado solo en relación con la posición neutra observada de ese dispositivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Lea la discusión de ingeniería Azahar y los cambios en el código fuente"
+    }
+  ]
+}

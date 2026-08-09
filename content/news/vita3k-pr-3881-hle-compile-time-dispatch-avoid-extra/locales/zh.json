@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 将 HLE 参数派发从运行时移入模板",
+  "summary": "编译时 ARM 参数布局和普通函数指针减少了每个导入的桥接机制，同时保持标量、可变参数和返回值转换的显式性。",
+  "heroAlt": "来自 Vita3K 拉取请求 #3881 的源证据：模块/桥接：HLE 编译时派发，避免额外的指针间接",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE 桥接",
+    "ARM ABI",
+    "模板",
+    "函数派发"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "核心",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "模块/桥接：HLE 编译时派发，避免额外的指针间接"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "每个客体导入都跨越相同的 ABI 转换边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "一个 Vita 函数调用到达时，其参数分散在 ARM 通用寄存器、浮点寄存器和堆栈上。Vita3K 的 HLE 桥必须定位这些参数，将客机指针和表示形式转换为主机类型，调用正确的导出函数，并写回返回值。旧桥接构建布局状态，并在 std::function 中捕获导出指针和名称，为几乎每个模拟服务调用使用的路径增加了通用运行时机制。"
+    },
+    {
+      "type": "heading",
+      "text": "导出函数成为桥接类型的一部分"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #3881 引入了带有 ExportFn 作为非类型模板参数的 make_bridge。lay_out 作为 constexpr 为导出的参数包运行，生成固定的 ArgLayout 条目和可变参数状态。生成的非捕获函数通过 read_bridged_arg 读取每个参数，直接调用 ExportFn，并有条件地写入结果（除非返回类型为 void）。因此，ImportFn 可以是一个普通的函数指针。"
+    },
+    {
+      "type": "heading",
+      "text": "桥接类型保留客机到主机的契约"
+    },
+    {
+      "type": "paragraph",
+      "text": "编译时布局并不意味着将寄存器重新解释为任意的 C++ 对象。BridgeTypes 会选择每个参数的 ARM 表示，并在需要时使用模拟内存进行转换。module::vargs 传递的是其计算后的状态，而不是假装成一个标量参数。Tracy 范围仍然通过静态存储接收导出名称，从而在移除之前的闭包捕获的同时保留每个函数的分析。"
+    },
+    {
+      "type": "heading",
+      "text": "ABI 一致性需要编译时和运行时测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "为零参数、四个和五个整数、64 位对齐值、浮点数、指针、由桥类型表示的结构体、可变参数、void 返回和错误码实例化桥。将寄存器和栈的位置与 Vita ABI 以及之前的实现进行比较。在支持的编译器上编译每个生成的模块，检查代码大小和调用形式，并对以导入为主的工作负载进行基准测试。无效或不支持的类型应在编译期间失败并给出明确的诊断，而不是默默选择错误的布局。"
+    },
+    {
+      "type": "callout",
+      "text": "优化之所以有效，是因为导出签名已经包含了 ABI 信息；模板可以在仿真开始之前将这些信息转化为固定的桥接。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "阅读 Vita3K 的工程讨论和源代码更改"
+    }
+  ]
+}

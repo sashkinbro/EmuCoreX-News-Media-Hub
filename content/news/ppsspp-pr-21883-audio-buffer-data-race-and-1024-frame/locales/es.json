@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP cierra una condición de carrera entre hilos en la entrega de audio de libretro",
+  "summary": "Cada operación en el búfer de muestras convertidas compartido ahora usa un mutex, evitando que realloc o shutdown invaliden la memoria mientras otro hilo escribe audio.",
+  "heroAlt": "Evidencia de la fuente del pull request #21883 de PPSSPP: libretro: corregir la condición de carrera en el búfer de audio y los empujes de muestras de más de 1024 cuadros",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "carrera de audio",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Audio",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: corregir la condición de carrera en el búfer de audio y los empujes de muestras de más de 1024 cuadros"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dos hilos podrían poseer el mismo puntero bruto a la vez"
+    },
+    {
+      "type": "paragraph",
+      "text": "En la ruta frontal libretro, System_AudioPushSamples convierte el audio de PSP y lo añade a output_audio_buffer. Con los backends OpenGL, los empujes de muestras pueden llegar a través de la cola de comandos GL en el lado de la emulación, mientras que retro_run vacía el buffer en el hilo libretro. La inicialización, el apagado y el crecimiento de la capacidad también reemplazan o liberan la asignación. Sin una regla de propiedad, un realloc podría invalidar el puntero mientras el otro hilo lo estaba leyendo o escribiendo."
+    },
+    {
+      "type": "heading",
+      "text": "Un único mutex ahora define la vida útil del buffer."
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #21883 agrega output_audio_buffer_mutex y lo toma en la inicialización, destrucción, carga y System_AudioPushSamples. El ayudante de capacidad está documentado explícitamente como que requiere que el llamador mantenga ese bloqueo, por lo que el crecimiento ocurre dentro de la misma sección crítica que la adición que lo necesita. La carga mantiene el bloqueo durante la llamada de lote y el reinicio del tamaño, evitando que un productor cambie la carga útil a mitad de la entrega."
+    },
+    {
+      "type": "heading",
+      "text": "La corrección protege la estructura y las muestras juntas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloquear solo el tamaño o la capacidad no sería suficiente: los datos, el tamaño y la capacidad forman un invariante único. El puntero debe referirse a una asignación de al menos capacidad elementos de largo, y el tamaño debe identificar las muestras inicializadas dentro de ella. El mutex hace que las actualizaciones a los tres sean visibles como una sola operación. Esto es particularmente relevante para el temporizado de GL con hilos, pero la inicialización y liberación usan la misma regla, por lo que reinicios rápidos del núcleo no pueden competir con un productor tardío."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de estrés deben variar el temporizado de las callbacks y del renderizador"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ejecute libretro con OpenGL, Vulkan y renderizado por software mientras pausa, adelanta, reinicia, cambia contenido y cierra el núcleo repetidamente. Use callbacks de audio que consuman rápidamente, lentamente y en lotes irregulares, además de empujes de muestras por encima de los tamaños ordinarios de fotogramas. ThreadSanitizer no debería detectar accesos no sincronizados al conjunto de búferes. Escuche y haga hash del PCM capturado para detectar huecos o reordenamientos, y confirme que ninguna callback vuelve a entrar en un camino que espere en el mismo mutex no recursivo."
+    },
+    {
+      "type": "callout",
+      "text": "Un búfer de audio que puede crecer es un único objeto compartido, no tres campos independientes; su puntero, tamaño y capacidad deben cruzar hilos bajo el mismo bloqueo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Lea la discusión de ingeniería PPSSPP y los cambios de código fuente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-11461-rt-in-rt-support",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 impara quando un gioco disegna all'interno di un render target esistente",
+  "summary": "Il tracciamento render-target-in-render-target sostituisce le ipotesi di indirizzo esatto per gli aggiornamenti delle pagine con offset e gli scambi di mezzo frame, recuperando effetti che prima apparivano solo in un angolo o su metà schermo.",
+  "heroAlt": "Prove visive dal pull request #11461 di PCSX2: GS/HW: Implementare il supporto RT in RT",
+  "searchKeywords": [
+    "PCSX2",
+    "render target",
+    "cache delle texture",
+    "Tex in RT",
+    "post-elaborazione"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-11461": "GS/HW: Implementare il supporto RT in RT"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La corrispondenza esatta dell'indirizzo iniziale ha mancato subregioni di un target più grande"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alcuni giochi PlayStation 2 puntano lo GS a un indirizzo a metà di un render target creato in precedenza. Possono aggiornare una pagina, mescolare la metà inferiore di un'immagine o campionare una regione offset per il post-processing. Il vecchio percorso hardware riconosceva in gran parte i target solo quando i loro indirizzi di inizio coincidevano esattamente. Di conseguenza, operazioni valide dell'ospite potevano diventare artefatti nell'angolo in alto a sinistra, effetti a metà schermo, overlay mancanti o sfarfallii."
+    },
+    {
+      "type": "heading",
+      "text": "Il riconoscimento RT-in-RT mappa l'offset di nuovo al target principale"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #11461 aggiunge supporto per draw e shuffle il cui indirizzo si trova all'interno di un render target esistente. La cache delle texture e il renderer hardware possono trattare quell'intervallo come parte dell'immagine principale, mentre l'invalidazione delle sorgenti viene regolata in modo che letture successive non riutilizzino pagine obsolete. Il lavoro copre lo stato comune GS, shader, routing hardware-hack e impostazioni GameDB perché il solo riconoscimento non è sufficiente se gli intervalli memorizzati nella cache mantengono la vecchia proprietà."
+    },
+    {
+      "type": "heading",
+      "text": "Le evidenze di compatibilità spaziano tra effetti post e rendering split-screen"
+    },
+    {
+      "type": "paragraph",
+      "text": "I miglioramenti segnalati includono Battlefield 2, Death by Degrees, Drakengard, Hitman, Jak X, King Kong, Manhunt 2, Ridge Racer V, Tekken 5, Time Crisis 3, Tomb Raider: Legend, Urban Reign e molti altri. I problemi visivi interessati non sono un sintomo unico e generico: nebbia, bloom, mescolamenti di canale, ombre, visione notturna, illuminazione del secondo giocatore, fuoco, scene seppia e effetti libro a metà schermo esercitano tutti obiettivi di offset in modi diversi."
+    },
+    {
+      "type": "heading",
+      "text": "Tex nel gating RT e nei casi di mescolamento rimanenti definiscono il confine"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il percorso è bloccato dietro Tex in RT perché lasciarlo attivo per giochi incompatibili può rompere il rendering. Pachipara, Raw Danger e Steambot Chronicles sono stati migliorati ma avevano comunque deswizzling della profondità manuale o mescolamenti insoliti che richiedevano ulteriori lavori. Il testing di regressione dovrebbe quindi confrontare acquisizioni native e upscalate, rimuovere solo gli hack CRC che la fonte identifica come obsoleti e ritestare le scene ad alta invalidazione piuttosto che trasformare l'elenco ampio di giochi in una promessa di compatibilità generale."
+    },
+    {
+      "type": "callout",
+      "text": "Il vantaggio architettonico è la consapevolezza dell'intervallo di indirizzi: un obiettivo può rimanere la stessa immagine anche quando un gioco inizia la sua operazione successiva da una pagina al suo interno."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/11461",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

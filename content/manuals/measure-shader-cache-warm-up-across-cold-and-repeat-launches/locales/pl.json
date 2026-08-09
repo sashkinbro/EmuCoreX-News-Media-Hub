@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "measure-shader-cache-warm-up-across-cold-and-repeat-launches",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zmierz rozgrzewkę pamięci podręcznej shaderów przy zimnych i powtarzanych uruchomieniach PS2",
+  "summary": "Użyj deterministycznej ścieżki efektów podczas pierwszej wizyty, natychmiastowego powtórzenia, ponownego uruchomienia aplikacji i opcjonalnego ponownego uruchomienia systemu, aby dowiedzieć się, które zacięcia znikają po kompilacji potoku i czy pamięć podręczna utrzymuje się normalnie.",
+  "heroAlt": "Vulkan 1.3 grafika przedstawiająca zachowanie potoku graficznego i pamięci podręcznej shaderów",
+  "searchKeywords": [
+    "Rozgrzewka pamięci podręcznej shaderów PS2",
+    "Zacięcie przy pierwszym uruchomieniu EmuCoreX",
+    "Zacięcie przy kompilacji Vulkan",
+    "Ponowne uruchomienie aplikacji z pamięcią podręczną",
+    "Wydajność przy powtarzanym uruchomieniu"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "performance": "Wydajność",
+    "shaders": "Shadery"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan kontekst potoku",
+    "pcsx2-vulkan": "PCSX2 Vulkan kontekst rozwoju renderera"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mapuj efekty napotkane po raz pierwszy w granicach cyklu życia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bufor shaderów lub potoków powinien zmniejszyć część pracy kompilacyjnej przy pierwszym napotkaniu materiałów i efektów. Aby to przetestować, użyj trasy z oznaczonymi punktami efektów i zachowaj bufor między przejściami. Porównaj pierwszą wizytę, natychmiastowe powtórzenie, zwykłe ponowne uruchomienie aplikacji, a dopiero potem opcjonalne ponowne uruchomienie Android. Nie czyść danych aplikacji, chyba że zachowanie ponownego budowania bufora jest wyraźnie osobnym eksperymentem."
+    },
+    {
+      "type": "callout",
+      "text": "Czyszczenie bufora po każdym przejściu powoduje, że wszystkie uruchomienia są „zimne” i uniemożliwia pomiar utrzymywania danych. Wykonaj kopię zapasową konfiguracji przed jakimkolwiek celowym testem czyszczenia danych."
+    },
+    {
+      "type": "heading",
+      "text": "Przygotuj tabelę punktów kontrolnych i cyklu życia"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normalne zapisanie przed deterministyczną trasą zawierającą kilka odrębnych efektów.",
+        "Jeden renderer i sterownik systemowy utrzymywany w stałości przez całą sekwencję.",
+        "Nakładka czasu klatki lub zsynchronizowane nagranie ze stabilnym obciążeniem.",
+        "Początkowy stan pamięci podręcznej udokumentowany przed pierwszą wizytą.",
+        "Wystarczająca przestrzeń dyskowa i brak zaplanowanego narzędzia sprzątającego podczas testowania."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Wykonaj pierwszą wizytę, odtworzenie, ponowne uruchomienie aplikacji i ponowne uruchomienie systemu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Udokumentuj stan pamięci podręcznej i uruchom trasę na zimno bez usuwania plików.",
+        "2. Oznacz każdą przerwę według znacznika czasu i widocznego punktu odniesienia efektu.",
+        "3. Wróć do tego samego zapisu i odtwórz go natychmiast, bez zmian w ustawieniach.",
+        "4. Zamknij emulator normalnie, otwórz go ponownie i uruchom trzeci przebieg.",
+        "5. Porównaj, które przerwy znikają, zmniejszają się lub pojawiają się ponownie w tych samych punktach odniesienia.",
+        "6. Uruchom ponownie Android i powtarzaj tylko wtedy, gdy ważna jest trwałość cyklu życia systemu.",
+        "7. Sprawdź dzienniki i znaczniki czasu pamięci podręcznej bez zmieniania ich zawartości.",
+        "8. Zapisz tabelę czterech przebiegów przed testowaniem jakiegokolwiek celowego usuwania pamięci podręcznej."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Testy natychmiastowego powtórnego odtwarzania w sesji - ponowne użycie; restart aplikacji sprawdza, czy skompilowane dane przetrwają normalny cykl życia procesu; restart systemu sprawdza trwałość w szerszym zakresie. Zacięcie powtarzające się przy każdym identycznym wejściu może być zamiast tego pracą związanej z pamięcią lub synchronizacją, podczas gdy nieregularne zacięcia pod koniec sesji mogą być związane z temperaturą lub aktywnością w tle."
+    },
+    {
+      "type": "heading",
+      "text": "Wzór akceptacji rozgrzewki pamięci podręcznej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Klasyfikacja musi podążać za powtarzalnym zachowaniem punktów orientacyjnych w zdefiniowanych etapach cyklu życia."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zacięcia przy pierwszej wizycie są przypisywane do nazwanych efektów lub lokalizacji.",
+        "Natychmiastowe powtórne odtwarzanie używa tej samej trasy i niezmienionego profilu.",
+        "Ponowne uruchomienie aplikacji następuje bez usuwania pamięci podręcznej.",
+        "Ponowne uruchomienie systemu jest testowane osobno i tylko w razie potrzeby.",
+        "Dzienniki lub znaczniki czasu wspierają wniosek o trwałości."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Sekwencje do ponownego uruchomienia od początku"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Android lub czyścik usuwa pamięć podręczną w trakcie sekwencji: wyłącz czyszczenie i powtórz.",
+        "Sterownik lub renderer zmienia się między przebiegami: rozpocznij nową tabelę.",
+        "Losowe spotkania zmieniają efekty: wybierz deterministyczny zapis.",
+        "Drugi przebieg zaczyna się w wyższej temperaturze: znormalizuj stan termiczny."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zachowaj sprawdzoną pamięć podręczną i normalny cykl życia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyłącz nakładki diagnostyczne, zachowaj ważną pamięć podręczną, przywróć normalną politykę czyszczenia w tle i uruchom tytuł od zimnego startu raz. Jeśli później testowano celowe usunięcie, pozwól na jedną kompletną rundę rozgrzewki przed ponowną oceną codziennej wydajności."
+    },
+    {
+      "type": "heading",
+      "text": "Jednorazowa praca nie jest automatycznym kompilowaniem shaderów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przesyłanie tekstur, dekompresja, odczyty z dysku i inicjalizacja gry mogą również zniknąć podczas powtórki. Użyj logów renderera i korelacji efektów, aby wesprzeć etykietę shaderów, a niepewne zacięcia klasyfikuj jako zdarzenia pierwszej wizyty, zamiast przeceniać przyczynę."
+    },
+    {
+      "type": "link",
+      "text": "Przejrzyj wskazówki Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

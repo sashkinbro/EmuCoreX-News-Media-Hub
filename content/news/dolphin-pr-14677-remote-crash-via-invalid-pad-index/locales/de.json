@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin lehnt NetPlay-Controller-Indizes ab, bevor sie die Server-Maps erreichen",
+  "summary": "Signierte Bereichsprüfungen erfolgen jetzt vor dem Zugriff auf Pad- und Wiimote-Maps, wodurch ein Remote-Absturzpfad geschlossen wird, während die Validierung der Sender-Eigentümerschaft erhalten bleibt.",
+  "heroAlt": "Quellenbeweis aus dem Pull-Request #14677 von Dolphin: NetPlayServer: Behebt Remote-Absturz durch ungültigen Pad-Index",
+  "searchKeywords": [
+    "Dolphin",
+    "NetPlay-Sicherheit",
+    "Pad-Index",
+    "Remote-Paket",
+    "Wiimote-Map"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Sicherheit",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Behebt Remote-Absturz durch ungültigen Pad-Index"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Controller-Nummer aus dem Netzwerk ist weiterhin unzuverlässige Eingabe"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay-Pakete identifizieren das Pad oder Wii Remote, dessen Zustand sie übertragen. Der Server verwendete zuvor map_array.at, nachdem in einigen Pfaden der Besitz überprüft wurde, aber ein ungültiger signierter Index konnte zuerst den bounds-geprüften Zugriff erreichen. std::array::at wirft dann eine Ausnahme, wodurch ein fehlerhaftes oder bösartiges Peer-Paket zu einem Serverprozessfehler wird, anstatt zu einer abgelehnten Nachricht. Negative Werte erfordern besondere Vorsicht vor der Umwandlung in size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Helfer stellt den Bereich vor der Besitzüberprüfung her"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14677 führt IsValidPadIndex ein. Zunächst muss der Index nicht negativ sein, dann wird er umgewandelt und mit der konkreten Größe des Map-Arrays verglichen. Pad-Daten, Pad-Host-Abfragen und Wiimote-Daten rufen den Helfer vor at auf. Nur ein gültiger Slot, der dem sendenden Spieler zugeordnet ist, wird fortgesetzt. Der Server gibt bei ungültigen Eingaben einen Protokollfehler zurück, anstatt zu indexieren oder einem Client zu ermöglichen, Steuerungen für einen anderen Teilnehmer zu senden."
+    },
+    {
+      "type": "heading",
+      "text": "Das Trennverhalten berücksichtigt auch zugeordnete Wiimotes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die gleiche Änderung überprüft, ob ein scheidender Nicht-Host-Spieler während eines aktiven Spiels eine Wiimote-Zuordnung besitzt. Falls ja, beendet der Server die Sitzung und sendet DisableGame aus, was das Bedürfnis widerspiegelt, nicht mit fehlender synchronisierter Eingabe fortzufahren. Die Überprüfung ergreift das Spiel-Lock nur beim Ändern des laufenden Flags. Dieses Verhalten ist getrennt von der Bereichsvalidierung, deckt jedoch eine andere Randbedingung des Controller-Zuordnungslebenszyklus ab."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzz jedes Nachricht, die einen Index enthält"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sende den kleinsten Integer, -1, null, den letzten gültigen Slot, den ersten ungültigen Slot und den größten Integer durch jeden Pad- und Wiimote-Pakettyp. Wiederhole dies als Host, zugeordneter Client, nicht zugeordneter Client sowie nach Trennung oder Neuzuordnung. Der Server sollte fehlerhafte Eingaben ablehnen, ohne Ausnahmen, übermäßige Protokollierung oder Zustandsänderungen zu verursachen. Füge Paket-Fuzzing um abgeschnittene Werte und Typgrenzen hinzu und überprüfe dann, dass valide Multi-Controller-Sitzungen und Wiimote-Trennungen mitten im Spiel weiterhin der vorgesehenen Abschaltpolitik folgen."
+    },
+    {
+      "type": "callout",
+      "text": "Grenzen und Eigentum sind getrennte Fragen: Der Server muss zuerst nachweisen, dass ein Slot existiert, und dann nachweisen, dass der entfernte Sender berechtigt ist, ihn zu steuern."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Lesen Sie die Dolphin-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

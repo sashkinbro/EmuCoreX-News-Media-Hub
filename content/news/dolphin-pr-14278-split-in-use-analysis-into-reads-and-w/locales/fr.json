@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin enseigne à ses JIT si un registre actif sera lu ou écrasé",
+  "summary": "Des masques séparés de lecture future et d'écriture future permettent aux caches x64 et ARM64 de prendre des décisions de préchargement et de vidage plus sûres et plus précises qu'un seul indicateur d'utilisation.",
+  "heroAlt": "Preuve source provenant de la demande de tirage Dolphin #14278 : PPCAnalyst : Séparer l'analyse « en cours d'utilisation » en lectures et écritures",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "cache de registres",
+    "analyse de vivacité",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "Processeur",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst : Séparer l'analyse « en cours d'utilisation » en lectures et écritures"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Être vivant ne dit pas ce que la prochaine instruction fera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un registre invité peut être pertinent pour le bloc restant parce qu'une instruction future lit sa valeur actuelle, parce qu'une instruction future la remplace, ou les deux. L'ancien masque en cours d'utilisation de Dolphin fusionnait ces cas. Un cache de registres JIT avait alors des informations limitées lorsqu'il s'agissait de décider s'il fallait précharger une valeur invitée, réécrire une valeur hôte modifiée, supprimer un mapping ou le conserver à travers une limite de repli."
+    },
+    {
+      "type": "heading",
+      "text": "Deux ensembles d'utilisations futures rendent le flux de données explicite"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #14278 propage gprWillBeRead et gprWillBeWritten, avec des masques équivalents pour les registres à virgule flottante et de condition. La précharge prend en compte les registres qui participeront dans l'une ou l'autre direction tout en excluant encore les entrées pouvant être supprimées. Les vidages complets ciblent les valeurs qui ne sont plus utilisées par les opérations suivantes. Les sorties qui ne seront pas écrites plus tard reçoivent un traitement séparé afin que leur valeur actuelle modifiée atteigne l'état invité avant que le cache ne les marque comme propres."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty conserve un mapping utile après la validation de sa valeur"
+    },
+    {
+      "type": "paragraph",
+      "text": "La refactorisation nomme le comportement de vidage précisément. L'écriture complète modifiera les données et supprimera l'association. MaintainState conserve l'état existant lorsque cela est nécessaire. Le nouveau mode Undirty écrit une valeur modifiée mais conserve l'association registre-hôte comme propre. Cela est utile lorsqu'une sortie doit être cohérente à un niveau externe tout en pouvant être lue ultérieurement. Les chemins x64 et ARM64 adoptent le vocabulaire, y compris l'accès lent à la mémoire et les sites de repli de l'interpréteur."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests des blocs différentiels doivent se concentrer sur les flux de contrôle maladroits"
+    },
+    {
+      "type": "paragraph",
+      "text": "Comparer l'interpréteur, JIT64 et JITARM64 à travers les blocs générés avec des modèles lecture seule, écriture seule, lecture puis écriture, écriture puis lecture, rejetés, immédiats, flottants et registres de condition. Ajouter des exceptions, des fautes mémoire, des vérifications de pipeline de collecte, des branchements, des instructions de repli et des sorties de bloc à chaque position. Instrumenter les sauvegardes de l'hôte et les écritures invitées pour vérifier que l'optimisation réduit effectivement le travail sans changer l'état. L'exécution différentielle aléatoire doit comparer tous les registres architecturaux après chaque frontière forcée."
+    },
+    {
+      "type": "callout",
+      "text": "La vivacité du registre devient exploitable uniquement lorsque le JIT sait si l'avenir a besoin de la valeur d'aujourd'hui ou a seulement besoin du nom du registre pour un écrasement ultérieur."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Lisez la discussion d'ingénierie Dolphin et les modifications de source"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14503-rov-support-for-feedback-draws",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 将有序反馈绘制引入三个硬件后端",
+  "summary": "Direct3D 11、Direct3D 12 和 Vulkan 上的 ROV 风格执行减少了在反馈密集渲染中的拆分，同时暴露了副本、障碍和后端限制以供验证。",
+  "heroAlt": "来自 PCSX2 pull request #14503 的源证据：GS/HW：对反馈绘制的 ROV 支持。",
+  "searchKeywords": [
+    "PCSX2",
+    "ROV",
+    "反馈绘制",
+    "Vulkan",
+    "Direct3D 12"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14503": "GS/HW：对反馈绘制的 ROV 支持。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "反馈绘制迫使在顺序和额外通道之间做出选择"
+    },
+    {
+      "type": "paragraph",
+      "text": "一些 GS 效果会读取与它们当前正在写入的目标相关的数据，包括软件混合和 AA1 路径。如果没有有序的硬件机制，PCSX2 可能会拆分工作、复制目标或插入屏障，以便后续片段看到所需的值。这些保护措施可以保持正确性，但在反馈频繁的场景中会增加绘制调用次数和内存流量。"
+    },
+    {
+      "type": "heading",
+      "text": "DX11、DX12 和 Vulkan 获得了显式的有序路径"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14503 在 Direct3D 11、Direct3D 12 和 Vulkan 上实现了光栅顺序或等效反馈支持。它基于早期的纹理格式重构，因此为 ROV 存储的深度可以通过共享转换选择器移动。由于测试发现其不够可靠，OpenGL 的实现被移除，这表明该功能是通过后端保证启用的，而不是强制在每个 API 中实现。"
+    },
+    {
+      "type": "heading",
+      "text": "统计数据和 Vulkan 屏障使隐藏成本可见"
+    },
+    {
+      "type": "paragraph",
+      "text": "图形设置公开了ROV控制，并且OSD会报告ROV绘制调用、拷贝和屏障，同时显示正常总量。Vulkan还为那些在默认同步下闪烁的系统提供了更强的ROV屏障选项。Windows RDNA2反馈转换收到了专门修复。Direct3D 12在多个系统上工作，但在作者的Intel GPU上的一些转储中显示严重的Z冲突，这是一个未解决的边界问题，而不是普遍成功的声明。"
+    },
+    {
+      "type": "heading",
+      "text": "转储运行必须同时比较正确性和操作计数"
+    },
+    {
+      "type": "paragraph",
+      "text": "为每个后端启用ROV，并重放涉及软件混合、AA1、深度反馈和目标转换的反馈密集型转储。将无损输出与非ROV和软件参考进行比较，然后记录绘制、拷贝、屏障、GPU时间和驱动程序。用和不用更强屏障重新检查Vulkan。在Intel硬件上，Direct3D 12需要特别注意，而OpenGL测试应确认已移除的选项不能选择已知有问题的路径。"
+    },
+    {
+      "type": "callout",
+      "text": "ROV 只有在 API 和驱动程序保持片段顺序时才有价值；OSD 计数器显示该顺序是否实际上取代了复制和分割绘制。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14503",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

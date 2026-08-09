@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 rimuove la gestione del buffer di disegno quando nessun batch può usarlo",
+  "summary": "I disegni disabilitati o immediatamente non bufferizzabili non copiano più né ripristinano gli ambienti GS, mentre i riferimenti locali sostituiscono il traffico di puntatori aggiunto ai percorsi di rendering caldi.",
+  "heroAlt": "Prove sorgente dal pull request #14729 di PCSX2: GS: Ottimizzare il buffering dei disegni e la logica dei puntatori",
+  "searchKeywords": [
+    "PCSX2",
+    "buffering dei disegni",
+    "thread GS",
+    "percorso critico",
+    "prestazioni"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Ottimizzare il buffering dei disegni e la logica dei puntatori"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un'ottimizzazione disabilitata stava ancora pagando il costo della sua configurazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il buffering del disegno può combinare lavori compatibili, ma PCSX2 potrebbe disabilitarlo globalmente o scoprire che il disegno successivo non può essere bufferizzato. L'implementazione ha comunque eseguito il backup dell'ambiente di disegno e lo ha ripristinato durante le operazioni di flush, anche se nessun batch futuro poteva utilizzare quello snapshot. In un carico di lavoro pesante su GS, le copie ripetute trasformano una funzionalità inattiva in un overhead misurabile di CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Le copie dell'ambiente ora seguono l'effettiva idoneità al buffering"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14729 restringe le operazioni di backup e ripristino ai percorsi in cui il buffering del disegno può conservare lavori successivi. Se il buffering è disabilitato o la compatibilità fallisce immediatamente, il renderer continua a usare il contesto corrente senza creare una copia di recupero. Questo preserva il comportamento funzionale del flush mentre rimuove il traffico di stato il cui unico scopo era annullare un batch che non è mai esistito."
+    },
+    {
+      "type": "heading",
+      "text": "I riferimenti locali sostituiscono l'inseguimento dei puntatori nei percorsi più critici"
+    },
+    {
+      "type": "paragraph",
+      "text": "La precedente implementazione del buffering introdusse puntatori utilizzati durante l'elaborazione del disegno, in modo che il codice potesse passare tra lo stato live e quello buffered. Dove tale indirezione non è più necessaria, la patch utilizza riferimenti locali. I riferimenti permettono al compilatore di mantenere lo stato accesso frequentemente più vicino all'operazione e ridurre i caricamenti ripetuti dei puntatori, senza modificare la proprietà o la durata del contesto GS sottostante."
+    },
+    {
+      "type": "heading",
+      "text": "I test di throughput devono mantenere visibile lo stato del buffering"
+    },
+    {
+      "type": "paragraph",
+      "text": "Usa giochi pesanti GS e dump per confrontare il tempo massimo FPS, GS-thread e i conteggi di copia dell'ambiente con buffering abilitato, disabilitato e frequentemente rifiutato. I CPUs più deboli sono i beneficiari previsti. È ancora richiesta la comparazione dei frame senza perdita perché un backup saltato a un limite di compatibilità potrebbe far fuoriuscire lo stato modificato nel disegno successivo. Profilare le cause rappresentative di flush e verificare che il miglioramento non sia solo un caso artificiale del runner."
+    },
+    {
+      "type": "callout",
+      "text": "L'ottimizzazione rimuove lavoro dai percorsi che non possono beneficiare del buffering; non riduce la necessità di ripristino dello stato richiesto da un vero batch bufferizzato."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

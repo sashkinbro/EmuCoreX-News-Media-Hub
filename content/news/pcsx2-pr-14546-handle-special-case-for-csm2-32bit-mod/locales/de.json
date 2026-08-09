@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 isoliert das Laden der CSM2-Palette von der gewürfelten Reihenfolge von CSM1",
+  "summary": "Ein Speicher-Modus-Wechsel in Breath of Fire zeigte, warum sequentielle CSM2-Daten einen temporären CLUT-Puffer, der nach den Swizzle-Regeln von CSM1 gefüllt wurde, nicht sicher wiederverwenden können.",
+  "heroAlt": "Visuelle Beweise aus dem PCSX2 Pull Request #14546: GS/CLUT: Besonderer Fall für CSM2 32-Bit-Moduswechsel behandeln",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "Palette",
+    "Breath of Fire"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT: Besonderer Fall für CSM2 32-Bit-Moduswechsel behandeln"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Palette übersteht den Moduswechsel, aber ihre Reihenfolge nicht"
+    },
+    {
+      "type": "paragraph",
+      "text": "Breath of Fire: Dragon Quarter lädt seine Farb-Lookup-Tabelle im CLUT-Speichermodus 1 neu und wechselt dann zu Speichermodus 2. CSM1 wendet eine verschränkte Anordnung an, während CSM2 die Paletteinträge nacheinander adressiert. Die Wiederverwendung der für den ersten Modus vorbereiteten temporären Daten liefert daher im zweiten Modus gültige Farben an den falschen Positionen. Menütext zeigt dann schwarze Löcher, wo die beabsichtigte Hauptfarbe erscheinen sollte."
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 liest jetzt die autoritative Palette aus dem lokalen Speicher GS"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14546 ändert GSClut, sodass Speichermodus 2 die CLUT immer aus dem lokalen Speicher lädt, anstatt aus dem temporären, für CSM1 orientierten Puffer. Der Ansatz erklärt auch das langsamere Verhalten von CSM2: Es behandelt den Speicher GS als Quelle zur Texture-Cache-Ladezeit. Durch die Wahl der Quelle entsprechend dem aktiven Speichermodus vermeidet PCSX2 die Erfindung einer Konvertierung zwischen zwei Layouts, die das Spiel selbst nie angefordert hat."
+    },
+    {
+      "type": "heading",
+      "text": "Die Quelle präsentiert eine Hardware-Theorie, keine erfundene Gewissheit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Implementierung basiert auf dem Verhalten des Spiels, einem sauberen GS-Dump und der Tatsache, dass keine andere Wiederverwendungsregel eine kohärente CSM2-Palette erzeugte. Der Autor merkt ausdrücklich an, dass Hardwaretests geplant waren, um das Modell zu bestätigen. Diese Grenze ist für einen technischen Artikel relevant: Die Softwarekorrektur hat einen starken Reproducer, aber der genaue interne Grund, warum der ursprüngliche GS sich so verhält, bleibt eine Hypothese, bis Konsolenspuren dies bestätigen."
+    },
+    {
+      "type": "heading",
+      "text": "Tests sollten den Menü-Reproducer mit Konsolenbeweisen kombinieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die unmittelbare Regressionsprüfung ist Breath of Fire: Dragon Quarter im betroffenen Menü, wobei die Paletteneinträge vor und nach dem CSM1-zu-CSM2-Wechsel verglichen werden. Eine nützliche Spur zeichnet den Speichermodus, die CLUT-Quelladresse, die Reihenfolge der Einträge und die vom beschädigten Text verwendete Farbe auf. Weitere Spiele, die zwischen den beiden Speichermodi wechseln, sollten bestätigen, dass das Erzwingen des Ladens aus dem lokalen Speicher die zuvor funktionierenden Paletten nicht stört. Hardware-Ergebnisse sollten separat von Emulatorableitungen dokumentiert werden."
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 behebt die beobachtete Palettekorruption, während die Hardware-Erklärung ehrlich bleibt: Das direkte Verhalten von CSM2 im lokalen Speicher ist durch Beweise gestützt, wartet jedoch noch auf eine stärkere Konsolenbestätigung."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "Lesen Sie die PCSX2 Ingenieursdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

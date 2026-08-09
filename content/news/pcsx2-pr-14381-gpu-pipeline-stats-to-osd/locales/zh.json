@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 在覆盖层更改之前显示着色器调用次数",
+  "summary": "一个可选的 OSD 指标报告在 ImGui 绘制之前收集的顶点和像素着色器调用，使后端工作量比较更稳定且更易于阅读。",
+  "heroAlt": "PCSX2 拉取请求 #14381 的来源证据：GS：将 GPU 管线统计添加到 OSD。",
+  "searchKeywords": [
+    "PCSX2",
+    "GPU 管线统计",
+    "顶点着色器调用",
+    "像素着色器调用",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "工具",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS：将 GPU 管线统计添加到 OSD。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "帧率无法判断场景扩展了多少顶点或像素工作"
+    },
+    {
+      "type": "paragraph",
+      "text": "性能回归可能来自更多提交的顶点、更多覆盖的样本、额外的渲染通道或同步。PCSX2 已经显示了几个渲染器指标，但缺乏直接的管线调用计数。拉取请求 #14381 添加了 VSI 和 PSI，使开发人员可以查看 GPU 在测量间隔内执行了数千次顶点着色器调用还是数百万次像素着色器调用。"
+    },
+    {
+      "type": "heading",
+      "text": "查询在每种硬件 API 上实现。"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D 11、Direct3D 12、OpenGL、Vulkan 和 Metal 设备类将管线统计信息公开为通用性能指标。该设置出现在 OSD 配置中，覆盖层以小数 K、M 和 B 后缀显示大数字。通过后端查询收集数据是必要的，因为通过绘制计数的常规估计可能会遗漏裁剪、实例化、样本覆盖和特定 API 的执行情况。"
+    },
+    {
+      "type": "heading",
+      "text": "在 ImGui 之前进行采样会将覆盖层从自身的测量中移除。"
+    },
+    {
+      "type": "paragraph",
+      "text": "早期结果差异很大，因为查询可能包括 OSD 和 ImGui 渲染。最终行为是在绘制覆盖层之前收集统计数据，从而稳定数字并使场景比较更具意义。软件渲染仍通过 Vulkan 呈现，因此值可能显示在那里，但描述的是呈现而非软件 GS 工作负载；源头警告这些数字不应像硬件渲染器统计数据一样解读。"
+    },
+    {
+      "type": "heading",
+      "text": "有效的比较需要固定场景和查询间隔"
+    },
+    {
+      "type": "paragraph",
+      "text": "启用显示 GPU 流水线统计并在各后端保持一个场景静止，检查 VSI 和 PSI 是否出现并在分辨率或几何变化时按比例变化。切换 OSD 本身并确认测量值不会因为计算其像素而跳动。操作查询重置、设备丢失、暂停和后端切换。跨 API 的计数仍可能有所不同，因为规范和采样计数各异，因此在声称精确一致性之前，应先在同一后端诊断趋势。"
+    },
+    {
+      "type": "callout",
+      "text": "OSD 报告的是硬件查询结果，而不是通用的跨 API 真理；在 ImGui 之前获取样本使其有用，而不会让仪表自我测量。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "阅读 PCSX2 工程讨论和源代码更改"
+    }
+  ]
+}

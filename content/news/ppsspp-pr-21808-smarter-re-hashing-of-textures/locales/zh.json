@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 将纹理重新哈希与客户 GPU 同步绑定",
+  "summary": "纹理有效性现在遵循 PSP 软件可以观察或重写 GPU 内存的点，用显式同步域替代帧计数启发式。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21808 的源证据：纹理缓存：更智能的纹理重新哈希",
+  "searchKeywords": [
+    "PPSSPP",
+    "纹理缓存",
+    "重新哈希",
+    "GE 同步",
+    "GPU 内存"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "纹理缓存：更智能的纹理重新哈希"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "帧龄仅是内存可见性的代理"
+    },
+    {
+      "type": "paragraph",
+      "text": "缓存的 PSP 纹理可能在数百帧内保持不变，或者在一帧内被多次重写。之前的纹理回退策略使用了迷你哈希、帧计数器、失效提示和指数计划来决定何时执行完整哈希。这减少了工作量，但经过的帧数并不能直接描述客机 CPU 和 GPU 在内存中的同步时间，因此该启发式方法可能会进行不必要的检查或保留过时的内容。"
+    },
+    {
+      "type": "heading",
+      "text": "同步域标记假设可能发生变化的时刻"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #21808 在 GE 等待、阻塞地址变化、绘图同步、帧缓冲区复制和相关块传输时增加了 textureSyncTimeDomain。每个非可靠纹理条目记录最后检查的域。已知失效情况仍由显式的 HASH_RECHECK 和 CLUT_RECHECK 标志强制执行工作，而可靠的类似字体的纹理可以跳过域测试。现在，这一决定与模拟可见性事件而非定时器相关联。"
+    },
+    {
+      "type": "heading",
+      "text": "重新设计还消除了可能漂移的簿记"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁移除了面向用户的退避开关、每条目迷你哈希计划、更改频率标志以及可变缓存大小计数器。缓存压力通过在执行抽取时汇总当前条目来得出，以牺牲偶尔的计算为代价换取在异常删除路径后状态不会不一致。视频纹理和调色板变体保持专用行为，因为它们的变异模式不同于普通静态图像。"
+    },
+    {
+      "type": "heading",
+      "text": "正确性需要那些以不寻常顺序重写纹理的游戏"
+    },
+    {
+      "type": "paragraph",
+      "text": "测试视频播放、渲染到纹理效果、修改来自 CPU 的纹理内存的游戏、多种 CLUT 变体、帧缓冲复制，以及长期存在的静态 UI 字体。在每次同步域转换前后比较哈希值和屏幕截图。测量全哈希计数、CPU 时间、缓存大小和长期会话下的逐出行为。存档状态加载、内存无效化和后端切换必须重置或推进域状态，以防条目继承错误的新鲜状态声明。"
+    },
+    {
+      "type": "callout",
+      "text": "有用的问题不是纹理存活了多少帧，而是访客可见的同步是否创建了它的内存可能变化的新机会。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "阅读 PPSSPP 工程讨论和源代码变更"
+    }
+  ]
+}

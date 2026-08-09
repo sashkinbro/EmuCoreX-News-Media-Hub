@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin ensina seu JIT se um registrador ativo será lido ou sobrescrito",
+  "summary": "Máscaras de leitura futura e escrita futura separadas permitem que os caches x64 e ARM64 tomem decisões de pré-carregamento e descarte mais seguras e precisas do que um único indicador de uso.",
+  "heroAlt": "Evidência de fonte do pull request #14278 do Dolphin: PPCAnalyst: Dividir a análise de \"em uso\" em leituras e escritas",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "cache de registrador",
+    "análise de vivacidade",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "Cpu",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Dividir a análise de \"em uso\" em leituras e escritas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Estar ativo não indica o que a próxima instrução fará"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um registrador de guest pode ser relevante para o bloco restante porque uma instrução futura lê seu valor atual, porque uma instrução futura o sobrescreve, ou ambos. A máscara de uso mais antigo do Dolphin unia esses casos. Um cache de registradores JIT então tinha informações limitadas ao decidir se iria pré-carregar um valor de guest, escrever de volta um valor sujo do host, descartar um mapeamento ou mantê-lo através de um limite de fallback."
+    },
+    {
+      "type": "heading",
+      "text": "Dois conjuntos de uso futuro tornam o fluxo de dados explícito"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14278 propaga gprWillBeRead e gprWillBeWritten, com máscaras equivalentes para registradores de ponto flutuante e de condição. O pré-carregamento considera registradores que participarão em qualquer direção enquanto ainda exclui entradas descartáveis. Flushes completos têm como alvo valores que não serão mais usados por operações subsequentes. Saídas que não serão escritas mais tarde recebem um tratamento separado para que seu valor sujo atual alcance o estado do guest antes que o cache as marque como limpas."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty mantém um mapeamento útil após confirmar seu valor"
+    },
+    {
+      "type": "paragraph",
+      "text": "A refatoração nomeia com precisão o comportamento de flush. Escritas completas tornam os dados sujos e removem o mapeamento. MaintainState preserva o estado existente quando necessário. O novo modo Undirty escreve um valor sujo, mas mantém a associação do registrador do host como limpa. Isso é útil quando uma saída deve ser externamente coerente em uma fronteira, mas ainda pode ser lida posteriormente. Ambos os caminhos x64 e ARM64 adotam o vocabulário, incluindo acesso lento à memória e sites de fallback do interpretador."
+    },
+    {
+      "type": "heading",
+      "text": "Testes de blocos diferenciais devem focar em fluxos de controle complicados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Compare o interpretador, JIT64, e JITARM64 em blocos gerados com padrões de somente leitura, somente escrita, leitura-antes-de-escrita, escrita-antes-de-leitura, descartados, imediatos, ponto flutuante e registrador de condição. Adicione exceções, falhas de memória, verificações de pipeline de coleta, branches, instruções de fallback e saídas de bloco em todas as posições. Instrumente spills do host e writebacks do convidado para verificar se a otimização realmente reduz o trabalho sem alterar o estado. A execução diferencial randomizada deve comparar todos os registradores arquitetônicos após cada fronteira forçada."
+    },
+    {
+      "type": "callout",
+      "text": "O registro de vivacidade só se torna acionável quando o JIT sabe se o futuro precisa do valor de hoje ou apenas precisa do nome do registro para uma sobrescrita posterior."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Leia a discussão de engenharia do Dolphin e as alterações de código-fonte"
+    }
+  ]
+}

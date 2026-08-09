@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP vincula la rehacer texturas con la sincronización del invitado GPU",
+  "summary": "La validez de la textura ahora sigue los puntos donde el software PSP puede observar o reescribir la memoria GPU, reemplazando una heurística de conteo de cuadros con dominios de sincronización explícitos.",
+  "heroAlt": "Evidencia fuente del pull request #21808 de PPSSPP: Caché de texturas: Re-hashing más inteligente de texturas",
+  "searchKeywords": [
+    "PPSSPP",
+    "caché de texturas",
+    "rehashing",
+    "Sincronización GE",
+    "memoria GPU"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Caché de texturas: Re-hashing más inteligente de texturas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La edad del cuadro era solo un proxy para la visibilidad de la memoria"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una textura de PSP almacenada en caché puede permanecer sin cambios durante cientos de fotogramas o ser sobrescrita varias veces dentro de un solo fotograma. La estrategia anterior de retroceso de texturas utilizaba mini-hashes, contadores de fotogramas, indicios de invalidez y un calendario exponencial para decidir cuándo realizar un hash completo. Eso reducía el trabajo, pero los fotogramas transcurridos no describen directamente cuándo los invitados CPU y GPU se han sincronizado alrededor de la memoria, por lo que la heurística podría realizar comprobaciones innecesarias o mantener contenido obsoleto."
+    },
+    {
+      "type": "heading",
+      "text": "Los dominios de sincronización marcan momentos en los que los supuestos pueden cambiar"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #21808 incrementa textureSyncTimeDomain en esperas de GE, cambios de dirección de bloqueo, sincronización de dibujado, copias de framebuffer y transferencias de bloque relevantes. Cada entrada de textura no confiable registra el último dominio en el que fue comprobada. Las banderas explícitas HASH_RECHECK y CLUT_RECHECK aún fuerzan trabajo para casos de invalidez conocidos, mientras que las texturas confiables tipo fuente pueden omitir la prueba de dominio. La decisión ahora está vinculada a eventos de visibilidad emulados en lugar de a un temporizador."
+    },
+    {
+      "type": "heading",
+      "text": "El rediseño también elimina la contabilidad que podría desviarse"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche elimina la opción de retroceso visible para el usuario, el horario mini-hash por entrada, las banderas de frecuencia de cambio y los contadores mutables del tamaño de la caché. La presión de la caché se deriva sumando entradas actuales cuando se ejecuta la decimación, intercambiando cálculos ocasionales por un estado que no puede volverse inconsistente después de un camino de eliminación inusual. Las texturas de video y las variantes de paleta mantienen un comportamiento dedicado porque sus patrones de mutación difieren de las imágenes estáticas ordinarias."
+    },
+    {
+      "type": "heading",
+      "text": "La corrección necesita juegos que reescriban texturas en órdenes inusuales"
+    },
+    {
+      "type": "paragraph",
+      "text": "Prueba de reproducción de video, efectos de renderizado a textura, juegos que modifican la memoria de texturas del CPU, muchas variantes del CLUT, copias de framebuffer y fuentes estáticas UI de larga duración. Compara los hashes y capturas de pantalla antes y después de cada transición de dominio de sincronización. Mide el conteo de hash completo, el tiempo del CPU, el tamaño de la caché y el comportamiento de expulsión durante sesiones largas. Las cargas de savestate, la invalidación de memoria y los cambios de backend deben reiniciar o avanzar el estado del dominio para que una entrada no pueda heredar un falso reclamo de vigencia."
+    },
+    {
+      "type": "callout",
+      "text": "La pregunta útil no es cuántos cuadros sobrevivió una textura, sino si la sincronización visible para el invitado creó una nueva oportunidad para que su memoria cambiara."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Lee la discusión de ingeniería y los cambios de fuente de PPSSPP"
+    }
+  ]
+}

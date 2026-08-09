@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 consente alla dimensione dell'immagine caricata di definire l'area valida di un obiettivo precaricato",
+  "summary": "I limiti esatti di caricamento EE-to-GS impediscono che la successiva scala RTA ritagli un'immagine intera nella piccola regione disegnata in seguito, mentre sovrapposizioni di un pixel impediscono di riposizionare obiettivi altrimenti validi.",
+  "heroAlt": "Evidenza della fonte dal pull request #14740 di PCSX2: GS/TC: Imposta la dimensione minima valida basata sull'obiettivo precaricato esatto",
+  "searchKeywords": [
+    "PCSX2",
+    "cache delle texture",
+    "precarica",
+    "Scala RTA",
+    "Caricamento EE verso GS"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC: Imposta la dimensione minima valida basata sull'obiettivo precaricato esatto"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un piccolo disegno potrebbe ridurre un obiettivo che già conteneva un caricamento completo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alcuni giochi caricano un'immagine dall'Emotion Engine nella memoria GS, pre-caricano quell'immagine come bersaglio e poi disegnano solo una piccola regione. Il pre-caricamento potrebbe essere corretto, ma il tracciamento delle dimensioni valide di PCSX2 potrebbe seguire il disegno successivo piuttosto che il caricamento. Se RTA Scaling ridimensionava il bersaglio, trattava come valide solo quelle poche pixel disegnate e eliminava il resto dell'immagine pre-caricata."
+    },
+    {
+      "type": "heading",
+      "text": "La copertura dell'upload ora fornisce l'altezza valida minima"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14740 rileva le dimensioni dell'upload EE-to-GS che ha popolato il pre-caricamento e le utilizza per stabilire l'altezza valida del bersaglio. I successivi piccoli disegni possono estendere la validità dove appropriato ma non possono ridurla al di sotto dei contenuti caricati noti. La correzione risiede in GSTextureCache perché questo riguarda la proprietà e i metadati di copertura, non un effetto shader applicato dopo che l'immagine è già stata troncata."
+    },
+    {
+      "type": "heading",
+      "text": "Un pixel di sovrapposizione non sposta più l'identità del bersaglio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un caso separato ha permesso un nuovo caricamento che si sovrapponeva a un altro bersaglio di un singolo pixel per regolare l'inizio di quel bersaglio e ridimensionarlo. Le ricerche per l'indirizzo base originale poi fallivano anche se la risorsa era ancora valida a quell'indirizzo base. La gestione del preload ora tollera la lieve sovrapposizione dei blocchi senza rilocare il bersaglio, preservando l'identità dell'indirizzo che altre operazioni di cache usano per trovarlo."
+    },
+    {
+      "type": "heading",
+      "text": "Vexx e Lucifer's Call testano le due correzioni indipendenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx è il riproduttore sorgente per un'immagine completamente precaricata ritagliata tramite il tracciamento delle dimensioni valide. Shin Megami Tensei: Lucifer's Call copre il comportamento di sovrapposizione. Il test dovrebbe registrare i limiti del caricamento, la base del bersaglio, l'altezza valida, i limiti di disegno successivi e qualsiasi ridimensionamento RTA. Confrontare i frame nativi e quelli ingranditi, poi aggiungere un caso negativo con una vera sovrapposizione maggiore che dovrebbe comunque modificare la proprietà. Correggere la tolleranza di un pixel non deve permettere a bersagli in conflitto di coesistere indefinitamente."
+    },
+    {
+      "type": "callout",
+      "text": "La validità precaricata ora segue le prove già presenti nella memoria GS: la dimensione esatta del caricamento e l'indirizzo base stabile hanno la precedenza su un successivo piccolo disegno o una sovrapposizione trascurabile."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "Leggi la discussione di ingegneria PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

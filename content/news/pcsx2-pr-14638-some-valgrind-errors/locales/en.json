@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 removes two sources of uninitialized-state decisions found by Valgrind",
+  "summary": "Debugger table geometry starts at zero, and audio settings compare fields instead of raw struct bytes, eliminating branches influenced by never-written memory and padding.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14638: Misc: Fix some valgrind errors",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "uninitialized read",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Misc: Fix some valgrind errors"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The debugger painted with members that had no defined first value"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind traced a conditional branch in MemoryViewTable::DrawTable to row counts, positions, selection state, and address members that were declared without initialization. Normal resize or setup paths often assigned them before painting, which made the defect intermittent. A paint event arriving earlier could nevertheless read indeterminate integers and choose layout behavior from whatever bits occupied the object."
+    },
+    {
+      "type": "heading",
+      "text": "Zero initializers give the first paint a valid empty table"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14638 initializes rowCount, rowVisible, rowHeight, value and text axes, first-row position, start and selected addresses, and selectedIndex at declaration. Zero represents a safe pre-layout state until real dimensions arrive. The change does not guess a default address or selection; it ensures that early events see an intentionally empty model instead of undefined data."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp was comparing audio fields and invisible padding together"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters implemented equality by comparing sizeof(struct) raw bytes. C++ padding between members is not a field and may retain indeterminate values, so two logically identical configurations could compare unequal. That reached SPU2 configuration checks during settings changes and savestate load. The patch replaces custom == and != with a defaulted three-way comparison, which compares declared members according to their types and never treats padding as configuration."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind and behavioral tests should cover event order and state load"
+    },
+    {
+      "type": "paragraph",
+      "text": "Run the debugger under Valgrind while opening, resizing, painting, selecting, and closing memory views before and after a VM starts. Then load savestates and repeatedly apply identical audio settings, confirming no spurious restart and no uninitialized comparison report. Change one real audio field to ensure inequality still works. Compiler and sanitizer builds with different struct padding are valuable because a clean result on one layout does not prove the removed memcmp was safe elsewhere."
+    },
+    {
+      "type": "callout",
+      "text": "Both fixes replace accidental memory contents with language-level state: initialized fields for UI layout and field-wise equality for audio configuration."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

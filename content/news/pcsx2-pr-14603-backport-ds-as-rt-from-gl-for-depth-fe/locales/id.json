@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menukar Direct3D 11 salinan depth untuk salinan render-target yang lebih cepat",
+  "summary": "Jalur depth-sebagai-render-target melakukan lebih banyak operasi salin tetapi menggunakan bentuk Direct3D 11 yang lebih cepat, menargetkan adegan berfeedback tinggi AA1 dan AAT ketika ROV dinonaktifkan.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14603: GS/DX11: Mem-backport ds sebagai rt dari GL untuk feedback depth.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "feedback depth",
+    "salinan render target",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Mem-backport ds sebagai rt dari GL untuk feedback depth."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jumlah salinan saja tidak memprediksi biaya Direct3D 11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Umpan balik kedalaman membutuhkan PCSX2 untuk membuat informasi kedalaman tersedia untuk draw berikutnya tanpa melanggar aturan penggunaan target. Direct3D 11 dapat melakukan salinan kedalaman GPU, tetapi sumber melaporkan operasi itu sebagai sangat lambat. Oleh karena itu, solusi dengan lebih sedikit salinan dapat kalah dengan jalur yang mengubah kedalaman menjadi bentuk render-target dan melakukan salinan tambahan melalui perangkat keras dan shader yang dioptimalkan untuk target seperti warna."
+    },
+    {
+      "type": "heading",
+      "text": "Strategi kedalaman-sebagai-RT OpenGL disesuaikan untuk DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14603 menambahkan konversi dan plumbing perangkat yang diperlukan untuk memperlakukan umpan balik kedalaman sebagai salinan render-target di Direct3D 11. Perubahan shader menampilkan jalur format yang diperlukan, dan GSDevice11 melacak sumber daya yang digunakan oleh konversi. Direct3D 12 menerima penyesuaian bersama terkait, tetapi target performanya adalah DX11. Desain ini secara eksplisit diuji tanpa ROV sehingga umpan balik terurut tidak menyembunyikan perbedaan jalur salinan."
+    },
+    {
+      "type": "heading",
+      "text": "Operasi lebih banyak masih bisa selesai lebih cepat ketika setiap operasi lebih murah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pertukaran sentral dalam artikel ini dapat diukur: rute baru mungkin mengeksekusi salinan tambahan, namun menghindari perilaku penyalinan kedalaman bawaan yang mahal. Ini tidak boleh digambarkan sebagai lebih cepat secara universal hanya dari jumlah operasi saja. Konversi format, bandwidth memori, ukuran target, vendor GPU, dan jumlah peristiwa umpan balik menentukan hasilnya. Ketepatan juga tergantung pada pemeliharaan presisi kedalaman melalui representasi target render."
+    },
+    {
+      "type": "heading",
+      "text": "Game AA1 dan AAT menyediakan uji stres yang dimaksud"
+    },
+    {
+      "type": "paragraph",
+      "text": "Benchmark Final Fantasy X, Everybody's Golf, dan judul AA1 atau AAT lainnya di Direct3D 11 dengan ROV dinonaktifkan, menjaga resolusi dan adegan tetap konstan. Catat jenis salinan, jumlahnya, waktu GPU, dan output frame dibandingkan dengan jalur penyalinan kedalaman sebelumnya. Uji ukuran asli dan yang ditingkatkan serta beberapa vendor. Bandingkan efek yang bergantung pada kedalaman dan urutan z pixel demi pixel; peningkatan kecepatan yang memperkenalkan kuantisasi atau kedalaman yang usang tidak dapat diterima."
+    },
+    {
+      "type": "callout",
+      "text": "Optimisasi memilih primitif yang lebih murah untuk DX11, bukan jumlah yang lebih kecil: salinan render-target tambahan bisa mengungguli satu jalur salinan kedalaman yang mahal."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

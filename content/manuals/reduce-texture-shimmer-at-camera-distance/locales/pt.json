@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "reduce-texture-shimmer-at-camera-distance",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Reduza o brilho de texturas distantes sem borrar a imagem PS2",
+  "summary": "Construa uma rota de câmera repetível através de estradas, cercas ou terreno, teste mipmapping antes do filtro anisotrópico, compare a resolução nativa com a de destino e aceite apenas uma configuração que estabilize o detalhe em movimento.",
+  "heroAlt": "Diagrama de amostragem em resolução nativa PCSX2 usado para explicar o comportamento da textura durante o upscale",
+  "searchKeywords": [
+    "Brilho de textura PS2",
+    "Texturas distantes EmuCoreX",
+    "Mipmapping",
+    "Filtro anisotrópico",
+    "Flicker de movimento da câmera"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "sampling": "Amostragem"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "Explicação da amostragem de textura PCSX2",
+    "pcsx2-performance": "Indicadores de mapeamento e filtragem de mip PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Use o movimento para expor detalhes instáveis da textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "O cintilamento é um problema temporal: padrões de textura finos mudam rapidamente à medida que a câmera se movimenta porque os texels distantes são amostrados de forma inconsistente. Uma imagem estática pode parecer nítida enquanto a rota cintila durante o jogo. Escolha uma estrada reta, piso em placas, cerca de arame ou inclinação de terreno com velocidade de câmera controlável. A rota deve ser longa o suficiente para ver as transições de distância e curta o suficiente para repetir com os mesmos parâmetros."
+    },
+    {
+      "type": "callout",
+      "text": "Não comece forçando o nível anisotrópico mais alto e um shader de nitidez juntos. Qualquer um deles pode alterar o detalhe aparente sem provar se os níveis de mip do título estão sendo selecionados corretamente."
+    },
+    {
+      "type": "heading",
+      "text": "Crie uma rota de estabilidade de textura"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um salvamento no jogo antes de um movimento de câmera de dez a vinte segundos.",
+        "Gravações em resolução nativa e resolução-alvo da rota inalterada.",
+        "Filtragem de textura padrão e mapeamento mip automático de hardware registrados.",
+        "Pós-nitidez, substituição de textura e aprimoramento de exibição desativados.",
+        "Um elemento UI em primeiro plano à vista para detectar desfoque global indesejado."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Testar seleção de mip antes do filtragem oblíqua"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Execute a rota na resolução nativa e marque onde os detalhes distantes começam a cintilar.",
+        "2. Repita com o multiplicador de aumento pretendido sem alterar o filtragem ou o renderizador.",
+        "3. Se o cintilamento crescer com a resolução, volte para a nativa e teste o próximo nível de precisão de mipmapping suportado.",
+        "4. Grave a mesma rota e compare as transições em vez de frames individuais nítidos.",
+        "5. Quando as transições de mip estiverem estáveis, teste o filtro anisotrópico moderado em superfícies vistas em ângulo acentuado.",
+        "6. Inspecione fontes, sprites e bordas de atlas de textura em busca de halos, costuras ou suavização inesperada.",
+        "7. Volte para a resolução alvo e repita depois que o dispositivo atingir a temperatura normal de operação.",
+        "8. Armazene mipmapping e filtragem apenas no perfil de título afetado se um segundo jogo regredir."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Mipmaps fornecem níveis de textura prefiltrados menores para superfícies distantes, enquanto o filtro anisotrópico melhora as amostras vistas em ângulos oblíquos. Eles resolvem problemas de amostragem relacionados, mas diferentes. A ampliação pode revelar lacunas e suposições do atlas que estavam ocultas na taxa de amostragem do PS2, portanto, uma saída mais nítida não é automaticamente mais estável ou fiel."
+    },
+    {
+      "type": "heading",
+      "text": "Passagem de estabilidade da textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Julgue a rota completa em velocidade normal de reprodução e, em seguida, inspecione quadros representativos."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Padrões distantes mudam suavemente em vez de cintilar entre os quadros.",
+        "Estradas e pisos permanecem detalhados em ângulos oblíquos sem bordas arrastadas.",
+        "O texto do HUD e os sprites 2D mantêm sua nitidez pretendida.",
+        "As bordas do atlas de texturas não vazam para a arte adjacente.",
+        "A combinação escolhida não tem penalidade térmica ou de tempo de quadro sustentada."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Alterações na amostragem para rejeitar"
+    },
+    {
+      "type": "list",
+      "items": [
+        "O cintilar diminui apenas porque o quadro inteiro está borrado: restaure o filtro anterior.",
+        "Novas costuras coloridas aparecem ao redor dos sprites: remova a filtragem forçada e teste novamente o atlas.",
+        "Apenas um multiplicador de upscale falha: mantenha a última resolução estável em vez de acumular correções.",
+        "O cintilamento da superfície permanece no software na saída nativa: confirme se o jogo original se comporta da mesma forma."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Retorne os controles de amostragem para valores seguros do jogo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restaure o mipmapping automático, a filtragem de texturas controlada pelo jogo e a resolução interna anterior. Desative qualquer estágio de nitidez introduzido durante a comparação, inicialize a rota salva com cold-boot e confirme o padrão de cintilação base antes de tentar uma correção documentada específica para o título."
+    },
+    {
+      "type": "heading",
+      "text": "A compressão de vídeo oculta e inventa cintilação"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gravações de baixa taxa de bits podem transformar detalhes finos em blocos ou suavizar o rastreamento temporal. Mantenha capturas locais de alta qualidade para análise e trate as versões transmitidas apenas como auxiliares de navegação, não como evidência final."
+    },
+    {
+      "type": "link",
+      "text": "Estude a explicação de amostragem PCSX2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

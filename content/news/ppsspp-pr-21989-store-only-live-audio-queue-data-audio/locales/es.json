@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP reduce los savestate almacenando solo muestras de audio en directo",
+  "summary": "Un formato de cola compacto serializa las muestras que aún pueden reproducirse, en lugar de copiar los nueve búferes de audio de capacidad fija en cada estado.",
+  "heroAlt": "Evidencia de la fuente de PPSSPP pull request #21989: Savestate: almacenar solo datos de cola de audio en vivo (sección AudioChannel v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "Cola de audio",
+    "savestate tamaño",
+    "Rebobinar",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Estados guardados",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: solo almacenar datos de cola de audio en vivo (sección AudioChannel v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La capacidad fija se confundía con un estado significativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada canal de sceAudio utiliza un FixedSizeQueue con espacio para 32768 por ocho valores de 16 bits, un almacenamiento de respaldo de 512 KB. Hay nueve colas de canales. El serializador anterior copiaba cada byte de esos arreglos aunque solo un pequeño segmento lógico entre la cabeza y el conteo pudiera ser desapilado. Consecuentemente, aproximadamente 4.6 MB de datos mayormente muertos ingresaron a guardados manuales, ranuras de guardado, entrada de compresión y cada instantánea periódica de rebobinado en memoria."
+    },
+    {
+      "type": "heading",
+      "text": "La forma compacta preserva el orden de la cola a través del desbordamiento"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #21989 introduce DoStateCompact como un formato opcional. Cuando la región activa es contigua, escribe un arreglo crudo. Cuando la cabeza más el conteo cruza el final del almacenamiento, escribe la cola y el inicio como dos piezas en orden de desapilado. POD DoArray escribe bytes crudos sin un encabezado por llamada, de modo que esas piezas forman el mismo flujo que una sola lectura lineal consume. La carga coloca la secuencia en el índice cero y deriva la nueva cola a partir del conteo."
+    },
+    {
+      "type": "heading",
+      "text": "La versionado protege estados antiguos y otros llamadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sección AudioChannel avanza a un nuevo nivel de formato y selecciona la serialización compacta solo allí. Los niveles de sección más antiguos todavía usan el método original de almacenamiento completo, por lo que las partidas existentes siguen siendo legibles. La función antigua de FixedSizeQueue permanece intacta porque su disposición de bytes no es intercambiable y otro llamador podría depender de ella. El cargador también rechaza un conteo fuera del rango de cero hasta la capacidad con SetError, evitando que un archivo dañado desincronice cada campo que le sigue."
+    },
+    {
+      "type": "heading",
+      "text": "Colas envueltas, vacías y llenas son las pruebas esenciales"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cree colas deterministas que estén vacías, parcialmente llenas, exactamente llenas y envueltas en varios desplazamientos de cabeza. Guárdelas y cárguelas, luego compare cada muestra extraída con el orden original. Ejercite los nueve canales durante el juego, los límites de desbordamiento y subdesbordamiento de audio, la recarga de rebobinado, las proporciones de compresión y la compatibilidad con estados antiguos. Corrompa el conteo almacenado para confirmar una falla limpia de carga. Mida el tiempo de almacenamiento y la presión de memoria por separado; se espera una carga útil más pequeña, pero la corrección sigue siendo la principal restricción."
+    },
+    {
+      "type": "callout",
+      "text": "La capacidad es un detalle de implementación; un savestate necesita la secuencia de audio en vivo y suficientes metadatos para reconstruir una cola equivalente."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de PPSSPP"
+    }
+  ]
+}

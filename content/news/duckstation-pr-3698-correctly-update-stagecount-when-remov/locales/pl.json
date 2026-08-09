@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation utrzymuje spójną długość łańcucha post-processingu po usunięciu i wyczyszczeniu",
+  "summary": "Skorygowana trwałość StageCount rozróżnia skrócony łańcuch, jawnie pusty łańcuch bazowy oraz pusty override dla gry, który powinien zostać usunięty.",
+  "heroAlt": "Dowody źródłowe z pull requestu DuckStation #3698: PostProcessing: Poprawne aktualizowanie `StageCount` podczas usuwania/ czyszczenia etapów",
+  "searchKeywords": [
+    "DuckStation",
+    "post-processing",
+    "StageCount",
+    "ustawienia per-game",
+    "usuwanie shaderów"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: Poprawne aktualizowanie `StageCount` podczas usuwania/ czyszczenia etapów"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount jest zarówno długością, jak i markerem override"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation przechowuje etapy post-processingu w ustawieniach razem z StageCount. W ustawieniach bazowych zero wyraźnie oznacza brak etapów. W warstwie przypisanej do konkretnej gry, usunięcie pola może oznaczać, że gra nie nadpisuje już globalnego łańcucha. Traktowanie tych przypadków jednakowo powoduje przestarzałe etapy lub uniemożliwia dziedziczenie. Usunięcie, które pozostawia dwa etapy, musi zapisać dwa; usunięcie, które nie pozostawia żadnego, może wymagać wymazania pola przypisanego do gry."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage teraz usuwa tylko naprawdę pusty nadpisanie przypisane do gry"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3698 oblicza new_stage_count i zachowuje tę wartość, gdy etapy pozostają. Pole jest usuwane tylko wtedy, gdy interfejs ustawień nie jest warstwą bazową, a liczba osiąga zero, pozwalając pustemu nadpisaniu specyficznemu dla gry zniknąć. Wcześniej gałąź mogła wykasować StageCount po jakimkolwiek usunięciu per-game, tracąc zadeklarowaną długość pozostałego łańcucha."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages koryguje przeciwną gałąź warstwy bazowej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jasna ścieżka miała odwrócony warunek baza-przeciw-gra. Poprawiony kod zapisuje StageCount = 0 dla ustawień bazowych, gdzie jawny pusty łańcuch globalny ma znaczenie, i usuwa wartość dla poszczególnych gier, aby konfiguracja globalna mogła przepływać. Ta symetria jest kluczem poprawki: skrócenie, wyczyszczenie globalnie i wyczyszczenie nadpisania to trzy odrębne operacje trwałości."
+    },
+    {
+      "type": "heading",
+      "text": "Testy w obie strony powinny obejmować każdą warstwę i pozostałą liczbę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utwórz trzyetapowy globalny łańcuch i inny trzyetapowy łańcuch dla poszczególnych gier. Usuń środkowy etap poszczególnej gry, zrestartuj i zweryfikuj, że dwóch ocalałych zachowuje kolejność i parametry. Usuń dwa ostatnie i potwierdź, że wraca globalny łańcuch. Następnie wyczyść łańcuch bazowy i potwierdź, że pozostaje pusty po restarcie. Powtórz przez Qt i FullscreenUI, sprawdzaj StageCount po każdej operacji i przetestuj dodanie etapu bezpośrednio po czyszczeniu, aby wychwycić przestarzałe indeksowane pola."
+    },
+    {
+      "type": "callout",
+      "text": "Długość łańcucha równa zeru nie jest zawsze przechowywana w ten sam sposób: ustawienia bazowe rejestrują pustkę, podczas gdy pusta warstwa dla konkretnej gry powinna przestać nadpisywać bazę."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Przeczytaj dyskusję inżynieryjną DuckStation i zmiany w źródle"
+    }
+  ]
+}

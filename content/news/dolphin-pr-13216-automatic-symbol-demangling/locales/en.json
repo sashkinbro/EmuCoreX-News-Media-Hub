@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-13216-automatic-symbol-demangling",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin translates CodeWarrior symbols into readable C++ names",
+  "summary": "A dedicated demangler decodes the compiler conventions found in many GameCube and Wii binaries, improving symbol lists without relying on manual renaming.",
+  "heroAlt": "Source evidence from Dolphin pull request #13216: Core: Implement automatic symbol demangling",
+  "searchKeywords": [
+    "Dolphin",
+    "CodeWarrior",
+    "demangler",
+    "symbols",
+    "debugger"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-13216": "Core: Implement automatic symbol demangling"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Console symbols often preserve structure in a compressed spelling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Many GameCube and Wii binaries were built with Metrowerks CodeWarrior. When symbol data survives, its names encode namespaces, classes, arguments, qualifiers, templates, operators, constructors, destructors, and virtual tables in a compiler-specific grammar. Showing the raw token is better than an address, but it still forces reverse engineers to decode every signature mentally and makes related overloads difficult to distinguish."
+    },
+    {
+      "type": "heading",
+      "text": "The parser covers types, qualifiers, scopes, and special names"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #13216 adds Dolphin's CWDemangler based on the openly licensed cwdemangle work. It parses pointer, reference, const, volatile, signed and unsigned qualifiers; primitive and named types; nested scopes and templates; operator codes from allocation through comparisons and calls; and special objects such as vtables. Parsing functions return the unconsumed suffix, allowing the caller to reject a partial interpretation rather than display a confidently wrong signature."
+    },
+    {
+      "type": "heading",
+      "text": "Strict failure behavior protects arbitrary symbol inputs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Length fields are parsed with from_chars, strings are checked for ASCII where the grammar requires it, nesting depth is tracked while finding separators, and optional results represent malformed constructs. These boundaries matter because symbol tables may be stripped, corrupted, manually supplied, or extracted from unusual binaries. Automatic demangling should enhance a recognized CodeWarrior token and leave unknown naming schemes intact instead of destructively normalizing everything."
+    },
+    {
+      "type": "heading",
+      "text": "A conformance set should preserve overload identity"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test functions, methods, nested namespaces, constructors, destructors, operators, pointers to qualified types, arrays, templates within templates, variadic arguments, vtables, and every primitive code. Include truncated lengths, unmatched brackets, invalid operator tokens, deep nesting, empty components, and non-ASCII bytes. Compare results with known CodeWarrior map files and cwdemangle fixtures. Confirm overloaded functions remain distinct in the debugger and that remangling is never assumed, because the feature is a readable presentation layer."
+    },
+    {
+      "type": "callout",
+      "text": "A useful symbol view preserves the compiler's exact identity while translating its compact grammar into a signature a human can scan."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/13216",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

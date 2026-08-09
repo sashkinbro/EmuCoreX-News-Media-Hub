@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar mengkalibrasi pusat pemicu warisan alih-alih mengasumsikan nol",
+  "summary": "Sumbu pemicu Steam Deck dapat berada di dekat -32767 di bawah API Joystick SDL; merekam pusat awal mengembalikan pemetaan lama yang sebaliknya melaporkan L dan R seakan ditekan.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2328: BUGFIX: Pemicu joystick warisan di Linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "kalibrasi pemicu",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Pemicu joystick warisan di Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nilai netral sebuah pemicu tergantung pada API SDL dan pemetaan perangkat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengguna Steam Deck melalui EmuDeck melaporkan tombol L dan R selalu tertekan. Profil lama mereka menggunakan sumbu trigger melalui API Joystick SDL, di mana nilai istirahat mungkin -32767 daripada nol. Implementasi status langsung yang lebih baru berhenti menyimpan sampel historis dan karena itu menggunakan asumsi nol-sentris yang valid untuk beberapa perangkat tetapi memperlakukan posisi netral ini sebagai tekanan penuh."
+    },
+    {
+      "type": "heading",
+      "text": "Inisialisasi menangkap pusat istirahat aktual perangkat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2328 menambahkan kalibrasi per-sumbu ke lapisan joystick lama. Ketika perangkat diinisialisasi, Azahar mencatat pusat saat ini dan membandingkan nilai-nilai berikutnya dengannya. Pemetaan kemudian mengukur gerakan dari titik netral yang diamati alih-alih mengkodekan satu interpretasi rentang SDL secara keras. Ini sangat sesuai untuk kompatibilitas mundur karena pengikatan lama yang disimpan mungkin merujuk ke sumbu joystick mentah."
+    },
+    {
+      "type": "heading",
+      "text": "Pemetaan baru biasanya menggunakan Kontroler SDL dan menghindari ambiguitas lama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Standar API Controller default modern Azahar menormalkan semantik trigger dan bukanlah target dari perbaikan ini. Pengguna yang memetakan controller sekarang seharusnya tidak melihat perubahan. Patch ini mempertahankan profil Joystick legacy dan kontrol tidak biasa yang tetap berada di luar API yang distandarisasi. Menjaga perilaku yang terfokus mencegah heuristik kalibrasi mengubah backend yang sudah melaporkan trigger controller yang ternormalisasi dengan benar."
+    },
+    {
+      "type": "heading",
+      "text": "Tes membutuhkan sumbu yang berpusat nol dan berpusat negatif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mulai setiap perangkat dengan trigger dilepas, konfirmasi pusat terkalibrasi, lalu tekan dan lepaskan perlahan-lahan dan sepenuhnya. Uji Steam Deck, controller desktop yang menggunakan API legacy, hot-plug, suspend/resume, dan perangkat yang disambungkan saat trigger sedang ditekan. Profil yang ada harus pulih tanpa pemetaan ulang, sementara profil Controller-API baru tetap identik. Kasus yang ditekan saat inisialisasi membutuhkan jalur pemulihan yang terdokumentasi sehingga satu sampel buruk tidak menjadi pusat permanen sesi."
+    },
+    {
+      "type": "callout",
+      "text": "Kalibrasi mengembalikan titik referensi yang hilang: nilai pemicu mentah berarti ditekan hanya relatif terhadap posisi netral yang diamati perangkat tersebut."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumber"
+    }
+  ]
+}

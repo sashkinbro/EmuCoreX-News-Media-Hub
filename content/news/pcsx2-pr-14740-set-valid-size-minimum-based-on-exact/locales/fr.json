@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 permet à la taille de l'image téléchargée de définir la zone valide d'une cible préchargée",
+  "summary": "Des limites exactes d'envoi EE-to-GS empêchent le redimensionnement RTA ultérieur de recadrer une image complète dans la petite zone dessinée par la suite, tandis que des chevauchements d'un pixel empêchent de déplacer autrement des cibles valides.",
+  "heroAlt": "Preuve source de la demande de tirage PCSX2 #14740 : GS/TC : Définir la taille valide minimale en fonction de la cible préchargée exacte",
+  "searchKeywords": [
+    "PCSX2",
+    "cache de textures",
+    "précharger",
+    "Redimensionnement RTA",
+    "Téléversement EE vers GS"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC : Définir la taille valide minimale en fonction de la cible préchargée exacte"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un petit dessin pourrait réduire une cible qui contenait déjà un téléversement complet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Certains jeux téléchargent une image depuis le moteur Emotion Engine dans la mémoire GS, préchargent cette image comme cible, puis ne dessinent qu'une petite région. Le préchargement peut être correct, mais le suivi de la taille valide de PCSX2 pourrait suivre le dessin ultérieur plutôt que le téléchargement. Si le Redimensionnement RTA redimensionnait ensuite la cible, il ne considérait comme valides que ces quelques pixels dessinés et supprimait le reste de l'image préchargée."
+    },
+    {
+      "type": "heading",
+      "text": "La couverture du téléchargement fournit désormais la hauteur minimale valide"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14740 détecte les dimensions du téléchargement EE-vers-GS qui a rempli le préchargement et les utilise pour établir la hauteur valide de la cible. Les petits dessins ultérieurs peuvent étendre la validité lorsque c'est approprié, mais ne peuvent pas la réduire en dessous du contenu téléchargé connu. La correction se trouve dans GSTextureCache car il s'agit de métadonnées de propriété et de couverture, et non d'un effet de shader appliqué après que l'image a déjà été tronquée."
+    },
+    {
+      "type": "heading",
+      "text": "Un chevauchement d'un pixel ne déplace plus l'identité de la cible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un cas séparé permettait un nouveau téléchargement chevauchant une autre cible d’un seul pixel pour ajuster le début de cette cible et la redimensionner. Les recherches par l’adresse de base originale échouaient alors même que la ressource était toujours valide à cette adresse de base. La gestion du préchargement tolère désormais ce léger chevauchement de bloc sans relocaliser la cible, préservant l’identité de l’adresse utilisée par d’autres opérations de cache pour la trouver."
+    },
+    {
+      "type": "heading",
+      "text": "Vexx et Lucifer's Call mettent en pratique les deux correctifs indépendants"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx est le cas reproduisant pour une image entièrement préchargée recadrée par le suivi de taille valide. Shin Megami Tensei: Lucifer's Call couvre le comportement de chevauchement. Les tests doivent enregistrer les limites du téléchargement, la base de la cible, la hauteur valide, les limites de dessin ultérieures et tout redimensionnement RTA. Comparez les images natives et mises à l’échelle, puis ajoutez un cas négatif avec un chevauchement plus important réel qui devrait toujours modifier la propriété. Corriger la tolérance d’un pixel ne doit pas permettre à des cibles conflictuelles de coexister indéfiniment."
+    },
+    {
+      "type": "callout",
+      "text": "La validité préchargée suit désormais les preuves déjà présentes dans la mémoire GS : la taille exacte du téléchargement et l'adresse de base stable ont la priorité sur un petit dessin ultérieur ou un chevauchement négligeable."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "Lisez la discussion technique et les modifications de source PCSX2"
+    }
+  ]
+}

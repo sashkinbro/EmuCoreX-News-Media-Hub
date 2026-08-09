@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin memisahkan alamat muat segmen ELF dari alamat virtualnya",
+  "summary": "Loader sekarang lebih memilih p_paddr sebagai alamat memori muat segmen dan hanya menggunakan p_vaddr jika tidak ada alamat fisik yang diberikan.",
+  "heroAlt": "Bukti sumber dari Dolphin pull request #14115: Core/Boot: Perbaiki semantik alamat muat ELF",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: Perbaiki semantik alamat muat ELF"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF header program dapat menggambarkan dua alamat yang berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Segmen ELF yang dapat dimuat mencakup p_vaddr, alamat yang digunakan oleh program saat dieksekusi, dan p_paddr, yang biasanya diperlakukan dalam lingkungan tertanam sebagai alamat memori tempat dimuat. Banyak binari menetapkan keduanya sama, yang menyembunyikan loader yang menggabungkan kedua bidang. Homebrew, komponen boot, atau image pengembangan dapat dengan sengaja memisahkan keduanya. Dolphin sebelumnya menyalin byte segmen ke p_vaddr tanpa syarat, mengabaikan penempatan fisik yang dikodekan oleh berkas."
+    },
+    {
+      "type": "heading",
+      "text": "Loader sekarang memberikan pilihan pertama pada field fisik yang tidak nol."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14115 mencatat kedua nilai dan menginisialisasi writeAddr dari p_paddr. Alamat fisik yang tidak nol dipetakan ke dalam wilayah virtual PowerPC dengan mengatur bit 0x80000000. Jika p_paddr adalah nol, Dolphin menggunakan p_vaddr sebagai fallback kompatibilitas. Pemeriksaan khusus MEM1 juga beralih ke alamat tulis yang dipilih sebenarnya, sehingga filter mengevaluasi di mana byte akan ditulis alih-alih bidang header yang berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Ini adalah koreksi semantik loader, bukan relokasi sewenang-wenang."
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin tidak menghitung lokasi baru atau menulis ulang referensi di dalam biner. Ini mengikuti alamat muat yang disediakan oleh header program dan mempertahankan konvensi pemetaan virtual yang telah ditetapkan. Perbedaan itu penting untuk segmen yang disalin ke satu lokasi sebelum aliran kontrol atau kode startup menggunakannya di lokasi lain. Hal ini juga mencegah p_paddr bernilai nol, yang umum pada file yang tidak membedakan alamat, memetakan secara tidak sengaja ke dasar memori."
+    },
+    {
+      "type": "heading",
+      "text": "Perlengkapan harus mencakup rentang yang sama, terpisah, nol, dan tidak valid"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat ELFs kecil yang p_paddr-nya sama dengan p_vaddr, bernilai nol, berbeda tetapi tetap berada di MEM1, mendarat di dekat batas, atau menunjuk ke luar RAM emulasi yang bisa ditulisi. Isi setiap segmen dengan pola unik dan verifikasi tujuan tepatnya, pembersihan BSS, eksekusi entri, dan penanganan tumpang tindih. Lakukan penyaringan only_in_mem1 terhadap writeAddr dan periksa log untuk kedua bidang tersebut. Homebrew asli harus diuji bersamaan dengan file yang rusak agar semantik yang ditingkatkan tidak menjadi penulisan memori tamu yang tidak terkontrol."
+    },
+    {
+      "type": "callout",
+      "text": "Ketika ELF yang tertanam menyediakan alamat memori beban, pemuat harus menghormatinya; alamat virtual menggambarkan eksekusi, bukan selalu tempat di mana byte pertama kali berada."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Baca diskusi rekayasa Dolphin dan perubahan sumber"
+    }
+  ]
+}

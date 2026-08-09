@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Gerbang PCSX2 Vulkan umpan balik kedalaman pada kemampuan yang mengesahkannya",
+  "summary": "Pengambilan sampel hanya-baca kedalaman sekarang kembali ke tata letak GENERAL saat penghalang tekstur dinonaktifkan, menghindari tata letak loop-umpan balik yang dipilih tanpa bit fitur Vulkan yang diperlukan.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14817: GS:VK: Gunakan hanya layout umpan balik loop untuk kedalaman jika penghalang tekstur didukung.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "layout umpan balik loop",
+    "penghalang tekstur",
+    "lapisan validasi"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Gunakan hanya layout umpan balik loop untuk kedalaman jika penghalang tekstur didukung."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Layout gambar hanya valid ketika kontrak fiturnya diaktifkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tata letak umpan balik-lingkaran lampiran Vulkan menggambarkan gambar yang digunakan melalui hubungan umpan balik. PCSX2 menambahkan bit kemampuan yang sesuai hanya ketika penghalang tekstur atau dukungan umpan balik kedalaman aktif. Jalur pengambilan kedalaman hanya-baca tetap dapat memilih tata letak itu setelah penghalang dipaksa mati, menciptakan kontradiksi: pencatatan perintah mengklaim fitur yang dikonfigurasi perangkat secara sengaja tidak diaktifkan."
+    },
+    {
+      "type": "heading",
+      "text": "Umpan balik kedalaman yang tidak didukung sekarang menggunakan tata letak GENERAL"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan tarik #14817 membuat pemilihan tata letak bersyarat pada uji dukungan yang sama yang mengontrol bit kemampuan. Jalur yang didukung mempertahankan tata letak umpan balik-lingkaran khusus. Ketika fitur tidak tersedia atau Dipaksa Dinonaktifkan, pengambilan sampel kedalaman menggunakan GENERAL, sebuah cadangan legal dengan persyaratan sinkronisasi yang lebih luas. Perubahan ini menjaga status gambar dan fitur perangkat yang berasal dari satu keputusan alih-alih pemeriksaan optimis secara mandiri."
+    },
+    {
+      "type": "heading",
+      "text": "Kesalahan validasi menyingkap kesalahan portabilitas nyata sebelum piksel gagal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Seorang pengemudi mungkin menerima kombinasi layout ilegal tanpa artefak visual segera, terutama di luar mode debug. Lapisan validasi Vulkan menandai ketidakcocokan secara deterministik, menjadikannya bukti yang tepat untuk patch ini. Menghindari peringatan bukanlah pembersihan log kosmetik: ini memastikan aliran perintah tetap sesuai kontrak yang diperlukan di antara vendor dan versi driver daripada bergantung pada perilaku permisif."
+    },
+    {
+      "type": "heading",
+      "text": "Dump sumber menguji jalur kemampuan-nonaktif secara tepat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalankan dump Time Crisis 3 GunCon yang terlampir di Vulkan dengan Override Texture Barriers diatur ke Force Disabled dan Use Debug Device diaktifkan. Jalur yang dikoreksi seharusnya tidak menghasilkan kesalahan validasi feedback-loop-layout dan mempertahankan frame. Ulangi dengan barrier didukung untuk memverifikasi layout khusus masih muncul, kemudian uji depth read-only, color feedback, backend reset, dan beberapa GPUs. Tangkap transisi gambar sehingga peringatan yang hilang tidak dapat menyembunyikan penggunaan sinkronisasi GENERAL yang salah."
+    },
+    {
+      "type": "callout",
+      "text": "Tata letak dan kemampuan adalah satu kontrak: jika PCSX2 tidak mengaktifkan dukungan umpan balik kedalaman, itu tidak boleh mengiklankan dukungan tersebut melalui tata letak gambar."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

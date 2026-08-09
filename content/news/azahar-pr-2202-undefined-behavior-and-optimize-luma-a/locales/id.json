@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar menghilangkan ambiguitas overflow bertanda dari alias memori Luma",
+  "summary": "Masker bit-31 tak bertanda membuat deteksi alias terdefinisi di C++, sementara pengembalian awal dan cabang MMIO yang tidak mungkin memberikan alur instruksi lebih lurus untuk jalur memori yang umum.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2202: core/memory: Perbaiki perilaku tak terdefinisi dan optimalkan jalur alias Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias Luma",
+    "perilaku tak terdefinisi",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Inti",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Perbaiki perilaku tak terdefinisi dan optimalkan jalur alias Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bit 31 dibentuk melalui aritmatika bertanda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS mengekspos bentuk alamat alias yang bit tertingginya memberi tahu Azahar untuk melewati tabel halaman normal untuk FCRAM atau MMIO. Kode tersebut menguji dan membersihkan bit itu dengan 1 << 31. Ketika int adalah 32 bit, menggeser angka bertanda ke posisi tanda adalah perilaku yang tidak terdefinisi, memberi izin pada compiler pengoptimal untuk mengubah kode di sekitarnya dengan cara yang tidak mempertahankan mask yang diinginkan."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u membuat operasi uji dan bersihkan menjadi terdefinisi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2202 mendeklarasikan LUMA_ALIAS_BIT sebagai literal unsigned 0x80000000u. Jalur baca dan tulis menguji vaddr terhadap konstanta itu dan memperoleh paddr dengan membersihkannya. Perubahannya kecil namun bersifat arsitektural: manipulasi alamat harus menggunakan tipe unsigned yang mewakili VAddr, tidak bergantung pada hasil yang dipilih compiler untuk aritmatika bertanda yang melampaui batas."
+    },
+    {
+      "type": "heading",
+      "text": "Return awal memisahkan FCRAM dari jalur dingin MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alias FCRAM tetap menjadi jalur utama yang berguna dan berakhir dengan pengembalian segera. MMIO diperiksa setelahnya dan ditandai tidak mungkin, begitu juga entri alias itu sendiri relatif terhadap akses tabel-halaman biasa. Meratakan rantai else-if yang sebelumnya memungkinkan Clang menempatkan alur umum lebih linear dan menjaga kode handler khusus yang jarang dari jalur cache-instruksi yang digunakan oleh sebagian besar pembacaan dan penulisan."
+    },
+    {
+      "type": "heading",
+      "text": "Klaim optimisasi memerlukan cakupan compiler dan alias"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalankan pembacaan dan penulisan alias Luma untuk FCRAM, MMIO 32-bit yang valid, alamat alias di luar kedua rentang, dan alamat tabel-halaman normal. Bandingkan Clang dan GCC pada berbagai tingkat optimisasi dengan UBSan diaktifkan, memverifikasi tidak ada laporan pergeseran bertanda dan hasil yang identik. Periksa kode yang dihasilkan untuk pengembalian awal yang dimaksud, tetapi prioritaskan ketepatan. Lebar MMIO selain jalur 32-bit yang didukung secara ketat masih harus diteruskan atau gagal sesuai dengan semantik yang ada."
+    },
+    {
+      "type": "callout",
+      "text": "Jalur yang lebih cepat dimulai dengan perilaku yang terdefinisi: sebuah bendera alamat harus berupa bit mask tanpa tanda sebelum petunjuk cabang atau bentuk assembly dapat dipercaya."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumber"
+    }
+  ]
+}

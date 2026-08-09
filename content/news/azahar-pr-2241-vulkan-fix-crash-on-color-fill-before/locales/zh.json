@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 在 3GX 插件在帧缓冲区之前到达时，保护 Vulkan 的颜色填充",
+  "summary": "PokeReader 暴露的启动顺序可能在目标图像存在之前调用 FillScreen；渲染器现在将缺失的图像视为延迟设置状态，而不是崩溃。",
+  "heroAlt": "来自 Azahar 拉取请求 #2241 的来源证据：video_core: vulkan: 修复帧缓冲区设置之前颜色填充的崩溃",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "帧缓冲区"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: 修复帧缓冲区设置之前颜色填充的崩溃"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "插件可以在 Vulkan 拥有图像之前请求屏幕颜色"
+    },
+    {
+      "type": "paragraph",
+      "text": "在实现 FillScreen 后，在报告者的 AMD Vulkan 系统上使用 PokeReader 启用 3GX 加载器会导致 Windows 一直崩溃。日志和 git bisect 将回归定位在该实现上。键顺序不常见但对前端有效：插件启动在帧缓冲区纹理的 Vulkan 图像被创建之前就达到了颜色填充配置。"
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture 现在检查资源，而不是意图"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2241 在 RendererVulkan::ConfigureFramebufferTexture 中增加了一个狭窄的保护。如果 texture.image 不存在，该函数在配置或填充帧缓冲区之前返回。后续带有有效图像的调用遵循正常路径。该修复不会创建虚拟图像或假设尺寸，从而避免了其布局和生命周期可能与真实帧缓冲区不一致的占位资源。"
+    },
+    {
+      "type": "heading",
+      "text": "该故障可能解释了超出一台 GPU 的报告，但证据仍然保持在范围内"
+    },
+    {
+      "type": "paragraph",
+      "text": "该来源引用了 PokeReader、Windows、Vulkan，以及可能的 AMD 作为可重现的组合，并将多个问题与可能相关的行为联系起来。这些报告是线索，而不是已确认的修复。唯一经过验证的不变量是，在 Vulkan 操作使用帧缓冲图像之前，该图像必须存在。其他崩溃需要各自的日志来确认它们是否会达到相同的早期 FillScreen 状态。"
+    },
+    {
+      "type": "heading",
+      "text": "回归测试应强制使用早期和正常填充顺序。"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 3GX 支持关闭和开启的情况下启动，选择 PokeReader，并在 AMD、NVIDIA 以及可用的移动 Vulkan 上进行测试。对图像创建和 FillScreen 顺序进行检测，验证早期调用在没有验证错误的情况下返回，并确认后续初始化的填充仍能清屏。重复插件卸载、游戏重启、表面重建和后台切换。如果未发生崩溃也不足以说明问题解决，因为保护措施可能会导致帧缓冲区永久未填充或保持过期内容。"
+    },
+    {
+      "type": "callout",
+      "text": "渲染器现在区分请求的填充与已初始化的目标；Vulkan 的工作仅在图像实际存在后才开始。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "阅读 Azahar 的工程讨论和源代码更改"
+    }
+  ]
+}

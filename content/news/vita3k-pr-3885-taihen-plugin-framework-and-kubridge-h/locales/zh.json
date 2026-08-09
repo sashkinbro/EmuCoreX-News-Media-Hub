@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3885-taihen-plugin-framework-and-kubridge-h",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 为 taiHEN 插件和 kubridge 打下了基础",
+  "summary": "按标题加载插件、可重定位钩子跳板、注入跟踪、内存 HLE 以及来宾中止回调，为 Vita 插件兼容性打开了一条经过仔细限制的路径。",
+  "heroAlt": "来自 Vita3K 拉取请求 #3885 的源头证据：添加 taiHEN 插件框架和 kubridge HLE 支持",
+  "searchKeywords": [
+    "Vita3K",
+    "taiHEN",
+    "kubridge",
+    "Vita 插件",
+    "内联钩子"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "核心",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3885": "添加 taiHEN 插件框架和 kubridge HLE 支持"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Vita 插件依赖于普通用户模块下的基础设施"
+    },
+    {
+      "type": "paragraph",
+      "text": "taiHEN 插件不仅仅是导入库。它们通过模块和 NID 定位函数，替换导入存根或函数前导代码，通过跳板继续执行，注入字节范围，并随后释放每个对象。kubridge 向用户插件暴露面向内核的内存保留、提交、保护和异常处理。在模拟器中运行原始低级实现会将行为绑定到固件地址和主机故障细节。"
+    },
+    {
+      "type": "heading",
+      "text": "Hook 对象保持足够的状态以撤销每个修改。"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #3885 添加了一个 taiHEN 状态，具有唯一的 IDs、hook 和注入映射，以及针对特定标题插件路径的配置部分。导入 hook 会将原始存根保存在 trampoline 中，并修补跳转到客户端 hook。内联 hook 使用指令重定位支持在重定向 ARM 或 Thumb 执行之前复制安全的前序代码。每条记录保留目标、已保存的字节、trampoline、客户端 hook 元数据、模式和补丁大小以实现受控释放。"
+    },
+    {
+      "type": "heading",
+      "text": "kubridge 内存调用保持在 Vita3K 所有权范围内"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLE实现将kubridge保护标志转换为MemPerm，保留地址空间，提交和撤销页面，并注册异常处理程序。受保护内存故障会在信号安全的CPU原子操作中记录地址和写入方向，停止执行，并让正常的客户机运行循环在客户机堆栈上构建中止上下文。线程本地的CPU指针由保护机制清除，以防回收的宿主线程暴露过时状态。"
+    },
+    {
+      "type": "heading",
+      "text": "插件兼容性不得超过隔离测试的范围"
+    },
+    {
+      "type": "paragraph",
+      "text": "加载无插件、一个插件、多个标题和内核部分、丢失路径、导入钩子、ARM和Thumb内联钩子、链式请求、注入以及非通常顺序的释放。拒绝无法转换的重定位或超出客户机内存的范围。测试数据中止注册、受保护的读写、线程退出、savestates、标题切换和关闭。验证释放后原始字节和分配是否恢复，同时不支持的异常类型和固件特定行为应明确失败，而不是假装成功。"
+    },
+    {
+      "type": "callout",
+      "text": "仅当每个访客钩子、跳板、注入范围和异常回调都有一个模拟器可见的所有者并且生命周期可逆时，插件支持才是安全的。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3885",
+      "label": "阅读 Vita3K 工程讨论和源代码变更"
+    }
+  ]
+}

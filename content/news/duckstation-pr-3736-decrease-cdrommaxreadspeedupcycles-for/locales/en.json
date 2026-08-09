@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3736-decrease-cdrommaxreadspeedupcycles-for",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation narrows CD-ROM speedup for Resident Evil 2's timing boundary",
+  "summary": "Twenty serial-specific GameDB entries move from 70,000 to 65,000 accelerated read cycles after the higher value began hanging at boot and around door transitions.",
+  "heroAlt": "Source evidence from DuckStation pull request #3736: GameDB: Decrease `cdromMaxReadSpeedupCycles` for Resident Evil 2",
+  "searchKeywords": [
+    "DuckStation",
+    "Resident Evil 2",
+    "CD-ROM speedup",
+    "GameDB",
+    "door transition"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3736": "GameDB: Decrease `cdromMaxReadSpeedupCycles` for Resident Evil 2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "An optimization threshold changed meaning after instruction-cache enforcement"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation can accelerate emulated disc reads, but games still observe the timing relationships around those operations. Resident Evil 2 had tolerated a cdromMaxReadSpeedupCycles value of 70,000 until ForceRecompilerICache changed the surrounding execution behavior. At that point the same GameDB setting could hang during boot or after particular door transitions, showing that a compatibility speedup is part of the timing model rather than a free host optimization."
+    },
+    {
+      "type": "heading",
+      "text": "The correction reduces the cap instead of disabling acceleration"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3736 lowers the value to 65,000. That keeps much of the loading benefit while staying below the newly exposed failure point. The patch does not alter core CD-ROM code or make every game more conservative; it records a title-specific ceiling in GameDB. This is the right scope when one game's synchronization depends on how aggressively read latency is shortened."
+    },
+    {
+      "type": "heading",
+      "text": "Twenty serials keep regional and disc variants aligned"
+    },
+    {
+      "type": "paragraph",
+      "text": "The diff applies the same value to Japanese SLPS entries, European SLES and SLED variants, and North American SLUS releases, including multiple discs. Updating the family together avoids fixing one report while leaving another region with the same hang. The comments also become more precise, naming boot and door-transition failures instead of describing only a random hang."
+    },
+    {
+      "type": "heading",
+      "text": "Testing must cross doors repeatedly, not stop at a successful boot"
+    },
+    {
+      "type": "paragraph",
+      "text": "Boot every affected region and disc with CD-ROM speedup enabled, load saves before several door transitions, and repeat each path enough times to expose intermittent timing. Compare 65,000, 70,000, and speedup disabled while keeping recompiler and cache settings fixed. Verify FMV, audio streaming, disc swap, and save loading too. The successful threshold should avoid hangs without introducing underruns or silently falling back to normal speed."
+    },
+    {
+      "type": "callout",
+      "text": "The GameDB keeps the optimization but respects the game's timing ceiling; faster is useful only below the point where progress stops."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3736",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

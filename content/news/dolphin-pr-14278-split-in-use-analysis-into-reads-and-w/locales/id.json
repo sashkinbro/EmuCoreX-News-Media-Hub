@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin mengajarkan JIT apakah sebuah register yang aktif akan dibaca atau ditimpa",
+  "summary": "Topeng baca maupun tulis di masa depan yang terpisah memungkinkan cache x64 dan ARM64 membuat keputusan preload dan flush yang lebih aman dan lebih tepat dibanding satu flag 'sedang digunakan'.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Dolphin #14278: PPCAnalyst: Memisahkan analisis 'sedang digunakan' menjadi baca dan tulis",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "cache register",
+    "analisis liveness",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "Cpu",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Memisahkan analisis 'sedang digunakan' menjadi baca dan tulis"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Berliving tidak mengatakan apa yang akan dilakukan instruksi berikutnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebuah register tamu mungkin relevan dengan blok yang tersisa karena instruksi di masa depan membaca nilainya saat ini, karena instruksi di masa depan menimpanya, atau keduanya. Masker penggunaan lama Dolphin menggabungkan kasus-kasus tersebut. Cache register JIT kemudian memiliki informasi terbatas saat memutuskan apakah akan memuat nilai tamu, menulis nilai host yang kotor kembali, membuang pemetaan, atau mempertahankannya melalui batas fallback."
+    },
+    {
+      "type": "heading",
+      "text": "Dua set penggunaan di masa depan membuat aliran data menjadi eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14278 menyebarkan gprWillBeRead dan gprWillBeWritten, dengan masker setara untuk register floating-point dan condition. Pemuatan awal mempertimbangkan register yang akan berpartisipasi dalam salah satu arah sambil tetap mengecualikan input yang bisa dibuang. Flush penuh menargetkan nilai yang tidak lagi digunakan oleh operasi berikutnya. Output yang tidak akan ditulis kemudian menerima perlakuan terpisah sehingga nilai kotor mereka saat ini mencapai status tamu sebelum cache menandainya bersih."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty mempertahankan pemetaan yang berguna setelah mengkomit nilainya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Refaktorisasi memberi nama perilaku flush dengan tepat. Full menulis data yang kotor dan menghapus pemetaan. MaintainState mempertahankan keadaan yang ada sesuai kebutuhan. Mode baru Undirty menulis nilai kotor tetapi mempertahankan asosiasi register-host sebagai bersih. Ini berguna ketika keluaran harus koheren secara eksternal pada sebuah batas namun masih dapat dibaca kemudian. Kedua jalur x64 dan ARM64 mengadopsi kosakata ini, termasuk akses memori lambat dan lokasi fallback interpreter."
+    },
+    {
+      "type": "heading",
+      "text": "Tes blok diferensial harus fokus pada alur kontrol yang rumit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bandingkan interpreter, JIT64, dan JITARM64 pada blok yang dihasilkan dengan pola read-only, write-only, read-then-write, write-then-read, discarded, immediate, floating-point, dan condition-register. Tambahkan pengecualian, kesalahan memori, pemeriksaan gather-pipe, cabang, instruksi fallback, dan keluar blok pada setiap posisi. Instrumen host spills dan guest writebacks untuk memverifikasi bahwa optimisasi benar-benar mengurangi pekerjaan tanpa mengubah keadaan. Eksekusi diferensial acak harus membandingkan semua register arsitektur setelah setiap batas yang dipaksakan."
+    },
+    {
+      "type": "callout",
+      "text": "Pendaftaran ketersediaan menjadi dapat diambil tindakan hanya ketika JIT mengetahui apakah masa depan membutuhkan nilai hari ini atau hanya membutuhkan nama register untuk penimpaan nanti."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Baca diskusi rekayasa Dolphin dan perubahan sumber"
+    }
+  ]
+}

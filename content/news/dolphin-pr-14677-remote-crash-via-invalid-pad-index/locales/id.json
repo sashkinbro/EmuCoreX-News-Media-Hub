@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin menolak indeks pengontrol NetPlay sebelum mencapai peta server",
+  "summary": "Pemeriksaan rentang bertanda sekarang dilakukan sebelum akses peta pad dan Wiimote, menutup jalur kerusakan jarak jauh sambil mempertahankan validasi kepemilikan pengirim.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Dolphin #14677: NetPlayServer: Perbaiki kerusakan jarak jauh melalui indeks pad yang tidak valid",
+  "searchKeywords": [
+    "Dolphin",
+    "Keamanan NetPlay",
+    "indeks pad",
+    "paket jarak jauh",
+    "peta Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Keamanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Perbaiki kerusakan jarak jauh melalui indeks pad yang tidak valid"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nomor pengontrol dari jaringan masih merupakan input yang tidak tepercaya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Paket NetPlay mengidentifikasi pad atau Wii Remote yang statusnya mereka bawa. Server sebelumnya menggunakan map_array.at setelah memeriksa kepemilikan di beberapa jalur, tetapi indeks yang ditandatangani tidak valid bisa mencapai akses yang diperiksa batas terlebih dahulu. std::array::at kemudian melempar, mengubah paket peer yang rusak atau bermusuhan menjadi kegagalan proses server daripada pesan yang ditolak. Nilai negatif memerlukan perhatian khusus sebelum dikonversi ke size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Salah satu helper menetapkan rentang sebelum kepemilikan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14677 memperkenalkan IsValidPadIndex. Ini pertama kali mengharuskan indeks tidak negatif, kemudian mengonversinya dan membandingkannya dengan ukuran array map yang konkret. Data pad, polling pad host, dan data Wiimote memanggil helper sebelum at. Hanya slot yang valid dan dipetakan ke pemain pengirim yang melanjutkan. Server mengembalikan kegagalan protokol untuk input yang tidak valid alih-alih mengindeks atau memungkinkan klien mengirim kontrol untuk peserta lain."
+    },
+    {
+      "type": "heading",
+      "text": "Perilaku pemutusan juga memperhitungkan Wiimote yang dipetakan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan yang sama memeriksa apakah pemain non-host yang akan keluar memiliki pemetaan Wiimote saat permainan sedang aktif. Jika ya, server menghentikan sesi dan menyiarkan DisableGame, mencerminkan kebutuhan untuk menghindari kelanjutan dengan input tersinkronisasi yang hilang. Pemeriksaan ini hanya mengambil kunci permainan saat mengubah flag berjalan. Perilaku ini terpisah dari validasi batas tetapi mencakup sudut siklus hidup peta pengontrol lainnya."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzz setiap pesan yang membawa indeks"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kirim integer minimum, -1, nol, slot valid terakhir, slot tidak valid pertama, dan integer maksimum melalui setiap tipe paket pad dan Wiimote. Ulangi sebagai host, klien yang dipetakan, klien yang tidak dipetakan, dan setelah putus koneksi atau pemetaan ulang. Server harus menolak input yang salah bentuk tanpa pengecualian, logging berlebihan, atau perubahan status. Tambahkan fuzzing paket di sekitar nilai yang terpotong dan batas tipe, kemudian verifikasi sesi multi-pengontrol yang valid dan putusnya Wiimote di tengah permainan masih mengikuti kebijakan penghentian yang dimaksudkan."
+    },
+    {
+      "type": "callout",
+      "text": "Batasan dan kepemilikan adalah pertanyaan yang terpisah: server harus terlebih dahulu membuktikan bahwa slot ada, kemudian membuktikan bahwa pengirim jarak jauh diizinkan untuk mengendalikannya."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Baca diskusi rekayasa Dolphin dan perubahan sumber"
+    }
+  ]
+}

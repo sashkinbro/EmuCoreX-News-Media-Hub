@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar convierte archivos especiales en una pila componible de capas de almacenamiento",
+  "summary": "Una nueva cadena IOFileBase permite que vistas acotadas, compresión y cifrado se envuelvan unas a otras, reemplazando la herencia que se volvió frágil cuando varios tipos de archivos especiales tenían que cooperar.",
+  "heroAlt": "Evidencia de origen del pull request #2352 de Azahar: core: Refactorizar IOFile y tipos de archivos derivados",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Almacenamiento",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: Refactorizar IOFile y tipos de archivos derivados"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La herencia dejó de escalar cuando un archivo necesitaba varios comportamientos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar originalmente derivaba archivos comprimidos y encriptados directamente de IOFile. Cada clase especial podía sobrescribir operaciones básicas, pero combinarlas requería trucos porque la herencia en C++ describe lo que es un objeto, no una secuencia ordenada de transformaciones. Agregar otro tipo de archivo para trabajos futuros habría multiplicado esas combinaciones y hecho que los desplazamientos, la serialización y los errores dependieran de cuál subclase estaba en la parte superior."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase delega a través de una capa hija propia"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #2352 introduce un IOFileBase abstracto con el contrato de acceso completo y un child_file de tipo unique_ptr. Una capa sobrescribe solo las operaciones que transforma y, de otro modo, delega a su hijo. El nivel inferior es IOFile o NullIOFile. Por lo tanto, un RomFS CCI comprimido puede ser SubIOFile para RomFS, otro SubIOFile para NCCH dentro de NCSD, Z3DSReadIOFile para descompresión, e IOFile para acceso desde el host."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile y NullIOFile hacen que los límites y fallos sean objetos explícitos"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile expone una ventana fija y traduce las operaciones de seek, size, read y write sin hacer que cada llamador repita comprobaciones de offsets o límites. El análisis de NCSD y NCCH ya lo utiliza. NullIOFile implementa la misma interfaz pero devuelve valores de error, permitiendo que la construcción y serialización fallidas conserven un grafo de objetos válido en lugar de distribuir comprobaciones de nullptr en cada capa."
+    },
+    {
+      "type": "heading",
+      "text": "Los archivos encriptados obtienen identidad mientras que los datos heredados siguen siendo compatibles"
+    },
+    {
+      "type": "paragraph",
+      "text": "La nueva salida de CryptoIOFile comienza con un encabezado AZCR que contiene la versión, tamaño del encabezado y un hash derivado de la clave y el nonce. Azahar puede identificar el formato y rechazar una clave incorrecta sin adivinar si los bytes descifrados parecen plausibles. Los archivos heredados sin encabezado todavía se abren mediante la lógica de compatibilidad. Las pruebas deben componer cada orden de capa, hacer seek a través de los límites de subarchivo, serializar objetos fallidos, verificar claves incorrectas y reabrir activos encriptados antiguos sin reescribirlos."
+    },
+    {
+      "type": "callout",
+      "text": "El cambio arquitectónico es la composición: cada capa de archivo tiene una responsabilidad y pasa el resto hacia abajo a través de la misma interfaz."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Lea la discusión de ingeniería Azahar y los cambios de fuente"
+    }
+  ]
+}

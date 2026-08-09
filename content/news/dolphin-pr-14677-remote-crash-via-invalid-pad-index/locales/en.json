@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin rejects NetPlay controller indices before they reach server maps",
+  "summary": "Signed range checks now precede pad and Wiimote map access, closing a remote crash path while preserving sender-ownership validation.",
+  "heroAlt": "Source evidence from Dolphin pull request #14677: NetPlayServer: Fix remote crash via invalid pad index",
+  "searchKeywords": [
+    "Dolphin",
+    "NetPlay security",
+    "pad index",
+    "remote packet",
+    "Wiimote map"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Security",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Fix remote crash via invalid pad index"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A controller number from the network is still untrusted input"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay packets identify the pad or Wii Remote whose state they carry. The server previously used map_array.at after checking ownership in some paths, but an invalid signed index could reach the bounds-checked access first. std::array::at then throws, turning a malformed or hostile peer packet into a server process failure rather than a rejected message. Negative values require special care before conversion to size_t."
+    },
+    {
+      "type": "heading",
+      "text": "One helper establishes range before ownership"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14677 introduces IsValidPadIndex. It first requires index to be nonnegative, then converts it and compares against the concrete map array size. Pad data, pad host polls, and Wiimote data call the helper before at. Only a valid slot mapped to the sending player continues. The server returns a protocol failure for invalid input instead of indexing or allowing a client to send controls for another participant."
+    },
+    {
+      "type": "heading",
+      "text": "Disconnect behavior also accounts for mapped Wiimotes"
+    },
+    {
+      "type": "paragraph",
+      "text": "The same change checks whether a departing non-host player owns any Wiimote mapping while a game is active. If so, the server stops the session and broadcasts DisableGame, mirroring the need to avoid continuing with missing synchronized input. The check takes the game lock only when changing the running flag. This behavior is separate from bounds validation but covers another controller-map lifecycle edge."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzz every message that carries an index"
+    },
+    {
+      "type": "paragraph",
+      "text": "Send minimum integer, -1, zero, last valid slot, first invalid slot, and maximum integer through each pad and Wiimote packet type. Repeat as host, mapped client, unmapped client, and after disconnect or remapping. The server should reject malformed input without exceptions, excessive logging, or state changes. Add packet fuzzing around truncated values and type boundaries, then verify valid multi-controller sessions and mid-game Wiimote disconnects still follow the intended shutdown policy."
+    },
+    {
+      "type": "callout",
+      "text": "Bounds and ownership are separate questions: the server must first prove a slot exists, then prove the remote sender is allowed to control it."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

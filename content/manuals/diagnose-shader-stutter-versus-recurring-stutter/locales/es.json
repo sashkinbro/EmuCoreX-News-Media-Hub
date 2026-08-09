@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguir el tartamudeo de sombreado en la primera ejecución de los bloqueos recurrentes de tiempo de cuadro",
+  "summary": "Ejecute una ruta fija en frío y en caliente sin eliminar la caché, marque la ubicación de cada bloqueo y clasifique solo las pausas de primera visita como candidatas a compilación mientras se conservan los bloqueos recurrentes de E/S, escena o ciclo de vida para un diagnóstico separado.",
+  "heroAlt": "Gráfico oficial de optimización de sombreado PCSX2 que representa la carga de trabajo de compilación y del renderizador",
+  "searchKeywords": [
+    "Tartamudeo de sombreado EmuCoreX",
+    "Bloqueo recurrente PS2",
+    "Ruta en frío y en caliente",
+    "Caché de sombreado",
+    "Pico de tiempo de cuadro"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Rendimiento",
+    "stutter": "Tartamudeo"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan guía de pipeline y rendimiento",
+    "pcsx2-vulkan": "PCSX2 desarrollo de caché de shaders"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Marcar ubicaciones de tirones a lo largo de rutas idénticas frías y calientes"
+    },
+    {
+      "type": "paragraph",
+      "text": "La compilación de shaders comúnmente ocurre cuando se encuentra un nuevo material o efecto por primera vez y debería reducirse una vez que el pipeline relevante está en caché. El tartamudeo recurrente se repite en la misma transición, lectura de almacenamiento, evento en segundo plano o límite de sincronización de cuadros. Elija una ruta determinista que contenga varios efectos y registre marcas de tiempo en lugar de depender de la memoria."
+    },
+    {
+      "type": "callout",
+      "text": "No borres la caché de sombreado entre las pasadas en frío y en caliente. Hacerlo fuerza a ambas rutas a un comportamiento de primera visita y destruye la comparación."
+    },
+    {
+      "type": "heading",
+      "text": "Prepara una línea de tiempo de tartamudeo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida normal antes de una ruta determinista de dos a cinco minutos.",
+        "System driver, un renderizador y perfil gráfico sin cambios.",
+        "Una superposición de tiempo de fotograma o grabación de pantalla sincronizada utilizada en cada pasada.",
+        "Estado de la caché documentado antes de la primera ejecución.",
+        "Descargas en segundo plano, captura y notificaciones controladas."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Comparar primera visita, reproducción inmediata y reinicio de la aplicación"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Reiniciar la aplicación sin borrar la caché de gráficos y arrancar la ruta desde cero.",
+        "2. Marcar la marca de tiempo y el contenido visible para cada pico en el tiempo de fotogramas.",
+        "3. Volver al guardado normal y reproducir de inmediato sin cambios en la configuración.",
+        "4. Clasificar los tartamudeos que desaparecen en la segunda visita como candidatos a compilación.",
+        "5. Marcar los bloqueos que se repiten en el mismo límite de carga o animación.",
+        "6. Cerrar y volver a abrir la aplicación sin borrar la caché, luego realizar una tercera ejecución.",
+        "7. Reinicie Android y repita solo cuando se esté probando la persistencia del ciclo de vida.",
+        "8. Envíe ubicaciones recurrentes al almacenamiento, CPU/GPU, o al diagnóstico de sincronización de cuadros en lugar de llamar a todo tartamudeo de sombreado."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Una comparación de caché cálida convierte el tiempo en evidencia. Las pausas que ocurren solo en el primer encuentro se ajustan a la creación del pipeline; un bloqueo que se repite en cada puerta puede ser E/S o sincronización; un tropiezo a intervalos regulares puede provenir del trabajo en segundo plano. La tercera pasada prueba si la caché sobrevive a un reinicio normal de la aplicación."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación de la clasificación de tartamudeo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada etiqueta debe respaldarse con su comportamiento a lo largo de las pasadas."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Los tropiezos que ocurren solo en la primera visita desaparecen o se reducen al reproducir inmediatamente.",
+        "Los bloqueos recurrentes conservan una marca de tiempo o un límite de escena reproducible.",
+        "La configuración, el controlador, la política de caché y la ruta no cambian.",
+        "El comportamiento en el tercer intento revela si la caché persiste tras reiniciar la aplicación.",
+        "La evidencia del tiempo de fotogramas concuerda con el ritmo visible y de audio."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Líneas de tiempo para repetir"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Enemigos o clima aleatorio cambian la ruta: elige un punto de control determinista.",
+        "La captura de video se ejecuta en un solo intento: normaliza la sobrecarga.",
+        "Android actualiza o borra la caché a mitad de la prueba: reinicie la secuencia completa.",
+        "La temperatura del dispositivo cambia de manera significativa: iguale el estado térmico antes de la comparación."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Devuelva las superposiciones y la política de caché a la normalidad."
+    },
+    {
+      "type": "paragraph",
+      "text": "Desactive la superposición de tiempo de cuadro diagnóstico, conserve la caché de shaders válida, restaure el comportamiento de las aplicaciones en segundo plano y arranque en frío el título una vez. No programe la eliminación rutinaria de caché para tirones que ya se ha demostrado que desaparecen después de la compilación."
+    },
+    {
+      "type": "heading",
+      "text": "No todo tirón en la primera visita es un shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las cargas de texturas, las lecturas de disco, la descompresión y la lógica del juego también pueden ocurrir una vez por área. Trate la desaparición en la primera pasada como una clasificación candidata, luego use contadores y registros para confirmar el subsistema responsable. Repita la ruta exacta después de un reinicio en caliente y nuevamente después de una condición de borrado de caché real solo cuando esa operación esté documentada y sea segura. Si el tirón se mueve con el acceso al almacenamiento o aparece en cada vuelta en el mismo límite de streaming, preserve los datos del shader e investigue la carga de trabajo recurrente en lugar de eliminar las cachés repetidamente."
+    },
+    {
+      "type": "link",
+      "text": "Revise la guía de optimización Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

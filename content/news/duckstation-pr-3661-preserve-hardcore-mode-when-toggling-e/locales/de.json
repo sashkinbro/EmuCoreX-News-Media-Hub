@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3661-preserve-hardcore-mode-when-toggling-e",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation lädt Erfolgsdaten neu, ohne den Hardcore-Modus zurückzusetzen",
+  "summary": "Die Optionen für RetroAchievements während der Sitzung aktualisieren jetzt die Daten des aktuellen Spiels auf dem vorhandenen Client, wobei der Hardcore-Status erhalten bleibt, den ein vollständiger Shutdown- und Initialisierungsvorgang verworfen hätte.",
+  "heroAlt": "Visuelle Belege aus dem Pull Request #3661 von DuckStation: Erfolge: Hardcore-Modus beim Umschalten von Encore-/Zuschauer-/inoffiziellen Einstellungen bewahren",
+  "searchKeywords": [
+    "DuckStation",
+    "RetroAchievements",
+    "Hardcore-Modus",
+    "Encore-Modus",
+    "rc_client"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3661": "Erfolge: Hardcore-Modus beim Umschalten von Encore-/Zuschauer-/inoffiziellen Einstellungen bewahren"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Einstellungsumschalter hat mehr Zustand neu aufgebaut, als ihm gehörte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Ändern des Encore-Modus, des Zuschauermodus oder das Testen von inoffiziellen Erfolgen während eines laufenden Spiels rief zuvor Shutdown() und Initialize() für den RetroAchievements-Client auf. Dieser vollständige Lebenszyklus wandte die Option zwar an, deaktivierte aber auch den Hardcore-Modus, bis das Spiel selbst zurückgesetzt wurde. Die Änderung der Einstellung floss daher in einen separaten Integritätszustand ein, den der Spieler nicht bewusst aufgegeben hatte."
+    },
+    {
+      "type": "heading",
+      "text": "ClearGameInfo und BeginLoadGame bewahren die Client-Grenze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #3661 hält den bestehenden rc_client am Leben. Er entlädt die Erfolgsinformationen des aktuellen Spiels mit ClearGameInfo() und ruft dann BeginLoadGame() auf, um die ausgewählten Regeln erneut zu laden und anzuwenden. Das Neuladen reicht aus, damit Encore den Freischaltzustand zurücksetzt und Zuschauer- oder inoffizielle Optionen wirksam werden; der Netzwerk-Client und sein Hardcore-Zustand müssen nicht neu erstellt werden."
+    },
+    {
+      "type": "heading",
+      "text": "Encore kann innerhalb einer Emulationssitzung wiederholt angewendet werden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelle stellt ausdrücklich fest, dass der Encore-Modus mehr als einmal umgeschaltet werden kann und dennoch die Freischaltungen von Erfolgen korrekt aktualisiert werden. Das ist ein wichtiger Lebenszyklus-Test, da eine einmalige Implementierung nach der ersten Umschaltung als behoben erscheinen könnte, aber beim zweiten Mal veraltete Spieldaten behalten würde. Die sichtbaren Vorher-Nachher-Beweise zeigen auch, dass Hardcore nach dem Neuladen der Option weiterhin aktiviert bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Die Validierung muss den Client-Status und den Erfolgsstatus separat verfolgen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Starte eine Hardcore-Sitzung, schalte Encore, Zuschauer und inoffizielle Tests einzeln um und überprüfe, dass das beabsichtigte Erfolgspaket neu geladen wird, während Hardcore aktiv bleibt. Wiederhole jede Umschaltung mehrmals, melde dich ab und wieder an und teste einen Titel mit bereits freigeschalteten Erfolgen, sodass das Zurücksetzverhalten beobachtbar ist. Ein Netzwerkausfall während BeginLoadGame() darf den bestehenden Client nicht beschädigen. Eine echte Hardcore-Deaktivierung, wie der dokumentierte Reset-Pfad des Emulators, sollte weiterhin normal funktionieren."
+    },
+    {
+      "type": "callout",
+      "text": "Die Korrektur verkürzt den Lebenszyklus: Lade spielespezifische Erfolgsdaten neu, aber zerstöre nicht den Client-Zustand, der den Hardcore-Modus besitzt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3661",
+      "label": "Lese die DuckStation Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

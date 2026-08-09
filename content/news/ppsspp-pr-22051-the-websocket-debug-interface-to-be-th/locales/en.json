@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP moves WebSocket debugging work onto the CPU thread",
+  "summary": "A synchronous task bridge replaces distributed debugger locking, and the disassembler drops merged macro-operations that made stepping size ambiguous.",
+  "heroAlt": "Source evidence from PPSSPP pull request #22051: Refactor the websocket debug interface to be thread-safe, remove \"macro ops\" in disasm",
+  "searchKeywords": [
+    "PPSSPP",
+    "WebSocket debugger",
+    "CPU thread",
+    "breakpoints",
+    "disassembly"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refactor the websocket debug interface to be thread-safe, remove \"macro ops\" in disasm"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Remote debugger requests were crossing an ownership boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "A WebSocket debugger runs on a networking thread, but breakpoints, stepping, register access, and much of emulated memory are owned by the CPU execution thread. Protecting individual functions with unrelated locks makes correctness depend on lock order and on every future handler remembering the same rules. It is especially fragile while the core is paused, because a request may need CPU-thread state precisely when ordinary frame progress has stopped."
+    },
+    {
+      "type": "heading",
+      "text": "One bridge serializes CPU-owned operations at the run loop"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #22051 adds Core_RunOnCPUThread. A caller packages a function in a shared task, pushes it under a queue mutex, and waits on a condition variable. Core_RunLoopUntil drains the queue at the top of its loop, executes functions on the CPU thread, marks them complete under the mutex, and wakes waiters. Calls already on the CPU thread execute immediately, avoiding self-deadlock. The loop drains continuously while stepping or paused and at least once per host frame while running."
+    },
+    {
+      "type": "heading",
+      "text": "Disassembly now keeps step size in one unit"
+    },
+    {
+      "type": "paragraph",
+      "text": "The same work removes disassembler macro operations that combined instruction patterns such as lui plus ori into one presentation line. Although convenient to read, merged operations blur whether a step size means bytes, guest instructions, or display rows. The new contract treats stepSize as a count of four-byte MIPS instructions, and breakpoint address calculations multiply accordingly. Views can later add visual hints without altering the underlying execution unit."
+    },
+    {
+      "type": "heading",
+      "text": "Concurrency tests need paused and re-entrant cases"
+    },
+    {
+      "type": "paragraph",
+      "text": "Issue simultaneous WebSocket reads, writes, breakpoint changes, memory scans, and single steps while the game is running, paused, and transitioning between states. Disconnect clients while tasks wait, stop the core with a nonempty queue, and call the bridge from the CPU thread itself. ThreadSanitizer should report no debugger races. Verify every request receives completion or a controlled shutdown error, and compare disassembly addresses around former macro patterns so stepping never skips or repeats a guest instruction."
+    },
+    {
+      "type": "callout",
+      "text": "The debugger no longer asks many locks to imitate CPU ownership; it sends the operation to the thread that already owns the state."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

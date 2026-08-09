@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticar un juego PS2 que muestra el HUD pero no el mundo",
+  "summary": "Usar el HUD que sobrevive como evidencia de que la presentación está activa, verificar la imagen del disco, restablecer anulaciones que deshabilitan el dibujo, comparar las APIs de hardware y una referencia de software breve, luego capturar el fallo de geometría del mundo reproducible más pequeño.",
+  "heroAlt": "Captura de juego PCSX2 de una comparación de regresión del renderizador con capas de interfaz y mundo",
+  "searchKeywords": [
+    "Solo HUD visible en PS2",
+    "Mundo negro en EmuCoreX",
+    "Geometría faltante",
+    "Omitir reinicio de dibujo",
+    "Diagnósticos del renderizador"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "diagnostics": "Diagnósticos"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 línea base de solución de problemas limpia",
+    "pcsx2-performance": "PCSX2 renderizador e indicadores GS"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Trate el HUD visible como un límite de capa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si los contadores, menús o el HUD del juego todavía se dibujan, la superficie de salida y al menos una parte del flujo de comandos GS están activos. La parte faltante puede ser la geometría del mundo, la composición del framebuffer o una regla manual amplia que descarta los dibujos. Antes de cambiar la precisión, registra si el mundo está negro, transparente, congelado en un cuadro anterior o reemplazado por un solo color plano. Esos síntomas conducen a diferentes pruebas."
+    },
+    {
+      "type": "callout",
+      "text": "No aumentes los valores de omisión de dibujo para hacer desaparecer una capa corrupta. Una regla de omisión puede eliminar todo el mundo mientras deja las superposiciones 2D, reproduciendo exactamente este síntoma."
+    },
+    {
+      "type": "heading",
+      "text": "Preserva un punto de control de inicio hasta la jugabilidad"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida guardada normal en el juego que llega a la escena afectada sin un estado de guardado del emulador.",
+        "Número de serie verificado, región, revisión y hash de imagen personal.",
+        "Capturas de pantalla de los valores gráficos globales y por juego actuales.",
+        "Controlador del sistema GPU con sustituciones de texturas y shaders desactivados.",
+        "Un registro corto que muestre la inicialización del renderizador y la transición al juego."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaurar dibujos antes de agregar precisión"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Inicia el título desde cero y confirma si los menús, FMV y la jugabilidad fallan en diferentes límites.",
+        "2. Restablecer saltar-dibujar, correcciones de hardware manuales, desplazamientos de texturas y parches heredados por juego para este número de serie.",
+        "3. Volver a probar a resolución interna nativa en el API de hardware original.",
+        "4. Cerrar la sesión, seleccionar el otro API de hardware soportado y reproducir la misma transición.",
+        "5. Si ambos caminos mantienen solo el HUD, ejecutar la escena brevemente en renderizado por software y capturar si la geometría del mundo regresa.",
+        "6. Cuando el software sea correcto, volver al hardware y probar solo un renderizador específico del título documentado o corrección GS.",
+        "7. Si el software también está vacío, vuelva a verificar la imagen y pruebe un perfil limpio antes de asumir un fallo únicamente de gráficos.",
+        "8. Capture registros y configuraciones exactas de la ejecución más pequeña que reproduzca el mundo faltante."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "El HUD y el mundo a menudo usan rutas de dibujo diferentes. Un fotograma de software correcto demuestra que el juego produjo comandos del mundo y reduce la falla a la traducción de hardware o al comportamiento del controlador del host. La falla en rutas de hardware y software limpias apunta de nuevo hacia la imagen, los parches, la progresión del juego o una regresión más amplia del emulador. Restablecer los controles que deshabilitan el dibujo primero evita que un síntoma autoinducido contamine esa decisión."
+    },
+    {
+      "type": "heading",
+      "text": "Criterios de recuperación de capas del mundo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El perfil corregido debe mostrar más que un simple fotograma conveniente."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La geometría del mundo, los personajes, las partículas y la interfaz HUD aparecen en el orden previsto.",
+        "Los menús y FMV aún hacen la transición al juego sin un fotograma negro residual.",
+        "El movimiento de la cámara no revela grandes sectores faltantes.",
+        "Una segunda área se inicia en frío con la misma configuración por juego.",
+        "La corrección está adjunta únicamente al número de serie y revisión verificados."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Evidencia de escalamiento"
+    },
+    {
+      "type": "list",
+      "items": [
+        "El software y las API de hardware fallan en una imagen verificada con configuraciones limpias: recopilar un informe de regresión.",
+        "Solo falla un controlador personalizado: volver al controlador del sistema e informar el paquete de controladores por separado.",
+        "El mundo vuelve cuando skip-draw es cero: retirar la anulación copiada.",
+        "La falla comienza después de cargar un estado guardado: reproducir desde un guardado dentro del juego antes de presentar evidencia gráfica."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Reconstruir el perfil del título desde los valores predeterminados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Elimine el perfil experimental, restaure el renderizador global registrado, seleccione el controlador del sistema y arranque en frío a la resolución nativa. Reaplique únicamente la corrección verificada si pasó todas las comprobaciones de área; deje todos los controles de descarte-dibujo desactivados a menos que la evidencia oficial específica del título los requiera."
+    },
+    {
+      "type": "heading",
+      "text": "Un mundo negro no siempre es una pantalla negra"
+    },
+    {
+      "type": "paragraph",
+      "text": "El rango de visualización y el nivel de negro del OLED pueden aplastar escenas oscuras, pero no pueden hacer que la geometría esté ausente en una captura de pantalla directa. Inspeccione un fotograma capturado y el registro del renderizador antes de cambiar la televisión o la configuración HDR."
+    },
+    {
+      "type": "link",
+      "text": "Siga la línea base general de resolución de problemas PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

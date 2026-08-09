@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 fornisce richieste CDVD non valide con un'uscita dello stato dell'unità definita",
+  "summary": "Letture di lunghezza zero, negativa e oltre la fine ora aggiornano coerentemente stato pronto, stato, errore e stato di interruzione, insieme a transizioni corrette di CdStop e del vassoio.",
+  "heroAlt": "Evidenza della fonte dal pull request #5174 di PCSX2: CDVD: alcune gestioni degli errori, modifiche dei flag di Stato+Pronto e correzione di CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "conteggio dei settori",
+    "stato dell'unità",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Archiviazione",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: alcune gestioni degli errori, modifiche dei flag di Stato+Pronto e correzione di CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Diversi giochi inviano comandi del disco che sono scomodi ma osservabili"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, la prova della Principessa Aberanbou, demo di Evergrace e conti del settore degli esercizi di Animazione Battle o indirizzi che il vecchio flusso CDVD di PCSX2 non completava correttamente. Un conteggio zero o negativo poteva mantenere aperto un percorso di lettura, mentre un indirizzo oltre il disco non aveva una transizione di errore coerente. Il risultato variava da comportamento LSN non valido a mancati TLB, avvio fallito o blocchi successivi del filmato."
+    },
+    {
+      "type": "heading",
+      "text": "Pronto e Stato diventano assegnazioni esplicite dello stato dell’unità"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #5174 distingue i bit ready, busy, data-ready, device-connected ed error invece di ripetere ORing o di cancellare un flag al suo posto. cdvdUpdateStatus registra lo stato corrente e permanente, mentre il completamento del comando utilizza un percorso comune IRQ. Di conseguenza, i callback per l'apertura, la chiusura del vassoio, la ricerca, la lettura, la pausa, l'arresto, l'interruzione e il nuovo disco pubblicano una coppia coerente di valori di stato e di prontezza invece di lasciare bit di un'operazione precedente."
+    },
+    {
+      "type": "heading",
+      "text": "Conteggi non validi e limiti del disco ora terminano il comando"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'unità registra MaxSector dal disco montato e controlla una lettura prima di continuare oltre di esso. Una richiesta fuori intervallo imposta un errore di traccia esterna, ritorna in pausa, cancella l'attesa DMA e genera l'interruzione del comando. Un conteggio settori pari o inferiore a zero completa allo stesso modo e ritorna a pronto invece di programmare un altro trasferimento. I risultati di CdStop e SCMD sono corretti all'interno della stessa pulizia della macchina a stati."
+    },
+    {
+      "type": "heading",
+      "text": "I test di salvataggio dello stato e multi-gioco devono controllare le bandiere, non solo l'avvio"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica del layout dello stato ha richiesto un aumento della versione savestate, quindi la gestione dei vecchi e nuovi stati necessita di una copertura esplicita. Riprodurre i giochi nominati e registrare comando, LSN, conteggio, Pronto, Stato, Errore, IRQ e stato DMA. Testare le modifiche del vassoio, stop, interruzioni, letture valide di fine disco e richieste deliberatamente non valide. Alcuni casi sorgente richiedevano ancora patch separate per il gioco o avevano successivi blocchi FMV; quei limiti devono rimanere documentati piuttosto che attribuiti a questa pulizia dello stato."
+    },
+    {
+      "type": "callout",
+      "text": "Il miglioramento è un percorso di uscita completo: anche una richiesta di disco malformata deve far sì che l'unità, il motore DMA e il controller delle interruzioni siano d'accordo su ciò che è successo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

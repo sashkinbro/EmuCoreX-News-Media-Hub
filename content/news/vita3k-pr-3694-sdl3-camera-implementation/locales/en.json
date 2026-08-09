@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3694-sdl3-camera-implementation",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K builds PS Vita camera input on top of SDL3",
+  "summary": "Front and rear devices, static images, and solid colors feed a dedicated SceCamera state with Vita formats, timing, attributes, and lifecycle errors.",
+  "heroAlt": "Source evidence from Vita3K pull request #3694: modules/SceCamera: SDL3 camera implementation",
+  "searchKeywords": [
+    "Vita3K",
+    "SceCamera",
+    "SDL3 camera",
+    "front camera",
+    "static image"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "input": "Input",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3694": "modules/SceCamera: SDL3 camera implementation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Camera emulation is a timed device contract, not a screenshot picker"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita software opens a front or rear device, chooses resolution, pixel format and frame rate, starts capture, waits for frames, reads into guest buffers, checks timestamps and status, changes attributes, and expects specific errors when calls arrive out of order. A host webcam alone does not provide those Vita semantics. Android also requires declared camera capability and runtime permission before SDL can supply frames."
+    },
+    {
+      "type": "heading",
+      "text": "A new subsystem owns the complete SceCamera lifecycle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3694 adds camera state to EmuEnv and implements SceCamera entry points around it. Enumerations cover YUV planar and packed layouts, ARGB, ABGR, RAW8, Vita-supported resolutions from small QCIF forms through 640 by 480 and 640 by 360, and frame rates from low capture rates to 120 FPS under size constraints. State tracks initialization, open and start status, device selection, buffers, timestamps, and configurable camera attributes."
+    },
+    {
+      "type": "heading",
+      "text": "Live hardware is only one possible source"
+    },
+    {
+      "type": "paragraph",
+      "text": "SDL3 provides host camera enumeration and frame acquisition for front and back choices. Settings also allow a static image or solid color. Those alternatives are important for automated tests, machines without a webcam, repeatable QR or augmented-reality inputs, and users who do not want a live device open. Image loading and conversion still pass through the Vita output-format path rather than copying arbitrary host pixels directly into guest memory."
+    },
+    {
+      "type": "heading",
+      "text": "Format, timing, permission, and privacy tests all matter"
+    },
+    {
+      "type": "paragraph",
+      "text": "Open front and rear devices across supported resolutions, formats, and frame rates; verify row sizes, plane order, channel order, mirroring, timestamps, timeout, repeated reads, stop, close, and reinitialize errors. Deny Android permission, unplug a camera mid-frame, and run without hardware using known color bars and static images. Compare guest buffers byte-for-byte and confirm the camera closes on title exit. No host device should activate before the user-selected source and platform permission allow it."
+    },
+    {
+      "type": "callout",
+      "text": "Reliable camera emulation combines Vita's state machine with a selectable source, so live hardware, a test image, and a privacy-safe color all obey the same guest API."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3694",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3621-shader-enable-disable-toggle",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation permette a una fase di post-elaborazione di dormire senza dimenticare la sua regolazione",
+  "summary": "Gli interruttori di abilitazione per singolo shader preservano l'ordine della catena e i parametri personalizzati, separando il bypass temporaneo dalla rimozione distruttiva sia in Qt che in FullscreenUI.",
+  "heroAlt": "Prova sorgente dal pull request #3621 di DuckStation: Qt, FullscreenUI, PostProcessing: Aggiungi interruttore di abilitazione/disabilitazione dello shader.",
+  "searchKeywords": [
+    "DuckStation",
+    "post-elaborazione",
+    "catena di shader",
+    "parametri",
+    "FullscreenUI"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3621": "Qt, FullscreenUI, PostProcessing: Aggiungi interruttore di abilitazione/disabilitazione dello shader."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Rimuovere uno shader era l'unico modo per bypassarlo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una catena di post-elaborazione spesso contiene diversi effetti i cui parametri sono stati regolati insieme. Prima della pull request #3621, controllare temporaneamente l'immagine senza una fase significava rimuoverla, poi ricreare lo shader e i suoi valori successivamente. Questo trasformava un semplice confronto in lavoro di configurazione e rendeva facile perdere un preset accuratamente regolato o ripristinare l'effetto nella posizione sbagliata."
+    },
+    {
+      "type": "heading",
+      "text": "Lo stato abilitato diventa parte della fase, non un sostituto vuoto"
+    },
+    {
+      "type": "paragraph",
+      "text": "La rappresentazione condivisa della post-elaborazione ora registra se uno shader individuale viene eseguito. Una fase disabilitata rimane nella catena con i suoi valori di parametro e l'ordine intatti; il renderer semplicemente salta il suo lavoro. Riabilitarla quindi ripristina lo stesso effetto invece di creare un'istanza predefinita. Questo differisce dalla rimozione di una fase, che rimane l'operazione corretta quando l'utente vuole che cambi la definizione stessa della catena."
+    },
+    {
+      "type": "heading",
+      "text": "Qt e FullscreenUI espongono lo stesso controllo non distruttivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implementazione si estende nello strato di utilità di post-elaborazione, nel widget delle impostazioni di Qt e nelle impostazioni di FullscreenUI. Ciò garantisce che il flag abilitato non sia solo una decorazione del frontend: qualsiasi interfaccia modifica lo stato che il renderer utilizza. Consente inoltre agli utenti di configurare la stessa catena da una finestra desktop o da un display controller-first senza che un lato scarti silenziosamente la nuova proprietà."
+    },
+    {
+      "type": "heading",
+      "text": "I test di persistenza e sull'ordine della catena sono più importanti di uno screenshot."
+    },
+    {
+      "type": "paragraph",
+      "text": "Crea una catena con diversi shader, modifica più parametri e disabilita un passaggio a metà. L'output dovrebbe corrispondere a una catena che salta quell'effetto mentre i passaggi successivi rimangono nello stesso ordine. Salva le impostazioni, riavvia e conferma che lo stato disabilitato e i parametri siano mantenuti; poi riabilita e confronta con la cattura originale. Testa entrambi i frontend, l'importazione dei preset, la rimozione dei passaggi e il cambio rapido. Il timing GPU dovrebbe aumentare solo in base al lavoro del passaggio bypassato."
+    },
+    {
+      "type": "callout",
+      "text": "Disabilitare è ora una scelta di esecuzione reversibile; rimuovere rimane una modifica strutturale alla catena di post-elaborazione."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3621",
+      "label": "Leggi la discussione tecnica DuckStation e le modifiche al codice sorgente"
+    }
+  ]
+}

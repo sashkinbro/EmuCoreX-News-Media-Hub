@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Trova immagini duplicate PS2 con SHA-256 prima di eliminare qualsiasi cosa",
+  "summary": "Crea un inventario hash di sola lettura su Windows, Linux o macOS; raggruppa immagini di dischi personali identiche byte per byte; distingui le copie attive dai backup offline; e rimuovi solo le ridondanze verificate dalle cartelle scansionate.",
+  "heroAlt": "Riferimento Microsoft Learn Get-FileHash che mostra la sintassi del comando PowerShell SHA-256",
+  "searchKeywords": [
+    "duplicate PS2 ISO",
+    "Get-FileHash SHA-256",
+    "audit libreria sha256sum",
+    "EmuCoreX giochi duplicati",
+    "verifica file identici"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Libreria",
+    "integrity": "Integrità"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Riferimento Microsoft Get-FileHash",
+    "gnu-sha2": "Riferimento utilità GNU SHA-256"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inventario delle radici scansionate in modalità di sola lettura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Due file sono duplicati solo quando i loro byte corrispondono, non quando titoli o nomi dei file sembrano simili. Edizioni regionali, revisioni, dischi demo, dischi bonus, tracce CD e copie funzionanti patchate possono condividere un nome pur contenendo dati diversi. Inizia elencando ogni radice della libreria EmuCoreX e non spostare alcun file. L'audit dovrebbe leggere le immagini, scrivere il suo rapporto da qualche parte al di fuori di quelle radici e non considerare schede di memoria e dati dell'emulatore."
+    },
+    {
+      "type": "callout",
+      "text": "Un SHA-256 corrispondente prova l'identità dei byte tra i file che hai misurato. Non dimostra che il dump originale fosse accurato, autorizzato per la ridistribuzione o sicuro da eliminare da ogni backup. Conserva una copia master verificata fuori dalla libreria attiva."
+    },
+    {
+      "type": "heading",
+      "text": "Crea il rapporto hash di Windows PowerShell"
+    },
+    {
+      "type": "paragraph",
+      "text": "Collega lo storage a un computer Windows attendibile o lavora direttamente in una cartella già disponibile lì. Sostituisci D:\\PS2 con il percorso letterale di una radice scansionata. Get-FileHash usa SHA-256 per impostazione predefinita, ma specificando l'algoritmo il rapporto diventa autoesplicativo. L'esportazione in CSV conserva i percorsi completi e previene il troncamento in console."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Apri PowerShell senza diritti di amministratore; generare l'hash dei normali file di libreria non richiede privilegi elevati.",
+        "2. Esegui: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. Attendi che il prompt ritorni. Le grandi immagini DVD richiedono la lettura di ogni byte, quindi lo storage rimovibile può richiedere molto tempo.",
+        "4. Apri il CSV e raggruppa le righe adiacenti con lo stesso valore Hash. Conferma che i valori Path riportati puntano a file separati piuttosto che allo stesso file elencato tramite due collegamenti.",
+        "5. Ripeti il comando per ogni root non sovrapposta e conserva i rapporti insieme alla data di audit, all'identità del drive e a eventuali errori di lettura."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Utilizza sha256sum o shasum sui sistemi di tipo Unix"
+    },
+    {
+      "type": "paragraph",
+      "text": "Su Linux, GNU sha256sum fornisce il digest equivalente. Costruisci l'elenco dei file con find usando delimitatori nulli in modo che spazi e caratteri insoliti rimangano intatti, poi reindirizza l'output fuori dalla directory scansionata. Su macOS, shasum -a 256 è comunemente disponibile. Non incollare comandi presi da internet che eliminano automaticamente i file; questa procedura separa intenzionalmente il rilevamento dalla pulizia."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Esempio Linux: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "Esempio macOS: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "Se un comando segnala Errore di input/output, interrompi la pulizia e verifica il dispositivo sorgente. Un digest prodotto dopo letture instabili non è una linea di base di migrazione sana.",
+        "Per i dump CD cue/bin, considera il foglio cue e ogni traccia riferita come un unico set; eseguire l'hash solo del BIN più grande può far trascurare tracce audio mancanti."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Classifica ogni gruppo corrispondente prima della pulizia"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Mantieni la copia all'interno della radice di scansione prevista quando un'altra copia identica si trova in una cartella di download o di importazione temporanea.",
+        "Mantieni il master di conservazione quando la copia attiva corrispondente è un file di lavoro rinominato; il master appartiene al di fuori di ogni radice di scansione EmuCoreX.",
+        "Mantieni entrambe le copie fisiche quando una è l'unico backup offline su un altro dispositivo. I byte duplicati in diversi livelli di backup sono ridondanza deliberata, non clutter della libreria.",
+        "Non unire file con hash diversi solo perché il loro titolo visualizzato corrisponde. Registrare prima il numero di serie, la regione, la revisione, il numero del disco e lo stato della patch.",
+        "Per i giochi su più dischi, confermare che il Disco 1 e il Disco 2 siano intenzionalmente diversi; solo i nomi dei file non sono sufficienti per ricostruire il set in seguito."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Mettere in quarantena invece di eliminare al primo passaggio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Creare una cartella di quarantena al di fuori di tutte le radici della libreria selezionate. Spostare una copia funzionante ridondante da ciascun gruppo confermato al suo interno, aggiornare EmuCoreX una volta e verificare che la voce rimanente apra la regione prevista. Mantenere la quarantena per almeno un riavvio dell'app e un avvio di ciascun titolo interessato. Solo allora eliminare le copie funzionanti ridondanti, e solo se un'altra copia di conservazione o di backup verificata rimane sotto il proprio controllo."
+    },
+    {
+      "type": "heading",
+      "text": "Convalidare la libreria deduplicata"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Il numero di voci EmuCoreX corrisponde alle copie giocabili previste, tenendo conto dei set multiddisco.",
+        "Ogni titolo interessato si risolve nel percorso scelto come canonico e si avvia a freddo da quel percorso.",
+        "Il SHA-256 del file mantenuto rimane uguale al digest registrato prima della quarantena.",
+        "Favoriti e profili per gioco puntano ancora al seriale e alla regione previsti.",
+        "La copia di conservazione offline e il relativo rapporto di verifica non sono all'interno di una cartella scansionata da EmuCoreX."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Recuperare da una classificazione errata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se un titolo scompare o apre la revisione sbagliata, chiudi EmuCoreX e sposta il file messo in quarantena nel suo percorso letterale originale. Aggiorna una volta, confronta i numeri di serie e ripristina il nome del file precedente se era stato modificato. Non compensare copiando salvataggi tra voci regionali; risolvi prima l'identità dell'immagine. Se l'unità di origine ha prodotto errori di lettura, conserva entrambe le copie e i loro rapporti fino a quando un nuovo dump dal disco posseduto non stabilisca un master affidabile."
+    },
+    {
+      "type": "link",
+      "text": "Controlla la sintassi di Microsoft Learn per Get-FileHash",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Restaurer un éclat cassé dans le rendu matériel sans surexposer la scène",
+  "summary": "Utilisez des points de contrôle lumineux et sombres appariés pour identifier un passage de framebuffer manquant ou mal aligné, comparez avec une référence logicielle, et trouvez la correction de fusion ou de mise à l'échelle native la moins coûteuse.",
+  "heroAlt": "Capture de God of War PCSX2 montrant un éclat lumineux et un passage de brouillard rendus de manière incorrecte",
+  "searchKeywords": [
+    "PS2 éclat cassé",
+    "EmuCoreX lueur trop brillante",
+    "éclat du rendu matériel",
+    "fusion du framebuffer",
+    "fantômes de mise à l'échelle native"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphiques",
+    "accuracy": "Précision"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 description du mélange, des lectures du framebuffer et de la mise à l'échelle native pour le bloom",
+    "pcsx2-july-august-2015": "PCSX2 exemples de précision du bloom et du brouillard avant et après"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Classer le bloom comme absent, déplacé, tronqué ou excessif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le bloom est généralement assemblé à partir de plus d'un passage : le jeu isole les informations lumineuses, les filtre ou les sous-échantillonne, puis composite le résultat sur la scène. Un moteur hardware peut donc échouer de plusieurs manières visiblement différentes. Un bloom manquant rend les sources de lumière aux bords nets ; un bloom déplacé produit un fantôme décalé par rapport à la source ; un bloom tronqué devient un rectangle ; un bloom excessif blanchit la géométrie environnante. Sélectionnez un point de contrôle avec une lampe ou un sort fortement isolé et un autre avec de petits reflets sur un fond sombre. Enregistrez le numéro de série du jeu, la résolution interne, le moteur, le pilote GPU, la précision du mélange, le statut du redimensionnement natif et si les corrections manuelles du framebuffer ou du saut de rendu sont actives."
+    },
+    {
+      "type": "callout",
+      "text": "Ne pas évaluer le bloom à partir d'une seule photo de téléphone surexposée. L'exposition automatique et le mappage tonal HDR peuvent effacer des détails présents dans la frame réelle de l'émulateur."
+    },
+    {
+      "type": "heading",
+      "text": "Préparez deux scènes de bloom avec des références de luminance"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde en jeu avant un effet lumineux reproductible avec une géométrie visible immédiatement autour.",
+        "Une deuxième scène sombre contenant de petits détails émissifs, afin qu'un paramètre ne puisse pas réussir simplement en assombrissant toute la sortie.",
+        "Captures d'écran directes à partir de la sortie du matériel natif et une brève référence de correction rendue par logiciel.",
+        "Shaders post-traitement, calques reshade, affichage de conversion HDR, remplacement de textures et contrôles de couleur personnalisés désactivés.",
+        "Un exemple de performance en session à chaud de la scène lumineuse et une sauvegarde du profil graphique du jeu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Séparer la précision de la composition de l’alignement du rehaussement."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Démarrer à froid le point de contrôle lumineux à la résolution interne native avec mélange automatique et capturer la source ainsi que les détails environnants.",
+        "2. Rendre brièvement le même moment en mode logiciel et comparer le rayon de l’éclat, le centre, l’occultation et vérifier si les objets au premier plan bloquent correctement la lueur.",
+        "3. Retournez en mode matériel et comparez les API graphiques prises en charge sans modifier le pilote ni la résolution ; conservez le chemin qui préserve le plus fidèlement la référence.",
+        "4. Lorsque l'effet de bloom est manquant ou se superpose à une forme solide à la résolution native, augmentez d'un niveau la précision du mélange, redémarrez la scène et arrêtez-vous au premier niveau qui restaure la composition.",
+        "5. Lorsque le matériel natif est correct mais que le bloom se sépare de sa lumière uniquement après l'upscaling, rétablissez le mélange automatique et testez la correction de mise à l'échelle native documentée de l'émulateur.",
+        "6. Rejouez le point de contrôle sombre et confirmez que les petits reflets brillent sans soulever les arrière-plans noirs ni blanchir les textures des personnages.",
+        "7. Réchauffez l'appareil, mesurez la séquence à effets lourds et comparez les compteurs de barrières, de passe de rendu ou de lecture si la version les expose.",
+        "8. Sauvegardez uniquement la branche réussie dans le profil de ce jeu et indiquez si elle traite du mélange à la sortie native ou de l'alignement post-traitement lors de l'upsampling."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La précision du mélange gouverne la fidélité avec laquelle le rendu matériel reproduit les interactions avec le contenu précédent du tampon de trame, tandis que la mise à l'échelle native cible les passes post-traitement qui ont été créées pour fonctionner à l'échelle originale du PS2. Ils résolvent des symptômes apparentés à différents stades. Le rendu logiciel fournit une référence de composition car il peut reproduire le comportement du GS de manière plus directe, mais sa vitesse n'est pas l'objectif d'acceptation. Le test des deux scènes empêche une correction erronée où la réduction de la luminosité fait paraître une lampe surexposée meilleure tout en supprimant la lueur intentionnelle ailleurs."
+    },
+    {
+      "type": "heading",
+      "text": "Acceptation du profil de lueur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le profil sélectionné doit préserver la forme de l'effet, la relation de profondeur, la gamme tonale et la jouabilité."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La lueur est centrée sur l'objet émetteur et le suit lors des mouvements de la caméra ou du personnage.",
+        "La géométrie du premier plan occulte la lueur là où la référence logicielle montre une obstruction.",
+        "Les surfaces lumineuses conservent le détail de la texture au lieu de s'effondrer en une tache blanche uniforme.",
+        "Le point de contrôle sombre préserve les zones noires et affiche toujours ses petits reflets prévus.",
+        "Le rythme de trame soutenu reste acceptable après la stabilisation thermique et aucune transparence non liée ne régresse."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Résultats de bloom nécessitant une nouvelle enquête"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La sortie logicielle présente le même halo anormal : confirmer la référence de la scène et supprimer les correctifs du jeu ou les modifications de textures.",
+        "Seul l'écran physique présente des blooms tandis que les captures d'écran directes sont équilibrées : vérifier le HDR, la plage de couleurs, l'amélioration du panneau et l'exposition de la caméra.",
+        "Un niveau de fusion plus élevé corrige la lampe mais corrompt les ombres ou le brouillard : revenir en arrière et collecter un rapport de rendu spécifique au titre.",
+        "L'effet ne dérive qu'à une seule résolution personnalisée inhabituelle : utilisez un multiplicateur entier pris en charge avant d'ajouter tout décalage manuel."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Annulez l'expérience coûteuse du framebuffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Réglez le mélange sur Automatique, désactivez le redimensionnement natif ou le décalage testé, restaurez l'API originale et redémarrez l'application. Rejouez les deux points de contrôle pour confirmer que le symptôme précédent est reproductible ; puis choisissez le dernier niveau inférieur qui a passé le test de performance ou revenez à la résolution native jusqu'à ce qu'une correction précise existe."
+    },
+    {
+      "type": "heading",
+      "text": "L'éblouissement intentionnel peut être visuellement agressif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Certains jeux PS2 utilisent délibérément un éclat large et lumineux. L'objectif est la fidélité à une référence fiable, et non un éclairage uniformément atténué. Évitez de publier une recommandation globale basée sur un seul titre, car les formats de framebuffer, les équations de mixage et la mise à l'échelle post-traitement diffèrent selon les moteurs et même selon les scènes."
+    },
+    {
+      "type": "link",
+      "text": "Passez en revue l'explication de PCSX2 sur le mélange moderne et la mise à l'échelle native",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

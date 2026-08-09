@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 mengisolasi pemuatan palet CSM2 dari urutan swizzled CSM1",
+  "summary": "Sebuah pergantian mode penyimpanan di Breath of Fire mengungkapkan mengapa data CSM2 berurutan tidak dapat dengan aman menggunakan ulang buffer CLUT sementara yang diisi sesuai aturan swizzle CSM1.",
+  "heroAlt": "Bukti visual dari permintaan tarik PCSX2 #14546: GS/CLUT: Menangani kasus khusus untuk pergantian mode 32bit CSM2",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "palet",
+    "Breath of Fire"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT: Menangani kasus khusus untuk pergantian mode 32bit CSM2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Satu palet bertahan saat pergantian mode, tetapi urutannya tidak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Breath of Fire: Dragon Quarter memuat ulang tabel pencarian warna (color lookup table) dalam Mode Penyimpanan CLUT 1 dan kemudian beralih ke Mode Penyimpanan 2. CSM1 menerapkan susunan swizzled, sementara CSM2 mengakses entri palet secara berurutan. Menggunakan kembali data sementara yang disiapkan untuk mode pertama memberikan mode kedua warna yang valid tetapi pada posisi yang salah. Teks menu kemudian menunjukkan lubang hitam di mana warna utama yang dimaksud seharusnya muncul."
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 sekarang membaca palet resmi dari memori lokal GS"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14546 mengubah GSClut sehingga mode penyimpanan 2 selalu memuat CLUT dari memori lokal daripada buffer sementara yang berorientasi pada CSM1. Pendekatan ini juga menjelaskan perilaku CSM2 yang lebih lambat: ia memperlakukan memori GS sebagai sumber saat pemuatan cache tekstur. Dengan memilih sumber sesuai dengan mode penyimpanan aktif, PCSX2 menghindari penciptaan konversi antara dua susunan yang sebenarnya tidak pernah diminta oleh permainan."
+    },
+    {
+      "type": "heading",
+      "text": "Sumber ini menyajikan teori perangkat keras, bukan kepastian yang dibuat-buat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementasi ini didasarkan pada perilaku permainan, dump GS yang bersih, dan fakta bahwa tidak ada aturan penggunaan ulang lain yang menghasilkan palet CSM2 yang koheren. Penulis secara eksplisit mencatat bahwa pengujian perangkat keras direncanakan untuk mengonfirmasi model tersebut. Batas ini penting untuk artikel teknik: perbaikan perangkat lunak memiliki reproduksi yang kuat, tetapi alasan internal yang tepat mengapa GS asli berperilaku seperti ini tetap merupakan hipotesis hingga jejak konsol mengonfirmasinya."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian sebaiknya menggabungkan reproduksi menu dengan bukti dari konsol"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengecekan regresi langsung adalah Breath of Fire: Dragon Quarter pada menu yang terkena, membandingkan entri palet sebelum dan sesudah switch dari CSM1 ke CSM2. Jejak yang berguna mencatat mode penyimpanan, alamat sumber CLUT, urutan entri, dan warna yang digunakan oleh teks yang rusak. Game tambahan yang bergantian menggunakan kedua mode penyimpanan harus mengonfirmasi bahwa pemaksaan pemuatan dari memori lokal tidak mengganggu palet yang sebelumnya berfungsi. Hasil perangkat keras harus didokumentasikan terpisah dari kesimpulan emulator."
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 memperbaiki kerusakan palet yang teramati sambil menjaga penjelasan perangkat keras tetap jujur: perilaku memori lokal langsung CSM2 didukung oleh bukti tetapi masih menunggu konfirmasi konsol yang lebih kuat."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

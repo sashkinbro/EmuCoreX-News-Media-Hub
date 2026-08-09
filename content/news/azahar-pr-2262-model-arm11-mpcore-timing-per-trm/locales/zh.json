@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 模型 ARM11 指令时序，同时保留传统逃生口",
+  "summary": "基于 TRM 的周期表区分流水线刷新、预测返回、寻址模式、传输和 VFP 操作，而不是对每条指令都计一个周期。",
+  "heroAlt": "来自 Azahar 拉取请求 #2262 的源证据：core/arm：根据 TRM 对 ARM11 MPCore 时序建模",
+  "searchKeywords": [
+    "Azahar",
+    "ARM11 MPCore",
+    "指令时序",
+    "Dynarmic",
+    "LEGO 城市卧底"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm：根据 TRM 对 ARM11 MPCore 时序建模"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "每个周期一条指令掩盖了流水线和传输的差异"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nintendo 3DS CPU 并不是以完全相同的延迟执行每条 ARM 指令。一个清空八级流水线的分支、一个预测的返回、一个移位寄存器地址，以及多寄存器或 VFP 传输，其成本各不相同。Azahar 早期的简单时序可能会相对于 CPU 工作移动中断或游戏逻辑，特别是在事件何时可见会影响行为的序列中。"
+    },
+    {
+      "type": "heading",
+      "text": "该表遵循 ARM11 MPCore 机制，而非任意游戏延迟。"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2262 扩展了 arm_tick_counts，包括七周期流水线清空模型、间接分支的较低平均值、对 MOV 或加载到 PC 的特殊处理、移位寄存器地址成本、每周期两寄存器的多重传输，以及 VFP 传输计数。作为将指令编码匹配到适当时序函数的一部分，位域提取辅助程序也已被修正。"
+    },
+    {
+      "type": "heading",
+      "text": "预测返回与非结构化控制流不同。"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr 和基于堆栈的 PC 加载可以使用返回预测并获得更低成本的结果，而其他 PC 写入或跳转表加载则会产生重装填惩罚。这一区别防止了广义分支常量对正常函数返回过度收费，同时对不可预测的重定向收费不足。该模型描述了主机模拟的客户机周期；它独立于 Dynarmic 在手机或桌面上执行已翻译代码块的速度。"
+    },
+    {
+      "type": "heading",
+      "text": "在验证期间，遗留切换包含兼容性风险"
+    },
+    {
+      "type": "paragraph",
+      "text": "调试 CPU 设置可以恢复旧的每条指令一滴答的行为，以适应对时间敏感的游戏；LEGO 城市潜行的追逐场景就是引用示例。测试应在 CPU 基准、中断、音频、输入轮询和该追逐场景中比较两种模式。将周期数与 TRM 案例和目标指令循环进行验证。切换必须以确定方式执行并保持，但应调查新的回归，而不是永久地将每个标题隐藏在遗留时间之后。"
+    },
+    {
+      "type": "callout",
+      "text": "新表格模拟了指令为何要占用不同的来宾周期；传统开关在该模型成熟期间保持对时间敏感的软件可测试。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "阅读 Azahar 工程讨论和源代码更改"
+    }
+  ]
+}

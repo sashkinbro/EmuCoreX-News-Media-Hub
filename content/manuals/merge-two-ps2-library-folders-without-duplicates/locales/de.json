@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-two-ps2-library-folders-without-duplicates",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zwei PS2-Bibliotheksordner mit einer hash-basierten Konflikttabelle zusammenführen",
+  "summary": "Zwei spielbare Ursprünge in ein neues Ziel konsolidieren, indem identische Hashes, regionale Revisionen, Multidisc-Sets und gepatchte Arbeitskopien klassifiziert werden, bevor EmuCoreX den zusammengeführten Ordner überhaupt scannt.",
+  "heroAlt": "Frontend zur Medienerhaltung zeigt optische Medien-Identitätsfelder, die verwendet werden, um Quell-Discs während eines Mergers zu unterscheiden",
+  "searchKeywords": [
+    "PS2-Spielordner zusammenführen",
+    "EmuCoreX-Bibliothek deduplizieren",
+    "PS2-Regionalvarianten",
+    "Hash-Konflikttabelle",
+    "Multidisc-Set"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Bibliothek",
+    "integrity": "Integrität"
+  },
+  "sourceLabels": {
+    "powershell-hash": "SHA-256 Inventarreferenz",
+    "pcsx2-discs": "PS2 Disc-Set-Struktur"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "In einen dritten Ordner zusammenführen, niemals in einen der beiden Quellordner"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein sicherer Merge bewahrt Ordner A und Ordner B, während ein leerer Ordner C erstellt wird. Dieser dritte Speicherort macht jede Entscheidung umkehrbar. Kollisionen bei Dateinamen sind nur das erste Signal: Identische Hashes können unterschiedliche Namen haben, während übereinstimmende Namen verschiedene Bereiche, Revisionen, Discs oder extern gepatchte Arbeitskopien verbergen können. Die Konflikttabelle muss daher Pfad, Bytes, SHA-256, Seriennummer, Region und Rolle in einem Multidisc-Set speichern."
+    },
+    {
+      "type": "callout",
+      "text": "Lassen Sie keinen Dateimanager für die gesamte Operation auf Ersetzen, Überspringen oder Beide behalten antworten. Diese Schaltflächen wissen nicht, welche Kopie ein verifizierter Master ist, welche gepatcht wurde oder ob Disc 2 neben Disc 1 gehört."
+    },
+    {
+      "type": "heading",
+      "text": "Erstellen Sie Inventare für A und B"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Schreibgeschützte SHA-256-Berichte für beide Quellwurzeln.",
+        "Ausreichend separate Kapazität für das vollständige deduplizierte Ziel.",
+        "Dump-Protokolle oder serielle Aufzeichnungen für mehrdeutige regionale und Revisions-Paare.",
+        "Eine Namenskonvention, die bei Bedarf die Disc-Nummer einschließt.",
+        "Beide Quellwurzeln vorübergehend aus dem EmuCoreX-Scan während der abschließenden Abnahme entfernt."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Kollisionen vor dem Kopieren klassifizieren."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Die beiden Inventare nach Hash zusammenführen, um byte-identische Dateien unabhängig vom Namen zu identifizieren.",
+        "2. Erneut nach normalisiertem Dateinamen zusammenführen, um Konflikte mit demselben Namen, aber unterschiedlichen Hashes aufzudecken.",
+        "3. Bei identischen Hashes eine kanonische funktionierende Datei auswählen und aufzeichnen, welche Quelle sie geliefert hat.",
+        "4. Bei unterschiedlichen Hashes Seriennummer, Region, Revision, Disc-Nummer und Patch-Status überprüfen; jede legitime Variante unter einem eindeutigen Namen aufbewahren.",
+        "5. Klassifizierte Dateien gruppenweise in den leeren Ordner C kopieren und dann einen neuen Hash-Bericht für das Ziel berechnen.",
+        "6. C mit der Konflikttabelle vergleichen und überprüfen, dass jede geplante Variante und jedes Multidisc-Komponenten einmal vorhanden ist.",
+        "7. Autorisieren Sie nur Ordner C in EmuCoreX, aktualisieren Sie und testen Sie einen Eintrag aus jeder Konfliktklasse.",
+        "8. Behalten Sie A und B schreibgeschützt, bis C den Neustart übersteht und jede regionale oder multidiskontinuierliche Identität korrekt ist."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein gepatchtes Abbild sollte keinen unberührten Erhaltungs-Master ersetzen. Bevorzugen Sie externes Patchen, wo unterstützt, und halten Sie den Master außerhalb aktiver Scans. Wenn eine Cue-Datei auf Tracks verweist, erhält das gesamte Set eine Konfliktentscheidung; das Kopieren nur der Cue- oder der größten BIN-Datei erzeugt ein irreführendes, aber unvollständiges Bibliothekselement."
+    },
+    {
+      "type": "heading",
+      "text": "Schließen Sie jede Zeile in der Konflikttabelle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Merge ist abgeschlossen, wenn jede Eingabedatei eine dokumentierte Disposition hat und jede Ausgabe einen Integritätsnachweis aufweist."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Jede Gruppe mit identischem Hash liefert eine beabsichtigte aktive Kopie.",
+        "Different-Hash-Kollisionen haben explizite Erklärungen zu Serien, Region, Revision oder Patch.",
+        "Jedes Multidisc- und Cue/Bin-Set ist vollständig.",
+        "Ziel-Hashes stimmen mit den ausgewählten Eingabekopien überein.",
+        "EmuCoreX zeigt die geplanten Titel ohne sich überschneidende Quellverzeichnisse."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Konflikte, die eine Pause erfordern"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zwei Dateien teilen sich einen Titel, weisen jedoch keine serielle Evidenz auf: Bewahren Sie beide außerhalb des aktiven Hauptverzeichnisses auf, bis sie identifiziert sind.",
+        "Der Ziel-Hash stimmt mit keiner Quelle überein: Wiederholen Sie das Kopieren von der gewählten verifizierten Datei.",
+        "Ein Hinweis startet ohne Ton: Ein referenzierter Track wurde umbenannt oder weggelassen.",
+        "Favoriten sind der falschen Region zugeordnet: Korrigieren Sie die Bildidentität, bevor Sie Speicherstände oder Profile verschieben."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verwerfen Sie C und kehren Sie zur Quellkarte zurück"
+    },
+    {
+      "type": "paragraph",
+      "text": "Entfernen Sie die Berechtigungen von Ordner C, aktualisieren Sie und autorisieren Sie A und B genau so, wie sie waren. Da keine Quelle geändert wurde, ist keine Rückkopie erforderlich. Bewahren Sie die Konflikttabelle auf, markieren Sie die strittigen Zeilen und bauen Sie C erst wieder auf, nachdem diese Identitäten gelöst wurden."
+    },
+    {
+      "type": "heading",
+      "text": "Deduplizierung und Aufbewahrung von Backups sind unterschiedliche Entscheidungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine aktive Kopie pro Hash verhindert Unordnung in der Bibliothek, aber eine zweite Offline-Kopie auf einem anderen physischen Gerät ist legitime Resilienz. Die Hashtabelle sollte zwischen Aktiv, Preservation-Master und Backup unterscheiden, sodass eine Bereinigung niemals die letzte wiederherstellbare Kopie entfernt."
+    },
+    {
+      "type": "link",
+      "text": "Verwenden Sie die offizielle SHA-256-Befehlsreferenz",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

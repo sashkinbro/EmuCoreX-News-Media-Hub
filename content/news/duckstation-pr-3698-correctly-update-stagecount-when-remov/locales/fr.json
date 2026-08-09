@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation maintient la longueur de la chaîne de post-traitement constante après suppression et réinitialisation",
+  "summary": "La persistance corrigée de StageCount distingue une chaîne raccourcie, une chaîne de base explicitement vide et une modification par jeu vide qui doit être supprimée.",
+  "heroAlt": "Preuve source de la pull request DuckStation #3698 : PostProcessing : Mise à jour correcte de `StageCount` lors de la suppression/réinitialisation des étapes",
+  "searchKeywords": [
+    "DuckStation",
+    "post-traitement",
+    "StageCount",
+    "paramètres par jeu",
+    "suppression de shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Interface",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing : Mise à jour correcte de `StageCount` lors de la suppression/réinitialisation des étapes"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount est à la fois une longueur et un marqueur de remplacement"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation stocke les étapes de post-traitement dans les paramètres avec StageCount. Dans les paramètres de base, zéro signifie explicitement aucune étape. Dans une couche par jeu, supprimer le champ peut signifier que le jeu ne remplace plus la chaîne globale. Traiter ces cas de la même manière entraîne des étapes obsolètes ou empêche l'héritage. Une suppression qui laisse deux étapes doit écrire deux ; une suppression qui n'en laisse aucune peut nécessiter la suppression du champ spécifique au jeu."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage supprime désormais uniquement la véritable substitution vide par jeu."
+    },
+    {
+      "type": "paragraph",
+      "text": "La requête de tirage n° 3698 calcule new_stage_count et conserve cette valeur lorsque des étapes restent. Le champ n'est supprimé que lorsque l'interface des paramètres n'est pas la couche de base et que le compteur atteint zéro, permettant à une substitution spécifique au jeu vide de disparaître. Auparavant, la branche pouvait effacer StageCount après toute suppression par jeu, perdant la longueur déclarée de la chaîne restante."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages corrige la branche de la couche de base opposée."
+    },
+    {
+      "type": "paragraph",
+      "text": "Le chemin clair avait sa condition base-contre-jeu inversée. Le code corrigé écrit StageCount = 0 pour les paramètres de base, où une chaîne globale vide explicite est significative, et supprime la valeur par jeu afin que la configuration globale puisse se propager. Cette symétrie est au cœur de la correction : raccourcir, effacer globalement et effacer une substitution sont trois opérations de persistance distinctes."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests aller-retour doivent couvrir chaque couche et le nombre restant"
+    },
+    {
+      "type": "paragraph",
+      "text": "Créer une chaîne globale en trois étapes et une chaîne par jeu en trois étapes différente. Supprimer l'étape intermédiaire par jeu, redémarrer et vérifier que les deux survivants conservent l'ordre et les paramètres. Supprimer les deux dernières et confirmer que la chaîne globale revient. Ensuite, effacer la chaîne de base et confirmer qu'elle reste vide après le redémarrage. Répéter avec Qt et FullscreenUI, inspecter StageCount après chaque opération et tester l'ajout d'une étape immédiatement après l'effacement pour détecter les champs indexés périmés."
+    },
+    {
+      "type": "callout",
+      "text": "Une longueur de chaîne de zéro n'est pas toujours stockée de la même manière : les paramètres de base enregistrent le vide, tandis qu'une couche par jeu vide devrait cesser d'écraser la base."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Lisez la discussion d'ingénierie DuckStation et les modifications du code source"
+    }
+  ]
+}

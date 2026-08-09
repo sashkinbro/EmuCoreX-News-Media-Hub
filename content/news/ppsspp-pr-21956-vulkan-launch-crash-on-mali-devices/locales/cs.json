@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP opravuje past při vytváření zařízení Vulkan na hardwaru Mali",
+  "summary": "Zábal libretro nyní vybírá přesně jeden kanál funkce Vulkan, čímž je splněno pravidlo, že pEnabledFeatures musí být null, když je spojen VkPhysicalDeviceFeatures2.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PPSSPP #21956: Libretro: oprava zhroucení při spuštění Vulkan na zařízeních Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: oprava zhroucení při spuštění Vulkan na zařízeních Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tolerantní ovladače skrývaly neplatnou kombinaci create-info"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan nabízí ukazatel pEnabledFeatures pro starší funkce a rozšiřitelnou strukturu VkPhysicalDeviceFeatures2 v pNext. Když je Features2 přítomen, specifikace vyžaduje, aby ukazatel pro starší funkce byl null. Wrapper libretro od PPSSPP mohl naplnit oba, zatímco přidával funkce požadované frontendem. Některé ovladače přijímaly nesprávně vytvořený požadavek zařízení, ale Mali vrátil VK_ERROR_INITIALIZATION_FAILED, takže jádro vykreslené Vulkan selhalo ještě před spuštěním hry."
+    },
+    {
+      "type": "heading",
+      "text": "Wrapper nyní zjišťuje, kterou cestu funkcí jádro zvolilo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21956 prochází řetězec pNext při vytváření zařízení a zaznamenává, zda obsahuje VkPhysicalDeviceFeatures2. Pokud je nalezen, funkce požadované frontendem jsou sloučeny do této struktury a newInfo.pEnabledFeatures je explicitně nastaven na null. Pokud chybí, wrapper zachovává stávající chování pro starší verze kopií nebo vytvořením VkPhysicalDeviceFeatures a přiřazením ukazatele. Obě legální cesty Vulkan jsou tedy vzájemně výlučné."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření zahrnovalo jak přísný, tak tolerantní mobilní GPUs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor testoval hardwarové vykreslování na Android 14 s zařízením Mali-G615 a na Android 13 se zařízením Snapdragon 865 Adreno. Oba se spustily a fungovaly. Na systému Mali způsobilo předání vytvoření zařízení problém s kapacitou samostatného virtuálního swapchainu, který byl řešen jinou změnou; zachování tohoto rozlišení je důležité, protože vyřešení jedné startovací překážky by nemělo vést k tomu, aby Hub tvrdošíjně tvrdil, že každá pozdější selhání Vulkan má stejnou příčinu."
+    },
+    {
+      "type": "heading",
+      "text": "Testy řetězení funkcí by měly kontrolovat vlastnictví struktury"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zachyťte VkDeviceCreateInfo s validačními vrstvami pro legacy core, core Features2, řetězce s doplňkovými feature struktury a neexistující volitelné funkce. Opakujte na Mali, Adreno, desktop Vulkan a na několika verzích RetroArch. Ověřte, že požadované bity jsou zachovány a nejsou přepsány, ukazatele pNext zůstávají platné během vkCreateDevice a pEnabledFeatures je nulový pouze v případě Features2. Testujte také softwarovou a OpenGL cestu, aby se zajistilo, že inicializace wrapperu nepředpokládá Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "Vyjednávání funkcí Vulkan má dvě právní cesty; jejich kombinace může fungovat na povolných ovladačích, ale je stále neplatná a selhává na přísnějším hardwaru."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PPSSPP"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Odstraňte barevné pruhy způsobené post-process shaderem",
+  "summary": "Zaznamenejte jeden hladký gradient nebe nebo mlhy s vypnutým post-processingem, postupně znovu povolte jednotlivé fáze shaderu, zkontrolujte výstup před převodem na zobrazení a ponechte pouze přednastavení, jehož přesnost nepoškozuje ani neprisampluje zdroj.",
+  "heroAlt": "PCSX2 ilustrace zpracování shaderu z oficiální zprávy o pokroku grafiky",
+  "searchKeywords": [
+    "PS2 pruhy shaderu",
+    "EmuCoreX posterizace gradientu",
+    "přesnost post-processingu",
+    "pruhy nebe",
+    "barevné stlačení"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "post-processing": "Post-processing"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 nastavení a zachycení důkazů",
+    "android-hdr": "Android kontext převodu zobrazení"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Prokažte, že pásy začínají po snímku emulátoru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Banding mění hladký gradient na viditelné kroky. Hra může již používat umění s nízkou přesností, shader může kvantizovat mezibarvu, kódování snímků může snížit přesnost nebo zobrazovací řetězec může hodnoty stlačit. Vyberte velký stabilní gradient, například soumrakové nebe, mlhu nebo postupné vyblednutí nabídky. Zachyťte přímý výstup se vším post-processingem vypnutým před hodnocením televizní fotografie."
+    },
+    {
+      "type": "callout",
+      "text": "Dithering může skrýt kroky přidáním šumu, ale neobnovuje hodnoty, které již byly oříznuty v předchozí fázi shaderu. Najděte fázi, která ztrácí přesnost, než považovat šum za lék."
+    },
+    {
+      "type": "heading",
+      "text": "Vytvořte referenční sadu gradientu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Stabilní herní uložená pozice s velkým gradientem s nízkým pohybem.",
+        "Bezeztrátové nebo vysoce kvalitní přímé zachycení s vypnutými a zapnutými shadery.",
+        "Shader preset zkopírován na místo pro obnovení.",
+        "HDR převod, noční režim a transformace barev pro přístupnost vypnuty pro základní nastavení.",
+        "Druhý gradient s odlišnou jasností a odstínem."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Identifikujte první fázi, která způsobuje ztrátu přesnosti"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Studené spuštění s vypnutým post-processingem a zachyťte oba gradienty.",
+        "2. Povolte přednastavení, ale vypněte všechny volitelné fáze, které jeho rozhraní nabízí.",
+        "3. Přidávejte jednu fázi po druhé, restartujte scénu, když pipeline vyžaduje reinicializaci.",
+        "4. Porovnávejte kroky histogramu a viditelné hranice kontur v přímých záznamech, nikoli ve znovukódovaných náhledech.",
+        "5. Když je nalezena zodpovědná fáze, snižte její sílu nebo vyberte její zdokumentovanou cestu s vyšší přesností.",
+        "6. Znovu otestujte bez emulátorového ditheringu, poté povolte pouze zamýšlenou možnost ditheringu, pokud zůstanou reziduální zdrojové kroky.",
+        "7. Znovu připojte normální režim zobrazení a ověřte téměř černé a jasné gradienty samostatně.",
+        "8. Uložte přednastavení specifické pro titul, pokud jiné hry vyžadují odlišný tónový proces."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Řetězec shaderů je uspořádán takto: časná fáze může ořezávat, kvantizovat nebo přemapovat hodnoty, které pozdější fáze nemohou rekonstruovat. Přímé zachycení určuje, zda ztráta existuje před Android, nebo zda externí displej transformuje snímek. Dvě jasové oblasti zabraňují tomu, aby korekce jasných částí oblohy tiše zničila tmavý mlžný efekt."
+    },
+    {
+      "type": "heading",
+      "text": "Přijatelnost kvality gradientu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konečné přednastavení musí zachovat tónové detaily, aniž by měnilo časování hry či barevný záměr."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Velké přechody gradientů probíhají bez nových konturových kruhů.",
+        "Kroky téměř černé zůstávají rozeznatelné a světla nejsou oříznutá.",
+        "Bílé prvky HUD a odstíny pleti nezískávají barevný nádech.",
+        "Druhý gradient se zlepšuje při stejném pořadí scén.",
+        "Rovnoměrnost snímkové frekvence a udržovaná zátěž GPU zůstávají v rámci základní tolerance."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zdroje pásmování mimo shader"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Existují pásy s vypnutým zpracováním při přímém zachycení: porovnejte původní výstup hry nebo zdroje.",
+        "Přímé zachycení je plynulé, ale televizní pásy: zkontrolujte rozsah RGB, HDR a zpracování panelu.",
+        "Pouze sdílené snímky obrazovky ukazují kruhy: použijte bezztrátový místní soubor před změnou přednastavení.",
+        "Fáze opravuje pásy rozostřením detailu: odmítněte ji a obnovte řetězec zachovávající zdroj."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Obnovte známý nezpracovaný snímek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Deaktivujte upravený přednastavený profil, obnovte jeho uložený soubor nebo výchozí hodnoty, vypněte experimentální dithering a znovu zachyťte základní gradient. Přepněte zpět zobrazovací transformace až poté, co je výstup emulátoru prokázán jako plynulý."
+    },
+    {
+      "type": "heading",
+      "text": "Snímky obrazovky mohou měnit barevné kanály."
+    },
+    {
+      "type": "paragraph",
+      "text": "Některé cesty snímání Android tónují HDR nebo ukládají jiný barevný prostor než zobrazený snímek. Zaznamenejte formát snímání a režim zobrazení; použijte jak přímé důkazy, tak kontrolu na kalibrovaném displeji, když problém existuje pouze v HDR."
+    },
+    {
+      "type": "link",
+      "text": "Přečtěte si pokyny pro HDR pipeline Android",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

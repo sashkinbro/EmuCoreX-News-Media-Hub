@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar přesouvá pomalé požadavky na souborový systém 3DS z vlákna emulace, aniž by FS_USER způsobil souběžnost",
+  "summary": "Vyhrazená fronta s jedním pracovníkem umožňuje hostujícím vláknům pokračovat během náročných operací se storage, přičemž zachovává serializaci vyžadovanou nebezpečnou službou FS_USER Azahar.",
+  "heroAlt": "Azahar asynchronní požadavek souborového systému ukazující návrh dedikovaného pracovníka FS_USER",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "asynchronní souborový systém",
+    "ThreadWorker",
+    "Android přerušení v ukládání"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Ukládání",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "jádro: Přidat asynchronní operace souborového systému"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pozastavení hostitelského storage by nemělo zamrazit všechna emulovaná aplikační vlákna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Některé volání souborového systému 3DS mohou na hostiteli trvat natolik dlouho, že se to stane viditelným zásekem, zejména přes poskytovatele úložiště Android používaného ve verzi Google Play. Spuštění operace přímo blokuje vlákno emulace, i když by jiná hostitelská práce mohla pokračovat. Pull request #2098 mění tuto hranici plánování: IPC souborového systému může nechat spící volající vlákno hostitele, zatímco operace na hostiteli běží jinde."
+    },
+    {
+      "type": "heading",
+      "text": "Jednovláknový pracovník řeší bezpečnostní omezení FS_USER"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar nemohl jednoduše posílat každou žádost do obecného vlákna, protože FS_USER a jeho stav archivu nejsou bezpečné pro více vláken. Změna poskytuje službě vyhrazeného ThreadWorkera obsahujícího přesně jedno pracovní vlákno. Žádosti jsou asynchronní vůči emulaci, ale sériové vůči sobě navzájem. To zachovává předpoklady o pořadí služby, aniž by musela čekat nesouvisející emulovaná vlákna na hostitelský souborový systém."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker odděluje práci hostitele od odpovědi IPC"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext získává pomocníka, který obaluje operaci se skladováním do zabaleného úkolu, zařazuje ji do fronty vybraného pracovníka a uchovává budoucí hodnotu pro dokončení. Vlákno hosta klienta spí, zatímco úkol běží. Jakmile je dokončen, Azahar probudí toto vlákno a sestaví výsledek IPC na straně emulátoru. Synchronous fallback zůstává k dispozici pro deterministický režim asynchronních operací a pro případy, kdy je nastavení zakázáno."
+    },
+    {
+      "type": "heading",
+      "text": "Patch zabraňuje placení režie fronty za každý drobný čtení."
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementace je selektivní. Otevírání archivů, mazání, přejmenování, adresáře a související FS_USER cesty mohou používat dedikovaného pracovníka. Operace s cacheovanými soubory následují asynchronní cestu, když data nejsou připravena, zatímco mnoho malých necacheovaných čtení a zápisů zůstává synchronní, protože komunikace mezi vlákny by mohla stát víc než I/O. Zavření a změna velikosti souborů také respektuje nastavení a destruktor FS_USER čeká na zařazené požadavky, než služba zmizí."
+    },
+    {
+      "type": "heading",
+      "text": "Méně záškubů může být výměnou za o něco delší načítání."
+    },
+    {
+      "type": "paragraph",
+      "text": "Povolení běhu jiných hostitelských vláken mění, kdy je viditelný pokrok, nikoli jak rychle dokončí hostitelské úložiště. Zdroj proto očekává výrazné snížení prodlev souvisejících se souborovým systémem, ale uznává, že některé načítání může trvat o něco déle. Tato volba je ve výchozím nastavení povolena v nastaveních úložiště Android a Qt, což činí kompromis viditelným a vratným, místo aby byl skryt v sestavení specifickém pro platformu."
+    },
+    {
+      "type": "heading",
+      "text": "Testování správnosti musí přežít samotnou operaci i službu."
+    },
+    {
+      "type": "paragraph",
+      "text": "Užitečný benchmark zaznamenává časy snímků a dobu načítání s volbou zapnutou i vypnutou při použití stejné úložné lokace. Pokrytí správnosti by mělo zahrnovat otevírání, čtení adresářů, příkazy přejmenování a odstranění; zavření titulu při čekajících úlohách; a následnou kontrolu hashů uložených dat. Pomalé ukládání dokumentů Android je hlavní scénář pro výkon, ale lokální i síťové cesty na ploše jsou cenné pro odhalování regresí v pořadí zpracování, vypínání a šíření chyb."
+    },
+    {
+      "type": "callout",
+      "text": "Klíčovou volbou návrhu je serializovaná asynchronie: jeden pracovník FS_USER odstraňuje zpoždění vlákna emulace, aniž by předstíral, že souborová služba je bezpečná pro paralelní přístup."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Prozkoumejte implementaci pracovníka FS_USER, probuzení IPC a nastavení úložiště uživatele Azahar"
+    }
+  ]
+}

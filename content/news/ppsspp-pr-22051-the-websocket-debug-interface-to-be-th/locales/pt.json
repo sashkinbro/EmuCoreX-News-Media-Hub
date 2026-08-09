@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP move o trabalho de depuração WebSocket para a thread CPU",
+  "summary": "Uma ponte de tarefas síncronas substitui o bloqueio do depurador distribuído, e o desmontador descarta operações macro mescladas que tornavam o tamanho do passo ambíguo.",
+  "heroAlt": "Evidência da fonte do pull request #22051 do PPSSPP: Refatorar a interface de depuração websocket para ser segura em threads, remover \"ops macro\" na desassembly",
+  "searchKeywords": [
+    "PPSSPP",
+    "Depurador WebSocket",
+    "Thread CPU",
+    "Pontos de interrupção",
+    "Desmontagem"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Ferramentas",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refatorar a interface de depuração websocket para ser segura em threads, remover \"ops macro\" na desassembly"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Solicitações de depurador remoto estavam cruzando um limite de propriedade"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um depurador WebSocket é executado em um thread de rede, mas breakpoints, passo a passo, acesso a registradores e grande parte da memória emulada são de propriedade do thread de execução CPU. Proteger funções individuais com locks não relacionados faz com que a correção dependa da ordem dos locks e de cada manipulador futuro lembrar das mesmas regras. Isso é especialmente frágil enquanto o núcleo está pausado, porque uma requisição pode precisar do estado do CPU-thread exatamente quando o progresso normal do frame foi interrompido."
+    },
+    {
+      "type": "heading",
+      "text": "Uma ponte serializa operações de propriedade do CPU no loop de execução"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #22051 adiciona Core_RunOnCPUThread. Um chamador empacota uma função em uma tarefa compartilhada, a coloca sob um mutex de fila e espera em uma variável de condição. Core_RunLoopUntil drena a fila no início de seu loop, executa funções no thread CPU, marca como concluídas sob o mutex e acorda os que estão esperando. Chamadas já no thread CPU executam imediatamente, evitando deadlock consigo mesmo. O loop drena continuamente enquanto o passo a passo ou pausado e pelo menos uma vez por frame do host enquanto estiver em execução."
+    },
+    {
+      "type": "heading",
+      "text": "A desmontagem agora mantém o tamanho do passo em uma unidade"
+    },
+    {
+      "type": "paragraph",
+      "text": "O mesmo trabalho remove operações de macro do desmontador que combinavam padrões de instrução, como lui mais ori, em uma única linha de apresentação. Embora conveniente para leitura, operações mescladas confundem se o tamanho do passo significa bytes, instruções do convidado ou linhas de exibição. O novo contrato trata stepSize como uma contagem de instruções MIPS de quatro bytes, e os cálculos de endereço de ponto de interrupção são multiplicados de acordo. As visualizações podem posteriormente adicionar dicas visuais sem alterar a unidade de execução subjacente."
+    },
+    {
+      "type": "heading",
+      "text": "Testes de concorrência precisam de casos pausados e reentrantes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Execute leituras, gravações, alterações de ponto de interrupção, varreduras de memória e passos únicos simultâneos WebSocket enquanto o jogo está em execução, pausado e em transição entre estados. Desconecte os clientes enquanto as tarefas aguardam, pare o núcleo com uma fila não vazia e chame a ponte a partir do próprio thread CPU. O ThreadSanitizer não deve relatar disputas de depurador. Verifique se cada solicitação recebe conclusão ou um erro de desligamento controlado, e compare os endereços de desmontagem em torno de padrões de macro anteriores para que o passo nunca pule ou repita uma instrução de convidado."
+    },
+    {
+      "type": "callout",
+      "text": "O depurador não solicita mais muitos bloqueios para imitar a propriedade CPU; ele envia a operação para o thread que já possui o estado."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Leia a discussão de engenharia PPSSPP e as alterações de código-fonte"
+    }
+  ]
+}

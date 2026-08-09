@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP da a los mapas de memoria del kernel un formato savestate más liviano",
+  "summary": "BlockAllocator ahora escribe un registro compacto por bloque y garantiza etiquetas rellenadas con ceros cuando se crean, reduciendo el trabajo estructural de grandes mapas de memoria.",
+  "heroAlt": "Evidencia de la fuente del pull request #21990 de PPSSPP: Savestate: serialización compacta BlockAllocator (sección v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "memoria del kernel",
+    "serialización",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: serialización compacta BlockAllocator (sección v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mil bloques multiplican pequeños costos de serialización"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serializa listas de bloques enlazados para la memoria de usuario, kernel y volátil. Un juego en ejecución puede mantener aproximadamente mil bloques activos. El diseño anterior abría una Sección de serialización con nombre para cada bloque, agregando trabajo de encabezado y carga útil repetidamente. También llamaba a strlen y memset durante cada guardado para limpiar los bytes no utilizados en un búfer de etiqueta fijo, porque el ayudante que copiaba una etiqueta no inicializaba el relleno restante."
+    },
+    {
+      "type": "heading",
+      "text": "El nuevo registro contiene solo campos que definen un bloque"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #21990 agrega la sección BlockAllocator v2. Su rama compacta escribe start, size, taken y el arreglo completo de etiquetas de tamaño fijo directamente, sin sección de bloque anidada. La lectura realiza la misma secuencia de campos. Esto es deliberadamente una elección a nivel BlockAllocator en lugar de un cambio silencioso en el método antiguo de bloques, porque los formatos serializados necesitan un límite explícito cada vez que la disposición de bytes difiere."
+    },
+    {
+      "type": "heading",
+      "text": "La higiene de etiquetas se traslada al punto de mutación"
+    },
+    {
+      "type": "paragraph",
+      "text": "La construcción de bloques y SetAllocated ahora borran todo el búfer de etiquetas antes de copiar texto en él. Eso hace que el relleno sea determinista durante toda la vida del objeto y elimina el trabajo repetido de strlen más memset en la ruta de guardado frecuente. También evita que la memoria de proceso no inicializada llegue a un archivo de estado. La versión uno sigue estando disponible para cargar estados antiguos, mientras que los estados compactos recién escritos siguen la regla normal de incompatibilidad hacia adelante para un aumento de sección."
+    },
+    {
+      "type": "heading",
+      "text": "La topología del asignador importa más que el tamaño del archivo por sí solo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construya estados con listas vacías, un bloque, miles de bloques alternadamente libres y ocupados, etiquetas de longitud máxima, bloques reutilizados, memoria volátil y asignación tanto de arriba hacia abajo como de abajo hacia arriba. Cargue fixtures antiguos v1 y nuevos v2, compare el orden de las listas y cada límite, luego asigne y libere después de la restauración para exponer enlaces rotos. Inspeccione la salida para un relleno de etiquetas determinista y sin bytes no inicializados. Evalúe el tamaño y el tiempo de serialización solo después de pasar la equivalencia estructural y la gestión de corrupción."
+    },
+    {
+      "type": "callout",
+      "text": "La serialización compacta es más segura cuando el estado determinista del objeto se establece en el momento de la mutación, y no se repara cada vez que se escribe un guardado."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Lea la discusión de ingeniería PPSSPP y los cambios de código fuente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3621-shader-enable-disable-toggle",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation permet à une étape de post-traitement de dormir sans oublier son réglage",
+  "summary": "Les interrupteurs d'activation par shader préservent l'ordre de la chaîne et les paramètres personnalisés, séparant le contournement temporaire de la suppression destructive à la fois dans Qt et FullscreenUI.",
+  "heroAlt": "Preuves sources du pull request DuckStation #3621 : Qt, FullscreenUI, PostProcessing : Ajouter un interrupteur d'activation/désactivation du shader.",
+  "searchKeywords": [
+    "DuckStation",
+    "post-traitement",
+    "chaîne de shaders",
+    "paramètres",
+    "FullscreenUI"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3621": "Qt, FullscreenUI, PostProcessing : Ajouter un interrupteur d'activation/désactivation du shader."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Supprimer un shader était le seul moyen de le contourner"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une chaîne de post-traitement contient souvent plusieurs effets dont les paramètres ont été réglés ensemble. Avant la pull request #3621, vérifier temporairement l’image sans une étape signifiait la supprimer, puis recréer le shader et ses valeurs plus tard. Cela transforme une simple comparaison en travail de configuration et rend facile la perte d’un preset soigneusement ajusté ou le rétablissement de l’effet au mauvais endroit."
+    },
+    {
+      "type": "heading",
+      "text": "L’état activé devient une partie de l’étape, et non un remplacement vide"
+    },
+    {
+      "type": "paragraph",
+      "text": "La représentation partagée du post-traitement enregistre désormais si un shader individuel s’exécute. Une étape désactivée reste dans la chaîne avec ses valeurs de paramètres et son ordre intacts ; le moteur ignore simplement son travail. La réactivation restaure donc le même effet plutôt que de créer une instance par défaut. Cela diffère de la suppression d’une étape, qui reste l’opération correcte lorsque l’utilisateur souhaite modifier la définition de la chaîne elle-même."
+    },
+    {
+      "type": "heading",
+      "text": "Qt et FullscreenUI exposent le même contrôle non destructif"
+    },
+    {
+      "type": "paragraph",
+      "text": "La mise en œuvre s'étend à la couche utilitaire de post-traitement, au widget de paramètres Qt et aux paramètres de FullscreenUI. Cela garantit que le drapeau activé n'est pas une simple décoration de l'interface : chaque interface modifie l'état que le moteur de rendu utilise. Cela permet également aux utilisateurs de configurer la même chaîne depuis une fenêtre de bureau ou un affichage axé sur le contrôleur sans qu'un côté ne supprime silencieusement la nouvelle propriété."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de persistance et d'ordre de chaîne sont plus importants qu'une seule capture d'écran."
+    },
+    {
+      "type": "paragraph",
+      "text": "Créez une chaîne avec plusieurs shaders, modifiez plusieurs paramètres et désactivez une étape au milieu. La sortie doit correspondre à une chaîne qui ignore cet effet tandis que les étapes suivantes restent dans le même ordre. Enregistrez les paramètres, redémarrez et confirmez que l'état désactivé et les paramètres persistent ; puis réactivez et comparez avec la capture originale. Testez les deux interfaces, l'importation de préréglages, la suppression d'étapes et les basculements rapides. Le timing GPU ne doit être affecté que par le travail de l'étape contournée."
+    },
+    {
+      "type": "callout",
+      "text": "Désactiver est désormais un choix d'exécution réversible ; supprimer reste une modification structurelle de la chaîne de post-traitement."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3621",
+      "label": "Lisez la discussion d'ingénierie DuckStation et les modifications de source"
+    }
+  ]
+}

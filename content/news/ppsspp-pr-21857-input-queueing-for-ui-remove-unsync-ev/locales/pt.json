@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP direciona a entrada da plataforma através do loop de eventos UI",
+  "summary": "Os callbacks de toque, tecla e eixo agora enfileiram dados para envio ordenado na thread UI, removendo métodos de tela não sincronizados e um bloqueio recursivo amplo.",
+  "heroAlt": "Evidência de origem do pull request PPSSPP #21857: Reestruturar a enfileiramento de entrada para a UI, remover eventos Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "fila de entrada",
+    "Gerenciador de Tela",
+    "toque",
+    "controlador"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Entrada",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Reestruturar a enfileiramento de entrada para a UI, remover eventos Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Callbacks de entrada e mutação da tela estavam compartilhando uma fronteira frágil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Backends de desktop e mobile podem reportar eventos de toque, teclado e controle a partir de contextos que não possuem a pilha de telas atual do PPSSPP. O design anterior misturava um bloqueio de entrada recursivo com pontos de entrada UnsyncTouch, UnsyncKey e UnsyncAxis que podiam atravessar as views diretamente. Trocas de tela, sobreposições e despacho de eventos, portanto, dependiam de um grande bloqueio e de os chamadores saberem qual método não sincronizado era seguro."
+    },
+    {
+      "type": "heading",
+      "text": "Callbacks agora realizam apenas uma operação curta na fila"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21857 define eventos tipados em fila para entrada de toque, tecla e eixo. Callbacks do ScreenManager copiam o evento e o adicionam enquanto mantêm o eventQueueLock. Durante a atualização, a thread de UI move toda a deque para uma variável local, libera o mutex e despacha os eventos em ordem. A seção crítica não executa código de view, então os handlers não podem aumentar a latência do callback da plataforma ou adquirir recursivamente o bloqueio da fila."
+    },
+    {
+      "type": "heading",
+      "text": "Regras especiais de entrega permanecem explícitas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Todos os eventos de toque de liberação ainda alcançam cada camada da tela, e os eventos de key-up ainda se espalham de modo que uma camada de fundo não pode manter uma tecla presa após mudanças na pilha. A entrada comum vai para a tela da frente, enquanto um sobreposição recebe primeiro o toque para baixo, para que possa se dispensar e consumir o evento. A conversão de navegação por foco se torna um auxiliar normal KeyEventToFocusMoves, e muitos métodos Unsync desaparecem porque o despacho agora acontece na thread proprietária."
+    },
+    {
+      "type": "heading",
+      "text": "Ordenação e transições de tela são os testes mais difíceis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gere eventos intercalados de toque, tecla e eixo enquanto abre e fecha pop-ups, alterna telas, gira o dispositivo, reconecta controladores e mantém botões pressionados durante uma transição. Confirme a ordem FIFO e que os eventos de liberação limpam todos os estados pressionados. Faça estresse em produtores de múltiplas threads e use ThreadSanitizer em torno do acesso à fila e à pilha de telas. Defina o comportamento quando uma tela muda após um evento ser colocado na fila, mas antes da atualização; a implementação intencionalmente tem como alvo a pilha atual no momento do despacho, então os testes devem garantir esse contrato."
+    },
+    {
+      "type": "callout",
+      "text": "Os callbacks da plataforma agora relatam a entrada; o thread UI decide a que ela pertence quando processa a fila ordenada."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Leia a discussão de engenharia PPSSPP e as mudanças de código-fonte"
+    }
+  ]
+}

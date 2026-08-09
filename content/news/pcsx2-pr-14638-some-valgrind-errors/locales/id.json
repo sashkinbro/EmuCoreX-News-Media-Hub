@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menghapus dua sumber keputusan keadaan-tidak-terinisialisasi yang ditemukan oleh Valgrind",
+  "summary": "Geometri tabel debugger dimulai dari nol, dan pengaturan audio membandingkan bidang alih-alih byte struct mentah, menghilangkan cabang yang dipengaruhi oleh memori dan padding yang tidak pernah ditulis.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14638: Misc: Memperbaiki beberapa kesalahan valgrind",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "bacaan tidak terinisialisasi",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Tooling",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Misc: Memperbaiki beberapa kesalahan valgrind"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Debugger digambar dengan anggota yang tidak memiliki nilai pertama yang ditentukan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind menelusuri cabang kondisional di MemoryViewTable::DrawTable ke jumlah baris, posisi, status seleksi, dan anggota alamat yang dideklarasikan tanpa inisialisasi. Jalur resize atau pengaturan normal sering menetapkan nilai-nilai ini sebelum pengecatan, yang membuat cacat tersebut terjadi secara intermiten. Namun, sebuah acara paint yang datang lebih awal tetap bisa membaca bilangan bulat yang tidak ditentukan dan memilih perilaku tata letak dari bit-bit yang menempati objek."
+    },
+    {
+      "type": "heading",
+      "text": "Inisialisasi nol memberikan pengecatan pertama tabel kosong yang valid"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14638 menginisialisasi rowCount, rowVisible, rowHeight, sumbu value dan text, posisi baris pertama, alamat start dan selected, serta selectedIndex saat deklarasi. Nol mewakili status pra-tata letak yang aman hingga dimensi nyata tersedia. Perubahan ini tidak menebak alamat atau seleksi default; ini memastikan bahwa acara awal melihat model yang sengaja kosong alih-alih data yang tidak terdefinisi."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp membandingkan bidang audio dan padding yang tidak terlihat secara bersamaan"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters mengimplementasikan kesetaraan dengan membandingkan byte mentah sizeof(struct). Padding C++ antara anggota bukanlah field dan dapat menyimpan nilai yang tak tentu, sehingga dua konfigurasi yang secara logis identik bisa dibandingkan tidak sama. Itu mencapai pemeriksaan konfigurasi SPU2 selama perubahan pengaturan dan pemuatan savestate. Patch ini mengganti == dan != kustom dengan perbandingan tiga arah default, yang membandingkan anggota yang dideklarasikan sesuai tipe mereka dan tidak pernah memperlakukan padding sebagai konfigurasi."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind dan tes perilaku seharusnya mencakup urutan acara dan pemuatan state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalankan debugger di bawah Valgrind saat membuka, mengubah ukuran, melukis, memilih, dan menutup tampilan memori sebelum dan sesudah VM dimulai. Kemudian muat savestates dan ulangi menerapkan pengaturan audio yang identik, memastikan tidak ada restart palsu dan tidak ada laporan perbandingan yang tidak terinisialisasi. Ubah satu field audio nyata untuk memastikan ketidaksetaraan masih bekerja. Build compiler dan sanitizer dengan padding struct yang berbeda berharga karena hasil bersih pada satu layout tidak membuktikan memcmp yang dihapus aman di tempat lain."
+    },
+    {
+      "type": "callout",
+      "text": "Kedua perbaikan menggantikan isi memori yang tidak sengaja dengan status tingkat bahasa: bidang yang diinisialisasi untuk tata letak UI dan kesetaraan per bidang untuk konfigurasi audio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

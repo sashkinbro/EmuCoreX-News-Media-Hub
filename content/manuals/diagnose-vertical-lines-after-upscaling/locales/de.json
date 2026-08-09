@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnose vertikale Nähte, die erst nach dem Hochskalieren mit PS2 erscheinen",
+  "summary": "Kartiere den ersten Auflösungsfaktor, der die Nähte sichtbar macht, unterscheide Spritenausrichtung von Textur-Atlas-Bluten und behalte nur eine dokumentierte pro-Spiel-Korrektur bei, die HUD und Geometrie unverändert lässt.",
+  "heroAlt": "Tekken 5 PCSX2 Aufnahme mit schmalen vertikalen Nähten, verursacht durch Spritenfehlanordnung beim Hochskalieren",
+  "searchKeywords": [
+    "PS2 vertikale Linien Hochskalierung",
+    "EmuCoreX schwarze Nähte",
+    "Sprite ausrichten",
+    "Textur-Atlas-Bluten",
+    "Artefakt der internen Auflösung"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "accuracy": "Genauigkeit"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 Erklärung ungültiger Proben und schwarzer vertikaler Linien über der nativen Auflösung",
+    "pcsx2-gsdx-progress": "PCSX2 Beispiele und Umfang der Align-Sprite-Korrektur"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ermitteln, ob jede Linie einer Sprite-Grenze folgt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Vergrößerung kann Lücken aufdecken, die im nativen Pixelraster der PS2 nicht existieren. In einigen Spielen werden benachbarte Sprites so platziert, dass ihre Kanten bei der nativen Auflösung genau aufeinandertreffen; nach der Skalierung kann die Rundung eine ein Pixel breite Spalte unbedeckt lassen. Ein anderes Problem tritt auf, wenn ein Sample von einer Zelle eines Texture-Atlas in die nächste übergeht. Beginnen Sie mit einer Szene, die sowohl die Linien als auch stabile Referenzobjekte enthält: ein 2D-HUD, ein flacher Hintergrund und gewöhnliche 3D-Geometrie. Zeichnen Sie die Spielseriennummer, den Renderer, den Treiber, das Seitenverhältnis, den internen Auflösungsmultiplikator, die Textureinstellungen und jede manuelle Hardwarekorrektur auf. Die Position des Defekts ist wichtiger als seine Farbe: eine Linie, die gekachelten Paneelen folgt, unterscheidet sich von einer Linie, die am physikalischen Display fixiert ist."
+    },
+    {
+      "type": "callout",
+      "text": "Verdecken Sie keine Nähte mit Stretch, Zuschneiden, Overscan oder Anzeigezoom. Diese Änderungen können die äußersten Spalten verbergen, während das falsche Sampling im gesamten Bild aktiv bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Erstellen Sie eine Auflösungsleiter aus einer eingefrorenen Komposition"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ein Spielstand vor einem statischen Menü, einer Arena, dem Himmel oder Hintergrund, bei dem mindestens drei Nähte leicht zu erkennen sind.",
+        "Richten Sie Screenshots auf die native Auflösung und den derzeit bevorzugten Upscale-Multiplikator; Fotografien mit der Kamera sind kein geeignetes Beweismaterial für Ein-Pixel-Nachweise.",
+        "Texturaustausch, Schärfung, Nachbearbeitung, Breitbild-Patches und externe Display-Skalierung für den ersten Durchgang deaktiviert.",
+        "Der System GPU-Treiber und eine unterstützte Hardware-API wurden ausgewählt, mit dem pro Spiel erstellten Grafikprofil gesichert.",
+        "Eine einfache Fehlerkarte, die angibt, ob jede Linie das HUD kreuzt, einer wiederholten Sprite-Kante folgt oder sich mit der Kamera bewegt."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Lage die Skalierungsschwelle vor dem Testen der Ausrichtung."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Starte das Spiel bei nativer interner Auflösung im Kaltstart und erfasse die gewählte Komposition, ohne einen Emulator-Speicherstand zu laden.",
+        "2. Erhöhen Sie die interne Auflösung um einen Multiplikator, spielen Sie die identische Szene erneut ab und markieren Sie den ersten Schritt, bei dem jede zugeordnete Naht sichtbar wird.",
+        "3. Kehren Sie zu diesem ersten fehlschlagenden Multiplikator zurück und wechseln Sie nur die Hardware-API; wenn die Linienpositionen identisch bleiben, betrachten Sie die Auflösungsberechnung als stärkeren Hinweis als einen API-spezifischen Treiberfehler.",
+        "4. Überprüfen Sie, ob die Nähte zwischen rechteckigen Sprites oder gekachelten Hintergründen sitzen. Für dieses Muster testen Sie nur die dokumentierte Sprite-Ausrichtungs-Korrektur, die vom Emulator für den Titel bereitgestellt wird.",
+        "5. Wenn die Linien stattdessen Farben aus einer benachbarten Atlaszelle enthalten, stellen Sie die Ausrichtung wieder her und testen Sie die dokumentierte Rundungs- oder Texturoffset-Korrektur unabhängig.",
+        "6. Nach jeder scheinbaren Behebung sollten kleine Texte, Gesundheitsleisten, Kartenkacheln, Partikel-Billboards und Vollbildüberblendungen auf verschobene oder abgeschnittene Elemente überprüft werden.",
+        "7. Erhöhen Sie die Auflösung noch um einen weiteren Schritt und besuchen Sie eine zweite Szene erneut; eine Korrektur, die nur bei einem Multiplikator funktioniert, ist kein stabiles allgemeines Profil.",
+        "8. Speichern Sie die kleinste erfolgreiche Änderung pro Spiel, zusammen mit der Seriennummer und dem getesteten Multiplikator, anstatt sie auf die gesamte Bibliothek anzuwenden."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Der PS2 Graphics Synthesizer arbeitet mit einem Adress- und Abtastmodell, das auf dem Ausgabegitter der Konsole basiert. Das Upscaling auf der Host-Seite erhöht die Anzahl der rasterisierten Pixel, ohne jeden vom Spiel gelieferten Koordinatenwert zu ändern. Dies kann Löcher zwischen benachbarten Primitiven offenlegen oder eine Probe direkt außerhalb des vorgesehenen Texel-Bereichs anfordern. Sprite-Ausrichtung und Rundungskorrekturen behandeln unterschiedliche Arithmetik, daher zerstört das Aktivieren beider auf einmal den diagnostischen Wert des Tests. Ein sauberes natives Frame zusammen mit einem wiederholbaren Ausfallschwellenwert zeigt, dass das Dump und die Szene korrekt gerendert werden können und dass der Defekt durch den Upscale-Pfad eingeführt wird."
+    },
+    {
+      "type": "heading",
+      "text": "Beweise für die Akzeptanz der Nahtentfernung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Behalte die Korrektur nur, wenn sie die zugeordneten Lücken schließt, ohne andere Bildschirmebenen zu verschieben."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Jede zuvor markierte vertikale Spalte ist sowohl bei Stillstand als auch bei horizontaler Kamerabewegung kontinuierlich.",
+        "HUD-Symbole, Porträt-Rahmen und Menütrennzeichen bleiben scharf und werden nicht um ein Pixel seitlich verschoben.",
+        "Hintergrundkacheln stoßen sauber an den ersten fehlschlagenden Multiplikator und an den nächsten darüber liegenden Multiplikator.",
+        "Die gleiche Szene bleibt nach einem vollständigen Neustart der Anwendung korrekt und nicht nur nach einem Umschalten während der Sitzung.",
+        "Ein zweites Level mit unterschiedlichen Sprite-Abmessungen wird durchlaufen, und das Frame-Pacing bleibt innerhalb der vorfixierten Messung."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Muster, die eine Ausrichtungsdiagnose ablehnen"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Die Spalte bleibt an derselben physischen Bildschirmposition über Menüs und Android UI: Überprüfen Sie das Display-Panel, das Kabel oder den Capture-Pfad.",
+        "Linien existieren in nativer Auflösung und in Software-Rendering: Überprüfen Sie das Bild und vergleichen Sie es mit einer zuverlässigen Original-Ausgabe-Referenz.",
+        "Nur ersetzte Texturen zeigen farbige Ränder: Deaktivieren Sie das Paket und prüfen Sie stattdessen dessen Atlas-Padding, anstatt GS-Ausrichtung zu ändern.",
+        "Die Korrektur entfernt Lücken, zerstört aber Schriftarten oder Partikel: Setze sie zurück und teste den anderen Sampling-Zweig mit einer neuen Basislinie."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Gehe zur letzten sauberen Skalierungsstufe zurück"
+    },
+    {
+      "type": "paragraph",
+      "text": "Deaktiviere den getesteten Ausrichtungs- oder Rundungswert, stelle die standardmäßigen Texturoffsets und Filterungen wieder her, schließe das Spiel und erfasse den fehlerhaften Multiplikator erneut. Wenn keine enge Korrektur alle Szenen besteht, senke die interne Auflösung auf die höchste Stufe, die sauber geblieben ist, und bewahre die Defektkarte für einen Kompatibilitätsbericht auf."
+    },
+    {
+      "type": "heading",
+      "text": "Eine titel-spezifische Nahtkorrektur ist kein Bildqualitätsvorgabewert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die historischen Align-Sprite-Beispiele beziehen sich auf erkennbares Motorverhalten und nicht auf jede vertikale Linie in jedem Spiel. Emulator-Builds können bereits Datenbankkorrekturen für bekannte Serien anwenden. Bestätigen Sie den Fehler mit den Standardeinstellungen, bevor Sie eine manuelle Überschreibung hinzufügen, und entfernen Sie diese Überschreibung, wenn eine spätere Version den Pfad automatisch korrigiert."
+    },
+    {
+      "type": "link",
+      "text": "Lesen Sie die technische Erklärung von PCSX2 zum Upscale-Sampling",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

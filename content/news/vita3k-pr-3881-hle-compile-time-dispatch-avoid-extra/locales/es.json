@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K mueve la distribución de argumentos HLE desde el tiempo de ejecución hacia las plantillas",
+  "summary": "Las disposiciones de argumentos ARM en tiempo de compilación y los punteros de función simples reducen la maquinaria del puente por importación mientras mantienen la conversión explícita de escalares, argumentos variables y valores de retorno.",
+  "heroAlt": "Evidencia de la fuente del pull request Vita3K #3881: módulo/puente: HLE distribución en tiempo de compilación, evitar indirección de puntero adicional",
+  "searchKeywords": [
+    "Vita3K",
+    "puente HLE",
+    "ABI ARM",
+    "plantillas",
+    "distribución de funciones"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Núcleo",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "módulo/puente: HLE distribución en tiempo de compilación, evitar indirección de puntero adicional"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cada importación de invitado cruza la misma frontera de traducción ABI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una llamada a función Vita llega con argumentos divididos entre los registros generales ARM, los registros de punto flotante y la pila. El puente HLE de Vita3K debe localizarlos, convertir punteros y representaciones de invitado a tipos de anfitrión, invocar la exportación correcta y escribir un valor de retorno de nuevo. El puente más antiguo construía un estado de diseño y capturaba un puntero y nombre de exportación en std::function, agregando maquinaria de tiempo de ejecución de propósito general a un camino utilizado por casi cada llamada de servicio emulada."
+    },
+    {
+      "type": "heading",
+      "text": "La función de exportación se convierte en parte del tipo de puente"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #3881 introduce make_bridge con ExportFn como un parámetro de plantilla no tipo. lay_out se ejecuta como constexpr para el paquete de argumentos de la exportación, produciendo entradas ArgLayout fijas y estado de argumentos variables. Una función generada no capturante lee cada argumento a través de read_bridged_arg, llama a ExportFn directamente y escribe condicionalmente el resultado a menos que el tipo de retorno sea void. Por lo tanto, ImportFn puede ser un puntero de función simple."
+    },
+    {
+      "type": "heading",
+      "text": "Los tipos de puente retienen el contrato de invitado a anfitrión"
+    },
+    {
+      "type": "paragraph",
+      "text": "La disposición en tiempo de compilación no significa reinterpretar registros como objetos arbitrarios de C++. BridgeTypes selecciona la representación ARM de cada argumento y la convierte usando memoria emulada cuando es necesario. module::vargs lleva su estado calculado en lugar de pretender ser un argumento escalar. Los alcances de Tracy aún reciben el nombre de exportación a través del almacenamiento estático, preservando el perfilado por función mientras se elimina la captura de cierre anterior."
+    },
+    {
+      "type": "heading",
+      "text": "La conformidad con ABI necesita pruebas en tiempo de compilación y en ejecución"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instanciar puentes para cero argumentos, cuatro y cinco enteros, valores alineados de 64 bits, flotantes, punteros, estructuras representadas por tipos puente, varargs, retornos void y códigos de error. Comparar ubicaciones de registros y de pila con el ABI de Vita y con la implementación anterior. Compilar cada módulo generado en compiladores soportados, inspeccionar el tamaño del código y la forma de las llamadas, y medir el rendimiento de cargas de trabajo con muchas importaciones. Los tipos inválidos o no soportados deberían fallar durante la compilación con un diagnóstico claro en lugar de seleccionar silenciosamente una disposición incorrecta."
+    },
+    {
+      "type": "callout",
+      "text": "La optimización funciona porque la firma de exportación ya contiene los hechos del ABI; las plantillas pueden convertir esos hechos en un puente fijo antes de que comience la emulación."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Lea la discusión de ingeniería Vita3K y los cambios de fuente"
+    }
+  ]
+}

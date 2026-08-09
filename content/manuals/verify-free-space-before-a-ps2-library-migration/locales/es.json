@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "verify-free-space-before-a-ps2-library-migration",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Calcular el espacio de trabajo antes de una migración de la biblioteca PS2",
+  "summary": "Medir los bytes de origen, los bytes libres de destino, los límites de archivos más grandes, el espacio temporal de verificación y el margen de seguridad antes de copiar; verificar en lotes para que un destino lleno no produzca truncamiento silencioso.",
+  "heroAlt": "Pantalla de parámetros de imagen de la Utilidad de Discos de macOS mostrando las opciones de destino y formato antes de una operación de imagen de disco grande",
+  "searchKeywords": [
+    "Espacio libre de la biblioteca PS2",
+    "Capacidad de migración de EmuCoreX",
+    "Margen de almacenamiento de copia ISO",
+    "verificar transferencia grande",
+    "Almacenamiento de Android lleno"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "storage": "Almacenamiento",
+    "migration": "Migración"
+  },
+  "sourceLabels": {
+    "android-storage": "Android categorías de almacenamiento",
+    "microsoft-filesystems": "Restricciones de capacidad del sistema de archivos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Presupuesto para origen, destino y prueba"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una migración necesita más que el total de biblioteca mostrado. El destino debe contener los archivos, la sobrecarga del sistema de archivos, cualquier archivo cue/bin acompañante, y suficiente espacio libre para que Android y el proveedor de almacenamiento operen normalmente. Los reportes de verificación y una copia de origen retenida también ocupan espacio en otro lugar. Calcule los bytes exactos a partir de un inventario recursivo en lugar de sumar etiquetas redondeadas de gigabytes."
+    },
+    {
+      "type": "callout",
+      "text": "No comience cuando el plan requiera eliminar la fuente a mitad de camino para terminar el destino. Eso elimina la única reversión antes de que se haya probado la copia."
+    },
+    {
+      "type": "heading",
+      "text": "Cree una hoja de capacidad"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Total exacto de bytes y conteo de archivos para cada raíz de origen planificada.",
+        "Tamaño del archivo individual más grande y límite del sistema de archivos de destino.",
+        "Bytes libres en el destino medidos inmediatamente antes de la copia.",
+        "Un margen de seguridad para el overhead del sistema de archivos y la operación normal de Android.",
+        "Espacio separado para informes de hash, registros y la fuente retenida."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Aprobar los lotes de migración en relación con la capacidad restante"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Generar un inventario ordenado que contenga la ruta relativa, bytes y SHA-256.",
+        "2. Restar los archivos excluidos, copias de seguridad y archivos en cuarentena que nunca deberían entrar en la raíz activa.",
+        "3. Comparar la imagen más grande con el tamaño máximo de archivo único del destino.",
+        "4. Establecer un umbral de parada por encima de cero bytes libres; usar la guía de almacenamiento del dispositivo y dejar un margen operativo práctico.",
+        "5. Dividir el inventario en lotes cuyo total permanezca por debajo del espacio disponible después del umbral.",
+        "6. Copie el primer lote sin mover los archivos de origen, luego verifique los recuentos, bytes y sumas de verificación.",
+        "7. Vuelva a medir el espacio libre del destino en lugar de asumir el valor predicho.",
+        "8. Continúe solo mientras el espacio restante medido soporte el siguiente lote más el margen."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La asignación dispersa, las cachés del proveedor, las carpetas de basura y los bloques reservados del sistema de archivos pueden hacer que los totales del administrador de archivos difieran de la aritmética simple. El resultado medido después del lote corrige la hoja de trabajo. Si la compresión se usa solo para respaldo, su tamaño no debe sustituirse por el requisito extraído y reproducible."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación de capacidad e integridad"
+    },
+    {
+      "type": "paragraph",
+      "text": "El destino completado debe tener tanto un inventario coincidente como suficiente capacidad restante para una operación estable."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La cantidad de archivos y los bytes totales del destino coinciden con el inventario aprobado.",
+        "Cada hash del destino coincide con su registro de origen.",
+        "Los archivos más grandes no cruzaron ningún límite del sistema de archivos ni se truncaron.",
+        "El espacio libre restante se mantiene por encima del umbral de detención planificado después de volver a montar.",
+        "Dos títulos del lote final arrancan en frío antes de que se retire el origen."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Patrones de advertencia relacionados con el espacio"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La copia informa éxito pero los bytes difieren: trate el destino como incompleto.",
+        "El espacio libre disminuye más rápido de lo previsto: inspeccione la papelera, la caché del proveedor y la sobrecarga del sistema de archivos oculto.",
+        "Un archivo grande falla mientras los archivos más pequeños se copian: verifique el límite de archivo único.",
+        "Android se ralentiza u otras aplicaciones fallan cerca de la capacidad: detenga y restaure el margen operativo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Elimine solo el último lote incompleto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Usando las rutas de destino explícitas de la hoja de trabajo, elimine o ponga en cuarentena solo los archivos del lote fallido, vuelva a medir el espacio y conserve todos los datos de origen. Elimine la concesión de carpeta incompleta de EmuCoreX para que un conjunto parcial no pueda recopilar perfiles o guardados."
+    },
+    {
+      "type": "heading",
+      "text": "La capacidad anunciada no es capacidad utilizable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los proveedores de almacenamiento usan unidades decimales, los sistemas operativos pueden mostrar unidades binarias y los sistemas de archivos reservan espacio para metadatos. Registre los bytes para los cálculos y las unidades legibles por humanos solo como etiquetas."
+    },
+    {
+      "type": "link",
+      "text": "Revise la guía de almacenamiento de Android",
+      "url": "https://developer.android.com/training/data-storage"
+    }
+  ]
+}

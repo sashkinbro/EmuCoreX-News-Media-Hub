@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 permite que o tamanho da imagem carregada defina a área válida de um alvo pré-carregado",
+  "summary": "Os limites exatos de upload EE-para-GS evitam que o redimensionamento RTA posterior corte uma imagem inteira para a pequena região desenhada depois, enquanto sobreposições de um pixel impedem a realocação de alvos que seriam válidos",
+  "heroAlt": "Evidência de fonte do pull request #14740 do PCSX2: GS/TC: Definir tamanho mínimo válido com base no alvo pré-carregado exato",
+  "searchKeywords": [
+    "PCSX2",
+    "cache de textura",
+    "pré-carregar",
+    "Redimensionamento RTA",
+    "Upload EE para GS"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC: Definir tamanho mínimo válido com base no alvo pré-carregado exato"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um pequeno desenho poderia reduzir um alvo que já continha um upload completo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alguns jogos enviam uma imagem do Emotion Engine para a memória GS, pré-carregam essa imagem como um alvo e então desenham apenas uma pequena região. O pré-carregamento pode estar correto, mas o rastreamento do tamanho válido do PCSX2 poderia seguir o desenho posterior em vez do upload. Se o RTA Scaling então redimensionasse o alvo, ele trataria apenas aqueles poucos pixels desenhados como válidos e cortaria o restante da imagem pré-carregada."
+    },
+    {
+      "type": "heading",
+      "text": "A cobertura de upload agora fornece a altura mínima válida"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14740 detecta as dimensões do upload do EE para o GS que populou o pré-carregamento e as usa para estabelecer a altura válida do alvo. Desenhos pequenos subsequentes podem estender a validade onde apropriado, mas não podem reduzi-la abaixo do conteúdo enviado conhecido. A correção reside em GSTextureCache porque isso é metadado de propriedade e cobertura, não um efeito de shader aplicado depois que a imagem já foi truncada."
+    },
+    {
+      "type": "heading",
+      "text": "O sobreponto de um pixel não move mais a identidade do alvo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um caso separado permitiu um novo upload que se sobrepunha a outro alvo por um único pixel para ajustar o início desse alvo e redimensioná-lo. As consultas pelo endereço base original então falharam, mesmo que o recurso ainda fosse válido nesse base. O manuseio de preload agora tolera a leve sobreposição de blocos sem realocar o alvo, preservando a identidade do endereço que outras operações de cache usam para encontrá-lo."
+    },
+    {
+      "type": "heading",
+      "text": "Vexx e Lucifer's Call exercitam as duas correções independentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx é o reprodutor de origem para uma imagem totalmente pré-carregada cortada pelo rastreamento de tamanho válido. Shin Megami Tensei: Lucifer's Call cobre o comportamento de sobreposição. O teste deve registrar os limites do upload, a base do alvo, a altura válida, os limites de desenho posteriores e qualquer redimensionamento RTA. Compare os quadros nativos e ampliados, depois adicione um caso negativo com uma sobreposição genuinamente maior que ainda deve alterar a propriedade. Corrigir a tolerância de um pixel não deve permitir que alvos conflitantes coexistam indefinidamente."
+    },
+    {
+      "type": "callout",
+      "text": "A validade pré-carregada agora segue evidências já presentes na memória GS: o tamanho exato do upload e o endereço base estável têm precedência sobre um pequeno desenho posterior ou sobreposição insignificante."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "Leia a discussão de engenharia PCSX2 e as mudanças de origem"
+    }
+  ]
+}

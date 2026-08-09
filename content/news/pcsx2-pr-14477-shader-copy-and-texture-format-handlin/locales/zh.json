@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 将纹理转换策略移到 GSDevice 之后",
+  "summary": "StretchRectAuto、CreateCompatible 和 ShaderConvertSelector 重新组织了着色器复制和深度格式处理，使硬件渲染器可以在不了解每个后端管道细节的情况下请求转换。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14477 的视觉证据：GS/HW：重构着色器复制和纹理格式处理。",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "纹理转换"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW：重构着色器复制和纹理格式处理。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache 承担了属于后端边界的决策"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 中的着色器复制必须根据源格式、目标格式、模拟每像素位数和过滤方式选择转换。在拉取请求 #14477 之前，GSTextureCache 和 GSRendererHW 处理了过多的这类机制。重构将选择移动到 GSDevice 后面，因此更高级别的渲染代码描述它需要的复制操作，而不是自己选择后端特定的着色器细节。"
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto 和 CreateCompatible 表达操作，而不是 API"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto 接受两个纹理和模拟格式信息，然后在 GSDevice 内部选择转换着色器。CreateCompatible 创建与现有纹理格式匹配的纹理。ShaderConvertSelector 添加修饰位，这些修饰位可以表示相关转换，而无需增加不相关的着色器入口点。它们共同准备作为 R32 颜色存储的深度和未来的整数深度路径，同时将非激活的 ROV 深度-颜色支持保持在相同接口后面。"
+    },
+    {
+      "type": "heading",
+      "text": "重命名使深度和原语 ID 的意图明确"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁使 OpenGL 转换着色器与 Vulkan 更加一致，将模板图像初始化重命名为原语 ID 初始化，并将 rgba8_16bits 标签更改为 rgb5a1_16bits。Float32 变为 DepthColor，而 FLOAT32、FLOAT24 和 FLOAT16 选择器名称变为 DEPTH32、DEPTH24 和 DEPTH16。双线性过滤也从布尔值更改为枚举，为显式模式留出了空间，而不是使用另一个重载标志。"
+    },
+    {
+      "type": "heading",
+      "text": "纯重构需要在每个渲染器上进行输出一致性测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "声明的约定是与之前的代码输出完全相同。因此，转储运行应比较 Direct3D、OpenGL、Vulkan 和 Metal 在不同纹理格式、深度复制、本机分辨率和放大设置下的帧结果。Metal 已经进行了报告的转储运行检查，但由于文件集合广泛，这也意味着在其他硬件后端上必须对着色器编译和复制选择进行测试。任何像素差异都需要解释，然后新的路径才能在后续的 ROV 工作中使用。"
+    },
+    {
+      "type": "callout",
+      "text": "对用户可见的承诺是故意保守的：目前没有新的效果，但提供了一个更窄的渲染器/后端边界，后来的深度格式可以在不重复转换策略的情况下扩展。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "阅读 PCSX2 工程讨论和源代码更改"
+    }
+  ]
+}

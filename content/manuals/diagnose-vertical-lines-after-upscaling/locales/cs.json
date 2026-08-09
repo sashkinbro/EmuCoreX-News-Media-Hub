@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostikujte vertikální švy, které se objevují pouze po zvětšení PS2",
+  "summary": "Mapujte první multiplikátor rozlišení, který odhaluje švy, rozlišujte zarovnání sprite od prosakování textury-atlasu a uchovejte jen dokumentovanou opravu pro jednotlivé hry, která zachovává HUD a geometrii.",
+  "heroAlt": "Tekken 5 PCSX2 zachycení s úzkými vertikálními švy způsobenými nesouladem sprite při zvětšování",
+  "searchKeywords": [
+    "PS2 vertikální linie při zvětšování",
+    "EmuCoreX černé švy",
+    "zarovnat sprite",
+    "prosakování textury atlasu",
+    "artefakt vnitřního rozlišení"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Přesnost"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 vysvětlení neplatných vzorků a černých svislých čar nad nativním rozlišením",
+    "pcsx2-gsdx-progress": "PCSX2 příklady a rozsah opravy Zarovnání Spritu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Určete, zda každý řádek sleduje hranici spritu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zvětšování může odhalit mezery, které ve vlastní pixelové mřížce PS2 neexistují. V některých hrách jsou sousední sprity umístěny tak, že se jejich okraje přesně setkávají při nativním rozlišení; po zvětšení může zaokrouhlování zanechat jeden sloupec pixelů nepokrytý. Jiná chyba nastává, když vzorek přechází z jedné buňky texturového atlasu do další. Začněte se scénou obsahující jak linie, tak stabilní referenční objekty: 2D HUD, ploché pozadí a běžnou 3D geometrii. Zaznamenejte sériové číslo hry, renderer, ovladač, poměr stran, násobitel vnitřního rozlišení, filtrování textur a každou ruční hardwarovou opravu. Poloha vady je důležitější než její barva: linie sledující dlaždicové panely se liší od linie připevněné k fyzickému displeji."
+    },
+    {
+      "type": "callout",
+      "text": "Nepřekrývejte spáry pomocí roztažení, ořezu, overscanu nebo zvětšení obrazovky. Tyto úpravy mohou skrýt vnější sloupce, zatímco nesprávné vzorkování zůstane aktivní po celé obrazové ploše."
+    },
+    {
+      "type": "heading",
+      "text": "Vytvořte žebříček rozlišení z jedné zamrzlé kompozice."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Uložení ve hře před statickým menu, arénou, oblohou nebo pozadím, kde lze snadno vyznačit alespoň tři spáry.",
+        "Přímé snímky obrazovky v nativním rozlišení a aktuálně preferovaném poměru zvětšení; fotografie z kamery nejsou vhodné pro důkazy založené na jednotlivých pixelech.",
+        "Nahrazení textury, doostření, post-processing, widescreen záplaty a škálování na externím displeji jsou při prvním průchodu zakázány.",
+        "Je vybrán systémový ovladač GPU a jedno podporované hardwarové rozhraní API se zálohovaným grafickým profilem pro jednotlivé hry.",
+        "Jednoduchá mapa defektů zaznamenávající, zda každá linie protíná HUD, následuje opakující se okraj sprite nebo se pohybuje s kamerou."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Najděte prahovou hodnotu škálování před testováním zarovnání"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Studeně spusťte titul při nativním interním rozlišení a zachyťte vybranou kompozici, aniž byste načetli uložený stav emulátoru.",
+        "2. Zvyšte vnitřní rozlišení o jeden násobitel, přehrajte identickou scénu a označte první krok, při kterém se každé namapované švy stanou viditelnými.",
+        "3. Vraťte se k tomu prvnímu selhávajícímu násobiteli a přepněte pouze hardwarové API; pokud pozice linií zůstane stejná, považujte matematiku rozlišení za silnější důkaz než závadu driveru specifickou pro API.",
+        "4. Zkontrolujte, zda se švy nacházejí mezi obdélníkovými sprity nebo dlaždicovými pozadími. Pro tento vzorec testujte pouze zdokumentovanou korekci zarovnání spriteů, kterou pro titul emulátor nabízí.",
+        "5. Pokud řádky místo toho obsahují barvy z sousední buňky atlasu, obnovte zarovnání a otestujte dokumentovanou opravu zaokrouhlení nebo posunutí textury samostatně.",
+        "6. Po jakékoli zjevné opravě zkontrolujte malý text, ukazatele zdraví, dlaždice mapy, billboardy částic a přechody na celé obrazovce kvůli posunutým nebo oříznutým prvkům.",
+        "7. Zvyšte rozlišení o jeden krok a znovu navštivte druhou scénu; oprava, která funguje pouze při jednom násobiteli, není stabilní obecný profil.",
+        "8. Uložte nejmenší úspěšnou změnu pro každou hru s číslem série a testovaným násobitelem, místo abyste ji aplikovali na celou knihovnu."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafický syntezátor PS2 pracuje s adresním a vzorkovacím modelem navrženým kolem výstupní mřížky konzole. Zvýšení rozlišení na straně hostitele zvyšuje počet rastrových pixelů, aniž by změnilo každou souřadnici dodanou hrou. To může odhalit mezery mezi sousedními primitivy nebo požadovat vzorek těsně mimo zamýšlenou oblast texelu. Zarovnání sprite a opravy zaokrouhlování řeší různé aritmetické problémy, takže jejich současné zapnutí zničí diagnostickou hodnotu testu. Čistý nativní snímek plus opakovatelná prahová hodnota selhání ukazují, že dump a scéna mohou být renderovány správně a že vada je zaváděna cestou upscale."
+    },
+    {
+      "type": "heading",
+      "text": "Důkaz o přijetí odstranění švů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uchovejte opravu pouze tehdy, pokud uzavírá namapované mezery, aniž by posunula jiné vrstvy obrazovky."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Každý dříve označený svislý sloupec je kontinuitní jak při zastavení, tak při horizontálním pohybu kamery.",
+        "Znaky HUD, rámečky portrétů a oddělovače menu zůstávají ostré a nejsou posunuty o jeden pixel do strany.",
+        "Pozadí dlaždice se setkávají čistě u prvního selhávajícího násobitele a u následujícího násobitele nad ním.",
+        "Stejná scéna zůstává správná po úplném restartu aplikace, nikoli pouze po přepnutí během relace.",
+        "Druhá úroveň s odlišnými rozměry spriteů prochází a snímkování zůstává v rámci předem nastaveného měření."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vzory, které odmítají diagnózu zarovnání"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Sloupec zůstává na stejné fyzické obrazovce přes nabídky a Android UI: zkontrolujte zobrazovací panel, kabel nebo cestu zachycení.",
+        "Řádky existují v nativním rozlišení a při softwarovém vykreslování: ověřte obraz a porovnejte s důvěryhodným referenčním výstupem.",
+        "Jen nahrazené textury ukazují barevné okraje: vypněte balíček a zkontrolujte jeho atlas padding místo změny zarovnání GS.",
+        "Oprava odstraňuje mezery, ale poškodí písma nebo částice: vraťte ji zpět a otestujte jinou větev vzorkování s novým základem."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vraťte se na poslední čistý stupeň škálování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zakázat testovanou hodnotu zarovnání nebo zaokrouhlování, obnovte výchozí posuny textur a filtrování, zavřete hru a znovu zachyťte selhávající násobič. Pokud žádná úzká oprava neprojde všemi scénami, snižte vnitřní rozlišení na nejvyšší stupeň, který zůstal čistý, a uchovejte mapu vad pro zprávu o kompatibilitě."
+    },
+    {
+      "type": "heading",
+      "text": "Oprava švu specifická pro titul není přednastavením kvality obrazu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Historické příklady Align Sprite se vztahují na rozpoznatelné chování motoru, nikoliv na každý vertikální řádek v každé hře. Sestavení emulátoru mohou již aplikovat opravné databázové záznamy pro známá sériová čísla. Potvrďte chybu s výchozími nastaveními před přidáním manuálního přepsání a toto přepsání odstraňte, když novější sestavení automaticky opraví cestu."
+    },
+    {
+      "type": "link",
+      "text": "Přečtěte si technické vysvětlení PCSX2 týkající se vzorkování škálování",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

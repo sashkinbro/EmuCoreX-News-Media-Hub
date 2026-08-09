@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP sposta il lavoro di debug WebSocket sul thread CPU",
+  "summary": "Un ponte di attività sincrona sostituisce il blocco del debugger distribuito, e il disassemblatore rimuove le macro-operazioni unite che rendevano ambiguo la dimensione dei passi.",
+  "heroAlt": "Prove sorgente dal pull request #22051 di PPSSPP: Rifattorizza l'interfaccia di debug websocket per essere thread-safe, rimuovi le \"macro ops\" nel disasm",
+  "searchKeywords": [
+    "PPSSPP",
+    "Debugger WebSocket",
+    "Thread CPU",
+    "Punti di interruzione",
+    "Disassemblaggio"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Strumenti",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Rifattorizza l'interfaccia di debug websocket per essere thread-safe, rimuovi le \"macro ops\" nel disasm"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le richieste del debugger remoto attraversavano un confine di proprietà"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un debugger WebSocket funziona su un thread di rete, ma breakpoint, step, accesso ai registri e gran parte della memoria emulata sono gestiti dal thread di esecuzione CPU. Proteggere funzioni individuali con lock non correlati fa sì che la correttezza dipenda dall'ordine dei lock e dal fatto che ogni futuro handler ricordi le stesse regole. È particolarmente fragile mentre il core è in pausa, perché una richiesta può aver bisogno dello stato del thread CPU proprio quando il normale avanzamento del frame si è fermato."
+    },
+    {
+      "type": "heading",
+      "text": "Un bridge serializza le operazioni possedute da CPU nel ciclo di esecuzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #22051 aggiunge Core_RunOnCPUThread. Un chiamante impacchetta una funzione in un task condiviso, la inserisce sotto un mutex della coda e attende su una variabile di condizione. Core_RunLoopUntil svuota la coda all'inizio del ciclo, esegue le funzioni nel thread CPU, le marca complete sotto il mutex e sveglia chi attende. Le chiamate già sul thread CPU vengono eseguite immediatamente, evitando autoparalisi. Il ciclo svuota continuamente mentre si esegue step o durante la pausa e almeno una volta per frame host durante l'esecuzione."
+    },
+    {
+      "type": "heading",
+      "text": "Lo smontaggio ora mantiene la dimensione del passo in un'unità"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lo stesso lavoro rimuove le operazioni macro del disassemblatore che combinavano schemi di istruzioni come lui più ori in una sola riga di presentazione. Anche se comodo da leggere, le operazioni unite offuscano se una dimensione del passo significa byte, istruzioni guest o righe di visualizzazione. Il nuovo contratto tratta stepSize come un conteggio di istruzioni MIPS di quattro byte, e i calcoli degli indirizzi di breakpoint si moltiplicano di conseguenza. Le visualizzazioni possono successivamente aggiungere suggerimenti visivi senza alterare l'unità di esecuzione sottostante."
+    },
+    {
+      "type": "heading",
+      "text": "I test di concorrenza necessitano di casi messi in pausa e ri-entranti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esegui simultaneamente letture, scritture, modifiche dei breakpoint, scansioni della memoria e passi singoli di WebSocket mentre il gioco è in esecuzione, in pausa e durante la transizione tra stati. Disconnetti i client mentre i compiti sono in attesa, ferma il core con una coda non vuota e chiama il bridge dal thread CPU stesso. ThreadSanitizer non dovrebbe riportare gare del debugger. Verifica che ogni richiesta riceva completamento o un errore di spegnimento controllato, e confronta gli indirizzi del disassemblaggio intorno ai vecchi schemi macro in modo che il passo non salti mai o ripeta un’istruzione guest."
+    },
+    {
+      "type": "callout",
+      "text": "Il debugger non richiede più molti lock per imitare la proprietà del CPU; invia l’operazione al thread che possiede già lo stato."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Leggi la discussione ingegneristica e le modifiche al codice sorgente di PPSSPP"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin rechaza índices de controladores de NetPlay antes de que lleguen a los mapas del servidor",
+  "summary": "Las comprobaciones de rango firmadas ahora preceden al acceso a mapas de pad y Wiimote, cerrando una vía de fallo remoto mientras se preserva la validación de propiedad del remitente.",
+  "heroAlt": "Evidencia de la fuente del pull request #14677 de Dolphin: NetPlayServer: Corregir fallo remoto mediante un índice de pad no válido",
+  "searchKeywords": [
+    "Dolphin",
+    "Seguridad en NetPlay",
+    "índice de pad",
+    "paquete remoto",
+    "mapa de Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Seguridad",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Corregir fallo remoto mediante un índice de pad no válido"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un número de controlador de la red sigue siendo un dato de entrada no confiable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los paquetes de NetPlay identifican el pad o Wii Remote cuyo estado transportan. El servidor anteriormente usaba map_array.at después de verificar la propiedad en algunas rutas, pero un índice con signo inválido podría alcanzar primero el acceso con comprobación de límites. std::array::at entonces lanza una excepción, convirtiendo un paquete malformado o hostil en un fallo del proceso del servidor en lugar de un mensaje rechazado. Los valores negativos requieren cuidado especial antes de la conversión a size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Un ayudante establece el rango antes de la propiedad"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14677 introduce IsValidPadIndex. Primero requiere que el índice sea no negativo, luego lo convierte y lo compara con el tamaño concreto del array de mapas. Los datos del pad, las encuestas del host del pad y los datos de Wiimote llaman al ayudante antes de at. Solo continúa una ranura válida asignada al jugador que envía. El servidor devuelve un fallo de protocolo para entradas no válidas en lugar de indexar o permitir que un cliente envíe controles para otro participante."
+    },
+    {
+      "type": "heading",
+      "text": "El comportamiento de desconexión también tiene en cuenta los Wiimotes asignados"
+    },
+    {
+      "type": "paragraph",
+      "text": "El mismo cambio verifica si un jugador no anfitrión que se va posee alguna asignación de Wiimote mientras un juego está activo. Si es así, el servidor detiene la sesión y transmite DisableGame, reflejando la necesidad de evitar continuar con entradas sincronizadas faltantes. La verificación toma el bloqueo del juego solo al cambiar la bandera de ejecución. Este comportamiento es independiente de la validación de límites pero cubre otro borde del ciclo de vida del mapeo del controlador."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzzear cada mensaje que lleva un índice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enviar entero mínimo, -1, cero, último espacio válido, primer espacio inválido y entero máximo a través de cada tipo de paquete de pad y Wiimote. Repetir como anfitrión, cliente mapeado, cliente no mapeado y después de desconexión o remapeo. El servidor debería rechazar entradas malformadas sin excepciones, registros excesivos o cambios de estado. Agregar fuzzing de paquetes alrededor de valores truncados y límites de tipos, luego verificar que las sesiones válidas con múltiples controladores y las desconexiones de Wiimote a mitad de juego todavía sigan la política de apagado prevista."
+    },
+    {
+      "type": "callout",
+      "text": "Los límites y la propiedad son cuestiones separadas: el servidor primero debe demostrar que existe una ranura, luego demostrar que el remitente remoto tiene permitido controlarla."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Lea la discusión de ingeniería y los cambios de fuente de Dolphin"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 Gates Vulkan Tiefen-Feedback-Layout basierend auf der Fähigkeit, es zu legalisieren",
+  "summary": "Die nur-Lese-Tiefen-Abtastung fällt jetzt auf das GENERAL-Layout zurück, wenn Texturbarrieren deaktiviert sind, und verhindert so die Auswahl eines Feedback-Loop-Layouts ohne die erforderlichen Vulkan-Feature-Bits.",
+  "heroAlt": "Quellenbeweis aus PCSX2 Pull Request #14817: GS:VK: Verwenden Sie das Feedback-Loop-Layout für Tiefe nur, wenn die Texturbarriere unterstützt wird.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "Feedback-Loop-Layout",
+    "Texturbarriere",
+    "Validierungsschicht"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Verwenden Sie das Feedback-Loop-Layout für Tiefe nur, wenn die Texturbarriere unterstützt wird."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Bildlayout ist nur gültig, wenn sein Feature-Vertrag aktiviert ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkans Anhang-Feedback-Schleifen-Layout beschreibt ein Bild, das über eine Feedback-Beziehung verwendet wird. PCSX2 fügt das entsprechende Fähigkeitsbit nur hinzu, wenn Texturbarriere- oder Tiefen-Feedback-Unterstützung aktiv ist. Der Tiefen-Read-Only-Abtastpfad könnte dennoch dieses Layout wählen, nachdem Barrieren deaktiviert wurden, wodurch ein Widerspruch entsteht: Die Befehlsaufzeichnung beanspruchte eine Funktion, die von der Geräte-konfiguration absichtlich nicht aktiviert war."
+    },
+    {
+      "type": "heading",
+      "text": "Nicht unterstütztes Tiefen-Feedback verwendet jetzt das GENERAL-Layout"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14817 macht die Layout-Auswahl abhängig von demselben Unterstützungstest, der die Fähigkeitsbits steuert. Unterstützte Pfade behalten das spezialisierte Feedback-Schleifen-Layout. Wenn die Funktion nicht verfügbar oder erzwingend deaktiviert ist, verwendet die Tiefenabtastung GENERAL, einen legalen Fallback mit umfassenderen Synchronisationsanforderungen. Die Änderung sorgt dafür, dass Bildzustand und Gerätefunktionen aus einer einzigen Entscheidung abgeleitet werden, statt durch unabhängig optimistische Prüfungen."
+    },
+    {
+      "type": "heading",
+      "text": "Validierungsfehler zeigen einen echten Portierbarkeitsfehler auf, bevor Pixel fehlschlagen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Treiber kann eine illegale Layout-Kombination akzeptieren, ohne dass es sofort zu einem visuellen Artefakt kommt, insbesondere außerhalb des Debug-Modus. Vulkan-Validierungsebenen kennzeichnen die Diskrepanz deterministisch, wodurch sie die geeigneten Beweise für diesen Patch darstellen. Das Vermeiden der Warnung ist keine kosmetische Protokollbereinigung: Es stellt sicher, dass der Befehlsstrom den vertraglich geforderten Rahmen über verschiedene Hersteller und Treiberversionen hinweg einhält, anstatt sich auf nachgiebiges Verhalten zu verlassen."
+    },
+    {
+      "type": "heading",
+      "text": "Der Quell-Dump testet genau den Capability-Off-Pfad"
+    },
+    {
+      "type": "paragraph",
+      "text": "Führen Sie den beigefügten Time Crisis 3 GunCon-Dump auf Vulkan mit den Einstellungen \"Override Texture Barriers\" auf \"Force Disabled\" und \"Use Debug Device\" aktiviert aus. Der korrigierte Pfad sollte keinen Feedback-Loop-Layout-Validierungsfehler ausgeben und den Frame erhalten. Wiederholen Sie dies mit unterstützten Barrieren, um zu überprüfen, dass das spezialisierte Layout weiterhin erscheint, und testen Sie dann Depth Read-Only, Color Feedback, Backend Reset und mehrere GPUs. Erfassen Sie Bildübergänge, damit eine fehlende Warnung die Nutzung der falschen GENERAL-Synchronisation nicht verbergen kann."
+    },
+    {
+      "type": "callout",
+      "text": "Layout und Fähigkeit sind ein Vertrag: Wenn PCSX2 die Unterstützung für Tiefenfeedback nicht aktiviert, darf es diese Unterstützung nicht über das Bildlayout bewerben."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Lesen Sie die PCSX2-Entwicklungsdiskussion und Quelländerungen"
+    }
+  ]
+}

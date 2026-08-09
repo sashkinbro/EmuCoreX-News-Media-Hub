@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP zabraňuje zastaralým pomocným vláknům poškozovat obnovený savestate",
+  "summary": "Loader savestate nyní odpojuje staré obaly hostitele sceUtility a PSMF před zničením, čímž chrání živá jaderná vlákna a paměť, která může znovu použít stejné identifikátory.",
+  "heroAlt": "Důkaz ze zdrojového kódu ve pull requestu PPSSPP #21988: Savestate: nedovolte zastaralým pomocným vláknům HLE měnit obnovený stav jádra",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: nedovolte zastaralým pomocným vláknům HLE měnit obnovený stav jádra"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Destruktor by mohl jednat na nesprávné generaci stavu jádra"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP uchovává na straně hostitele obaly HLEHelperThread pro asynchronní práci, jako je přístup k uloženým datům a přehrávání PSMF. Během načítání emulátor nahrazuje tyto obaly objekty ze serializovaného proudu. Dva scénáře normálně zničily obal před načtením, což umožnilo jeho destruktoru volat __KernelDeleteThread a uvolnit vstupní blok poté, co byl nový stav jádra již nainstalován. IDs uvnitř starého obalu už nepopisoval objekty, které mohl vlastnit."
+    },
+    {
+      "type": "heading",
+      "text": "Opětovné použití identifikátoru proměnilo neškodný log do tichého poškození dat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud obnovený stav neobsahoval zastaralé ID vlákna nebo alokaci, chyba způsobila upozornění na chybějící vlákno nebo neplatné uvolnění paměti. Nebezpečný případ nastal, když obnovený stav měl recyklovanou jednu z těchto hodnot. Destruktor mohl tehdy ukončit legitimní aktivní vlákno nebo uvolnit paměť používanou jiným objektem. Načítání během aktivní práce se uloženými daty nebo přehrávačem PSMF činilo tuto chybu vlastnictví citlivou na časování mnohem snadněji dosažitelnou."
+    },
+    {
+      "type": "heading",
+      "text": "Forget odděluje životnost hostitelského obalu od vlastnictví hostitele"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21988 aplikuje vzor již použitý u zpracování stavu I/O PPSSPP. sceUtility explicitně volá Forget, maže svůj accessThread a maže ukazatel, než jej Do znovu vytvoří. Při čtení PSMF loader prochází existující mapu přehrávačů a volá Forget na každém finishThread, než deserializace mapy zničí přehrávače. Forget nevymaže obnovený stav hosta; říká zastaralému hostitelskému wrapperu, že již nevlastní tyto kernelové zdroje."
+    },
+    {
+      "type": "heading",
+      "text": "Regresní matice musí využívat recyklovaný IDs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Otestujte uložené soubory provedené před, během a po operacích se savedata a přehrávání PSMF, poté načtěte každý ze session s odlišnou aktivitou. Instrumentujte mazání vláken a uvolnění BlockAllocator, abyste prokázali, že žádný wrapper před načtením nemutuje obnovenou generaci. Zahrňte opakované cykly načítání, přetočení, přepínání slotů, neúspěšné stavy a vypnutí po načtení. Cílený test by měl úmyslně znovu vytvořit stejné ID vlákna a adresu bloku, protože samotný starý případ harmless-log by neodhalil tiché poškození."
+    },
+    {
+      "type": "callout",
+      "text": "Obnovení savestate mění generace vlastnictví; destruktory hostitele musí zapomenout zastaralé ukazatele hosta, než se obnovené jádro stane autoritativním."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Přečtěte si inženýrskou diskusi PPSSPP a změny zdrojového kódu"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar makes controller profiles portable without hiding device-specific controls",
+  "summary": "A desktop input overhaul prefers SDL's standardized controller model, keeps joystick fallback for unusual buttons, and lets mappings target one device, one controller type, or every controller.",
+  "heroAlt": "Azahar controller hotkey pull request showing the input-mapping work and review discussion",
+  "searchKeywords": [
+    "Azahar",
+    "controller profiles",
+    "SDL GameController",
+    "controller hotkeys",
+    "input mapping"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Desktop: Controller improvements - readable labels, controller hotkeys, option to apply profiles to all controllers"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Raw joystick identifiers made useful mappings hard to read and reuse"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar's older desktop path relied heavily on SDL's Joystick API. It could identify a physical input, but configuration screens often exposed technical button values instead of the face-button names users recognize. Profiles were also tied to both a device GUID and a port, so moving the same controller to another slot—or sharing a layout with a matching controller—could require another mapping. Pull request #1717 treats those two problems as one input-model issue rather than a cosmetic rename."
+    },
+    {
+      "type": "heading",
+      "text": "GameController first, Joystick only when the standardized map runs out"
+    },
+    {
+      "type": "paragraph",
+      "text": "The shared SDL layer now prefers the GameController API when SDL knows the device. That path supplies portable A/B/X/Y-style controls and readable Xbox- or PlayStation-style labels. Azahar retains the Joystick API as a fallback for controls outside the standard model, including back buttons and other device-specific inputs. Parameters record which API produced a mapping, preventing a stored GameController value from later being interpreted as a raw joystick index."
+    },
+    {
+      "type": "heading",
+      "text": "Three mapping scopes solve different profile problems"
+    },
+    {
+      "type": "paragraph",
+      "text": "The new map type is explicit. “This controller” keeps the earlier GUID-and-port behavior; “this controller type” uses the GUID without pinning a port; and “all controllers” accepts matching controls from any attached device. The choice applies to input profiles and controller hotkeys. This preserves precise multi-controller setups while allowing a living-room profile to survive cable swaps or replacement pads of the same model."
+    },
+    {
+      "type": "heading",
+      "text": "Controller hotkeys are monitored separately from normal gameplay input"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt gains a dedicated controller-hotkey page, a capture dialog, and a HotkeyMonitor that checks assigned controls on a 16 ms timer. A shortcut may contain one or two controller inputs, including axes and non-standard buttons. The registry stores the associated QAction so the monitor can invoke the same command as a keyboard shortcut. Normal controller state is still available to the game; if one button is deliberately assigned to both roles, both actions occur instead of the hotkey layer silently consuming gameplay input."
+    },
+    {
+      "type": "heading",
+      "text": "Automapping now respects Nintendo-style and Xbox-style face-button order"
+    },
+    {
+      "type": "paragraph",
+      "text": "The desktop prompt asks for the physical right face button and shows an icon, matching the intent of the mobile flow. If SDL reports that press as A, Azahar treats it as a Nintendo-layout choice or an intentional visible-label mapping. Other presses retain the familiar XInput-style arrangement. The decision is based on the user's captured control rather than assuming every controller prints the same letters in the same positions."
+    },
+    {
+      "type": "heading",
+      "text": "Regression testing must include attachment order and mixed bindings"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source records checks on Windows, Linux and macOS, plus hats, analog triggers and controller hot-plug after startup. A durable follow-up test should also reopen each mapping scope, reconnect the device on a different port, and verify a two-button hotkey while both buttons remain mapped in-game. Reports should include the SDL device name, GUID, selected map type and whether the input came through GameController or Joystick fallback."
+    },
+    {
+      "type": "callout",
+      "text": "The user-facing gain is not merely prettier labels: profiles become intentionally portable, while unusual controls still have a device-specific escape path."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Read Azahar's controller architecture and testing discussion"
+    }
+  ]
+}

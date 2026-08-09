@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K collega i moduli kernel reali di Vita al proprio grafo di moduli emulati",
+  "summary": "Il caricamento di boot e sysmodule SKPRX ora si unisce a un più ampio SELF, gestione dell'export dei driver, TLS, ciclo di vita e patch necessarie per un percorso di moduli di sistema a basso livello.",
+  "heroAlt": "Prove di origine dalla richiesta di pull Vita3K #3913: moduli: modulo kernel lle \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "Kernel LLE",
+    "SKPRX",
+    "sysmodule",
+    "loader di moduli"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "moduli: modulo kernel lle \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I moduli di sistema a basso livello necessitano di più di un parser SELF"
+    },
+    {
+      "type": "paragraph",
+      "text": "Caricare un vero binario kernel Vita significa risolvere i suoi import e export, assegnare la memoria dei segmenti, creare informazioni sul modulo, rispettare i comportamenti di start e stop, esporre i servizi del driver e pulire ogni simbolo al momento dello scaricamento. Il binario si aspetta anche che esistano campi TLS del kernel e altri moduli di sistema. Un loader che copia con successo i byte ma lascia incomplete quelle relazioni fallirà successivamente con un NID non risolto o un export obsoleto."
+    },
+    {
+      "type": "heading",
+      "text": "Il grafico di avvio include ora bootimage e sysmodule"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3913 aggiunge os0:kd/bootimage.skprx e os0:kd/sysmodule.skprx alla lista di preload. Espande il modulo manager, thread manager, process manager, sysmem, debug, process-event, QAF e le funzioni rivolte a sysmodule necessarie intorno a loro. I nomi TLS del kernel acquisiscono ruoli di stack-check e fiber-context. I percorsi di unload di import e export sono semplificati per rimuovere voci per NID e proprietà del modulo senza trasportare dati di rilocazione che non usano più."
+    },
+    {
+      "type": "heading",
+      "text": "Il patching si sposta allo strato che conosce i segmenti finali"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le patch del gioco vengono estratte dal loader generico del kernel SELF. Dopo che l’eseguibile principale diventa un modulo caricato, il codice dell’interfaccia recupera il suo SceKernelModuleInfo e copia solo le patch il cui segmento esiste e il cui offset più il numero di byte rientra in memsz. Questo mantiene separata una patch di titolo rivolta all’utente dal caricamento dei binari di sistema e fa sì che il controllo dei limiti utilizzi i segmenti mappati finali piuttosto che le ipotesi del parser."
+    },
+    {
+      "type": "heading",
+      "text": "Un grafo misto LLE e HLE richiede test di fallimento tracciabili"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avvia con file firmware completi, immagine di avvio mancante, modulo di sistema mancante, binari incompatibili e configurazioni ordinarie solo HLE. Traccia ogni import risolto, risultato di avvio del modulo, valore TLS, rimozione di export e spegnimento in ordine inverso. Ricarica i titoli ripetutamente per esporre NIDs obsoleti e modulo IDs. Inserisci patch all'inizio del segmento, alla fine esatta e un byte oltre. I binari del kernel non devono mai concedere accesso all'host; tutti i puntatori rimangono intervalli guest e le funzioni del driver non supportate devono riportare un confine preciso invece di restituire un successo inventato."
+    },
+    {
+      "type": "callout",
+      "text": "LLE non sta semplicemente eseguendo più codice firmware; sta costruendo un grafo di moduli reversibile dove i veri binari guest e i servizi dell'emulatore si incontrano a importazioni esplicite."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Leggi la discussione ingegneristica Vita3K e le modifiche al codice sorgente"
+    }
+  ]
+}

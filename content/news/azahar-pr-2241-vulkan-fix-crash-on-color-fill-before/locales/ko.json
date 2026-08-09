@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar는 3GX 플러그인이 프레임버퍼 전에 도착할 때 Vulkan 색상 채우기를 보호합니다",
+  "summary": "PokeReader로 노출된 시작 순서가 대상 이미지가 존재하기 전에 FillScreen을 호출할 수 있습니다. 렌더러는 이제 해당 누락된 이미지를 충돌 대신 지연 설정 상태로 처리합니다.",
+  "heroAlt": "Azahar 풀 리퀘스트 #2241의 출처 증거: video_core: vulkan: 프레임버퍼 설정 전에 색상 채우기 시 충돌 수정",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "프레임버퍼"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "그래픽",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: 프레임버퍼 설정 전에 색상 채우기 시 충돌 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "플러그인이 Vulkan가 이미지를 소유하기 전에 화면 색상을 요청할 수 있습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "PokeReader로 3GX 로더를 활성화하면 FillScreen이 구현된 후 보고자의 AMD Vulkan 시스템에서 일관된 Windows 크래시가 발생했습니다. 로그와 git bisect는 해당 회귀가 그 구현에 있다고 지적했습니다. 키 순서는 특이하지만 프론트엔드에서는 유효합니다. 플러그인 시작이 프레임버퍼 텍스처의 Vulkan 이미지가 생성되기 전에 색 채우기 구성을 처리합니다."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture는 이제 의도가 아닌 리소스를 확인합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #2241은 RendererVulkan::ConfigureFramebufferTexture에 좁은 가드를 추가합니다. texture.image가 없으면 함수는 프레임버퍼를 구성하거나 채우기 전에 반환됩니다. 나중에 유효한 이미지로 호출되면 정상 경로를 따릅니다. 이 수정은 더미 이미지를 생성하거나 크기를 가정하지 않으며, 실제 프레임버퍼와 레이아웃 및 수명이 맞지 않을 수 있는 임시 리소스를 피합니다."
+    },
+    {
+      "type": "heading",
+      "text": "이 실패는 GPU 이상에 대한 보고를 설명할 수 있지만 증거는 범위 내에 유지됩니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "해당 출처는 재현 가능한 조합으로 PokeReader, Windows, Vulkan 및 가능하면 AMD를 인용하며, 관련 행동일 수 있는 여러 문제를 연결합니다. 이러한 보고서는 단서일 뿐, 확인된 수정 사항은 아닙니다. 입증된 불변 사항 하나는 Vulkan 작업이 존재하기 전에 프레임버퍼 이미지를 사용할 수 없다는 것입니다. 다른 충돌은 동일한 초기 FillScreen 상태에 도달하는지 확인하기 위해 자체 로그가 필요합니다."
+    },
+    {
+      "type": "heading",
+      "text": "회귀 테스트는 초기 및 정상 채우기 순서를 모두 강제해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "사용 가능한 경우 AMD, NVIDIA 및 모바일 Vulkan에서 PokeReader를 선택하고 3GX 지원을 켜고 끈 상태로 실행합니다. 이미지 생성 및 FillScreen 순서를 관찰하고 초기 호출이 검증 오류 없이 반환되는지 확인하며, 나중에 초기화된 채우기가 여전히 화면을 지우는지 확인합니다. 플러그인 언로드, 게임 재시작, 표면 재생성 및 백엔드 전환을 반복합니다. 가드가 영구적으로 채워지지 않았거나 오래된 프레임버퍼를 남기는 경우 충돌이 없다고 해서 불충분합니다."
+    },
+    {
+      "type": "callout",
+      "text": "렌더러는 이제 요청된 채우기(fill)와 초기화된(target) 대상을 구분합니다; 이미지가 실제로 존재한 후에만 Vulkan 작업이 시작됩니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Azahar 엔지니어링 토론과 소스 변경 사항을 읽으세요."
+    }
+  ]
+}

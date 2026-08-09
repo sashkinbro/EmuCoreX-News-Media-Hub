@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "El backend Direct3D 12 de PCSX2 recuerda los aciertos del framebuffer más allá de la transición actual",
+  "summary": "Los cambios de estado de color o profundidad ahora pueden ampliar la detección de impactos para dibujos futuros, reduciendo la reorganización de pases de render posteriores en lugar de descartar la cobertura útil porque la transición presente era inevitable.",
+  "heroAlt": "Evidencia de la fuente del pull request #14595 de PCSX2: GS/DX12: Ampliar la retroadaptación de la detección de impactos de optimización de fb desde GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "optimización de framebuffer",
+    "pase de render",
+    "detección de impactos"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Ampliar la retroadaptación de la detección de impactos de optimización de fb desde GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una transición inevitable aún puede revelar cobertura futura útil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las optimizaciones del búfer de cuadros rastrean cuándo un dibujo posterior puede permanecer dentro del estado compatible de la pasarela de renderizado. La ruta Direct3D 12 anteriormente trataba un cambio de color o profundidad como una razón para no expandir la detección de impactos. Eso era demasiado corto de vista: la transición actual puede ser necesaria, pero la región afectada aún indica a PCSX2 que se pueden evitar cambios de estado posteriores."
+    },
+    {
+      "type": "heading",
+      "text": "Tanto el color como la profundidad pueden ampliar la ventana de optimización"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14595 retira comportamientos más amplios ya explorados en OpenGL y Direct3D 11. En GSDevice12, un impacto desde cualquier adjunto puede expandir la condición rastreada incluso cuando uno de ellos activa una transición ahora. La optimización no borra la barrera requerida actualmente ni el cambio de pasarela de renderizado; mantiene información que hace que la siguiente operación compatible sea más económica."
+    },
+    {
+      "type": "heading",
+      "text": "El parche depende de una gestión correcta del estado de la pasarela de renderizado"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente señala que los cambios adecuados de render-pass provenientes de trabajos relacionados forman parte de la base probada. Esa dependencia es importante porque menos pases son beneficiosos solo si las reglas de carga, almacenamiento y transición de attachments permanecen válidas. Un golpe demasiado amplio puede preservar datos que deberían haberse resuelto o limpiado. El efecto informado es una reducción de una a dos cifras en los render passes para los mismos juegos utilizados por el trabajo de optimización anterior."
+    },
+    {
+      "type": "heading",
+      "text": "La validación del rendimiento debe incluir comparación de cuadros exactos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Recree el conjunto de volcado referenciado en Direct3D 12, recopile contadores de render-pass, barrera, copia y tiempo GPU, y compare los cuadros con respecto a la ruta no optimizada. Construya casos donde solo cambie el color, solo cambie la profundidad y ambos cambien, seguidos de dibujos que deberían o no reutilizar el estado. Una caída en el recuento de pases sin identidad de píxeles es una regresión. Las pruebas también necesitan varios proveedores GPU porque el comportamiento del render-pass del controlador y el costo de transición pueden diferir."
+    },
+    {
+      "type": "callout",
+      "text": "La optimización recuerda un acierto para lo que viene después; nunca utiliza ahorros futuros para omitir una transición requerida por el consumo actual."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Eliminar el banding de color introducido por un shader de post-procesamiento",
+  "summary": "Capturar un cielo o un gradiente de niebla suave con el post-procesamiento desactivado, volver a habilitar las etapas del shader individualmente, inspeccionar la salida antes de la conversión de visualización y conservar solo un preset cuya precisión no aplaste ni posterice la fuente.",
+  "heroAlt": "PCSX2 ilustración del procesamiento de shaders de un informe oficial de progreso gráfico",
+  "searchKeywords": [
+    "PS2 banding de shader",
+    "EmuCoreX posterización del gradiente",
+    "precisión del post-procesamiento",
+    "bandas del cielo",
+    "aplastamiento de color"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "post-processing": "Post-procesamiento"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 configuración y captura de evidencia",
+    "android-hdr": "Android contexto de conversión de pantalla"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Demuestra que las bandas comienzan después del cuadro del emulador"
+    },
+    {
+      "type": "paragraph",
+      "text": "El banding convierte un degradado suave en pasos visibles. El juego puede usar arte de baja precisión, un shader puede cuantizar el color intermedio, la codificación de la captura de pantalla puede reducir la precisión, o la cadena de pantalla puede aplastar los valores. Elige un degradado grande y estable como el cielo al anochecer, la niebla o una transición de menú. Captura la salida directa con todo el post-procesamiento desactivado antes de juzgar una fotografía de televisión."
+    },
+    {
+      "type": "callout",
+      "text": "El tramado puede ocultar los pasos agregando ruido, pero no recupera valores que ya fueron recortados por una etapa de sombreado anterior. Encuentra la etapa que pierde precisión antes de tratar el ruido como una cura."
+    },
+    {
+      "type": "heading",
+      "text": "Crear un conjunto de referencia de gradiente"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida guardada estable en el juego con un gradiente de bajo movimiento.",
+        "Capturas directas sin pérdida o de alta calidad con los sombreadores apagados y encendidos.",
+        "Preajuste de sombreado copiado a una ubicación de restauración.",
+        "Conversión HDR, modo nocturno y transformaciones de color de accesibilidad desactivadas para la línea base.",
+        "Un segundo gradiente con diferente brillo y tono."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Identificar la primera etapa que pierde precisión"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Arranque en frío con el post-procesamiento desactivado y captura ambos gradientes.",
+        "2. Habilita el preajuste pero desactiva cada etapa opcional que su interfaz exponga.",
+        "3. Añade una etapa a la vez, reiniciando la escena cuando la tubería requiera reinitialización.",
+        "4. Compara los pasos del histograma y los contornos visibles en capturas directas, no en vistas previas recomprimidas.",
+        "5. Cuando se encuentre la etapa responsable, reduce su intensidad o elige su ruta documentada de mayor precisión.",
+        "6. Vuelva a probar sin el difuminado del emulador, luego habilite únicamente la opción de difuminado deseada si aún quedan pasos de origen residuales.",
+        "7. Vuelva a conectar el modo de pantalla normal y verifique los degradados casi negros y brillantes por separado.",
+        "8. Guarde un preset específico para el título cuando otros juegos necesiten una canalización tonal diferente."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Una cadena de sombreado se ordena: una etapa temprana puede recortar, cuantificar o reasignar valores que las etapas posteriores no pueden reconstruir. La captura directa localiza si la pérdida existe antes de Android o si la pantalla externa transforma el fotograma. Dos rangos de brillo evitan que una corrección para los reflejos del cielo aplaste silenciosamente la niebla oscura."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación de calidad de degradado"
+    },
+    {
+      "type": "paragraph",
+      "text": "El preset final debe preservar el detalle tonal sin cambiar la sincronización del juego ni la intención del color."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Los grandes degradados transicionan sin anillos de contorno nuevos.",
+        "Los pasos cercanos al negro permanecen distinguibles y los resaltados no se recortan.",
+        "Los blancos del HUD y los tonos de piel no adquieren una dominante de color.",
+        "El segundo degradado mejora bajo el mismo orden de etapas.",
+        "La cadencia de cuadros y la carga sostenida de GPU se mantienen dentro de la tolerancia base."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Fuentes de banding fuera del shader"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Existen bandas con el procesamiento deshabilitado en la captura directa: compara la salida o los recursos originales del juego.",
+        "La captura directa es fluida pero las bandas en el televisor: inspecciona el rango RGB, HDR y el procesamiento del panel.",
+        "Solo las capturas de pantalla compartidas muestran anillos: usa un archivo local sin pérdida antes de cambiar el preset.",
+        "Una etapa corrige bandas difuminando detalles: recházala y restaura la cadena que preserva la fuente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaura el fotograma conocido sin procesar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desactiva el preset editado, restaura su archivo guardado o los valores predeterminados, apaga el dithering experimental y captura nuevamente el gradiente de referencia. Vuelve a habilitar las transformaciones de pantalla solo después de que la salida del emulador se haya comprobado que es fluida."
+    },
+    {
+      "type": "heading",
+      "text": "Las capturas de pantalla pueden cambiar las tuberías de color"
+    },
+    {
+      "type": "paragraph",
+      "text": "Algunas rutas de captura Android aplican mapeo de tonos HDR o almacenan un espacio de color diferente al del fotograma mostrado. Registra el formato de captura y el modo de visualización; usa tanto evidencia directa como una verificación con pantalla calibrada cuando el problema exista únicamente en HDR."
+    },
+    {
+      "type": "link",
+      "text": "Lee la guía de la tubería HDR de Android",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

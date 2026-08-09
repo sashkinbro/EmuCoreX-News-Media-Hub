@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14548-sample-area-bbox-calculation-for-rt-ds",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 makes render-target hazard bounds respect texture wrapping",
+  "summary": "Clamp and wrap modes now participate in the sampled-area calculation used when a draw reads from its own render or depth target, preventing the hazard copy from omitting reachable pixels.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14548: GS/DX11/GL: Fix sample area bbox calculation for RT/DS sampling hazard.",
+  "searchKeywords": [
+    "PCSX2",
+    "sampling hazard",
+    "bounding box",
+    "ROV",
+    "texture wrap"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14548": "GS/DX11/GL: Fix sample area bbox calculation for RT/DS sampling hazard."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Primitive coordinates alone do not define the sampled texture region"
+    },
+    {
+      "type": "paragraph",
+      "text": "When a draw samples from the render target or depth target it is also writing, PCSX2 may need a safe copy or a barrier. The required region depends on texture addressing. Clamp can pin coordinates to an edge, while wrap can redirect them to another part of the image. The old sample-area bounding box did not fully account for those modes, so it could copy a region smaller or different from what the shader reached."
+    },
+    {
+      "type": "heading",
+      "text": "Clamp-aware bounds feed the RT/DS hazard path"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14548 corrects the bounding calculation shared by the hardware renderer and the Direct3D 11 and OpenGL device paths. Once the reachable sample area is known, the hazard logic can protect or copy the correct pixels. The patch also simplifies full-barrier handling: storing a separate sample rectangle for every primitive group added complexity without demonstrating enough benefit for the barrier case."
+    },
+    {
+      "type": "heading",
+      "text": "The fix is specific to self-sampling dependencies"
+    },
+    {
+      "type": "paragraph",
+      "text": "This is not a general viewport or scissor correction. It applies when a render or depth target is simultaneously a texture source, a pattern where ordering and region ownership matter. With ROV enabled on Direct3D 11, the wrong copied area was visible in the supplied Bakusou Dekotora Densetsu dump. Other ordinary texture draws should not take the hazard branch and therefore form an important negative test."
+    },
+    {
+      "type": "heading",
+      "text": "Testing should exercise clamp, wrap, and full-barrier routes separately"
+    },
+    {
+      "type": "paragraph",
+      "text": "The reported dump was checked with Direct3D 11 and ROV and was the only changed image in that run. A stronger matrix should vary horizontal and vertical clamp modes, primitive groups crossing a wrap boundary, render-target and depth-target sampling, and both partial-copy and full-barrier routes. Compare exact dump frames and record the computed bounding box; a visually correct result with an oversized copy may still hide a performance regression."
+    },
+    {
+      "type": "callout",
+      "text": "The safety region must describe addresses the shader can reach after wrapping, not merely the unmodified texture coordinates submitted by the guest."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14548",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

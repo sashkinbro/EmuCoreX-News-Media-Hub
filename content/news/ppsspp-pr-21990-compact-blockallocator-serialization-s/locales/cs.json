@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP poskytuje mapám jaderné paměti štíhlejší formát savestate",
+  "summary": "BlockAllocator nyní zapisuje kompaktní záznam pro každý blok a zaručuje nulou vyplněné značky při jejich vytvoření, což snižuje strukturální práci u velkých map paměti.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PPSSPP #21990: Savestate: kompaktní serializace BlockAllocator (sekce v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "jaderná paměť",
+    "serializace",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: kompaktní serializace BlockAllocator (sekce v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tisíc bloků násobí malé náklady na serializaci"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serializuje propojené seznamy bloků pro uživatelskou, jádrovou a volatilní paměť. Probíhající hra může udržet při životě přibližně tisíc bloků. Předchozí rozvržení otevíralo pojmenovanou serializační sekci pro každý blok, což opakovaně přidávalo práci s hlavičkou a užitečným zatížením. Také volalo strlen a memset při každém ukládání, aby vymazalo nepoužité bajty ve fixním tagovém bufferu, protože pomocník, který kopíroval tag, neinicializoval zbytek vycpávky."
+    },
+    {
+      "type": "heading",
+      "text": "Nový záznam obsahuje pouze pole, která definují blok"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21990 přidává BlockAllocator sekci v2. Její kompaktní větev zapisuje start, velikost, obsazené a celou pole tagů pevné velikosti přímo, bez vnořeného blokového oddílu. Čtení provádí stejnou sekvenci polí. Toto je úmyslně volba na úrovni BlockAllocator místo tichých změn staré metody bloků, protože serializované formáty potřebují výslovnou hranici vždy, když se liší rozvržení bajtů."
+    },
+    {
+      "type": "heading",
+      "text": "Udržování tagů se přesouvá na místo mutace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konstrukce bloků a SetAllocated nyní před kopírováním textu do něj vyčistí celý vyrovnávací buffer tagů. To zajišťuje deterministické vycpávání po celou dobu životnosti objektu a odstraňuje opakovanou práci strlen a memset z kritické cesty ukládání. Zároveň to zabraňuje, aby neinicializovaná paměť procesu byla zapsána do souboru stavu. Verze jedna zůstává k dispozici pro načítání starších stavů, zatímco nově zapisované kompaktní stavy se řídí běžným pravidlem nekompatibility dopředu při zvýšení sekce."
+    },
+    {
+      "type": "heading",
+      "text": "Topologie alokátoru je důležitější než samotná velikost souboru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sestavujte stavy s prázdnými seznamy, jedním blokem, tisíci střídajícími se volnými a obsazenými bloky, tagy maximální délky, znovu použitými bloky, volatilní pamětí a jak vrchní, tak spodní alokací. Načítejte staré v1 sady a nové v2 sady, porovnávejte pořadí seznamů a každou hranici, poté alokujte a uvolněte po obnovení k odhalení poškozených odkazů. Kontrolujte výstup pro deterministické vycpávání tagů a žádné neinicializované bajty. Benchmark velikosti a času serializace provádějte až po schválení strukturální ekvivalence a zvládnutí poškození."
+    },
+    {
+      "type": "callout",
+      "text": "Kompaktní serializace je nejbezpečnější, když je deterministický stav objektu stanoven při mutaci, nikoli opraven při každém zápisu uložení."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Přečtěte si technickou diskusi a změny zdrojového kódu PPSSPP"
+    }
+  ]
+}

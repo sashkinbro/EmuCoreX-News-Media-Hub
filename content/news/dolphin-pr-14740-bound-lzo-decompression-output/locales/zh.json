@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 对 NetPlay 存档解压进行了严格限制",
+  "summary": "安全的 LZO 解码、检查累积和精确的最终大小验证可以防止远程存档块溢出内存或无节制地操控分配。",
+  "heroAlt": "来自 Dolphin 拉取请求 #14740 的来源证据：NetPlay：限制 LZO 解压输出",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "NetPlay 存档",
+    "解压",
+    "缓冲区安全"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "安全",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay：限制 LZO 解压输出"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "压缩同步越过敌对的大小边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay 可以在游戏前从另一个对等方传输保存文件或文件夹。每个压缩的 LZO 块和声明的最终大小都来自网络。之前的路径在没有设置输出容量的情况下调用了未检查的解码器，因此格式错误的压缩数据可能会写入目标之外的空间。一个缓冲路径也直接从对等方提供的大小分配内存，这使得在解压缩验证任何内容之前，内存压力就可能被触发。"
+    },
+    {
+      "type": "heading",
+      "text": "现在每个块都分配了真实的目标容量"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14740 切换到 lzo1x_decompress_safe。文件输出将 new_len 初始化为固定输出缓冲区大小，并在写入前验证解码块是否适合剩余声明的总大小。内存中的文件夹输出解码到一个有界的临时块中，同时检查声明大小的减法和向量 max_size 的计算，然后只附加成功生成的字节。远程总量不再被用作立即分配请求。"
+    },
+    {
+      "type": "heading",
+      "text": "最终总量必须精确，而不仅仅是低于上限"
+    },
+    {
+      "type": "paragraph",
+      "text": "接受少于声明的字节可能会留下截断的保存文件，从而导致解析不可预测，而接受多于声明的字节则会超出发送方声明的格式边界。文件和缓冲区路径都会累积一个64位计数，并且在结束时要求相等。解码器错误、算术溢出条件、输出超过声明值或不匹配都会返回失败，并伴随受控警报，而不是将部分内容交给后续保存提取。"
+    },
+    {
+      "type": "heading",
+      "text": "解压缩测试集应测试资源使用情况以及写入情况"
+    },
+    {
+      "type": "paragraph",
+      "text": "提供有效的空传输、单块传输、多块传输以及最大正常传输，然后测试损坏的流、膨胀炸弹、截断块、尾部块、零声明、大声明，以及略高或略低于实际输出的总量。在 AddressSanitizer 和内存限制下运行，检查失败时是否移除部分文件，并且不会使会话无限期等待。交叉测试发送方和接收方版本、包含许多条目的保存文件夹，以及中断的网络。即使在内存安全范围之外，协议级别的最大值仍可能是可取的。"
+    },
+    {
+      "type": "callout",
+      "text": "安全解压需要三项协议：每个块适合其缓冲区，累积字节不能溢出，并且完成的流等于声明的负载。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "阅读 Dolphin 工程讨论和源代码更改"
+    }
+  ]
+}

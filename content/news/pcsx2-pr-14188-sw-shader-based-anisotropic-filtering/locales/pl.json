@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 dodaje anizotropię shaderów dla tekstur, które muszą pozostać filtrowane punktowo",
+  "summary": "Punkt awaryjny Direct3D wykonuje próbkowanie anizotropowe w shaderach, omijając ścieżki sprzętowe, które wymuszają filtrowanie liniowe lub odmawiają obsługi tekstur bez mipmap na niektórych sterownikach AMD.",
+  "heroAlt": "Dowód źródłowy z prośby o pull PCSX2 #14188: GS/HW: Dodaj anizotropowe filtrowanie oparte na shaderach",
+  "searchKeywords": [
+    "PCSX2",
+    "filtrowanie anizotropowe",
+    "filtrowanie punktowe",
+    "Direct3D 12",
+    "test alfa"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Dodaj anizotropowe filtrowanie oparte na shaderach"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Anizotropia sprzętowa może naruszać wymagany tryb filtrowania tekstury"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D nie zapewnia potrzebnej kombinacji filtrowania anizotropowego z filtrowaniem punktowym w ścieżce PCSX2, więc wcześniejsze włączenie AF powodowało przesunięcie dotkniętych tekstur w stronę próbkowania liniowego. Interpolacja liniowa miesza sąsiednie kolory przed testowaniem alfa; przezroczysty texel może więc wciągnąć kolor, którego gra nigdy nie zamierzała wyświetlić. Efekt jest najbardziej widoczny na nachylonych powierzchniach testowanych alfa i krawędziach tekstur."
+    },
+    {
+      "type": "heading",
+      "text": "Ścieżka shaderowa kontroluje próbki kierunkowe w sposób jawny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14188 dodaje programowy, bazujący na shaderach filtr anizotropowy do rendererów Direct3D. Ponieważ PCSX2 sam wybiera i łączy próbki, może zachować decyzje kolorystyczne podobne do punktowych przy jednoczesnym pokryciu wydłużonego obszaru tworzonego przez powierzchnię skośną. Ustawienie jest oddzielne od normalnego poziomu anizotropowego, umożliwiając użytkownikom celowe włączenie nowej ścieżki zamiast cichej zamiany zachowania sprzętowego."
+    },
+    {
+      "type": "heading",
+      "text": "Tekstury AMD DX12 bez mipmap uzyskują spójną alternatywę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Źródło informuje również, że sterownik AMD Direct3D 12 nie stosuje sprzętowego AF do tekstur bez mipmap, mimo że porównywalne renderowanie Vulkan działa. Próbkowanie w shaderze omija to ograniczenie hosta i dąży do zgodności z zachowaniem Vulkan na AMD i NVIDIA. Opisuje się je jako bardziej agresywne niż sprzętowe AF NVIDII, szczególnie w rozdzielczości natywnej, więc wynik nie jest uznawany za wizualnie identyczny."
+    },
+    {
+      "type": "heading",
+      "text": "Testy wymagają krawędzi alfa, tekstur bez mipmap i kilku dostawców"
+    },
+    {
+      "type": "paragraph",
+      "text": "Włącz filtrowanie anizotropowe oraz opcję shader, a następnie porównaj geometrię testowaną pod kątem alfa ze sprzętowym AF, filtrowaniem liniowym i Vulkan w tej samej scenie. Uwzględnij tekstury bez mipmap, rozdzielczości natywne i powiększone, ostre kąty widzenia oraz przezroczyste krawędzie z problemu #14077. Zarejestruj próbki tekstur i czas GPU na AMD i NVIDIA Direct3D 11 i 12. Sprawdź, czy ukryte kolory nie przenikają oraz czy agresywne wyostrzanie nie powoduje migotania ani aliasingu w ruchu."
+    },
+    {
+      "type": "callout",
+      "text": "Anizotropia shaderów istnieje, aby zachować zamierzenia filtrowania gościa, gdy wybory sprzętowe Direct3D mieszają zakazanych sąsiadów lub całkowicie pomijają teksturę."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

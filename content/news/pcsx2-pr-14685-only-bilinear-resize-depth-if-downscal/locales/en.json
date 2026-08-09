@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 limits bilinear depth resizing to real downscales",
+  "summary": "A one-condition texture-cache change separates the case that needs smoothing from copies where interpolation changes depth values and produces shadow or surface artifacts.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14685: GS/TC: Only bilinear resize depth if downscaled",
+  "searchKeywords": [
+    "PCSX2",
+    "depth target",
+    "bilinear resize",
+    "GSTextureCache",
+    "native scaling"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: Only bilinear resize depth if downscaled"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bilinear filtering can invent depth values even when size does not shrink"
+    },
+    {
+      "type": "paragraph",
+      "text": "Depth textures are not ordinary color images. Interpolating neighboring samples produces values that were never written by the game, which can alter later comparisons and show up as incorrect shadows or geometry edges. PCSX2 had enabled bilinear sampling broadly after it helped Native Scaling cases, but that rule also touched same-size and enlarged depth copies where smoothing was unnecessary and sometimes visibly destructive."
+    },
+    {
+      "type": "heading",
+      "text": "The new decision asks whether the depth target is actually downscaled"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14685 keeps the resize path in GSTextureCache but narrows its filter choice. Nearest sampling is used unless a depth target is copied to smaller dimensions; only that downscale selects bilinear filtering. The distinction preserves exact source values when pixels map directly or expand, while still averaging samples when a larger internal target must return to the guest's lower-resolution representation."
+    },
+    {
+      "type": "heading",
+      "text": "Kingdom Hearts and Xenosaga expose opposite sides of the tradeoff"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kingdom Hearts showed foot-shadow differences when interpolation touched a depth copy that did not need it, and The Nightmare Before Christmas exposed a stone-surface artifact. Xenosaga Episode III is the reason bilinear depth downscaling existed: its Native Scaling path looked poor when returning to normal resolution without smoothing. The corrected condition is valuable because it keeps both behaviors instead of choosing one game over the other."
+    },
+    {
+      "type": "heading",
+      "text": "Native and upscaled comparisons must verify values as well as appearance"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source asks testers to compare Kingdom Hearts, Xenosaga Episode III, and The Nightmare Before Christmas at native and upscaled resolutions. Captures should hold the scene and renderer constant, then inspect shadow boundaries, the reported stone area, and Xenosaga's water line. A regression pass should also log source and destination dimensions so an apparent improvement can be tied to the expected nearest or bilinear branch rather than accidental scene variation."
+    },
+    {
+      "type": "callout",
+      "text": "The rule is precise: bilinear filtering is a downscale tool for depth targets, not a default for every resize-shaped operation."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

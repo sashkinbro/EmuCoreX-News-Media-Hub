@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14785-unjumble-eatan-coefficients",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 restores microVU's EATAN coefficient order with bit-level tests",
+  "summary": "A coefficient naming regression in the vector-unit recompiler produced plausible but incorrect arctangent results; manual tables and ps2autotests reveal exactly which constants were shuffled.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14785: MicroVU: Unjumble EATAN coefficients",
+  "searchKeywords": [
+    "PCSX2",
+    "microVU",
+    "EATAN",
+    "ps2autotests",
+    "vector unit"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "cpu": "Cpu",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14785": "MicroVU: Unjumble EATAN coefficients"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Correct constants were attached to the wrong EATAN names"
+    },
+    {
+      "type": "paragraph",
+      "text": "The microVU path did not lack the arctangent coefficients; it used them in the wrong order. A prior cleanup changed how the constants were represented and relied on comments that did not describe the table correctly. The resulting names looked reasonable while pointing to shuffled values. That makes this a particularly subtle recompiler defect: ordinary scenes may still produce numbers, but those numbers diverge from the PlayStation 2 vector unit."
+    },
+    {
+      "type": "heading",
+      "text": "The fix follows the VU manual rather than tuning visible output"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14785 reorders the EATAN constants in microVU_Misc.h to match the coefficient table documented for the VU elementary-function unit. It also follows a separate discovery that the interpreter had one incorrect coefficient, checking the recompiler instead of assuming both execution paths shared the same fault. No game-specific threshold or visual workaround is introduced; the mathematical inputs to the existing recompiled sequence are corrected."
+    },
+    {
+      "type": "heading",
+      "text": "EATANxy and EATANxz expose errors that EATAN alone can hide"
+    },
+    {
+      "type": "paragraph",
+      "text": "The supplied efu.elf test exercises EATAN as well as its xy and xz variants with positive and negative zero, maximum values, NaNs, one, mantissa and exponent boundaries, and increasing or decreasing component pairs. The before-and-after logs show several changed hexadecimal results, including the maximum-mantissa and representative-angle cases. Those bit patterns are stronger evidence than judging one animation by eye."
+    },
+    {
+      "type": "heading",
+      "text": "Interpreter and recompiler comparisons should stay in the regression set"
+    },
+    {
+      "type": "paragraph",
+      "text": "Future validation should run the same ps2autotests ELF through the interpreter and microVU, preserve the raw hexadecimal output, and compare it with the VU manual's expected table. Games that rely heavily on vector-unit elementary functions are useful secondary checks, but they cannot replace edge cases such as NaN propagation or signed zero. A later coefficient refactor should fail this test before it reaches visual compatibility testing."
+    },
+    {
+      "type": "callout",
+      "text": "This is numerical emulation work, not a performance tweak: the success criterion is the vector unit's expected bit pattern across the full EATAN test matrix."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14785",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

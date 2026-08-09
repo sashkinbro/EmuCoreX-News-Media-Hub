@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K distingue l'objet SPIR-V IDs des numéros de voies vectorielles",
+  "summary": "La construction du mélange de vecteurs étiquette désormais les vecteurs source comme IDs et les sélecteurs de composants comme des littéraux, empêchant la voie zéro de devenir un SPIR-V ID invalide.",
+  "heroAlt": "Preuve source provenant de la requête de tirage Vita3K #4074 : shader : Corriger un cas de 'les IDs ne peuvent pas être 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "recompilateur de shader",
+    "bloc uniforme"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader : Corriger un cas de 'les IDs ne peuvent pas être 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le même type entier peut représenter deux concepts SPIR-V différents"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les instructions SPIR-V font référence à des objets définis précédemment par des ID numériques, et certains contiennent également des nombres littéraux. OpVectorShuffle prend deux vecteurs IDs suivis de sélecteurs de composants. Un sélecteur de zéro signifie la première voie du premier vecteur ; un objet ID de zéro est interdit. Faire passer chaque opération par un vecteur typé uniquement en tant que spv::Id fait donc perdre la distinction exactement là où un numéro de voie valide partage la valeur sentinelle d’un ID invalide."
+    },
+    {
+      "type": "heading",
+      "text": "Le constructeur reçoit désormais un type explicite pour chaque opérande"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #4074 change les deux listes d'opérandes de shuffle en spv::IdImmediate. Les loads de dest et dest_friend ainsi que le vecteur étant copié sont marqués comme IDs. Les indices de voie générés par la boucle sont marqués comme valeurs immédiates, qu'ils soient zéro, quatre plus i, ou un décalage dérivé de start modulo quatre. createOp peut alors encoder chaque mot selon la grammaire de l'instruction au lieu d'inférer sa signification à partir d'un alias C++."
+    },
+    {
+      "type": "heading",
+      "text": "Le chemin affecté joint les données uniformes au-delà des limites de vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register gère une plage qui englobe le vecteur de destination actuel et son voisin. Il construit des mélanges complémentaires afin que les voies de destination préservées et les voies source entrantes se positionnent correctement. Les départs alignés sur un vec4 suivent une route plus simple ; les départs désalignés stimulent la logique des deux listes. La correction ne change pas quelle formule de voie est choisie. Elle rend les sélecteurs déjà calculés en littéraux légaux."
+    },
+    {
+      "type": "heading",
+      "text": "Les fixtures pilotées par le validateur devraient énumérer chaque voie de départ."
+    },
+    {
+      "type": "paragraph",
+      "text": "Générez des copies uniformes commençant aux décalages zéro à trois avec des longueurs qui restent dans un vec4 et qui passent dans le suivant. Inspectez les mots OpVectorShuffle émis, exécutez spirv-val, et exécutez les shaders avec des voies source colorées ou numérotées de manière unique. Incluez les sélecteurs zéro, trois, quatre, sept, et tout sentinel indefini pris en charge par le constructeur. Testez les pilotes Vulkan avec une validation stricte et comparez le rendu entre les fournisseurs. Un test de régression devrait vérifier les types d'opérandes en plus des pixels finaux."
+    },
+    {
+      "type": "callout",
+      "text": "Dans un langage de shader binaire, zéro peut être une voie parfaitement valide et un ID d'objet impossible ; le constructeur doit savoir lequel l'instruction attend."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Lisez la discussion technique Vita3K et les modifications du code source"
+    }
+  ]
+}

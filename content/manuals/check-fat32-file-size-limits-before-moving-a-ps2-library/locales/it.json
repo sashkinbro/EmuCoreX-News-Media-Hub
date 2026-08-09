@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "check-fat32-file-size-limits-before-moving-a-ps2-library",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Verifica i limiti di FAT32 prima di copiare grandi immagini DVD PS2",
+  "summary": "Identifica il filesystem di destinazione, trova ogni immagine vicino o superiore a 4 GiB, esegui una copia di file di grandi dimensioni e un test hash, e scegli un formato di archiviazione supportato prima di confermare una migrazione della libreria EmuCoreX.",
+  "heroAlt": "KDE Partition Manager che mostra un'unità rimovibile e il layout del suo filesystem prima della preparazione dei supporti",
+  "searchKeywords": [
+    "FAT32 PS2 ISO 4GB",
+    "grande immagine DVD PS2",
+    "filesystem scheda SD Android",
+    "file troppo grande",
+    "archiviazione EmuCoreX"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "storage": "Archiviazione",
+    "integrity": "Integrità"
+  },
+  "sourceLabels": {
+    "microsoft-filesystems": "Confronto dei limiti del filesystem",
+    "android-storage": "Modello di archiviazione Android"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una scheda può avere spazio libero e comunque rifiutare un gioco"
+    },
+    {
+      "type": "paragraph",
+      "text": "FAT32 non può rappresentare un file normale di 4 GiB o più grandi. Molti dump di CD e DVD a singolo strato PS2 rientrano sotto questo limite, mentre alcune immagini DVD no. Lo spazio libero totale risponde quindi a una domanda diversa dalla dimensione massima di un singolo file. Dividere o comprimere un'immagine senza supporto dell'emulatore non è una soluzione sicura; la libreria ha bisogno di un file giocabile e verificato in byte su un filesystem supportato sia da Android sia dal dispositivo di archiviazione."
+    },
+    {
+      "type": "callout",
+      "text": "La formattazione cancella il volume selezionato. Questa guida non autorizza la formattazione da Android o da un computer; esegui prima il backup di tutti i file e conferma l'esatto obiettivo fisico. Se la scelta del filesystem è incerta, usa invece lo storage interno."
+    },
+    {
+      "type": "heading",
+      "text": "Raccogli le dimensioni prima di toccare la destinazione"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una cartella sorgente i cui dump personali sono già stati verificati.",
+        "La dimensione esatta in byte della più grande immagine, non un'etichetta arrotondata del file manager.",
+        "Il filesystem della scheda di destinazione riportato da uno strumento di storage del sistema operativo affidabile.",
+        "Due backup completi di tutto ciò che è attualmente memorizzato sulla scheda.",
+        "Una specifica del dispositivo o un test diretto che confermi che Android può montare il filesystem proposto in lettura-scrittura."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Dimostrare che una grande immagine si adatta e sopravvive al rimontaggio"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Ordina l'inventario sorgente per dimensione in byte e contrassegna ogni file pari o superiore a 4.294.967.296 byte.",
+        "2. Ispeziona il filesystem della scheda. Se è FAT32, fermati prima di tentare qualsiasi immagine contrassegnata.",
+        "3. Calcola quanta capacità di destinazione rimane dopo l'intera libreria più un margine di sicurezza; non fare affidamento sulla capacità stampata sull'etichetta della scheda.",
+        "4. Su una destinazione non FAT32 supportata, copiare l'immagine più grande mantenendo inalterata la sorgente.",
+        "5. Confrontare i conteggi di byte della sorgente e della destinazione, quindi calcolare SHA-256 per entrambe le copie.",
+        "6. Smontare e rimontare la scheda tramite il sistema operativo, hashare nuovamente la destinazione e confrontarla con il primo digest della destinazione.",
+        "7. Autorizzare una cartella di test tramite il selettore di Android e avviare a freddo quell'immagine esatta in EmuCoreX.",
+        "8. Solo dopo che i test di rimontaggio e avvio sono stati superati, dovrebbe essere copiato il resto della libreria."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Un archivio può memorizzare grandi quantità di dati come più parti, ma EmuCoreX non può trattare segmenti di archivio arbitrari come un'immagine disco normale. Allo stesso modo, cambiare un'estensione non cambia il file o il limite del filesystem. Conserva il dump originale e utilizza una disposizione di memoria che supporti il formato di lavoro effettivo."
+    },
+    {
+      "type": "heading",
+      "text": "Registra il test dei confini"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un record di archiviazione utile contiene il filesystem, i byte del file più grande, i byte di spazio libero e due hash presi in montaggi differenti."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ogni immagine sopra il limite FAT32 è stata identificata.",
+        "Il filesystem di destinazione scelto è supportato sia dal computer di preparazione sia dal dispositivo Android.",
+        "Il file di destinazione più grande mantiene il conteggio completo dei byte.",
+        "I valori di SHA-256 prima e dopo il rimontaggio sono identici.",
+        "EmuCoreX avvia il file di destinazione dopo che Android ha concesso l'accesso all'albero delle cartelle."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Come appare un fallimento di file di grandi dimensioni"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Compare il messaggio 'File troppo grande' nonostante ci sia spazio libero sufficiente: il limite del filesystem è la causa.",
+        "La copia si interrompe a un offset ripetibile con errore I/O: controllare lo stato della scheda e del lettore.",
+        "Android offre accesso in sola lettura: il filesystem o l'adattatore non sono scrivibili in questa configurazione del dispositivo.",
+        "Hash cambia dopo il rimontaggio: ritirare la destinazione dalla migrazione fino a quando l'integrità dello storage non è risolta."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Annullare solo il test incompleto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eliminare la copia della destinazione incompleta dopo averne confermato la posizione assoluta, lasciare intatta la fonte verificata e rimuovere il permesso della cartella di test da EmuCoreX. Se la scheda conteneva già dati utente, non formattarla né ripararla fino a quando quei backup non saranno aperti e verificati indipendentemente."
+    },
+    {
+      "type": "heading",
+      "text": "Il supporto per exFAT e NTFS dipende dal dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le versioni di Android variano nel supporto del filesystem rimovibile, e un adattatore USB può comportarsi diversamente da uno slot SD interno. Un formato leggibile su Windows non è automaticamente scrivibile sul telefono. La copia diretta, il rimontaggio, il calcolo dell'hash e la sequenza di cold-boot rappresentano il test di compatibilità che conta."
+    },
+    {
+      "type": "link",
+      "text": "Confronta i limiti ufficiali del filesystem",
+      "url": "https://learn.microsoft.com/windows/win32/fileio/filesystem-functionality-comparison"
+    }
+  ]
+}

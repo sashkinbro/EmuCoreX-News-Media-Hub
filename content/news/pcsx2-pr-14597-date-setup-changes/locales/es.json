@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 hace que la configuración de DATE dependa del solapamiento de la prueba alfa",
+  "summary": "Una decisión enfocada de GS separa los dibujos alfa-comprobados complejos que pueden usar de manera segura un DATE de los dibujos que se superponen y que requieren una barrera y deben evitar ese camino.",
+  "heroAlt": "Evidencia visual del pull request #14597 de PCSX2: GS/HW: cambios en la configuración de DATE.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "prueba alfa",
+    "barrera de texturas",
+    "renderizador GS"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW: cambios en la configuración de DATE."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La prueba alfa compleja no es suficiente para elegir el camino DATE"
+    },
+    {
+      "type": "paragraph",
+      "text": "La emulación de la prueba Alfa de Destino (Destination Alpha Test Emulation) interactúa tanto con la prueba alfa del dibujo como con si lee o escribe en una región superpuesta. La configuración anterior de PCSX2 trataba la condición de alfa complejo de manera demasiado amplia. La solicitud de extracción #14597 agrega la superposición a la decisión, porque el caso sin superposición puede usar DATE uno sin el riesgo de orden que aparece cuando la misma región participa en el dibujo."
+    },
+    {
+      "type": "heading",
+      "text": "DATE uno y la barrera DATE se convierten en elecciones deliberadas mutuamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "El renderizador de hardware ahora permite DATE uno cuando una prueba alfa compleja no tiene superposición. Si hay superposición, esa ruta se suprime y la barrera DATE se habilita en su lugar. Esto no es un efecto de renderizado nuevo; es una corrección de enrutamiento dentro de GSRendererHW para que la implementación elegida para la regla de alfa de destino coincida con el patrón de dependencia real del dibujo."
+    },
+    {
+      "type": "heading",
+      "text": "El cambio de un solo archivo tiene una superficie de regresión estrecha pero visible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debido a que el parche cambia únicamente la lógica de configuración, una buena revisión debería identificar qué rama toma cada dibujo afectado en lugar de comparar salidas de renderizador no relacionadas. El riesgo es simétrico: forzar la barrera en trabajos inofensivos que no se superponen puede agregar costo, mientras que permitir que DATE pase uno a través de una prueba alfa compleja superpuesta puede producir máscaras o sombras incorrectas. Por lo tanto, la rama debe coincidir con la superposición calculada en cada dibujo."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 y Energy Airforce anclan las verificaciones visuales"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente proporciona comparaciones para las sombras de Persona 4 y Energy Airforce y un registro de ejecución Direct3D 11 que cubre cambios adicionales de barrera y copia. La validación debería reproducir esas escenas con el mismo renderizador y configuración, registrar el modo DATE, el estado de alfa complejo, la superposición y la selección de barrera, y luego repetirlo en otro backend de hardware. El resultado esperado es la misma imagen con la decisión cambiando solo cuando la superposición cambia."
+    },
+    {
+      "type": "callout",
+      "text": "La regla es condicional, no global: las pruebas alfa complejas pueden usar DATE uno sin superposición, pero el trabajo superpuesto requiere la ruta de barrera."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de fuente"
+    }
+  ]
+}

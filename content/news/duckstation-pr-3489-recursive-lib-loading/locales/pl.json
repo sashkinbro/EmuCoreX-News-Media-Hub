@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation podąża za zagnieżdżonymi bibliotekami PSF do prawdziwego punktu wejścia programu",
+  "summary": "Zmiana rekursji w dwóch liniach sprawia, że najgłębszy _lib pierwszego rodzica dostarcza PC i SP, naprawiając loader, który przestał szukać punktu wejścia o jeden poziom za wcześnie.",
+  "heroAlt": "Dowód źródłowy z pull requestu DuckStation #3489: PSFLoader: Napraw rekursywne ładowanie _lib",
+  "searchKeywords": [
+    "DuckStation",
+    "Loader PSF",
+    "_lib",
+    "licznik programu",
+    "wskaźnik stosu"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Pamięć",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Napraw rekursywne ładowanie _lib"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PSF może dziedziczyć stan wykonywalny przez więcej niż jedną bibliotekę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pliki Portable Sound Format mogą odwoływać się do nadrzędnego poprzez _lib, a ten nadrzędny może odwoływać się do kolejnej pierwszej biblioteki. Rekursywne ładowanie danych nie jest wystarczające, jeśli loader wybierze PC i SP z niewłaściwego poziomu. Wytyczne formatu cytowane w zmianie mówią, że należy podążać za pierwszym łańcuchem _lib aż do jego najgłębszego członka; ten kontekst wykonywalny inicjalizuje odtwarzanie po zmontowaniu wszystkich dziedziczonych sekcji."
+    },
+    {
+      "type": "heading",
+      "text": "Stara kontrola głębokości zużywała flagę punktu wejścia zbyt wcześnie"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader wcześniej tworzył lib_use_pc_sp dla depth == 0. To pozwalało pierwszej nadrzędnej bibliotece przejąć licznik programu i wskaźnik stosu, a następnie uniemożliwiało głębszej rekurencji zrobienie tego samego. Pull request #3489 zamiast tego przekazuje flagę use_pc_sp wywołującego do LoadLibraryPSF rekurencyjnie i ustawia ją na fałsz dopiero po zakończeniu wywołania pierwszej biblioteki. Najgłębszy pierwszy rodzic otrzymuje flagę zanim jakikolwiek płytszy poziom jej użyje."
+    },
+    {
+      "type": "heading",
+      "text": "Tylko łańcuch pierwszej biblioteki posiada wybór PC i SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Czyszczenie use_pc_sp podczas odwijania zachowuje kolejną zasadę PSF: późniejsze biblioteki mogą dostarczać dane bez wielokrotnego zastępowania początkowych rejestrów. Patch nie spłaszcza każdej biblioteki _lib do jednej nieuporządkowanej listy. Rozróżnia rekurencyjną ścieżkę pierwszego rodzica, która ustala wykonanie, od rodzeństwa ładowanego później, utrzymując możliwie najmniejszą zmianę w psf_loader.cpp zamiast przepisywania formatu kontenera."
+    },
+    {
+      "type": "heading",
+      "text": "Przyrząd regresyjny potrzebuje co najmniej trzech zagnieżdżonych poziomów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Skonstruuj PSF, którego korzeń, pierwszy rodzic i najgłębszy pierwszy rodzic deklarują różne wartości PC i SP, plus dodatkową bibliotekę z kolejną parą. DuckStation powinien załadować wszystkie wymagane dane, ale zaczynając od rejestrów najgłębszego pierwszego rodzica; zmiana biblioteki nie-będącej pierwszym rodzicem nie może przesunąć punktu wejścia. Porównaj odtwarzanie i zalogowane rejestry z Mednafen lub innym loaderem zgodnym z formatem, a następnie przetestuj brakujące, cykliczne i nieczytelne referencje do bibliotek, aby uzyskać czyste błędy zamiast nieograniczonej rekurencji."
+    },
+    {
+      "type": "callout",
+      "text": "Poprawka dotyczy kolejności rekurencji: dane mogą pochodzić z wielu bibliotek, ale początkowy PC i SP należą do najgłębszego członka pierwszego łańcucha _lib."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Przeczytaj dyskusję inżynierską DuckStation i zmiany w źródle"
+    }
+  ]
+}

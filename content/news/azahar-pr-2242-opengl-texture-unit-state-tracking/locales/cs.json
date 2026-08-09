@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar učí OpenGL sledování stavu, že texturová jednotka může přestat být 2D",
+  "summary": "Vázání cubemap odhalilo předpoklad cached-stavu, že každá jednotka držela GL_TEXTURE_2D; sledování typu cíle a inicializace null cube obnovuje pozdější 2D operace.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Azahar #2242: renderer_gl: Oprava OpenGL sledování stavu texturové jednotky",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "texturová jednotka",
+    "cubemap",
+    "sledování stavu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Oprava OpenGL sledování stavu texturové jednotky"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uchovaná textura je neúplná bez svého typu cíle"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL váže textury podle jednotky i cíle. Stavová cache Azahar často předpokládala, že jednotka představuje GL_TEXTURE_2D, což fungovalo do doby, než sledování null-cubemapu zavedlo skutečné cubemap vazby. Jakmile jednotka držela GL_TEXTURE_CUBE_MAP, pozdější kód mohl přeskočit nebo provést bind pouze na základě uloženého číselného objektu, i když se změnilo jmenné prostorové cílení a očekávání následného vzorkování."
+    },
+    {
+      "type": "heading",
+      "text": "Stavové záznamy nyní rozlišují přechody mezi 2D, cube a null"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2242 aktualizuje nástroje rasterizer-cache a cesty rendererů OpenGL tak, aby jednotky textur uchovávaly cílovou vazbu potřebnou k rozhodnutí, zda je změna stavu nadbytečná. NULL_SURFACE_CUBE_ID je správně inicializován, což dává cestě null-surface cubemap definovaný zdroj. Soubory Vulkan dostávají související úpravy sdílené cache, ale pozorovaná chyba a oprava stavového stroje jsou v OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon a WWE ukazují následnou korupci z jednoho zastaralého předpokladu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Snímky před a po pro Pokémon Ultra Moon a WWE All Stars ukazují, že chyba nebyla omezena pouze na chybějící cubemap. Připojení cubemapu změnilo, jak byly interpretovány pozdější operace s texturami, takže obyčejné povrchy dál mohly být vyrenderovány nesprávně. Správné ukládání stavu musí proto obnovit stav napříč sekvencí, nikoliv pouze zobrazit cubemap v okamžiku jeho nastavení."
+    },
+    {
+      "type": "heading",
+      "text": "Regresní sekvence by měla střídat cíle na stejné jednotce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Opakovaně připojujte 2D, cube, null cube a 2D textury na jednu jednotku a ověřte jak provedené volání GL, tak vzorkovaný výstup. Reprodukujte obě hry, potom otestujte stínové mapy, environment mapy, vzorkování z render-targetů a zničení povrchů. Porovnejte uložený stav s diagnostikou glGet v debug sestavení. Optimalizace může stále přeskočit připojení pouze pokud se shoduje jak objekt, tak cíl; redukce volání nesmí nikdy zachovat cíl z předchozího použití."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL ukládání stavu je platné pouze tehdy, když si pamatuje jak cílové připojení, tak texturový objekt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Přečtěte si inženýrskou diskuzi a změny zdrojového kódu Azahar"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar macht Controller-Profile portabel, ohne gerätespezifische Steuerungen zu verbergen",
+  "summary": "Ein Desktop-Eingabe-Überarbeitung bevorzugt SDLs standardisiertes Controllermodell, behält den Joystick-Fallback für ungewöhnliche Tasten bei und erlaubt, dass Zuordnungen auf ein Gerät, einen Controllertyp oder alle Controller angewendet werden.",
+  "heroAlt": "Azahar Controller-Hotkey-Pull-Request zeigt die Eingabezuordnungsarbeit und die Überprüfungsdiskussion",
+  "searchKeywords": [
+    "Azahar",
+    "Controller-Profile",
+    "SDL GameController",
+    "Controller-Hotkeys",
+    "Eingabezuordnung"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Eingabe",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Desktop: Controller-Verbesserungen - lesbare Beschriftungen, Controller-Hotkeys, Möglichkeit, Profile auf alle Controller anzuwenden"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Rohjoystick-Identifikatoren machten nützliche Zuordnungen schwer lesbar und wiederverwendbar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der ältere Desktop-Pfad von Azahar war stark von der Joystick-API von SDL abhängig. Er konnte eine physische Eingabe erkennen, aber Konfigurationsbildschirme zeigten oft technische Button-Werte anstelle der von den Benutzern erkennbaren Face-Button-Namen. Profile waren außerdem sowohl an eine Geräte-GUID als auch an einen Port gebunden, sodass das Verschieben desselben Controllers in einen anderen Slot oder das Teilen eines Layouts mit einem passenden Controller eine neue Zuordnung erfordern konnte. Pull Request #1717 behandelt diese beiden Probleme als ein Eingabemodellproblem und nicht als kosmetische Umbenennung."
+    },
+    {
+      "type": "heading",
+      "text": "Zuerst GameController, nur Joystick, wenn die standardisierte Karte erschöpft ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die gemeinsame SDL-Ebene bevorzugt jetzt die GameController-API, wenn SDL das Gerät kennt. Dieser Pfad liefert portable A/B/X/Y-ähnliche Steuerungen und lesbare Xbox- oder PlayStation-ähnliche Bezeichnungen. Azahar behält die Joystick-API als Fallback für Steuerungen außerhalb des Standardmodells bei, einschließlich der Zurück-Tasten und anderer gerätespezifischer Eingaben. Parameter protokollieren, welche API eine Zuordnung erstellt hat, um zu verhindern, dass ein gespeicherter GameController-Wert später als roher Joystick-Index interpretiert wird."
+    },
+    {
+      "type": "heading",
+      "text": "Drei Mapping-Bereiche lösen verschiedene Profilprobleme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der neue Kartentyp ist explizit. „Dieser Controller“ behält das frühere GUID- und Port-Verhalten bei; „diese Controller-Art“ verwendet die GUID, ohne einen Port festzulegen; und „alle Controller“ akzeptiert passende Steuerungen von jedem angeschlossenen Gerät. Die Wahl gilt für Eingabeprofile und Controller-Hotkeys. Dies bewahrt präzise Multi-Controller-Setups, während ein Wohnzimmerprofil Kabelwechsel oder den Austausch von Pads desselben Modells übersteht."
+    },
+    {
+      "type": "heading",
+      "text": "Controller-Hotkeys werden getrennt von normalen Spielsteuerungseingaben überwacht"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt erhält eine eigene Controller-Hotkey-Seite, einen Aufnahme-Dialog und einen HotkeyMonitor, der auf einem 16-ms-Timer die zugewiesenen Steuerungen prüft. Eine Verknüpfung kann einen oder zwei Controller-Eingaben enthalten, einschließlich Achsen und nicht standardmäßiger Tasten. Die Registrierung speichert die zugehörige QAction, sodass der Monitor denselben Befehl wie eine Tastenkombination ausführen kann. Der normale Controller-Zustand steht dem Spiel weiterhin zur Verfügung; wenn eine Taste absichtlich beiden Rollen zugewiesen wird, erfolgen beide Aktionen, anstatt dass die Hotkey-Ebene die Spieleingabe stillschweigend blockiert."
+    },
+    {
+      "type": "heading",
+      "text": "Das Automapping berücksichtigt jetzt die Nintendo- und Xbox-artige Reihenfolge der Fronttasten."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Desktop-Abfrage fordert die physische rechte Fronttaste an und zeigt ein Symbol, das der Absicht des mobilen Ablaufs entspricht. Wenn SDL diesen Druck als A meldet, behandelt Azahar ihn als eine Wahl im Nintendo-Layout oder als absichtlich sichtbare Beschriftungs-Zuordnung. Andere Tasten drücken behalten die vertraute XInput-artige Anordnung bei. Die Entscheidung basiert auf der vom Benutzer erfassten Steuerung, anstatt davon auszugehen, dass jeder Controller dieselben Buchstaben an denselben Positionen druckt."
+    },
+    {
+      "type": "heading",
+      "text": "Regressionstests müssen die Reihenfolge der Anhänge und gemischte Bindungen einschließen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelldatensätze prüfen Windows, Linux und macOS sowie Hüte, analoge Auslöser und das Anschließen des Controllers nach dem Start. Ein dauerhafter Folgetest sollte außerdem jeden Zuordnungsbereich erneut öffnen, das Gerät an einem anderen Anschluss wieder anschließen und eine Zwei-Tasten-Hotkey-Funktion überprüfen, während beide Tasten im Spiel weiterhin zugeordnet sind. Berichte sollten den Gerätenamen SDL, die GUID, den ausgewählten Kartierungstyp und ob die Eingabe über GameController oder Joystick-Fallback erfolgt ist, enthalten."
+    },
+    {
+      "type": "callout",
+      "text": "Der vom Benutzer wahrnehmbare Vorteil besteht nicht nur in schöneren Beschriftungen: Profile werden absichtlich portabel, während ungewöhnliche Steuerungen noch einen gerätespezifischen Ausweg haben."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Lesen Sie die Controller-Architektur und Diskussionspunkte zum Test von Azahar"
+    }
+  ]
+}

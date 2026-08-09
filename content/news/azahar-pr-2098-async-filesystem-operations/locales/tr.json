@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar, FS_USER eşzamanlı yapılmadan emülasyon iş parçacığından yavaş 3DS dosya sistemi isteklerini uzaklaştırır",
+  "summary": "Özel bir tek işçi kuyruğu, misafir iş parçacıklarının maliyetli depolama işlemleri sırasında devam etmesini sağlar ve Azahar'in iş parçacığı güvenli olmayan FS_USER hizmeti tarafından gereken seri işlemeyi korur.",
+  "heroAlt": "Azahar, özel FS_USER işçisi tasarımını gösteren eşzamanlı olmayan dosya sistemi çekme isteği",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "eşzamanlı olmayan dosya sistemi",
+    "ThreadWorker",
+    "Android depolama takılması"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Depolama",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "çekirdek: Eşzamanlı olmayan dosya sistemi işlemleri ekle"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bir ana makine depolama duraklatması, tüm emüle edilmiş uygulama iş parçacıklarını dondurmamalıdır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bazı 3DS dosya sistemi çağrıları, özellikle Google Play sürümünde kullanılan Android depolama sağlayıcıları üzerinden çalışırken, sunucuda o kadar uzun sürebilir ki görünür takılmalara neden olabilir. İşlemi satır içinde çalıştırmak, diğer misafir işleri devam edebilse bile emülasyon iş parçacığını engeller. Pull request #2098 bu zamanlama sınırını değiştiriyor: dosya sistemi IPC, çağıran misafir iş parçacığını uyutabilirken, ana işlem başka yerde çalışabilir."
+    },
+    {
+      "type": "heading",
+      "text": "Tek iş parçacıklı bir çalışan, FS_USER güvenlik kısıtlamasını çözer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar her isteği genel iş parçacığı havuzuna gönderemez çünkü FS_USER ve arşiv durumu iş parçacığı açısından güvenli değildir. Değişiklik, hizmete tam olarak bir çalışan iş parçacığı içeren özel bir ThreadWorker verir. İstekler emülasyona göre asenkron, ama birbirine göre sıralıdır. Bu, hizmetin sıralama varsayımlarını korur ve ilgili olmayan emüle edilmiş iş parçacıklarının ana dosya sistemini beklemeye zorlanmasını önler."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker ana işi IPC yanıtından ayırır"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext, depolama işlemini paketlenmiş bir görev içinde saran, seçilen işçiye kuyruğa alan ve tamamlanma için bir future tutan bir yardımcı kazanır. Görev çalışırken misafir istemci iş parçacığı uyur. Tamamlandığında, Azahar o iş parçacığını uyandırır ve emülatör tarafında IPC sonucunu oluşturur. Belirleyici eşzamansız işlem modu ve ayar devre dışı bırakıldığında kullanılabilecek eşzamanlı bir geri dönüş yok değildir."
+    },
+    {
+      "type": "heading",
+      "text": "Yama, her küçük okuma için kuyruk yükünü ödemekten kaçınır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uygulama seçicidir. Arşiv açma, silme, yeniden adlandırma, dizin ve ilişkili FS_USER yolları ayrılmış işçiyi kullanabilir. Önbelleğe alınmış dosya işlemleri, veri hazır olmadığında eşzamansız yolu izlerken, birçok küçük önbelleğe alınmamış okuma ve yazma eşzamanlı kalır çünkü iş parçacığı iletişimi I/O’dan daha pahalıya mal olabilir. Dosya kapatma ve yeniden boyutlandırma da ayara uyar ve FS_USER yıkıcı işlevi servis kaybolmadan önce kuyruktaki isteklerin tamamlanmasını bekler."
+    },
+    {
+      "type": "heading",
+      "text": "Daha az takılma, biraz daha uzun yükleme ile değiştirilebilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diğer misafir iş parçacıklarının çalışmasına izin vermek, ilerlemenin ne zaman göründüğünü değiştirir, ana depolama cihazının ne kadar hızlı tamamlandığını değil. Bu nedenle kaynak, dosya sistemi ile ilgili duraklamalarda büyük bir azalma beklemekte ancak bazı yüklerin biraz daha uzun sürebileceğini kabul etmektedir. Bu seçenek, platforma özgü bir derlemede gizlemek yerine Android ve Qt depolama ayarlarında varsayılan olarak etkinleştirilmiş olup, değişimi görünür ve geri alınabilir hale getirir."
+    },
+    {
+      "type": "heading",
+      "text": "Doğruluk testi, işlemin ve servisin ömrü boyunca devam etmelidir."
+    },
+    {
+      "type": "paragraph",
+      "text": "Yararlı bir kıyaslama, aynı depolama konumunu kullanarak seçeneğin açık ve kapalı olduğu durumlarda kare sürelerini ve yükleme süresini kaydeder. Doğruluk kapsamı, açma, dizin okuma, yeniden adlandırma ve silme isteklerini; iş kuyrukta iken bir başlığı kapatma işlemini kapsamalı ve ardından kayıtlı veri özetlerini doğrulamalıdır. Yavaş Android belge depolaması birincil performans senaryosu iken, masaüstü yerel ve ağ destekli yollar sıralama, kapanış ve hata yayılımı bozulmalarını ortaya çıkarmak için değerlidir."
+    },
+    {
+      "type": "callout",
+      "text": "Ana tasarım seçimi seri hale getirilmiş eşzamansızlıktır: bir FS_USER işçisi, dosya sistemi hizmetinin paralel erişim için güvenliymiş gibi davranmadan emülasyon-iş parçacığı duraklamalarını kaldırır."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Azahar’in FS_USER işçisi, IPC uyanışı ve depolama ayarı uygulamasını inceleyin"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 zatrzymuje nieudane przydzielanie tekstur ImGui, zanim spowoduje awarię",
+  "summary": "Ścieżki tworzenia, przesyłania i niszczenia traktują teraz brakujące BackendUserData jako rzeczywisty stan, zapobiegając przedostawaniu się błędu przydzielania do operacji natywnych uchwytów i mapowania.",
+  "heroAlt": "Dowody źródłowe z pull request PCSX2 #14655: GS: Lepsze radzenie sobie z zagrożeniami podczas tworzenia tekstur imgui.",
+  "searchKeywords": [
+    "PCSX2",
+    "Tekstura ImGui",
+    "błąd przydzielania",
+    "GSTexture",
+    "awaria"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Lepsze radzenie sobie z zagrożeniami podczas tworzenia tekstur imgui."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui może zażądać tekstury, gdy GPU nie może jej dostarczyć"
+    },
+    {
+      "type": "paragraph",
+      "text": "Atlasy czcionek i inne obrazy interfejsu przechodzą przez stany WantCreate, WantUpdates i WantDestroy. Alokacja tekstury może się nie powieść z powodu utraty urządzenia, presji zasobów, nieobsługiwanych wymiarów lub innego błędu backendu. Stara gałąź tworzenia zgłaszała niepowodzenie, ale następnie kontynuowała, jakby istniał GSTexture, prosząc o jego natywny uchwyt i przechodząc do kodu przesyłania. Dlatego diagnostyka poprzedzała odwołanie do wartości null, zamiast je zawierać."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate przechodzi dalej tylko z prawidłowymi danymi backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14655 owrapowuje CreateTexture w gałąź ze wskaźnikiem sukcesu. Tylko prawdziwa tekstura otrzymuje ImTextureID i BackendUserData zanim kod przejdzie do przesyłania pełnowymiarowego. W przypadku niepowodzenia, PCSX2 emituje pxFailRel i wychodzi ze stanu. WantUpdates osobno sprawdza BackendUserData przed mapowaniem lub operacjami aktualizacji wiersz po wierszu, więc poprzednie nieudane tworzenie nie może być mylnie uznane za zainicjalizowany zasób."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy również akceptuje fakt, że tworzenie mogło się nigdy nie zakończyć."
+    },
+    {
+      "type": "paragraph",
+      "text": "Stan niszczenia teraz recykluje i unieważnia teksturę tylko wtedy, gdy BackendUserData jest niepusty. Ma to znaczenie, gdy ImGui odrzuca żądanie atlasu po niepowodzeniu alokacji lub gdy przejście stanu konkuruje z logiką odzyskiwania. Sama logika recyklingu dla poprawnych tekstur pozostaje bez zmian, w tym ponowne użycie atlasu tej samej wielkości; poprawka sprawia, że graf życia obejmuje gałąź brakującego zasobu od początku do końca."
+    },
+    {
+      "type": "heading",
+      "text": "Wstrzyknięcie błędu jest silniejsze niż oczekiwanie na problem #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jeżeli to możliwe, odtwórz powiązany zrzut awarii, a następnie dodaj kontrolowany hak backendu, który sprawi, że kolejna funkcja ImGui CreateTexture zwróci null. OSD i renderowanie czcionek powinny zgłosić błąd bez awarii, przesyłania pikseli ani recyklingu nieprawidłowego wskaźnika. Przywróć alokację i potwierdź, że późniejszy atlas może zostać utworzony i wyświetlony. Powtórz awarię podczas zmiany rozmiaru, usuwania czcionek, resetu urządzenia i zamykania na wszystkich sprzętowych backendach oraz uruchom normalne testy OSD, aby upewnić się, że chroniona ścieżka nie blokuje poprawnych aktualizacji."
+    },
+    {
+      "type": "callout",
+      "text": "Poprawka kończy maszynę stanów tekstury: awaria alokacji jest gałęzią terminalną dla tego żądania, a nie ostrzeżeniem, po którym następuje normalny kod przesyłania."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

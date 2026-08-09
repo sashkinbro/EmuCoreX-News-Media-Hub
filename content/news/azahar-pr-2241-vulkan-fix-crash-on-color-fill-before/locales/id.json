@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar menjaga pengisian warna Vulkan ketika plugin 3GX tiba sebelum framebuffer",
+  "summary": "Urutan startup yang terungkap oleh PokeReader dapat memanggil FillScreen sebelum gambar target ada; renderer sekarang memperlakukan gambar yang hilang itu sebagai status pengaturan yang ditunda alih-alih mengalami crash.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2241: video_core: vulkan: Perbaiki crash pada pengisian warna sebelum pengaturan framebuffer",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Perbaiki crash pada pengisian warna sebelum pengaturan framebuffer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sebuah plugin dapat meminta warna layar sebelum Vulkan memiliki gambar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mengaktifkan loader 3GX dengan PokeReader menghasilkan crash Windows yang konsisten pada sistem AMD Vulkan pelapor setelah FillScreen diterapkan. Log dan git bisect menempatkan regresi pada implementasi tersebut. Urutan kunci tidak biasa tetapi sah untuk frontend: startup plugin mencapai konfigurasi pengisian warna sebelum gambar Vulkan pada tekstur framebuffer dibuat."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture sekarang memeriksa sumber daya, bukan niat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2241 menambahkan pengamanan sempit di RendererVulkan::ConfigureFramebufferTexture. Jika texture.image tidak ada, fungsi akan kembali sebelum mengonfigurasi atau mengisi framebuffer. Panggilan berikutnya dengan gambar yang valid mengikuti jalur normal. Perbaikan ini tidak membuat gambar dummy atau mengasumsikan dimensi, menghindari sumber daya placeholder yang tata letak dan masa hidupnya dapat berbeda dengan framebuffer nyata."
+    },
+    {
+      "type": "heading",
+      "text": "Kegagalan ini mungkin menjelaskan laporan selain satu GPU, tetapi bukti tetap terbatas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sumber mengutip PokeReader, Windows, Vulkan, dan kemungkinan AMD sebagai kombinasi yang dapat direproduksi dan mengaitkan beberapa masalah dengan perilaku yang mungkin terkait. Laporan-laporan tersebut adalah petunjuk, bukan perbaikan yang telah dikonfirmasi. Satu hal yang terbukti tidak berubah adalah bahwa tidak ada operasi Vulkan yang boleh menggunakan gambar framebuffer sebelum gambar tersebut ada. Kecelakaan lainnya membutuhkan log mereka sendiri untuk menentukan apakah mereka mencapai status FillScreen awal yang sama."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian regresi harus memaksa urutan fill awal dan normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luncurkan dengan dukungan 3GX dimatikan dan dihidupkan, dengan PokeReader dipilih, di AMD, NVIDIA, dan Vulkan mobile bila tersedia. Instrumen pembuatan gambar dan urutan FillScreen, verifikasi bahwa panggilan awal kembali tanpa kesalahan validasi, dan konfirmasi bahwa pengisian yang diinisialisasi kemudian masih membersihkan layar. Ulangi pelepasan plugin, restart permainan, pembuatan ulang permukaan, dan pergantian backend. Ketiadaan crash tidak cukup jika pelindung meninggalkan framebuffer yang tidak terisi secara permanen atau usang."
+    },
+    {
+      "type": "callout",
+      "text": "Perender kini membedakan antara pengisian yang diminta dengan target yang diinisialisasi; pekerjaan Vulkan baru dimulai setelah gambar benar-benar ada."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumber"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP schließt ein Cross-Thread-Rennen in der libretro-Audiowiedergabe",
+  "summary": "Jede Operation auf dem gemeinsam genutzten konvertierten Abtastpuffer verwendet jetzt einen Mutex, wodurch verhindert wird, dass Realloc oder Shutdown Speicher ungültig machen, während ein anderer Thread Audio schreibt.",
+  "heroAlt": "Quellennachweis aus dem PPSSPP Pull Request #21883: libretro: Audio-Puffer-Datenrennen und >1024-Frame-Abtastungen beheben",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "Audio-Rennen",
+    "Mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Audio",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: Audio-Puffer-Datenrennen und >1024-Frame-Abtastungen beheben"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zwei Threads könnten gleichzeitig denselben rohen Pointer besitzen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Im Frontend-Pfad libretro wandelt System_AudioPushSamples PSP-Audio um und fügt es dem output_audio_buffer hinzu. Bei OpenGL-Backends können Sample-Pushes über die GL-Befehlswarteschlange auf der Emulationsseite eintreffen, während retro_run den Puffer im libretro-Thread leert. Initialisierung, Herunterfahren und Kapazitätserweiterung ersetzen oder geben auch die Zuordnung frei. Ohne eine Besitzregel könnte ein realloc den Zeiger ungültig machen, während der andere Thread ihn liest oder schreibt."
+    },
+    {
+      "type": "heading",
+      "text": "Ein einzelner Mutex definiert jetzt die Lebensdauer des Puffers."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #21883 fügt output_audio_buffer_mutex hinzu und nimmt ihn bei Initialisierung, Zerstörung, Upload und System_AudioPushSamples. Der Kapazitätshilfsdienst wird ausdrücklich dokumentiert, dass der Aufrufer diesen Lock halten muss, sodass das Wachstum innerhalb desselben kritischen Abschnitts wie das Anhängen erfolgt, das es benötigt. Upload behält den Lock während des Batch-Callbacks und der Größenrücksetzung bei und verhindert, dass ein Produzent die Datenmitte während der Lieferung ändert."
+    },
+    {
+      "type": "heading",
+      "text": "Die Korrektur schützt Struktur und Samples gleichzeitig."
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Sperren nur der Größe oder Kapazität wäre nicht ausreichend: Daten, Größe und Kapazität bilden eine Invariante. Der Zeiger muss auf eine Zuweisung zeigen, die mindestens so viele Elemente wie die Kapazität enthält, und die Größe muss die darin initialisierten Proben identifizieren. Der Mutex sorgt dafür, dass Aktualisierungen von allen drei als eine Operation sichtbar werden. Dies ist besonders relevant für getaktetes GL-Multithreading, aber init und free verwenden dieselbe Regel, sodass schnelle Kernneustarts keinem verspäteten Produzenten entgegenwirken können."
+    },
+    {
+      "type": "heading",
+      "text": "Stresstests müssen die Zeitpunkte von Callback und Renderer variieren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Führen Sie libretro mit OpenGL, Vulkan und Software-Rendering aus, während Sie wiederholt pausieren, vorwärts spulen, zurücksetzen, Inhalte wechseln und den Core schließen. Verwenden Sie Audio-Callbacks, die schnell, langsam und in unregelmäßigen Chargen verarbeitet werden, sowie Sample-Pushes über die gewöhnlichen Frame-Größen hinaus. ThreadSanitizer sollte keinen unsynchronisierten Zugriff auf das Buffer-Tupel feststellen. Hören Sie das erfasste PCM an und hashen Sie es auf Lücken oder Umordnungen und bestätigen Sie, dass kein Callback einen Pfad erneut betritt, der auf denselben nicht-rekursiven Mutex wartet."
+    },
+    {
+      "type": "callout",
+      "text": "Ein wachsender Audiopuffer ist ein gemeinsames Objekt, nicht drei unabhängige Felder; sein Zeiger, seine Größe und seine Kapazität müssen unter demselben Sperrmechanismus zwischen Threads übertragen werden."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Lesen Sie die PPSSPP Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

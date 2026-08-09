@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14647-android-netplay",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin builds a full NetPlay session layer for Android",
+  "summary": "A Kotlin lifecycle owner, native callback bridge, reactive lobby state, and Compose interface bring hosting, joining, chat, synchronization, and game boot to mobile.",
+  "heroAlt": "Source evidence from Dolphin pull request #14647: Android netplay",
+  "searchKeywords": [
+    "Dolphin",
+    "Android NetPlay",
+    "Kotlin Flow",
+    "Compose",
+    "traversal server"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "network": "Network",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14647": "Android netplay"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Desktop NetPlay could not simply be exposed as one Android button"
+    },
+    {
+      "type": "paragraph",
+      "text": "A multiplayer session spans discovery or direct connection, server and client lifetime, player lists, chat, controller mapping, buffer tuning, game selection, save transfer, game digest checks, traversal-server state, and the final synchronized boot. Dolphin's desktop dialog owns many of those responsibilities through Qt. Android needed an architecture that survives activity navigation and translates native callbacks into mobile UI state without leaking C++ objects."
+    },
+    {
+      "type": "heading",
+      "text": "NetplaySession becomes the single native-resource owner"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14647 adds a Kotlin session that creates UI callbacks and owns server, client, and BootSessionData pointers. NetplayManager serializes session creation so a new session waits for the previous one to close. StateFlow, SharedFlow, and channels expose player changes, chat, input authority, transfer progress, game digest, traversal state, connection errors, and disconnects. A guarded release path clears each pointer before invoking its native destructor."
+    },
+    {
+      "type": "heading",
+      "text": "Compose screens separate connection setup from the active lobby"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dedicated setup and session activities support hosting and joining through direct or traversal modes. ViewModels combine native session flows into screen state, while the lobby can change games, inspect whether all players own the title, adjust pad buffers, exchange chat, and start play. When the host supplies BootSessionData, NativeLibrary.RunNetPlay consumes the pointer exactly once and begins emulation with synchronized paths and Riivolution state."
+    },
+    {
+      "type": "heading",
+      "text": "Mobile lifecycle and mixed-version sessions need hard testing"
+    },
+    {
+      "type": "paragraph",
+      "text": "Host and join over direct LAN and traversal, rotate the device at every stage, background and resume, deny connectivity, lose the network, and close while a save or digest transfer is active. Verify pointers are released once, no callback reaches a closed Kotlin object, and a second session waits for cleanup. Mix Android with desktop clients, multiple controllers, missing games, chat bursts, host migration failure, and emulation exit back to the lobby. Memory and thread sanitizers should accompany user-flow tests."
+    },
+    {
+      "type": "callout",
+      "text": "Mobile NetPlay is primarily a lifecycle problem: the interface is trustworthy only when every native session object has one owner from connection through emulation and teardown."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14647",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

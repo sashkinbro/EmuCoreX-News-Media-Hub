@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 memberikan permintaan CDVD yang tidak valid dengan keluar keadaan drive yang sudah ditentukan",
+  "summary": "Pembacaan dengan panjang nol, negatif, dan melewati akhir sekarang memperbarui status siap, status, kesalahan, dan keadaan interupsi secara koheren, bersamaan dengan koreksi pada transisi CdStop dan tray.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #5174: CDVD: Beberapa penanganan kesalahan, perubahan Status+Ready Flag dan perbaikan CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "jumlah sektor",
+    "status drive",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Penyimpanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Beberapa penanganan kesalahan, perubahan Status+Ready Flag dan perbaikan CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Beberapa permainan mengirim perintah disc yang canggung tetapi dapat diamati"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, uji putri Aberanbou, demo Evergrace, dan latihan Animasi Pertempuran menghitung sektor atau alamat yang aliran CDVD lama PCSX2 tidak selesai dengan bersih. Jumlah nol atau negatif dapat menjaga jalur baca tetap aktif, sementara alamat di luar cakram tidak memiliki satu transisi kesalahan yang konsisten. Hasilnya berkisar dari perilaku LSN tidak valid hingga TLB miss, gagal boot, atau macet pada film berikutnya."
+    },
+    {
+      "type": "heading",
+      "text": "Ready dan Status menjadi penugasan keadaan drive yang eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #5174 membedakan bit siap, sibuk, data siap, perangkat tersambung, dan kesalahan alih-alih terus-menerus ORing atau menghapus satu bendera di tempat. cdvdUpdateStatus mencatat status saat ini dan lengket, sementara penyelesaian perintah menggunakan jalur IRQ yang sama. Oleh karena itu, callback buka, tutup, cari, baca, jeda, berhenti, berhenti paksa, dan cakram baru mempublikasikan pasangan nilai status dan kesiapan yang koheren alih-alih meninggalkan bit dari operasi sebelumnya."
+    },
+    {
+      "type": "heading",
+      "text": "Jumlah tidak valid dan batas cakram sekarang menghentikan perintah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Drive mencatat MaxSector dari disk yang terpasang dan memeriksa bacaan sebelum melanjutkan melewatinya. Permintaan di luar jangkauan menghasilkan kesalahan jalur terluar, kembali ke jeda, menghapus tunggu DMA, dan memicu interrupt perintah. Jumlah sektor sama dengan atau kurang dari nol juga menyelesaikan dan kembali ke siap alih-alih menjadwalkan transfer lain. CdStop dan hasil pembukuan SCMD dikoreksi dalam pembersihan mesin keadaan yang sama."
+    },
+    {
+      "type": "heading",
+      "text": "Tes Savestate dan multi-game harus memeriksa flag, bukan hanya boot"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan tata letak state memerlukan peningkatan versi savestate, jadi penanganan state lama dan baru perlu jangkauan eksplisit. Reproduksi game yang disebut dan catat perintah, LSN, jumlah, Siap, Status, Kesalahan, IRQ, dan status DMA. Uji perubahan baki, berhenti, hentikan, bacaan akhir disk yang valid, dan permintaan yang sengaja tidak valid. Beberapa kasus sumber masih memerlukan patch game terpisah atau mengalami hang FMV kemudian; batasan itu harus tetap didokumentasikan daripada dikreditkan ke pembersihan state ini."
+    },
+    {
+      "type": "callout",
+      "text": "Perbaikan ini adalah jalur keluar yang lengkap: bahkan permintaan disk yang rusak pun harus meninggalkan drive, mesin DMA, dan pengendali interupsi sambil sepakat tentang apa yang terjadi."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin enseña a los discos extraídos Triforce sobre la ventana de direcciones DIMM",
+  "summary": "DirectoryBlob ahora evita un rango de memoria de arcade sombreado y usa la alineación de archivos más pequeña de Triforce en lugar de aplicar supuestos de diseño de GameCube y Wii.",
+  "heroAlt": "Evidencia de origen de la solicitud de extracción Dolphin #14599: DirectoryBlob: corregir la alineación de datos para GC/Triforce y omitir el rango de memoria DIMM Triforce",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "aalineación de disco"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Almacenamiento",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: corregir la alineación de datos para GC/Triforce y omitir el rango de memoria DIMM Triforce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un disco respaldado por directorio todavía necesita colocación específica de la plataforma"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin puede montar archivos extraídos a través de DirectoryBlob como si fueran una imagen de disco. Ese diseño virtual asigna desplazamientos y alineación a cada archivo. Reutilizar las reglas de GameCube y Wii para la plataforma arcade Triforce de Sega pasó por alto el hardware conectado a la AMMediaboard. Las direcciones en una región particular del disco son reflejadas por SRAM y devuelven el contenido de DIMM, por lo que un archivo de host perfectamente válido podría volverse ilegible después de colocarse allí."
+    },
+    {
+      "type": "heading",
+      "text": "La bandera Triforce cambia dos decisiones de diseño"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14599 registra si el volumen de origen es Triforce. Antes de colocar un archivo, DirectoryBlob verifica si el rango propuesto se superpone con 0x1F000000 a 0x1F800000. Si es así, el desplazamiento salta a 0x1F800000, manteniendo el archivo completo más allá de la ventana reflejada. Los archivos Triforce posteriores se alinean a 0x20 bytes en lugar del conservador límite de 0x8000 bytes usado para los discos de directorio de GameCube y Wii."
+    },
+    {
+      "type": "heading",
+      "text": "Evitar la superposición debe considerar todo el intervalo del archivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verificar solo una dirección inicial pasaría por alto un archivo que comienza por debajo de la ventana y se extiende dentro de ella. El código compara tanto data_offset como data_offset más el tamaño de la entrada, luego reubica toda la entrada. La alineación más pequeña de 32 bytes también evita huecos innecesarios en las imágenes arcade mientras se preserva la granularidad esperada de la plataforma. Los volúmenes Non-Triforce nunca entran en ninguna de las dos ramas, por lo que su ubicación establecida sigue estando gobernada byte a byte por la política anterior."
+    },
+    {
+      "type": "heading",
+      "text": "Los dispositivos límite deben sondear cada lado del agujero"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construya árboles de directorios que coloquen archivos de longitud cero, pequeños y grandes inmediatamente antes, a través, dentro y después de ambos límites DIMM. Verifique los desplazamientos FST generados, la alineación 0x20, el contenido de los archivos leído a través de la AMMediaboard emulada y el tamaño total de la imagen. Repita el mismo árbol como GameCube y Wii para demostrar que la alineación 0x8000 no ha cambiado. Incluya aritmética de fin exacto y desplazamientos muy grandes para detectar desbordamientos, luego inicie títulos representativos Triforce desde los directorios extraídos en lugar de solo inspeccionar los metadatos."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob es un constructor de discos virtuales; los nombres de archivos correctos no son suficientes cuando el hardware de arcade cambia qué rangos de direcciones físicas pueden devolver datos del disco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de Dolphin"
+    }
+  ]
+}

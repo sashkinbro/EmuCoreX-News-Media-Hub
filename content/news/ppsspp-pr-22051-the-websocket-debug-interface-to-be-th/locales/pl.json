@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP przenosi pracę debugowania WebSocket na wątek CPU",
+  "summary": "Synchroniczny most zadań zastępuje blokowanie debuggera rozproszonego, a disassembler usuwa scalone makrooperacje, które powodowały niejednoznaczność rozmiaru kroków.",
+  "heroAlt": "Źródła dowodowe z pull request PPSSPP #22051: Refaktoryzacja interfejsu debugowania websocket, aby był bezpieczny dla wątków, usunięcie \"makro operacji\" w disasm",
+  "searchKeywords": [
+    "PPSSPP",
+    "Debugger WebSocket",
+    "Wątek CPU",
+    "Punkty przerwań",
+    "Dysasemblacja"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Narzędzia",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refaktoryzacja interfejsu debugowania websocket, aby był bezpieczny dla wątków, usunięcie \"makro operacji\" w disasm"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Żądania zdalnego debuggera przekraczały granicę własności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debugger WebSocket działa na wątku sieciowym, ale punkty przerwania, krokowanie, dostęp do rejestrów i większość emulowanej pamięci są zarządzane przez wątek wykonawczy CPU. Chronienie poszczególnych funkcji za pomocą niezwiązanych ze sobą blokad sprawia, że poprawność zależy od kolejności blokad i od tego, aby każdy przyszły handler pamiętał te same zasady. Jest to szczególnie kruche, gdy rdzeń jest zatrzymany, ponieważ żądanie może wymagać stanu wątku CPU dokładnie wtedy, gdy zwykły postęp ramki został zatrzymany."
+    },
+    {
+      "type": "heading",
+      "text": "Jeden most szeregowo wykonuje operacje należące do CPU w pętli wykonywania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #22051 dodaje Core_RunOnCPUThread. Wywołujący pakuje funkcję w wspólne zadanie, umieszcza ją pod mutexem kolejki i czeka na zmienną warunkową. Core_RunLoopUntil opróżnia kolejkę na początku swojej pętli, wykonuje funkcje na wątku CPU, oznacza je jako zakończone pod mutexem i budzi oczekujących. Wywołania wykonujące się już na wątku CPU są wykonywane natychmiast, unikając samoblokady. Pętla opróżnia kolejkę stale podczas krokowania lub zatrzymania oraz co najmniej raz na każdą ramkę hosta podczas działania."
+    },
+    {
+      "type": "heading",
+      "text": "Rozkład teraz utrzymuje rozmiar kroku w jednej jednostce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta sama praca usuwa makrooperacje disassemblera, które łączyły wzorce instrukcji, takie jak lui plus ori, w jednej linii prezentacji. Chociaż wygodne do czytania, połączone operacje zacierają, czy rozmiar kroku oznacza bajty, instrukcje gościa, czy wiersze wyświetlania. Nowy kontrakt traktuje stepSize jako liczbę czterobajtowych instrukcji MIPS, a obliczenia adresów punktów przerwania mnożą się odpowiednio. Widoki mogą później dodawać podpowiedzi wizualne, nie zmieniając podstawowej jednostki wykonawczej."
+    },
+    {
+      "type": "heading",
+      "text": "Testy współbieżności wymagają wstrzymania oraz przypadków re-entrancyjnych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wydawaj jednocześnie odczyty WebSocket, zapisy, zmiany punktów przerwania, skanowania pamięci i pojedyncze kroki, gdy gra działa, jest wstrzymana i przechodzi między stanami. Odłącz klientów, gdy zadania czekają, zatrzymaj rdzeń z niepustą kolejką i wywołaj most z wątku CPU. ThreadSanitizer nie powinien zgłaszać wyścigów debuggera. Sprawdź, czy każde żądanie otrzymuje zakończenie lub kontrolowany błąd zamknięcia, i porównaj adresy disasemblowane wokół dawnych wzorców makr, tak aby wykonywanie krokami nigdy nie pomijało ani nie powtarzało instrukcji gościa."
+    },
+    {
+      "type": "callout",
+      "text": "Debugger nie prosi już o wiele blokad, aby naśladować własność CPU; wysyła operację do wątku, który już posiada stan."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Przeczytaj dyskusję inżynieryjną PPSSPP i zmiany w źródłach"
+    }
+  ]
+}

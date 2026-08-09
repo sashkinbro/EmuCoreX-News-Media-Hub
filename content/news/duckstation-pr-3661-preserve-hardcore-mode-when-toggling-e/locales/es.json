@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3661-preserve-hardcore-mode-when-toggling-e",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation recarga los datos de logros sin desactivar el modo hardcore",
+  "summary": "Las opciones de RetroAchievements a mitad de sesión ahora actualizan los datos del juego actual en el cliente existente, preservando el estado hardcore que se perdía en un ciclo completo de Apagado e Inicialización.",
+  "heroAlt": "Evidencia visual del pull request #3661 de DuckStation: Logros: Preservar el modo hardcore al alternar las configuraciones de encore/espectador/no oficiales",
+  "searchKeywords": [
+    "DuckStation",
+    "RetroAchievements",
+    "modo hardcore",
+    "Modo Encore",
+    "rc_client"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Interfaz",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3661": "Logros: Preservar el modo hardcore al alternar las configuraciones de encore/espectador/no oficiales"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un cambio de configuración estaba reconstruyendo más estado del que le correspondía"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cambiar el Modo Encore, el Modo Espectador o probar logros no oficiales mientras un juego estaba en ejecución anteriormente llamaba a Shutdown() e Initialize() para el cliente de RetroAchievements. Ese ciclo completo aplicaba la opción, pero también deshabilitaba el modo hardcore hasta que el propio juego se reiniciaba. Por lo tanto, el cambio de configuración se filtraba en un estado de integridad separado que el jugador no había decidido abandonar."
+    },
+    {
+      "type": "heading",
+      "text": "ClearGameInfo y BeginLoadGame preservan el límite del cliente"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #3661 mantiene vivo el rc_client existente. Descarga la información de logros del juego actual con ClearGameInfo(), luego llama a BeginLoadGame() para obtener y aplicar nuevamente las reglas seleccionadas. La recarga es suficiente para que Encore restablezca el estado de desbloqueo y para que las opciones de espectador o no oficiales tengan efecto; reconstruir el cliente de red y su estado hardcore no es necesario."
+    },
+    {
+      "type": "heading",
+      "text": "Encore se puede aplicar repetidamente dentro de una sesión de emulación"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente señala específicamente que el Modo Encore se puede alternar más de una vez y aún así actualizar correctamente los logros desbloqueados. Esa es una prueba de ciclo de vida importante porque una implementación de una sola vez podría parecer fija después de la primera transición pero retener datos de juego obsoletos en la segunda. La evidencia visible del antes y después también muestra que el modo hardcore permanece habilitado después de recargar la opción."
+    },
+    {
+      "type": "heading",
+      "text": "La validación debe rastrear el estado del cliente y el estado de los logros por separado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Inicie una sesión hardcore, alterne Encore, espectador y pruebas no oficiales individualmente, y verifique que se recargue el conjunto de logros previsto mientras el modo hardcore permanece activo. Repita cada alternancia varias veces, cierre sesión y vuelva a iniciarla, y pruebe un título con logros desbloqueados para que se pueda observar el comportamiento de reinicio. Una falla de red durante BeginLoadGame() no debe corromper el cliente existente. Una acción genuina para deshabilitar el modo hardcore, como la ruta de reinicio documentada del emulador, aún debería comportarse normalmente."
+    },
+    {
+      "type": "callout",
+      "text": "La corrección estrecha el ciclo de vida: recarga los datos de logros específicos del juego, pero no destruye el estado del cliente que posee el modo hardcore."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3661",
+      "label": "Lee la discusión de ingeniería DuckStation y los cambios en el código fuente"
+    }
+  ]
+}

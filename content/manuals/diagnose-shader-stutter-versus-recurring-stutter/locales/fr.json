@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguer le bégaiement du shader au premier lancement des accrocs récurrents du temps de trame",
+  "summary": "Exécutez un parcours fixe à froid et à chaud sans supprimer le cache, marquez chaque emplacement d'accroc, et ne considérez comme candidats à la compilation que les pauses lors de la première visite tout en conservant les blocages récurrents d'E/S, de scène ou du cycle de vie pour un diagnostic séparé.",
+  "heroAlt": "Tableau officiel d'optimisation des shaders PCSX2 représentant la charge de compilation et du rendu",
+  "searchKeywords": [
+    "Bégaiement du shader EmuCoreX",
+    "Accroc récurrent PS2",
+    "Parcours à froid et à chaud",
+    "Cache de shader",
+    "Pic du temps de trame"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Performance",
+    "stutter": "Bégaiement"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan directives sur le pipeline et la performance",
+    "pcsx2-vulkan": "Développement du cache de shaders PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Marquer les emplacements des à-coups sur des trajets identiques froids et chauds"
+    },
+    {
+      "type": "paragraph",
+      "text": "La compilation des shaders se produit généralement lorsqu'un nouveau matériau ou effet est rencontré pour la première fois et devrait diminuer une fois que le pipeline pertinent est mis en cache. Un bégaiement récurrent se répète au même endroit de transition, lecture de stockage, événement en arrière-plan ou limite de cadence d’images. Choisissez un trajet déterministe contenant plusieurs effets et enregistrez les horodatages plutôt que de vous fier à la mémoire."
+    },
+    {
+      "type": "callout",
+      "text": "Ne pas effacer le cache des shaders entre les passages froids et chauds. Le faire force les deux parcours à adopter un comportement de première visite et détruit la comparaison."
+    },
+    {
+      "type": "heading",
+      "text": "Préparer une chronologie des accrocs"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde normale avant un parcours déterministe de deux à cinq minutes.",
+        "System driver, un moteur de rendu et profil graphique inchangé.",
+        "Une superposition du temps de trame ou un enregistrement d’écran synchronisé utilisé à chaque passage.",
+        "État du cache documenté avant la première exécution.",
+        "Téléchargements en arrière-plan, capture et notifications contrôlés."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Comparer la première visite, la lecture immédiate et le redémarrage de l'application"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Redémarrez l'application sans supprimer le cache graphique et lancez le parcours à froid.",
+        "2. Marquez le timestamp et le contenu visible pour chaque pic de temps par image.",
+        "3. Revenez à la sauvegarde normale et relancez immédiatement la lecture sans changer les paramètres.",
+        "4. Classez les saccades qui disparaissent lors de la deuxième visite comme des candidats à la compilation.",
+        "5. Marquez les blocages qui réapparaissent au même seuil de chargement ou animation.",
+        "6. Fermez et rouvrez l'application sans vider le cache, puis effectuez un troisième passage.",
+        "7. Redémarrez Android et répétez uniquement lorsque la persistance du cycle de vie est testée.",
+        "8. Envoyez les emplacements récurrents au stockage, CPU/GPU, ou au diagnostic de mise en trame au lieu de tout appeler \"saccade de shader\"."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Une comparaison de cache chaud transforme le temps en preuve. Les pauses lors de la première rencontre conviennent à la création du pipeline ; un blocage qui se répète à chaque passage peut être I/O ou synchronisation ; un accroc à intervalles réguliers peut provenir du travail en arrière-plan. Le troisième passage teste si le cache survit à un redémarrage normal de l'application."
+    },
+    {
+      "type": "heading",
+      "text": "Acceptation de la classification des saccades"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chaque étiquette doit être soutenue par son comportement à travers les passages."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les accrocs lors de la première visite disparaissent ou diminuent lors de la lecture immédiate.",
+        "Les arrêts récurrents conservent un horodatage ou une limite de scène reproductible.",
+        "Les paramètres, le pilote, la politique de cache et le parcours restent inchangés.",
+        "Le comportement lors du troisième passage révèle si le cache persiste après le redémarrage de l'application.",
+        "Les preuves du temps d'affichage concordent avec le rythme visible et audio."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Lignes temporelles à répéter"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les ennemis ou la météo aléatoires modifient le parcours : choisissez un point de contrôle déterministe.",
+        "La capture vidéo s'effectue en un seul passage : normalisez la surcharge.",
+        "Android met à jour ou efface le cache en cours de test : redémarrez la séquence complète.",
+        "La température de l'appareil change de manière significative : alignez l'état thermique avant comparaison."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Revenez aux superpositions et à la politique de cache normales."
+    },
+    {
+      "type": "paragraph",
+      "text": "Désactivez la superposition de temps de trame diagnostique, conservez le cache de shaders valide, restaurez le comportement des applications en arrière-plan et démarrez le titre à froid une fois. Ne prévoyez pas la suppression de cache de routine pour des saccades déjà prouvées disparaître après compilation."
+    },
+    {
+      "type": "heading",
+      "text": "Toutes les saccades lors de la première visite ne sont pas un shader."
+    },
+    {
+      "type": "paragraph",
+      "text": "Les téléchargements de textures, les lectures de disque, la décompression et la logique du jeu peuvent également se produire une fois par zone. Traitez la disparition lors du premier passage comme une classification candidate, puis utilisez des compteurs et des journaux pour confirmer le sous-système responsable. Répétez exactement le même parcours après un redémarrage à chaud et à nouveau après une véritable condition de vidage du cache uniquement lorsque cette opération est documentée et sûre. Si le blocage se déplace avec l'accès au stockage ou apparaît à chaque tour à la même frontière de streaming, conservez les données du shader et enquêtez sur la charge de travail récurrente au lieu de supprimer les caches à plusieurs reprises."
+    },
+    {
+      "type": "link",
+      "text": "Revoir les conseils d'optimisation Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

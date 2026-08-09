@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Obnovte poškozený bloom v hardwarovém vykreslování, aniž byste přeexponovali scénu",
+  "summary": "Použijte spárované světlé a tmavé kontrolní body k identifikaci chybějícího nebo nesprávně zarovnaného framebuffer passu, porovnejte softwarovou referenci a najděte nejméně nákladnou korekci mícháním nebo nativním škálováním.",
+  "heroAlt": "Snímek z God of War PCSX2 ukazující nesprávně vykreslený světlý bloom a fog pass",
+  "searchKeywords": [
+    "PS2 poškozený bloom",
+    "EmuCoreX příliš jasné záření",
+    "hardwarové vykreslování bloom",
+    "míchání rámcových bufferů",
+    "duchování při nativním škálování"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Přesnost"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 popis blendování, čtení z framebufferu a nativního škálování pro bloom",
+    "pcsx2-july-august-2015": "PCSX2 příklady přesnosti bloom a mlhy před a po"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zařaďte bloom jako nepřítomný, přesunutý, oříznutý nebo nadměrný"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloom je obvykle sestaven z více než jednoho průchodu: hra izoluje jasné informace, filtruje je nebo redukuje jejich vzorek a výsledkem je složení přes scénu. Hardwarový renderer tedy může selhat několika vizuálně odlišnými způsoby. Chybějící bloom nechává světelné zdroje ostré; posunutý bloom vytváří duchy offsetované od zdroje; ořezaný bloom se stává obdélníkem; nadměrný bloom vyplavuje blízkou geometrii. Vyberte jeden kontrolní bod s výraznou izolovanou lampou nebo kouzlem a druhý s malými zvýrazněními na tmavém pozadí. Zaznamenejte sériové číslo hry, interní rozlišení, renderer, ovladač GPU, přesnost míchání, stav nativního škálování a zda jsou aktivní ruční opravy framebufferu nebo skip-draw."
+    },
+    {
+      "type": "callout",
+      "text": "Nehodnoťte rozjasnění z jednoho přeexponovaného snímku z telefonu. Automatická expoziční úprava a HDR tónování mohou vymazat detaily, které jsou přítomny ve skutečném snímku emulátoru."
+    },
+    {
+      "type": "heading",
+      "text": "Připravte dvě scény s rozjasněním s luminančními referencemi."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Uložení ve hře před opakovatelným jasným efektem s viditelnou geometrií ihned kolem něj.",
+        "Druhá tmavá scéna obsahující malé vyzařující detaily, aby nastavení nemohlo projít pouze ztemněním celého výstupu.",
+        "Přímé snímky obrazovky z nativního hardwarového výstupu a stručná referenční kontrola správnosti vykreslená softwarem.",
+        "Post-shadery, vrstvy reshade, zobrazení konverze HDR, nahrazení textur a vlastní ovládání barev zakázáno.",
+        "Ukázka výkonu během teplé relace ze světlé scény a záloha grafického profilu hry."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Oddělit přesnost kompozice od zarovnání škálování"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Studeně spusťte světlý kontrolní bod v nativním interním rozlišení s automatickým mícháním a zachyťte zdroj spolu s okolními detaily.",
+        "2. Krátce vykreslete stejný okamžik v softwarovém režimu a porovnejte poloměr záře, střed, zaclonění a to, zda objekty v popředí správně blokují záři.",
+        "3. Vraťte se do režimu hardwaru a porovnejte podporované grafické API, aniž byste měnili ovladač nebo rozlišení; zachovejte cestu, která co nejvíce odpovídá referenci.",
+        "4. Když chybí bloom nebo se zobrazuje jako pevný tvar při nativním rozlišení, zvyšte přesnost míchání o jednu úroveň, restartujte scénu a zastavte se na první úrovni, která obnoví kompozici.",
+        "5. Když je nativní hardware správný, ale bloom se odděluje od svého světla až po upscalingu, obnovte automatické míchání a otestujte zdokumentovanou opravu nativního škálování emulátoru.",
+        "6. Přehrajte tmavý kontrolní bod a potvrďte, že malé zvýraznění září, aniž by se zvedalo černé pozadí nebo bělení textur postavy.",
+        "7. Zahřejte zařízení, změřte sekvenci s vysokým zatížením efektů a porovnejte čítače bariér, vykreslovacího průchodu nebo čítače zpětného čtení, pokud je build zpřístupňuje.",
+        "8. Uložte pouze úspěšnou větev do profilu této hry a poznamenejte, zda řeší prolínání při nativním výstupu nebo zarovnání po zpracování při zvětšení."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Přesnost míchání určuje, jak věrně hardwarové vykreslování reprodukuje interakce s předchozím obsahem framebufferu, zatímco nativní škálování cílí na postprocesní průchody, které byly vytvořeny pro provoz na původním měřítku PS2. Řeší příznaky, které vypadají podobně, v různých fázích. Softwarové vykreslování poskytuje referenci kompozice, protože dokáže přímoji reprodukovat chování GS, ale jeho rychlost není cílem akceptace. Test dvou scén zabraňuje falešnému nápravě, kdy snížení jasu způsobí, že jedna přeexponovaná lampa vypadá lépe, zatímco záměrný závoj jinde je odstraněn."
+    },
+    {
+      "type": "heading",
+      "text": "Přijetí profilu záře"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vybraný profil musí zachovat tvar efektu, vztah hloubky, tónové rozmezí a hratelnost."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zář je soustředěna na vyzařující objekt a následuje ho při pohybu kamery nebo postavy.",
+        "Přední geometrie zakrývá záři tam, kde softwarová reference ukazuje překážku.",
+        "Jasné povrchy si zachovávají detail textury místo toho, aby se zhroutily do jednotné bílé plochy.",
+        "Tmavý kontrolní bod zachovává černé oblasti a stále zobrazuje malé zamýšlené zvýraznění.",
+        "Udržitelná snímková frekvence zůstává přijatelná po tepelném stabilizování a žádná nesouvisející průhlednost se nevrací."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Výsledky Bloom, které vyžadují další vyšetření"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Výstup softwaru má stejný abnormální lesk: potvrďte odkaz na scénu a odstraňte herní patche nebo úpravy textur.",
+        "Pouze fyzický displej kvete, zatímco přímé snímky obrazovky jsou vyvážené: kontrola HDR, rozsah barev, vylepšení panelu a expozice fotoaparátu.",
+        "Vyšší úroveň míchání opravuje lampu, ale poškozuje stíny nebo mlhu: vraťte ji zpět a shromážděte zprávu o vykreslování specifickou pro titul.",
+        "Efekt se projevuje pouze při jednom neobvyklém vlastním rozlišení: před přidáním jakéhokoli ručního posunu použijte podporovaný celočíselný násobek."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zrušte nákladný experiment s rámcovou pamětí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nastavte míchání na Automatické, deaktivujte testované nativní škálování nebo přepsání posunu, obnovte původní API a restartujte aplikaci. Přehrajte oba kontrolní body, abyste potvrdili, že předchozí příznak je reprodukovatelný; poté zvolte poslední nižší úroveň, která prošla výkonem, nebo se vraťte na nativní rozlišení, dokud nebude k dispozici přesná oprava."
+    },
+    {
+      "type": "heading",
+      "text": "Úmyslné oslňování může být vizuálně agresivní"
+    },
+    {
+      "type": "paragraph",
+      "text": "Některé hry PS2 záměrně používají široký, jasný bloom. Cílem je věrnost důvěryhodnému referenčnímu zdroji, nikoli jednotně tlumené osvětlení. Vyhněte se publikování globálního doporučení z jednoho titulu, protože formáty framebufferu, rovnice míchání a škálování po zpracování se liší mezi enginy a dokonce i mezi scénami."
+    },
+    {
+      "type": "link",
+      "text": "Prozkoumejte vysvětlení PCSX2 o moderním míchání a nativním škálování",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

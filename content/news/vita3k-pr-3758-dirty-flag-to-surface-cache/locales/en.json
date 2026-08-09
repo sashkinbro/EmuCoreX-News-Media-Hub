@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K makes guest memory writes invalidate Vulkan surfaces",
+  "summary": "Protected backing ranges now mark cached color surfaces dirty, preventing stale GPU images from being reused as textures after the CPU changes their memory.",
+  "heroAlt": "Source evidence from Vita3K pull request #3758: renderer/vulkan: Add dirty flag to surface cache",
+  "searchKeywords": [
+    "Vita3K",
+    "Vulkan surface cache",
+    "dirty flag",
+    "mprotect",
+    "guest memory"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Add dirty flag to surface cache"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A surface can exist in GPU memory after the guest changes its backing bytes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K caches Vita color surfaces as Vulkan resources. When a game writes the corresponding guest memory from the CPU, the cached image may no longer represent that address range. Returning it as a texture can show an old frame or effect. Some linear formats also require GPU-to-guest synchronization when the CPU reads them, so read and write faults have related but different meanings."
+    },
+    {
+      "type": "heading",
+      "text": "Protection callbacks now carry shared sync and dirty state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3758 gives each ColorSurfaceCacheInfo a shared dirty flag. protect_surface aligns the safely protectable interior to 4 KiB pages. Sync-capable linear surfaces use MemPerm::None to trap reads and writes and capture need_surface_sync; other surfaces use ReadOnly to trap writes. A write marks dirty. For a surface smaller than a page, dirty tracking is withheld because unrelated data on the same protected page would create false invalidations."
+    },
+    {
+      "type": "heading",
+      "text": "Cache lookup refuses GPU data after a CPU write"
+    },
+    {
+      "type": "paragraph",
+      "text": "When a color surface is requested as a texture, a set dirty flag returns no cached result, forcing the caller away from stale GPU content. When the same surface becomes a framebuffer again, Vita3K can rearm protection and clear dirty after establishing the new authoritative use. Overlapping protections combine through most_restrictive_perm so adding a weaker range cannot accidentally reopen memory already guarded more strongly."
+    },
+    {
+      "type": "heading",
+      "text": "Memory mapping methods and page overlap are key tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Render to a surface, sample it, rewrite all or part from the guest CPU, then sample again for linear and tiled formats. Include aligned, unaligned, sub-page, overlapping, and shared-page allocations; confirm small surfaces avoid false dirty flags without hiding real changes. Test readback synchronization separately from write invalidation. Repeat on native buffer mapping, double buffering, NVIDIA and non-NVIDIA Linux drivers, Android, and savestate restore. Record protection faults to catch loops or excessive hot-path trapping."
+    },
+    {
+      "type": "callout",
+      "text": "A cache is correct only while its ownership evidence is current; one guest write is enough to revoke the GPU surface's claim to that memory."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

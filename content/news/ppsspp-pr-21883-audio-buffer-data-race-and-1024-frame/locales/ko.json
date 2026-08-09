@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP는 libretro 오디오 전달에서 교차 스레드 경합을 종료합니다",
+  "summary": "공유 변환 샘플 버퍼에 대한 모든 작업은 이제 하나의 뮤텍스를 사용하여, 다른 스레드가 오디오를 쓰는 동안 메모리가 재할당되거나 종료되어 무효화되는 것을 방지합니다.",
+  "heroAlt": "PPSSPP 풀 리퀘스트 #21883의 소스 증거: libretro: 오디오 버퍼 데이터 경쟁 및 >1024프레임 샘플 푸시 수정",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "oaudio 경쟁",
+    "뮤텍스",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "오디오",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: 오디오 버퍼 데이터 경쟁 및 >1024프레임 샘플 푸시 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "두 스레드가 동시에 동일한 원시 포인터를 소유할 수 있었습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "libretro 프런트엔드 경로에서 System_AudioPushSamples는 PSP 오디오를 변환하고 이를 output_audio_buffer에 추가합니다. OpenGL 백엔드에서는 샘플 푸시가 에뮬레이션 측의 GL 명령 큐를 통해 도착할 수 있으며, retro_run은 libretro 스레드에서 버퍼를 소모합니다. 초기화, 종료, 그리고 용량 증가 또한 할당을 교체하거나 해제합니다. 소유권 규칙이 하나 없으면, 다른 스레드가 읽기나 쓰기 중일 때 realloc이 포인터를 무효화할 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "단일 뮤텍스가 이제 버퍼의 수명을 정의합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883은 output_audio_buffer_mutex를 추가하고 초기화, 종료, 업로드, System_AudioPushSamples에서 이를 획득합니다. 용량 헬퍼는 호출자가 해당 락을 보유해야 한다고 명시적으로 문서화되어 있으므로, 필요한 append와 동일한 임계 구간 내에서 용량 증가가 발생합니다. 업로드는 배치 콜백과 크기 재설정 동안 락을 유지하여, 생산자가 전달 중간에 페이로드를 변경하지 못하도록 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "이 수정은 구조체와 샘플을 함께 보호합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "크기 또는 용량만 잠그는 것으로는 충분하지 않습니다: 데이터, 크기, 용량은 하나의 불변식(invariant)을 형성합니다. 포인터는 적어도 용량(capacity) 요소 길이만큼 할당된 메모리를 참조해야 하며, 크기(size)는 그 안에서 초기화된 샘플을 식별해야 합니다. 뮤텍스(mutex)는 세 가지 모두에 대한 업데이트를 하나의 연산으로 보이도록 합니다. 이는 특히 스레드 기반 GL 타이밍에 관련이 있지만, 초기화(init)와 해제(free)에서도 동일한 규칙이 적용되므로 빠른 코어 재시작이 늦은 생산자(late producer)와 경쟁하지 않습니다."
+    },
+    {
+      "type": "heading",
+      "text": "스트레스 테스트는 콜백(callback)과 렌더러(renderer) 타이밍을 다양하게 해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "libretro를 OpenGL, Vulkan 및 소프트웨어 렌더링과 함께 실행하면서 반복적으로 일시정지, 빨리 감기, 재설정, 콘텐츠 전환 및 코어 종료를 수행하십시오. 빠르게, 느리게, 불규칙한 배치로 소비되는 오디오 콜백과 일반 프레임 크기 이상의 샘플 푸시를 사용하십시오. ThreadSanitizer는 버퍼 튜플에 대한 비동기화 액세스를 감지하지 않아야 합니다. 캡처한 PCM을 들으며 간격이나 재정렬이 있는지 확인하고, 동일한 비재귀 뮤텍스를 기다리는 경로에서 콜백이 재진입하지 않는지 확인하십시오."
+    },
+    {
+      "type": "callout",
+      "text": "확장 가능한 오디오 버퍼는 세 개의 독립적인 필드가 아니라 하나의 공유 객체입니다; 그 포인터, 크기, 용량은 동일한 잠금 아래에서 스레드를 넘어야 합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "PPSSPP 엔지니어링 논의와 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

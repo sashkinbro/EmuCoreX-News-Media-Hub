@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-a-renderer-crash-during-shader-compilation",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnozowanie awarii renderera podczas kompilacji shaderów",
+  "summary": "Rozróżnienie spodziewanej pracy shaderów przy pierwszym uruchomieniu od powtarzalnej awarii sterownika poprzez porównanie zimnych i ciepłych uruchomień, przywrócenie sterownika systemowego, zmianę jednego API oraz zachowanie dokładnej sceny i logu, który wywołuje kompilację.",
+  "heroAlt": "PCSX2 okno ostrzegawcze identyfikujące przestarzały sterownik graficzny podczas rozwiązywania problemów z rendererem",
+  "searchKeywords": [
+    "EmuCoreX awaria kompilacji shaderów",
+    "Vulkan awaria przy pierwszym uruchomieniu",
+    "GPU sterownik renderera",
+    "pamięć podręczna shaderów",
+    "urządzenie utracone"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "crash": "Awaria"
+  },
+  "sourceLabels": {
+    "pcsx2-windows": "PCSX2 Vulkan/OpenGL przyczyny awarii",
+    "pcsx2-vulkan": "Rozwój renderera i pamięci podręcznej shaderów PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Oddziel powolną pierwszą kompilację od awarii renderera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zimne uruchomienie może zatrzymać się podczas kompilowania nowych wariantów shaderów, ale ostatecznie powinno zakończyć się, a kolejne uruchomienia powinny ponownie użyć pamięci podręcznej. Awaria renderera zamiast tego kończy sesję, zgłasza utratę urządzenia lub błąd kompilatora albo powtarza się przy tym samym rysowaniu. Zanotuj, czy aplikacja się zamyka, Android ją kończy, ekran się zawiesza, czy tylko wskaźnik postępu zatrzymuje się."
+    },
+    {
+      "type": "callout",
+      "text": "Nie usuwaj wszystkich danych aplikacji, aby wyczyścić pamięć podręczną grafiki. Karty pamięci, profile, zapisy i odniesienia do oprogramowania sprzętowego znajdują się poza granicą jednorazowej pamięci podręcznej shaderów."
+    },
+    {
+      "type": "heading",
+      "text": "Zachowaj stan nieudanej inicjalizacji"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normalny zapis w grze przed dokładnym efektem lub obszarem, który wywołuje kompilację.",
+        "Pakiet sterowników systemowych GPU i wszelkie niestandardowe identyfikatory sterowników zapisane.",
+        "Czas uruchomienia na zimno i na ciepło.",
+        "Dziennik renderera lub zapis awarii Android uchwycony bez prywatnych zawartości plików.",
+        "Kopia zapasowa profili tytułów i danych zapisów użytkownika."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Przetestuj pamięć podręczną, sterownik i API jako niezależne gałęzie"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Uruchom tytuł na zimno i poczekaj przez jedno zmierzone okno kompilacji bez wielokrotnego ponownego uruchamiania.",
+        "2. Jeśli zakończy się, zamknij normalnie i powtórz tę samą scenę, aby określić, czy ścieżka ciepła jest stabilna.",
+        "3. Kiedy wystąpi awaria, przywróć sterownik systemowy GPU przed zmianą API renderera.",
+        "4. Spróbuj ponownie scenę dwukrotnie na sterowniku systemowym i zanotuj pierwszą wiadomość o błędzie kompilatora lub utracie urządzenia.",
+        "5. Wybierz inne obsługiwane API sprzętowe bez zmiany rozdzielczości i dokładności.",
+        "6. Wyczyść tylko udokumentowany jednorazowy cache shaderów emulatora raz, a następnie porównaj kolejne zimne i ciepłe uruchomienia.",
+        "7. Uruchom ponownie Android, aby usunąć przestarzały stan procesu sterownika i powtórz najmniejsze odtworzenie.",
+        "8. Zachowaj stabilne API dla każdej gry, jednocześnie zachowując dziennik błędów dla raportu sterownika lub emulatora."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Warianty shaderów zależą od renderera, sterownika, rysunków gry i ustawień grafiki. Odbudowa cache powinna stworzyć jedno wolniejsze uruchomienie, po którym nastąpi stabilne ponowne użycie. Awaria, która następuje po niestandardowym sterowniku, ale znika w przypadku pakietu systemowego, wskazuje na tę gałąź; awaria sceny specyficznej w różnych sterownikach i API wymaga minimalnego raportu emulatora."
+    },
+    {
+      "type": "heading",
+      "text": "Akceptacja stabilności kompilacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Proces odzyskiwania musi przejść powtarzające się testy zimnego i ciepłego uruchamiania, a nie tylko jedno udane uruchomienie."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Jedna zimna kompilacja kończy się bez zakończenia działania aplikacji.",
+        "Dwa późniejsze ciepłe uruchomienia docierają do tej samej sceny bez przebudowywania wszystkiego.",
+        "Na zaakceptowanej ścieżce nie pojawia się utrata urządzenia ani błąd kompilatora shaderów.",
+        "Niepowiązane tytuły nadal inicjalizują się pod wybranym sterownikiem i API.",
+        "Zapisane przez użytkownika dane i profile pozostają nienaruszone przez utrzymanie pamięci podręcznej."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Wzorce awarii do zachowania w celu eskalacji"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ta sama scena shader zabija oba API na sterowniku systemowym: zbierz minimalny raport.",
+        "Tylko niestandardowy pakiet powoduje awarię: usuń go z aktywnego profilu.",
+        "Każde uruchomienie rekompiluje te same warianty: sprawdź trwałość pamięci podręcznej i stan przechowywania.",
+        "Android zabija proces pod presją pamięci: oddziel wyczerpanie zasobów od awarii kompilatora."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Powróć do sterownika systemowego i zachowanej polityki pamięci podręcznej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyłącz niestandardowy sterownik, przywróć poprzednie stabilne API, przestań czyścić pamięć podręczną i uruchom ponownie znany działający tytuł. Ponownie zaimportuj zapisany profil na grę dopiero po upewnieniu się, że nie przywraca on kombinacji powodującej awarię."
+    },
+    {
+      "type": "heading",
+      "text": "Ciepły sukces może maskować uszkodzoną ścieżkę startu na zimno"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pamięć podręczna shadera może pozwolić na pomyślne późniejsze uruchomienia, podczas gdy świeża instalacja lub aktualizacja sterownika wciąż powoduje awarię. Zachowaj co najmniej jeden kontrolowany test uruchomienia na zimno przed uznaniem konfiguracji za przenośną."
+    },
+    {
+      "type": "link",
+      "text": "Przejrzyj wskazówki dotyczące awarii sterownika graficznego PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/windows/"
+    }
+  ]
+}

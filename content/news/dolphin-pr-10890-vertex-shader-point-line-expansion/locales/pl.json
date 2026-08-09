@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin odbudowuje szerokie punkty i linie wewnątrz vertex shader",
+  "summary": "Rozszerzenie czworokąta wychodzi ze etapu geometrii, przywracając szerokie prymitywy na Metal i MoltenVK, jednocześnie oferując szybszą ścieżkę na niektórych stacjonarnych GPUs.",
+  "heroAlt": "Źródło dowodu z pull request Dolphin #10890: VideoCommon: Dodaj rozszerzenie punktu/linie w vertex shader",
+  "searchKeywords": [
+    "Dolphin",
+    "vertex shader",
+    "Metal",
+    "MoltenVK",
+    "szerokie linie"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: Dodaj rozszerzenie punktu/linie w vertex shader"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nowoczesne APIs nie wszystkie zapewniają stary etap rozszerzenia Dolphin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprogramowanie GameCube i Wii może żądać punktów i linii szerszych niż jeden piksel. Dolphin tradycyjnie rozszerza te prymitywy za pomocą shadera geometrii, ale Metal nie ma odpowiedniego etapu, a MoltenVK dziedziczy to ograniczenie. Brakująca ścieżka była widoczna w zawartości takiej jak mapa Metroid Prime 2, gdzie szerokie linie mogły renderować się niepoprawnie. Shadery geometrii mogą być również stosunkowo kosztowne, nawet na sprzęcie, który je obsługuje."
+    },
+    {
+      "type": "heading",
+      "text": "Bity indeksu mówią shaderowi wierzchołków, który róg czworokąta zbudować"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #10890 reprezentuje rozszerzony punkt lub linię jako czworokąt. Zmodyfikowane indeksy rezerwują swoje dolne dwa bity, aby zidentyfikować wygenerowany róg. Shader wierzchołków ładuje powiązany wierzchołek źródłowy lub punkty końcowe, wykonuje zwykłą transformację i oblicza przesunięcie w przestrzeni ekranu potrzebne dla tego rogu. Dynamiczna konstrukcja ładowania wierzchołków dostarcza dodatkowe dane i stałe geometrii poprzez powiązania zasobów specyficzne dla backendu."
+    },
+    {
+      "type": "heading",
+      "text": "Możliwość backendu decyduje, czy ścieżka jest wymagana, czy opcjonalna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal i Vulkan-do-MoltenVK mogą używać rozwinięcia wierzchołków, aby uzyskać funkcjonalność, której nie mogły wyrazić za pomocą shaderów geometrycznych. D3D12, Vulkan, OpenGL oraz inne zdolne ścieżki ujawniają wsparcie, podczas gdy zaawansowane ustawienie pozwala użytkownikom wybrać rozwinięcie wierzchołków tam, gdzie istnieją obie metody. Profilowanie na Radeon Pro 5600M wykazało zauważalną przewagę w mapie Metroid Prime 2, ale opcja pozostaje kontekstowa, a nie uniwersalną obietnicą wydajności."
+    },
+    {
+      "type": "heading",
+      "text": "Zakres musi obejmować semantykę prymitywów, a nie tylko jedną mapę."
+    },
+    {
+      "type": "paragraph",
+      "text": "Porównaj punkty i linie przy różnych szerokościach, proporcjach boków, wewnętrznych rozdzielczościach, skalach viewportu, granicach przycinania i przekształceniach perspektywy. Uwzględnij przesunięcia tekstur, ponieważ pierwotna dyskusja wskazała je jako obszar wymagający większego pokrycia przez gry. Zarejestruj wyjścia Metal, MoltenVK, natywne Vulkan, D3D12 i OpenGL w porównaniu z rozwinięciem geometrycznym tam, gdzie jest dostępne. Sprawdź prowokujące wierzchołki, głębię, interpolację, linie degenerowane, zmiany stanu i savestate; przeprowadź testy wydajnościowe dla zmian w potoku osobno od wykonania shaderów."
+    },
+    {
+      "type": "callout",
+      "text": "Rozszerzenie wierzchołka jest zarówno mostem kompatybilności dla Metal, jak i mierzalną alternatywą dla shaderów geometrycznych, ale identyczne reguły prymitywów nadal pozostają testem akceptacyjnym."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Przeczytaj dyskusję inżynieryjną Dolphin i zmiany w źródłach"
+    }
+  ]
+}

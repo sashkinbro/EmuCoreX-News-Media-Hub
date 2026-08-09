@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Ripristina il bloom rotto nel rendering hardware senza sovraesporre la scena",
+  "summary": "Usa checkpoint luminosi e scuri accoppiati per identificare un passaggio del framebuffer mancante o disallineato, confronta con un riferimento software e trova la correzione di blending o ridimensionamento nativo meno costosa.",
+  "heroAlt": "God of War PCSX2 cattura che mostra un passaggio di bloom luminoso e nebbia renderizzato in modo errato",
+  "searchKeywords": [
+    "PS2 bloom rotto",
+    "EmuCoreX bagliore eccessivamente luminoso",
+    "bloom nel rendering hardware",
+    "blending del framebuffer",
+    "ghosting da ridimensionamento nativo"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "accuracy": "Precisione"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 descrizione della miscelazione, letture del framebuffer e scaling nativo per il bloom",
+    "pcsx2-july-august-2015": "PCSX2 esempi di precisione del bloom e della nebbia prima e dopo"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Classifica il bloom come assente, spostato, tagliato o eccessivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il bloom viene solitamente assemblato da più passaggi: il gioco isola le informazioni luminose, le filtra o le riduce di campione e compone il risultato sulla scena. Un renderer hardware può quindi fallire in diversi modi visibilmente differenti. La mancanza di bloom lascia le sorgenti luminose con bordi netti; un bloom spostato produce un fantasma decentrato rispetto alla sorgente; un bloom tagliato diventa un rettangolo; un bloom eccessivo sbianca la geometria vicina. Seleziona un checkpoint con una lampada o un incantesimo isolato e un altro con piccoli punti luce su uno sfondo scuro. Registra il numero di serie del gioco, la risoluzione interna, il renderer, il driver GPU, l'accuratezza del blending, lo stato della scala nativa e se sono attivi correzioni manuali del framebuffer o salti di disegno."
+    },
+    {
+      "type": "callout",
+      "text": "Non valutare il bloom da una singola fotografia sovraesposta scattata con il telefono. L'esposizione automatica e la mappatura tonale HDR possono cancellare dettagli presenti nel frame effettivo dell'emulatore."
+    },
+    {
+      "type": "heading",
+      "text": "Prepara due scene con bloom con riferimenti di luminanza."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio in gioco prima di un effetto luminoso ripetibile con geometria visibile immediatamente intorno.",
+        "Una seconda scena scura contenente piccoli dettagli emissivi, in modo che un'impostazione non possa passare semplicemente oscurando l'uscita completa.",
+        "Screenshot diretti dall'output dell'hardware nativo e un breve riferimento alla correttezza renderizzata via software.",
+        "Shaders post, livelli reshade, conversione HDR display, sostituzione delle texture e controlli colore personalizzati disabilitati.",
+        "Un campione di prestazioni della sessione calda dalla scena luminosa e un backup del profilo grafico del titolo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separare l'accuratezza della composizione dall'allineamento dell'upscale"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avviare a freddo il punto di controllo luminoso alla risoluzione interna nativa con fusione automatica e catturare la sorgente più i dettagli circostanti.",
+        "2. Renderizzare lo stesso momento brevemente in modalità software e confrontare raggio di bloom, centro, occlusione e se gli oggetti in primo piano bloccano correttamente il bagliore.",
+        "3. Torna alla modalità hardware e confronta le API grafiche supportate senza modificare il driver o la risoluzione; conserva il percorso che preserva più fedelmente il riferimento.",
+        "4. Quando il bloom manca o si taglia in una forma solida alla risoluzione nativa, aumenta di un livello la precisione della fusione, riavvia la scena e fermati al primo livello che ripristina la composizione.",
+        "5. Quando l'hardware nativo è corretto ma il bloom si separa dalla sua luce solo dopo l'upscaling, ripristina la fusione automatica e testa la correzione dello scaling nativo documented dell'emulatore.",
+        "6. Riproduci il checkpoint oscuro e conferma che i piccoli riflessi brillino senza sollevare gli sfondi neri o sbiancare le texture dei personaggi.",
+        "7. Riscalda il dispositivo, misura la sequenza ad alto effetto e confronta barriere, passaggi di rendering o contatori di lettura se il build li espone.",
+        "8. Salva solo il ramo riuscito nel profilo di questo gioco e annota se affronta il blending all'uscita nativa o l'allineamento del post-processo mentre viene upscalato."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La precisione del blending governa quanto fedelmente il rendering hardware riproduce le interazioni con i contenuti precedenti del framebuffer, mentre la scalatura nativa è destinata ai passaggi post-process che sono stati creati per operare alla scala originale dello PS2. Risolvono sintomi simili in fasi diverse. Il rendering software fornisce un riferimento di composizione perché può riprodurre il comportamento dello GS in modo più diretto, ma la sua velocità non è l'obiettivo di accettazione. Il test a due scene previene una falsa correzione in cui ridurre la luminosità fa sembrare migliore una lampada sovraesposta mentre elimina l'illuminazione prevista altrove."
+    },
+    {
+      "type": "heading",
+      "text": "Accettazione del profilo Bloom"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il profilo selezionato deve preservare la forma dell'effetto, la relazione di profondità, l'intervallo tonale e la giocabilità."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Il bagliore è centrato sull'oggetto emittente e lo segue durante il movimento della telecamera o del personaggio.",
+        "La geometria in primo piano occulta il bagliore dove il riferimento del software mostra un'ostruzione.",
+        "Le superfici luminose mantengono il dettaglio della texture invece di collassare in una macchia bianca uniforme.",
+        "Il checkpoint scuro preserva le aree nere e mostra comunque i piccoli evidenziatori previsti.",
+        "La sincronizzazione del frame sostenuta rimane accettabile dopo la stabilizzazione termica e non regredisce alcuna trasparenza non correlata."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Risultati di bloom che richiedono un'altra indagine"
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'output software ha lo stesso bagliore anomalo: confermare il riferimento alla scena e rimuovere patch di gioco o modifiche delle texture.",
+        "Solo il bloom del display fisico si manifesta mentre gli screenshot diretti sono bilanciati: controllare HDR, gamma colori, miglioramento del pannello ed esposizione della fotocamera.",
+        "Un livello di fusione più alto risolve la lampada ma corrompe ombre o nebbia: ripristinarlo e raccogliere un rapporto di rendering specifico del titolo.",
+        "L'effetto deriva solo a una risoluzione personalizzata insolita: utilizzare un moltiplicatore intero supportato prima di aggiungere qualsiasi offset manuale."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Annulla l'esperimento costoso del framebuffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Imposta la fusione su Automatica, disabilita la scalatura nativa testata o l'override dell'offset, ripristina l'API originale e riavvia l'applicazione. Riprova entrambi i checkpoint per confermare che il sintomo precedente sia riproducibile; poi scegli l'ultimo livello inferiore che ha superato le prestazioni o torna alla risoluzione nativa fino a quando non esiste una correzione precisa."
+    },
+    {
+      "type": "heading",
+      "text": "L'abbagliamento intenzionale può essere visivamente aggressivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alcuni giochi PS2 utilizzano deliberatamente un ampio e luminoso effetto di bloom. L'obiettivo è la fedeltà a un riferimento affidabile, non un'illuminazione uniformemente attenuata. Evitate di pubblicare una raccomandazione globale basata su un solo titolo, perché i formati dei framebuffer, le equazioni di blending e la scalabilità post-processo differiscono tra i motori e persino tra le scene."
+    },
+    {
+      "type": "link",
+      "text": "Rivedete la spiegazione PCSX2 sul blending moderno e sulla scalabilità nativa",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

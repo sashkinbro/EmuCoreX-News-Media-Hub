@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP menghentikan thread pembantu usang dari merusak savestate yang telah dipulihkan",
+  "summary": "Loader savestate sekarang melepaskan pembungkus host sceUtility dan PSMF lama sebelum penghancuran, melindungi thread kernel yang aktif dan memori yang mungkin menggunakan pengidentifikasi yang sama.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21988: Savestate: jangan biarkan thread pembantu HLE yang usang memodifikasi status kernel yang dipulihkan",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: jangan biarkan thread pembantu HLE yang usang memodifikasi status kernel yang dipulihkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sebuah destructor bisa bertindak pada generasi status kernel yang salah"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP mempertahankan pembungkus HLEHelperThread sisi host untuk pekerjaan asinkron seperti akses savedata dan pemutaran PSMF. Selama proses pemuatan, emulator mengganti pembungkus tersebut dengan objek dari aliran yang diserialisasi. Dua jalur menghancurkan pembungkus pra-muat dengan normal, memungkinkan destrukturnya memanggil __KernelDeleteThread dan membebaskan blok entri setelah status kernel baru sudah terpasang. IDs di dalam pembungkus lama tidak lagi menggambarkan objek yang diizinkan untuk dimilikinya."
+    },
+    {
+      "type": "heading",
+      "text": "Penggunaan ulang identifier yang berubah menjadi kebisingan log yang tidak berbahaya menjadi korupsi diam-diam"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jika status yang dipulihkan tidak mengandung ID thread atau alokasi yang kadaluwarsa, kesalahan tersebut menghasilkan error tentang thread yang hilang atau free yang tidak valid. Kasus berbahaya terjadi ketika status yang dipulihkan telah mendaur ulang salah satu nilai tersebut. Destruktor kemudian bisa menghentikan thread yang sah yang masih aktif atau membebaskan memori yang digunakan oleh objek lain. Memuat sementara pekerjaan savedata atau pemutar PSMF aktif membuat bug kepemilikan sensitif-waktu ini menjadi lebih mudah tercapai."
+    },
+    {
+      "type": "heading",
+      "text": "Forget memisahkan masa hidup pembungkus host dari kepemilikan tamu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21988 menerapkan pola yang sudah digunakan oleh penanganan status I/O milik PPSSPP. sceUtility secara eksplisit memanggil Forget, menghapus accessThread-nya, dan mengosongkan pointer sebelum Do membuatnya kembali. Pada pembacaan PSMF, loader menelusuri peta pemutar yang ada dan memanggil Forget pada setiap finishThread sebelum deserialisasi peta menghancurkan para pemutar. Forget tidak menghapus status tamu yang dipulihkan; ini memberitahu pembungkus host yang usang bahwa ia tidak lagi memiliki sumber daya kernel tersebut."
+    },
+    {
+      "type": "heading",
+      "text": "Matriks regresi harus menggunakan kembali IDs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uji simpanan yang dibuat sebelum, selama, dan setelah operasi savedata dan pemutaran PSMF, kemudian muat masing-masing dari sesi dengan aktivitas berbeda. Instrumen penghapusan thread dan pembebasan BlockAllocator untuk membuktikan tidak ada pembungkus pra-muat yang merubah generasi yang dipulihkan. Sertakan siklus muat ulang berulang, mundur, pergantian slot, status gagal, dan shutdown setelah pemuatan. Tes khusus harus sengaja membuat kembali ID thread dan alamat blok yang sama, karena kasus log tak berbahaya lama saja tidak akan menyingkap korupsi diam-diam."
+    },
+    {
+      "type": "callout",
+      "text": "Sebuah savestate memulihkan perubahan generasi kepemilikan; destruktor host harus melupakan pegangan tamu yang usang sebelum kernel yang dipulihkan menjadi otoritatif."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Baca diskusi rekayasa PPSSPP dan perubahan sumber"
+    }
+  ]
+}

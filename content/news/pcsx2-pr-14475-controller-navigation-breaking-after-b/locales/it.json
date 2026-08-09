@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14475-controller-navigation-breaking-after-b",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ricostruisce la navigazione del controller di Big Picture dopo il ridimensionamento della finestra",
+  "summary": "Rettangoli di navigazione ImGui obsoleti, non il fullscreen stesso, hanno causato l'interruzione dello spostamento del focus dopo un cambiamento significativo di dimensione; un ridimensionamento ora forza lo stato di navigazione a corrispondere al nuovo layout.",
+  "heroAlt": "Prova visiva dalla pull request PCSX2 #14475: FullscreenUI: Risolto il problema della navigazione del controller interrotta dopo il ridimensionamento della finestra in Big Picture Mode",
+  "searchKeywords": [
+    "PCSX2",
+    "Big Picture Mode",
+    "navigazione del controller",
+    "ridimensionamento della finestra",
+    "ImGui"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14475": "FullscreenUI: Risolto il problema della navigazione del controller interrotta dopo il ridimensionamento della finestra in Big Picture Mode"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il fullscreen sembrava colpevole perché di solito ridimensionava la finestra"
+    },
+    {
+      "type": "paragraph",
+      "text": "La navigazione tramite controller in Big Picture Mode potrebbe fermarsi immediatamente dopo aver attivato/disattivato la modalità a schermo intero. I test effettuati su diversi dispositivi hanno mostrato che lo stato a schermo intero era solo il trigger più comune notato dalle persone: la condizione reale era un cambiamento delle dimensioni della finestra sufficientemente grande. Le finestre portatili spesso cambiavano troppo poco per riprodurre il problema, mentre una finestra desktop ridimensionata molto più piccola prima che il toggle fallisse in modo affidabile."
+    },
+    {
+      "type": "heading",
+      "text": "NavRectRel descriveva ancora i widget con le vecchie dimensioni"
+    },
+    {
+      "type": "paragraph",
+      "text": "ImGui memorizza nella cache i rettangoli di navigazione relativi usati per decidere quale elemento riceve il focus quando un controller si muove su, giù, sinistra o destra. Dopo che il layout era stato ricostruito a una nuova dimensione, quei valori di NavRectRel potevano rimanere obsoleti. I calcoli del focus facevano quindi riferimento a geometrie che non corrispondevano più ai controlli visibili. Premere certe direzioni poteva incidentalmente ripristinare la navigazione, spiegando perché il bug a volte sembrava risolversi da solo."
+    },
+    {
+      "type": "heading",
+      "text": "Un ridimensionamento invalida ora lo stato di navigazione al confine UI"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14475 modifica ImGuiManager in modo che qualsiasi ridimensionamento della finestra Big Picture forza la reinizializzazione della navigazione. La correzione non aggiunge ritardi temporali né casi speciali per il fullscreen; risponde allo stato che rende i rettangoli memorizzati nella cache non validi. Mantenere la riparazione nel percorso di ridimensionamento copre anche il ridimensionamento manuale della finestra, le variazioni di risoluzione e altre transizioni che ricostruiscono il layout senza cambiare la modalità fullscreen."
+    },
+    {
+      "type": "heading",
+      "text": "La sequenza di regressione richiede sia cambiamenti di dimensioni grandi che piccoli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nel codice precedente, i tester dovrebbero ridurre sostanzialmente la finestra Big Picture e poi attivare/disattivare il fullscreen per riprodurre il blocco del focus del controller. Nel percorso corretto, la navigazione deve continuare dopo ripetuti ingrandimenti, riduzioni e transizioni fullscreen. La matrice dovrebbe includere finestre grandi quanto il desktop e portatili, l'interazione del mouse tra movimenti del controller e ogni bordo della scheda. La posizione del focus può essere resettata deliberatamente, ma non deve mai puntare oltre il layout ricostruito o richiedere un input di recupero."
+    },
+    {
+      "type": "callout",
+      "text": "La correzione segue l'effettivo evento di invalidamento: un ridimensionamento della finestra ricostruisce il layout, quindi la geometria della navigazione del controller deve essere ricostruita insieme ad esso."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14475",
+      "label": "Leggi la discussione ingegneristica e le modifiche del codice sorgente PCSX2"
+    }
+  ]
+}

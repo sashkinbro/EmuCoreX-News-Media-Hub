@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14647-android-netplay",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 为 Android 构建了完整的 NetPlay 会话层",
+  "summary": "一个 Kotlin 生命周期所有者、本地回调桥、响应式大厅状态和 Compose 界面，为移动端提供主机、加入、聊天、同步和游戏启动功能。",
+  "heroAlt": "来自 Dolphin 拉取请求 #14647 的源证据：Android netplay",
+  "searchKeywords": [
+    "Dolphin",
+    "Android NetPlay",
+    "Kotlin Flow",
+    "Compose",
+    "遍历服务器"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "network": "网络",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14647": "Android netplay"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "桌面 NetPlay 不能简单地作为一个 Android 按钮暴露"
+    },
+    {
+      "type": "paragraph",
+      "text": "多人游戏会话包括发现或直接连接、服务器和客户端的生命周期、玩家列表、聊天、控制器映射、缓冲区调优、游戏选择、存档传输、游戏摘要检查、遍历服务器状态，以及最终的同步启动。Dolphin 的桌面对话框通过 Qt 承担了其中许多职责。Android 需要一种在活动导航中仍能存活，并将本地回调转换为移动 UI 状态而不泄露 C++ 对象的架构。"
+    },
+    {
+      "type": "heading",
+      "text": "NetplaySession 成为唯一的本地资源所有者。"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14647 增加了一个 Kotlin 会话，它创建 UI 回调并拥有服务器、客户端和 BootSessionData 指针。NetplayManager 对会话创建进行序列化，因此新会话需要等待之前的会话关闭。StateFlow、SharedFlow 和通道公开玩家变化、聊天、输入权限、传输进度、游戏摘要、遍历状态、连接错误和断开连接。受保护的释放路径在调用其本地析构函数之前清除每个指针。"
+    },
+    {
+      "type": "heading",
+      "text": "Compose 屏幕将连接设置与活动大厅分开"
+    },
+    {
+      "type": "paragraph",
+      "text": "专用的设置和会话活动支持通过直接或中继方式进行主机和加入。ViewModels 将原生会话流程组合到屏幕状态中，而大厅可以更改游戏，检查所有玩家是否拥有该游戏，调整手柄缓冲区，交换聊天信息，并开始游戏。当主机提供 BootSessionData 时，NativeLibrary.RunNetPlay 会准确使用该指针一次，并以同步路径和 Riivolution 状态开始模拟。"
+    },
+    {
+      "type": "heading",
+      "text": "移动生命周期和混合版本会话需要严格测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "通过直接 LAN 和穿越功能进行主机和加入，在每个阶段旋转设备、在后台和恢复、拒绝连接、丢失网络，并在保存或摘要传输活动时关闭。验证指针只被释放一次，没有回调到一个已关闭的 Kotlin 对象，第二个会话等待清理。将 Android 与桌面客户端、多控制器、缺失的游戏、聊天爆发、主机迁移失败以及模拟退出回大厅混合使用。内存和线程消毒器应伴随用户流程测试。"
+    },
+    {
+      "type": "callout",
+      "text": "移动网络游戏主要是生命周期问题：只有当每个本地会话对象从连接到模拟和拆除过程中都有唯一所有者时，接口才是可靠的。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14647",
+      "label": "阅读 Dolphin 工程讨论和源码更改"
+    }
+  ]
+}

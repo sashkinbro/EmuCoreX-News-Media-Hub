@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13377-degenerate-primitive-testing-in-vertex",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 juzga primitivas degeneradas por los píxeles que realmente pueden cubrir",
+  "summary": "El redondeo de puntos y líneas, junto con el antialiasing, ahora participan en pruebas de área cero compartidas por vertex kick y el renderizador de software, alineando los límites con los casos límite de rasterización.",
+  "heroAlt": "Evidencia fuente de PCSX2 pull request #13377: GS: Mejorar las pruebas primitivas degeneradas en el cálculo de vértices kick y SW de cajas delimitadoras. Otras correcciones menores.",
+  "searchKeywords": [
+    "PCSX2",
+    "primitiva degenerada",
+    "Antialiasing",
+    "Renderizador de software",
+    "Caja delimitadora"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13377": "GS: Mejorar las pruebas primitivas degeneradas en el cálculo de vértices kick y de cajas delimitadoras de SW. Otras correcciones menores."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cero área matemática no significa siempre cero píxeles rasterizados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una línea o un punto pueden parecer degenerados en las coordenadas de vértices y aun así cubrir píxeles después de que GS aplica el tamaño del punto, el redondeo de la línea o las reglas de antialiasing. Por el contrario, un primitivo que pasa una prueba simple de coordenadas puede no aportar nada dentro de la tijera. PCSX2 utilizaba verificaciones de degeneración tanto en el kick de vértices como en el renderizado por software, y el desacuerdo en casos límite podría eliminar trabajo visible o enviar trabajo vacío más profundo en la canalización."
+    },
+    {
+      "type": "heading",
+      "text": "El redondeo y AA se convierten en entradas para una prueba consistente"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #13377 actualiza la prueba de kick de vértices para tener en cuenta el redondeo de líneas y puntos y el antialiasing, y luego aplica la misma corrección al renderizador por software. Compartir la regla es importante porque la preparación de hardware y la rasterización por software no deberían estar en desacuerdo sobre si el invitado envió un primitivo que se puede dibujar. El parche también simplifica los cálculos de la caja delimitadora y de la tijera, de modo que la decisión de cobertura y los límites que produce sigan la misma geometría."
+    },
+    {
+      "type": "heading",
+      "text": "La optimización de líneas horizontales y la limpieza de aserciones permanecen como secundarias"
+    },
+    {
+      "type": "paragraph",
+      "text": "El rasterizador de software obtiene una pequeña optimización para líneas horizontales, y se ajusta una afirmación para evitar falsos positivos. Estos son limpiezas relacionadas alrededor de los límites corregidos, no evidencia de una reescritura amplia del rendimiento. El objetivo declarado es la precisión, con poco cambio de rendimiento esperado. El problema #8677 es el caso límite concreto, mientras que la discusión de trabajos anteriores proporcionó escenarios adicionales."
+    },
+    {
+      "type": "heading",
+      "text": "Las imágenes de regresión necesitan combinaciones de subpíxel, tijera y antialiasing (AA)"
+    },
+    {
+      "type": "paragraph",
+      "text": "Puntos de prueba, líneas horizontales, verticales y de longitud casi cero en coordenadas fraccionarias con AA habilitado y deshabilitado. Muévalos a través de cada borde de tijera y compare la salida de hardware y software en resoluciones nativas y escaladas. Incluya primitivas que deberían desaparecer completamente y otras que ganan un solo píxel cubierto mediante redondeo. Las capturas de cuadro deben mostrar decisiones idénticas de aceptar/rechazar; las verificaciones de rendimiento solo necesitan confirmar que la nueva prueba y la ruta rápida horizontal no introducen regresiones medibles."
+    },
+    {
+      "type": "callout",
+      "text": "La degeneración es una cuestión de rasterización, no solo una cuestión de geometría: el redondeo y el AA pueden transformar una primitiva matemáticamente delgada en cobertura real de píxeles."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13377",
+      "label": "Lee la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

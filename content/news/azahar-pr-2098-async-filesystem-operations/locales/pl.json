@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar przenosi wolne żądania systemu plików 3DS poza wątek emulacji bez równoczesnego uruchamiania FS_USER",
+  "summary": "Dedykowana kolejka z jednym pracownikiem pozwala wątkom gościa kontynuować pracę podczas kosztownych operacji na pamięci masowej, jednocześnie zachowując serializację wymaganą przez niebezpieczną dla wątków usługę FS_USER Azahar.",
+  "heroAlt": "Azahar asynchroniczne żądanie pobrania systemu plików pokazujące projekt dedykowanego pracownika FS_USER",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "asynchroniczny system plików",
+    "ThreadWorker",
+    "Android przycięcia magazynu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Storage",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "rdzeń: Dodaj asynchroniczne operacje systemu plików"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wstrzymanie pamięci hosta nie powinno zamrażać każdego emulowanego wątku aplikacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Niektóre wywołania systemu plików 3DS mogą trwać na tyle długo na hoście, że stają się zauważalnym zacinaniem, szczególnie przez dostawców pamięci masowej Android używanych w wersji Google Play. Uruchamianie operacji inline blokuje wątek emulacji, nawet gdy inne zadania gościa mogłyby kontynuować pracę. Pull request #2098 zmienia tę granicę harmonogramu: IPC systemu plików może uśpić wątek wywołującego gościa, podczas gdy operacja hosta działa gdzie indziej."
+    },
+    {
+      "type": "heading",
+      "text": "Jednowątkowy worker rozwiązuje problem bezpieczeństwa FS_USER"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar nie mógł po prostu wysyłać każdego żądania do ogólnego puli wątków, ponieważ FS_USER i jego stan archiwum nie są bezpieczne wątkowo. Zmiana daje usłudze dedykowanego ThreadWorkera zawierającego dokładnie jeden wątek roboczy. Żądania są asynchroniczne względem emulacji, ale sekwencyjne względem siebie nawzajem. To zachowuje założenia dotyczące kolejności usługi bez zmuszania niezwiązanych wątków emulowanych do oczekiwania na system plików hosta."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker oddziela pracę hosta od odpowiedzi IPC"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext zyskuje pomocnika, który opakowuje operację zapisu w zadanie pakietowe, umieszcza je w kolejce na wybranym wątku roboczym i przechowuje przyszłość dla ukończenia. Wątek klienta gościa śpi, gdy zadanie jest wykonywane. Po zakończeniu Azahar budzi ten wątek i tworzy wynik IPC po stronie emulatora. Dostępna pozostaje synchronizowana metoda awaryjna dla deterministycznego trybu operacji asynchronicznej oraz w przypadkach, gdy ustawienie jest wyłączone."
+    },
+    {
+      "type": "heading",
+      "text": "Łatka unika płacenia kosztów kolejkowania przy każdym drobnym odczycie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementacja jest selektywna. Otwieranie archiwum, usuwanie, zmiana nazwy, katalog oraz powiązane ścieżki FS_USER mogą korzystać z dedykowanego wątku roboczego. Buforowane operacje na plikach podążają ścieżką asynchroniczną, gdy dane nie są gotowe, podczas gdy wiele małych niebuforowanych odczytów i zapisów pozostaje synchroniczne, ponieważ komunikacja wątków mogłaby kosztować więcej niż I/O. Zamknięcie pliku i zmiana rozmiaru również respektują to ustawienie, a destruktor FS_USER czeka na oczekujące żądania zanim usługa zniknie."
+    },
+    {
+      "type": "heading",
+      "text": "Mniej zacięć może odbywać się kosztem nieco dłuższego ładowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pozwalanie innym wątkom gości na działanie zmienia to, kiedy widoczny jest postęp, a nie to, jak szybko kończy się działanie urządzenia pamięci masowej hosta. Źródło oczekuje zatem dużej redukcji przestojów związanych z systemem plików, ale przyznaje, że niektóre ładowania mogą trwać nieznacznie dłużej. Opcja jest domyślnie włączona w ustawieniach przechowywania Android i Qt, co sprawia, że kompromis jest widoczny i odwracalny, zamiast ukrywać go w specyficznej dla platformy kompilacji."
+    },
+    {
+      "type": "heading",
+      "text": "Testowanie poprawności musi trwać dłużej niż operacja i usługa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przydatny test porównawczy rejestruje czasy ramek i czas ładowania z włączoną i wyłączoną opcją, używając tej samej lokalizacji pamięci. Zakres testowania poprawności powinien pokrywać otwarcia, odczyty katalogów, żądania zmiany nazw i usuwania; zamknąć tytuł, podczas gdy praca jest w kolejce; i sprawdzić hashe danych zapisu po zakończeniu. Wolne przechowywanie dokumentów Android jest podstawowym przypadkiem wydajności, ale lokalne i sieciowe ścieżki biurkowe są wartościowe do ujawniania regresji w kolejności, zamykaniu i propagacji błędów."
+    },
+    {
+      "type": "callout",
+      "text": "Kluczowy wybór projektowy to zserializowana asynchroniczność: jeden pracownik FS_USER usuwa zatrzymania w wątku emulacji, nie udając, że usługa systemu plików jest bezpieczna dla dostępu równoległego."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Przejrzyj implementację pracownika FS_USER, wybudzania IPC i ustawień pamięci masowej Azahar"
+    }
+  ]
+}

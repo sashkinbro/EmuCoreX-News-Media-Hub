@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar protège le remplissage de couleur Vulkan lorsqu'un plugin 3GX arrive avant le framebuffer",
+  "summary": "Un ordre de démarrage exposé par PokeReader peut appeler FillScreen avant que l'image cible n'existe ; le rendu considère désormais cette image manquante comme un état de configuration différée au lieu de provoquer un crash.",
+  "heroAlt": "Preuve provenant de la pull request Azahar #2241 : video_core : vulkan : Correction du crash lors du remplissage de couleur avant la configuration du framebuffer",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core : vulkan : Correction du crash lors du remplissage de couleur avant la configuration du framebuffer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un plugin peut demander la couleur de l'écran avant que Vulkan possède une image"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'activation du chargeur 3GX avec PokeReader a provoqué un crash Windows systématique sur le système AMD Vulkan du rapporteur après la mise en œuvre de FillScreen. Les journaux et un git bisect ont identifié la régression à cette mise en œuvre. L'ordre des clés est inhabituel mais valide pour le frontend : le démarrage du plugin atteint la configuration de remplissage des couleurs avant que l'image Vulkan de la texture du framebuffer ait été créée."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture vérifie maintenant la ressource, et non l'intention"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2241 ajoute une garde étroite dans RendererVulkan::ConfigureFramebufferTexture. Si texture.image est absente, la fonction retourne avant de configurer ou de remplir le framebuffer. Un appel ultérieur avec une image valide suit le chemin normal. La correction ne crée pas d'image factice ni ne suppose de dimensions, évitant une ressource de remplacement dont la disposition et la durée de vie pourraient ne pas correspondre au vrai framebuffer."
+    },
+    {
+      "type": "heading",
+      "text": "L’échec peut expliquer des rapports au-delà d’un GPU, mais les preuves restent limitées"
+    },
+    {
+      "type": "paragraph",
+      "text": "La source cite PokeReader, Windows, Vulkan et potentiellement AMD comme la combinaison reproductible et relie plusieurs problèmes à un comportement possiblement associé. Ces rapports sont des pistes, pas des corrections confirmées. L'invariant prouvé est qu'aucune opération Vulkan ne peut utiliser une image de framebuffer avant qu'elle n'existe. D'autres plantages nécessitent leurs propres journaux pour établir s'ils atteignent le même état précoce de FillScreen."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de régression doivent forcer à la fois l'ordre de remplissage précoce et normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lancer avec le support 3GX activé et désactivé, avec PokeReader sélectionné, sur AMD, NVIDIA et mobile Vulkan lorsque disponible. Instrumenter la création d'image et l'ordre de FillScreen, vérifier que l'appel précoce se termine sans erreurs de validation, et confirmer qu'un remplissage initialisé ultérieurement efface toujours l'écran. Répéter le déchargement du plugin, le redémarrage du jeu, la recréation de surface et le changement de backend. L'absence de plantage est insuffisante si la protection laisse un framebuffer non rempli ou obsolète de manière permanente."
+    },
+    {
+      "type": "callout",
+      "text": "Le moteur de rendu distingue désormais un remplissage demandé d'une cible initialisée ; le travail Vulkan ne commence qu'après que l'image existe réellement."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications du code source"
+    }
+  ]
+}

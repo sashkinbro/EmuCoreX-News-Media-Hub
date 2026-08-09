@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14475-controller-navigation-breaking-after-b",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 baut die Big-Picture-Controller-Navigation nach einer Größenänderung des Fensters wieder auf",
+  "summary": "Veraltete ImGui-Navigationsrechtecke, nicht der Vollbildmodus selbst, führten dazu, dass der Fokus nach einer erheblichen Größenänderung nicht mehr bewegt werden konnte; eine Größenänderung erzwingt jetzt, dass der Navigationszustand dem neuen Layout entspricht.",
+  "heroAlt": "Visuelle Beweise aus dem PCSX2 Pull-Request #14475: FullscreenUI: Behebung von Problemen mit der Controller-Navigation nach Größenänderung des Big-Picture-Modus-Fensters",
+  "searchKeywords": [
+    "PCSX2",
+    "Big Picture-Modus",
+    "Controller-Navigation",
+    "Fenstergrößenänderung",
+    "ImGui"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14475": "FullscreenUI: Behebung von Problemen mit der Controller-Navigation nach Größenänderung des Big-Picture-Modus-Fensters"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Vollbildmodus sah verdächtig aus, weil er normalerweise das Fenster vergrößerte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Controller-Navigation im Big-Picture-Modus konnte unmittelbar nach dem Umschalten auf den Vollbildmodus stoppen. Tests auf verschiedenen Geräten zeigten, dass der Vollbildzustand nur der Auslöser war, den die meisten Menschen bemerkten: Die eigentliche Bedingung war eine ausreichend große Änderung der Fenstergröße. Handheld-Fenster änderten sich oft zu wenig, um das Problem zu reproduzieren, während ein Desktop-Fenster viel kleiner skaliert wurde, bevor das Umschalten zuverlässig fehlschlug."
+    },
+    {
+      "type": "heading",
+      "text": "NavRectRel beschrieb weiterhin Widgets mit den alten Abmessungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "ImGui speichert relative Navigationsrechtecke, die verwendet werden, um zu entscheiden, welches Element den Fokus erhält, wenn ein Controller nach oben, unten, links oder rechts bewegt wird. Nachdem das Layout in einer neuen Größe neu aufgebaut wurde, konnten diese NavRectRel-Werte veraltet bleiben. Fokusberechnungen bezogen sich dann auf eine Geometrie, die nicht mehr mit den sichtbaren Steuerelementen übereinstimmte. Das Drücken bestimmter Richtungen konnte zufällig die Navigation wiederherstellen, was erklärt, warum der Fehler manchmal von selbst zu verschwinden schien."
+    },
+    {
+      "type": "heading",
+      "text": "Eine Größenänderung macht nun den Navigationszustand an der UI-Grenze ungültig"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull-Anfrage #14475 ändert ImGuiManager, sodass jede Größenänderung eines Big-Picture-Fensters eine Neinitialisierung der Navigation erzwingt. Die Korrektur fügt keine Zeitverzögerungen oder Sonderfälle für den Vollbildmodus hinzu; sie reagiert auf den Zustandswechsel, der die zwischengespeicherten Rechtecke ungültig macht. Die Reparatur im Resize-Pfad zu belassen deckt auch manuelles Fenstergrößenänderungen, Auflösungsänderungen und andere Übergänge ab, die das Layout neu aufbauen, ohne den Vollbildmodus zu ändern."
+    },
+    {
+      "type": "heading",
+      "text": "Die Regressionsfolge erfordert Änderungen sowohl in größeren als auch kleineren Dimensionen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Im vorherigen Code sollten Tester das Big-Picture-Fenster erheblich verkleinern und dann den Vollbildmodus umschalten, um den hängenbleibenden Controller-Fokus zu reproduzieren. Im korrigierten Pfad muss die Navigation nach wiederholtem Vergrößern, Verkleinern und Vollbildübergängen fortgesetzt werden. Die Matrix sollte Desktop- und Handheld-große Fenster, Mausinteraktion zwischen Controller-Bewegungen und jede Tab-Kante beinhalten. Die Fokusposition kann absichtlich zurückgesetzt werden, darf jedoch niemals außerhalb des neu aufgebauten Layouts zeigen oder eine Wiederherstellungseingabe erfordern."
+    },
+    {
+      "type": "callout",
+      "text": "Die Korrektur folgt dem eigentlichen Ungültigkeitsereignis: Eine Größenänderung des Fensters baut das Layout neu auf, daher muss die Geometrie der Steuerungsnavigation damit neu aufgebaut werden."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14475",
+      "label": "Lesen Sie die PCSX2 Ingenieurdiskussion und die Quellcodeänderungen"
+    }
+  ]
+}

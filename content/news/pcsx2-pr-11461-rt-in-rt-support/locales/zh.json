@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-11461-rt-in-rt-support",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 学会了当游戏在现有渲染目标内绘制时",
+  "summary": "渲染目标内渲染目标追踪取代了偏移页更新和半帧重排的精确地址假设，恢复了以前只出现在角落或屏幕一半的效果。",
+  "heroAlt": "来自 PCSX2 pull request #11461 的视觉证据：GS/HW: 实现 RT in RT 支持",
+  "searchKeywords": [
+    "PCSX2",
+    "渲染目标",
+    "纹理缓存",
+    "RT 中的纹理",
+    "后处理"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-11461": "GS/HW: 实现 RT in RT 支持"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "精确起始地址匹配会遗漏较大目标的子区域"
+    },
+    {
+      "type": "paragraph",
+      "text": "一些PlayStation 2游戏会将GS指向先前创建的渲染目标中的某个地址中间位置。它们可能会更新一页、重新排列图像的下半部分，或采样用于后期处理的偏移区域。旧的硬件路径主要只有在目标的起始地址完全匹配时才识别它们。因此，有效的客户操作可能会变成左上角的伪影、半屏效果、缺失的覆盖层或闪烁。"
+    },
+    {
+      "type": "heading",
+      "text": "RT-in-RT识别将偏移映射回父目标"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #11461增加了对地址位于现有渲染目标内部的绘制和重排的支持。纹理缓存和硬件渲染器可以将该子范围视为父图像的一部分，同时调整源无效化，以便后续读取不重用过时页面。该工作涵盖了常见的GS状态、着色器、硬件修补路由和GameDB设置，因为仅仅识别是不够的，如果缓存的范围仍然保留旧的所有权。"
+    },
+    {
+      "type": "heading",
+      "text": "兼容性证据涵盖了后期效果和分屏渲染"
+    },
+    {
+      "type": "paragraph",
+      "text": "报告的改进包括《战地2》、《死亡度量》、《龙战纪》、《杀手》、《Jak X》、《金刚》、《猎杀2》、《山脊赛车V》、《铁拳5》、《时间危机3》、《古墓丽影：传奇》、《都市统治》等众多游戏。受影响的视觉效果不是单一的通用症状：雾气、泛光、通道交错、阴影、夜视、玩家二号灯光、火焰、棕褐色场景以及半屏书籍效果都以不同方式影响偏移目标。"
+    },
+    {
+      "type": "heading",
+      "text": "在RT中对纹理的门控以及剩余交错案例定义了边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "路径被RT中的纹理门控，因为在不兼容的游戏中保持其活跃可能会破坏渲染。《Pachipara》、《Raw Danger》和《Steambot Chronicles》有所改善，但仍需要手动深度反混排或处理不寻常的交错，因此需要进一步工作。因此回归测试应比较原生和升级捕获，只移除源中标记为过时的CRC修补，并重新测试高失效场景，而不是将广泛的游戏列表变为通用兼容性承诺。"
+    },
+    {
+      "type": "callout",
+      "text": "架构上的优势是地址范围感知：即使游戏从其中的某个页面开始下一次操作，目标仍可以保持相同的镜像。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/11461",
+      "label": "阅读 PCSX2 工程讨论和源代码变更"
+    }
+  ]
+}

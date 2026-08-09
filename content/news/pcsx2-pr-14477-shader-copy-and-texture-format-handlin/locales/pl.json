@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 przenosi politykę konwersji tekstur za GSDevice",
+  "summary": "StretchRectAuto, CreateCompatible i ShaderConvertSelector reorganizują obsługę kopiowania shaderów i formatów głębokości, tak aby renderer sprzętowy mógł żądać konwersji bez znajomości szczegółów każdego pipeline'u backendu.",
+  "heroAlt": "Dowody wizualne z pull requesta PCSX2 #14477: GS/HW: Refaktoryzacja kopiowania shaderów i obsługi formatów tekstur.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "konwersja tekstur"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: Refaktoryzacja kopiowania shaderów i obsługi formatów tekstur."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache przenosił decyzje należące do granicy backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kopie shaderów w PCSX2 muszą wybierać konwersję na podstawie formatu źródłowego, formatu docelowego, emulowanej liczby bitów na piksel oraz filtrowania. Przed pull requestem #14477, GSTextureCache i GSRendererHW widziały zbyt wiele tej mechaniki. Refaktoryzacja przenosi wybór za GSDevice, dzięki czemu kod renderujący na wyższym poziomie opisuje kopiowanie, którego potrzebuje, zamiast samodzielnie wybierać szczegóły shaderów specyficzne dla backendu."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto i CreateCompatible wyrażają operację, a nie API"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto przyjmuje dwie tekstury i informacje o emulowanym formacie, a następnie wybiera shader konwersji wewnątrz GSDevice. CreateCompatible tworzy teksturę odpowiadającą formatowi istniejącej tekstury. ShaderConvertSelector dodaje bity modyfikatora, które mogą reprezentować powiązane konwersje bez mnożenia niepowiązanych punktów wejścia shaderów. Razem przygotowują głębię przechowywaną jako kolor R32 oraz przyszłe ścieżki głębi całkowitoliczbowej, zachowując jednocześnie nieaktywną obsługę głębi-koloru ROV za tym samym interfejsem."
+    },
+    {
+      "type": "heading",
+      "text": "Zmiany nazw czynią intencję głębokości i prymitywu-ID wyraźną"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka dostosowuje shadery konwersji OpenGL bardziej dokładnie do Vulkan, zmienia nazwę inicjalizacji stencil-image na inicjalizację primitive-ID oraz zmienia etykietę rgba8_16bits na rgb5a1_16bits. Float32 staje się DepthColor, podczas gdy nazwy selektorów FLOAT32, FLOAT24 i FLOAT16 stają się DEPTH32, DEPTH24 i DEPTH16. Filtrowanie biliniowe zmienia się również z Boolean na enum, pozostawiając miejsce na tryby jawne zamiast kolejnej przeciążonej flagi."
+    },
+    {
+      "type": "heading",
+      "text": "Czysty refactor wymaga testowania tożsamości wyjściowej na każdym rendererze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Określony kontrakt to identyczne wyjście w porównaniu do poprzedniego kodu. Zatem uruchomienia dump powinny porównywać wyniki klatek w Direct3D, OpenGL, Vulkan i Metal z różnymi formatami tekstur, kopiami głębokości, natywną rozdzielczością i skalowaniem. Metal już przeszedł zgłoszoną kontrolę dump-run, ale szeroki zestaw plików oznacza, że kompilacja shaderów i wybór kopii musi być również testowana na innych sprzętowych backendach. Każda różnica w pikselach wymaga wyjaśnienia zanim późniejsze prace ROV użyją nowej ścieżki."
+    },
+    {
+      "type": "callout",
+      "text": "Obietnica widoczna dla użytkownika jest celowo ostrożna: nie ma jeszcze nowego efektu, ale istnieje węższa granica renderera/backendu, którą późniejsze formaty głębokości mogą rozszerzać bez powielania polityki konwersji."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "Przeczytaj dyskusję inżynieryjną PCSX2 i zmiany w źródle"
+    }
+  ]
+}

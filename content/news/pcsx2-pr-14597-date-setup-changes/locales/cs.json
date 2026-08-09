@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 způsobuje, že nastavení DATE závisí na překrytí alfa testu",
+  "summary": "Zaměřené rozhodnutí GS odděluje složité alfa-testované vykreslování, které může bezpečně použít DATE, od překrývajícího se vykreslování, které vyžaduje bariéru a musí se této cestě vyhnout.",
+  "heroAlt": "Vizualní důkaz z pull requestu PCSX2 č. 14597: GS/HW: Změny nastavení DATE.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "alfa test",
+    "texturová bariéra",
+    "GS renderer"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW: Změny nastavení DATE."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Složitý alfa test nestačí k výběru cesty DATE"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulace testu cílové alfy (Destination Alpha Test Emulation) interaguje jak s alfa testem kreslení, tak s tím, zda čte nebo zapisuje do překrývající se oblasti. Předchozí nastavení PCSX2 považovalo podmínku složité alfy za příliš obecnou. Pull request #14597 přidává do rozhodování překryv, protože případ bez překryvu může použít DATE one bez nebezpečí pořadí, které se objeví, když se stejná oblast účastní kresby."
+    },
+    {
+      "type": "heading",
+      "text": "DATE one a DATE bariéra se stávají vzájemně záměrnými volbami."
+    },
+    {
+      "type": "paragraph",
+      "text": "Hardwarový renderer nyní povoluje DATE one, když složitý alfa test nemá překryv. Pokud je přítomen překryv, tato cesta je potlačena a místo ní je povolena DATE bariéra. Nejedná se o nový renderovací efekt; jde o opravu směrování uvnitř GSRendererHW, takže implementace zvolené pro pravidlo cílové alfy odpovídá skutečnému vzoru závislostí kresby."
+    },
+    {
+      "type": "heading",
+      "text": "Změna jednoho souboru má úzký, ale viditelný povrch regrese."
+    },
+    {
+      "type": "paragraph",
+      "text": "Protože patch mění pouze logiku nastavení, dobrá kontrola by měla identifikovat, kterou větev každý ovlivněný draw bere, místo porovnávání nesouvisejícího výstupu rendereru. Riziko je symetrické: vynucení bariéry na neškodnou, nepřekrývající se práci může přidat náklady, zatímco umožnění DATE jedné přes překrývající se složitý alpha test může produkující nesprávné masky nebo stíny. Větev se proto musí shodovat s vypočítaným překrytím u každého draw."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 a Energy Airforce zajišťují vizuální kontroly."
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdroj poskytuje porovnání stínů pro Persona 4 a Energy Airforce a Direct3D 11 záznam běhu pokrývající další změny bariéry a kopírování. Validace by měla přehrát tyto scény se stejným rendererem a nastaveními, zaznamenat DATE režim, stav složitého alpha, překrytí a výběr bariéry, a poté opakovat na jiném hardwarovém backendu. Očekávaný výsledek je stejný obraz s rozhodnutím se měnícím pouze při změně překrytí."
+    },
+    {
+      "type": "callout",
+      "text": "Pravidlo je podmíněné, nikoli globální: složité alfa testování může použít DATE jedno bez překrytí, ale překrývající se práce vyžaduje cestu bariéry."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdroje"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "ar",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP يصلح فخ إنشاء الأجهزة Vulkan على أجهزة Mali",
+  "summary": "الملف التعريفي libretro يختار الآن قناة ميزة واحدة تمامًا Vulkan، مما يفي بالقاعدة التي تنص على أن pEnabledFeatures يجب أن تكون null عند ربط VkPhysicalDeviceFeatures2.",
+  "heroAlt": "دليل المصدر من طلب السحب PPSSPP #21956: Libretro: إصلاح Vulkan تعطل الإطلاق على أجهزة Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "رسومات",
+    "emulation": "محاكاة"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: إصلاح Vulkan تعطل الإطلاق على أجهزة Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "سائقو التحمل أخفوا مجموعة معلومات إنشاء غير صالحة"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan يوفر مؤشر pEnabledFeatures القديم وبنية VkPhysicalDeviceFeatures2 القابلة للتوسع في pNext. عندما تكون Features2 موجودة، تتطلب المواصفة أن يكون المؤشر القديم فارغًا. يمكن لملف التغليف libretro الخاص بـ PPSSPP ملء كلاهما مع إضافة القدرات المطلوبة من الواجهة الأمامية. بعض برامج التشغيل قبلت طلب الجهاز المعطوب، لكن Mali أعاد VK_ERROR_INITIALIZATION_FAILED، لذلك فشل جوهر Vulkan-rendered قبل بدء تنفيذ اللعبة."
+    },
+    {
+      "type": "heading",
+      "text": "ملف التغليف الآن يكتشف أي مسار للميزة اختاره الجوهر"
+    },
+    {
+      "type": "paragraph",
+      "text": "يستعرض طلب السحب #21956 سلسلة pNext لإنشاء الجهاز ويسجل ما إذا كانت تحتوي على VkPhysicalDeviceFeatures2. إذا تم العثور عليها، يتم دمج الميزات المطلوبة من الواجهة الأمامية في تلك البنية ويصبح newInfo.pEnabledFeatures صريحًا فارغًا. إذا كانت غير موجودة، يحافظ ملف التغليف على السلوك القديم الحالي عن طريق نسخ أو إنشاء VkPhysicalDeviceFeatures وتعيين المؤشر. المساران القانونيان Vulkan هما بالتالي متبادلان الاستبعاد."
+    },
+    {
+      "type": "heading",
+      "text": "تمت التحقق من صحة كل من الجوال الصارم والمتساهل GPUs"
+    },
+    {
+      "type": "paragraph",
+      "text": "اختبر المؤلف عرض الأجهزة على Android 14 باستخدام جهاز Mali-G615 وAndroid 13 باستخدام جهاز Snapdragon 865 Adreno. كلاهما تم تشغيله وتشغيله. على نظام Mali، كشف تمرير إنشاء الجهاز عن مشكلة سعة سلسلة تبديل افتراضية منفصلة تمت معالجتها بواسطة تعديل آخر؛ الحفاظ على هذا التمييز مهم لأن حل عقبة بدء التشغيل واحدة لا يجب أن يؤدي إلى إدعاء Hub أن كل فشل لاحق في Vulkan له نفس السبب."
+    },
+    {
+      "type": "heading",
+      "text": "يجب أن تختبر اختبارات سلسلة الميزات ملكية الهيكل"
+    },
+    {
+      "type": "paragraph",
+      "text": "التقاط VkDeviceCreateInfo مع طبقات التحقق من الصحة لنواة قديمة، ونواة Features2، وسلاسل تحتوي على هياكل ميزات إضافية، وميزات اختيارية غائبة. يُكرر ذلك على Mali وAdreno وسطح المكتب Vulkan والعديد من إصدارات RetroArch. تحقق من الاحتفاظ بالبتات المطلوبة بدلاً من الكتابة عليها، وبقاء مؤشرات pNext صالحة خلال vkCreateDevice، وأن pEnabledFeatures يكون فارغًا فقط في حالة Features2. كما يتم اختبار مسارات البرنامج وOpenGL لضمان أن تهيئة الغلاف لا تفترض Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "تفاوض خصائص Vulkan له مسارين قانونيين؛ دمجهما قد ينجح على السائقين المتساهلين، لكنه لا يزال غير صالح ويفشل على الأجهزة الأكثر صرامة."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "اقرأ مناقشة هندسة PPSSPP وتغييرات المصدر"
+    }
+  ]
+}

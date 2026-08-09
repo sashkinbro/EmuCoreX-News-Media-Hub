@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-two-ps2-library-folders-without-duplicates",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Gabungkan dua folder perpustakaan PS2 dengan tabel konflik hash",
+  "summary": "Konsolidasikan dua root yang dapat dimainkan ke tujuan baru dengan mengklasifikasikan hash yang identik, revisi regional, set multi-disc, dan salinan kerja yang diperbaiki sebelum EmuCoreX memindai folder yang digabungkan.",
+  "heroAlt": "Frontend Pelestarian Media menampilkan bidang identitas media optik yang digunakan untuk membedakan disk sumber selama penggabungan",
+  "searchKeywords": [
+    "gabungkan folder game PS2",
+    "deduplicate perpustakaan EmuCoreX",
+    "varian wilayah PS2",
+    "tabel konflik hash",
+    "set multi-disc"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Perpustakaan",
+    "integrity": "Integritas"
+  },
+  "sourceLabels": {
+    "powershell-hash": "Referensi inventaris SHA-256",
+    "pcsx2-discs": "Struktur set-disc PS2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gabungkan ke dalam folder ketiga, jangan pernah ke salah satu sumber"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penggabungan yang aman mempertahankan Folder A dan Folder B sambil membangun Folder C yang kosong. Lokasi ketiga itu membuat setiap keputusan dapat dibalik. Tabrakan nama file hanya merupakan sinyal pertama: hash yang identik dapat menggunakan nama yang berbeda, sementara nama yang cocok dapat menyembunyikan wilayah, revisi, disk, atau salinan kerja yang dipatch secara eksternal. Oleh karena itu, tabel konflik harus menyimpan path, bytes, SHA-256, serial, wilayah, dan peran dalam satu set multidisk."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan biarkan pengelola file menjawab Ganti, Lewati, atau Simpan keduanya untuk seluruh operasi. Tombol-tombol itu tidak tahu salinan mana yang merupakan master yang diverifikasi, mana yang dipatch, atau apakah Disk 2 harus berada di samping Disk 1."
+    },
+    {
+      "type": "heading",
+      "text": "Buat inventaris untuk A dan B"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Laporan SHA-256 hanya-baca untuk kedua sumber root.",
+        "Kapasitas terpisah yang cukup untuk tujuan deduplikasi lengkap.",
+        "Buat log dump atau catatan serial untuk pasangan regional dan revisi yang ambigu.",
+        "Konvensi penamaan yang mencakup nomor disk bila diperlukan.",
+        "Kedua sumber root sementara dihapus dari pemindaian EmuCoreX selama penerimaan akhir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Klasifikasikan tabrakan sebelum menyalin"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Gabungkan kedua inventaris berdasarkan hash untuk mengidentifikasi file yang identik secara byte tanpa memandang nama.",
+        "2. Gabungkan kembali berdasarkan nama file yang dinormalisasi untuk menampilkan konflik dengan nama sama tetapi hash berbeda.",
+        "3. Untuk hash yang identik, pilih satu nama file kerja kanonik dan catat sumber yang menyediakannya.",
+        "4. Untuk hash yang berbeda, periksa serial, wilayah, revisi, nomor disc, dan status patch; simpan setiap varian yang sah dengan nama yang jelas.",
+        "5. Salin file yang diklasifikasikan ke Folder C yang kosong dalam kelompok, kemudian hitung laporan hash tujuan yang baru.",
+        "6. Bandingkan C dengan tabel konflik dan verifikasi bahwa setiap varian yang direncanakan dan komponen multidisc ada satu kali.",
+        "7. Otorisasi hanya Folder C di EmuCoreX, segarkan, dan uji satu entri dari setiap kelas konflik.",
+        "8. Pertahankan A dan B dalam mode baca-saja sampai C bertahan setelah restart dan setiap identitas regional atau multidisk benar."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Gambar yang sudah dipatch tidak boleh menggantikan master preservasi yang belum disentuh. Utamakan patch eksternal jika didukung dan simpan master di luar pemindaian aktif. Jika file cue merujuk ke trek, seluruh set menerima satu keputusan konflik; menyalin hanya cue atau BIN terbesar membuat item perpustakaan yang menyesatkan tetapi tidak lengkap."
+    },
+    {
+      "type": "heading",
+      "text": "Tutup setiap baris di tabel konflik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebuah penggabungan selesai ketika setiap berkas input memiliki disposisi yang didokumentasikan dan setiap output memiliki catatan integritas."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Setiap grup hash-identik memberikan satu salinan aktif yang dimaksudkan.",
+        "Tabrakan hash yang berbeda memiliki penjelasan eksplisit tentang serial, wilayah, revisi, atau patch.",
+        "Setiap set multidisc dan cue/bin lengkap.",
+        "Hash tujuan sesuai dengan salinan input yang dipilih.",
+        "EmuCoreX menunjukkan judul yang direncanakan tanpa akar sumber yang tumpang tindih."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Konflik yang memerlukan jeda"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Dua file memiliki judul yang sama tetapi tidak memiliki bukti seri: simpan keduanya di luar root aktif sampai diidentifikasi.",
+        "Hash tujuan tidak cocok dengan sumber mana pun: ulangi penyalinan dari file terverifikasi yang dipilih.",
+        "Sebuah cue boot tanpa audio: salah satu trek yang direferensikan diubah namanya atau dihilangkan.",
+        "Favorit terlampir ke wilayah yang salah: perbaiki identitas gambar sebelum memindahkan simpanan atau profil."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Buang C dan kembalikan ke peta sumber"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hapus hak Folder C, segarkan, dan berikan kembali otorisasi untuk A dan B persis seperti semula. Karena tidak ada sumber yang dimodifikasi, tidak diperlukan salinan balik. Pertahankan tabel konflik, tandai baris yang disengketakan, dan bangun kembali C hanya setelah identitas tersebut diselesaikan."
+    },
+    {
+      "type": "heading",
+      "text": "Deduplikasi dan retensi cadangan adalah keputusan yang berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Satu salinan aktif per hash mencegah kekacauan perpustakaan, tetapi salinan offline kedua di perangkat fisik lain adalah ketahanan yang sah. Tabel hash harus membedakan Aktif, Master Pelestarian, dan Cadangan agar pembersihan tidak pernah menghapus salinan terakhir yang dapat dipulihkan."
+    },
+    {
+      "type": "link",
+      "text": "Gunakan referensi perintah resmi SHA-256",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

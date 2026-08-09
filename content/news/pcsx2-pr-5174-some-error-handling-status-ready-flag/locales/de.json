@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 gibt ungültige CDVD-Anfragen einen definierten Laufwerksstatus-Ausgang",
+  "summary": "Null-Längen-, negative und über das Ende hinausgehende Lesevorgänge aktualisieren jetzt kohärent den Bereit-, Status-, Fehler- und Interrupt-Status, zusammen mit korrigierten CdStop- und Schacht-Übergängen.",
+  "heroAlt": "Quellenbeleg aus PCSX2 Pull Request #5174: CDVD: Einige Fehlerbehandlungen, Status+Bereit-Flag-Änderungen und Behebung von CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "Sektoranzahl",
+    "Laufwerksstatus",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Speicher",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Einige Fehlerbehandlungen, Status+Bereit-Flag-Änderungen und Behebung von CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mehrere Spiele senden Disc-Befehle, die umständlich, aber beobachtbar sind"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, das Aberanbou-Princess-Trial, die Evergrace-Demo und der Animation Battle-Übungssektor zählen oder adressieren Bereiche, die der ältere CDVD-Fluss von PCSX2 nicht sauber abgeschlossen hat. Eine null oder negative Zählung könnte einen Lesepfad aktiv halten, während eine Adresse jenseits der Disc keine konsistente Fehlerübergang hatte. Das Ergebnis reichte von ungültigem LSN-Verhalten über TLB-Misses, fehlgeschlagenes Booten bis hin zu späterem Einfrieren von Filmen."
+    },
+    {
+      "type": "heading",
+      "text": "Bereitschaft und Status werden explizite Laufwerkszustandszuweisungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #5174 unterscheidet die Bits für bereit, beschäftigt, datenbereit, geräteverbunden und Fehler, anstatt wiederholt ORing zu verwenden oder ein Flag vor Ort zu löschen. cdvdUpdateStatus erfasst den aktuellen und den persistierenden Status, während der Abschluss von Befehlen einen gemeinsamen IRQ-Pfad verwendet. Die Rückrufe für Schublade öffnen, schließen, suchen, lesen, pausieren, stoppen, abbrechen und neue Scheibe veröffentlichen daher ein konsistentes Paar von Status- und Bereitschaftswerten, anstatt Bits einer vorherigen Operation übrig zu lassen."
+    },
+    {
+      "type": "heading",
+      "text": "Ungültige Zählungen und Disc-Grenzen beenden nun den Befehl"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Laufwerk zeichnet MaxSector von der eingeklebten Disc auf und überprüft einen Lesevorgang, bevor es darüber hinaus fortfährt. Eine Anforderung, die außerhalb des Bereichs liegt, setzt einen Fehler auf der äußersten Spur, kehrt zu Pause zurück, löscht das DMA-Warten und löst die Befehlsunterbrechung aus. Eine Sektoranzahl von null oder darunter wird ebenfalls abgeschlossen und kehrt zu Bereit zurück, anstatt eine weitere Übertragung zu planen. CdStop- und SCMD-Ergebnisbuchungen werden innerhalb desselben Zustandsautomaten-Bereinigungsprozesses korrigiert."
+    },
+    {
+      "type": "heading",
+      "text": "Speicherzustand- und Multi-Spiel-Tests müssen Flags überprüfen, nicht nur den Bootvorgang."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderung des Zustandslayouts erforderte eine savestate-Versionserhöhung, daher müssen alte und neue Zustandsbehandlungen explizit abgedeckt sein. Reproduzieren Sie die genannten Spiele und protokollieren Sie Befehl, LSN, Anzahl, Bereit, Status, Fehler, IRQ und DMA-Zustand. Testen Sie Tray-Änderungen, Stop, Abbruch, gültige Ende-der-Disc-Lesevorgänge und absichtlich ungültige Anfragen. Einige Quellfälle erforderten weiterhin separate Spiel-Patches oder führten später zu FMV-Hängern; diese Einschränkungen müssen dokumentiert bleiben und dürfen nicht dieser Zustandsbereinigung zugeschrieben werden."
+    },
+    {
+      "type": "callout",
+      "text": "Die Verbesserung ist ein vollständiger Ausstiegspfad: Selbst eine fehlerhafte Festplattenanforderung muss dafür sorgen, dass Laufwerk, DMA-Engine und Interrupt-Controller sich darüber einig sind, was passiert ist."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

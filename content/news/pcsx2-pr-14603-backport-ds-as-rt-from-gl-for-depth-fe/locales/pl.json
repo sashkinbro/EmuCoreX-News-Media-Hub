@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 wymienia Direct3D 11 kopii głębi na szybsze kopie celów renderowania",
+  "summary": "Ścieżka głębi jako cel renderowania wykonuje więcej operacji kopiowania, ale używa formy Direct3D 11, która działa szybciej, celując w sceny o intensywnym sprzężeniu zwrotnym AA1 i AAT, gdy ROV jest wyłączone.",
+  "heroAlt": "Dowody źródłowe z pull requestu PCSX2 #14603: GS/DX11: Przeniesienie ds jako rt z GL dla sprzężenia zwrotnego głębi.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "sprzężenie zwrotne głębi",
+    "kopiowanie celu renderowania",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Przeniesienie ds jako rt z GL dla sprzężenia zwrotnego głębi."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sama liczba kopii nie przewiduje kosztu Direct3D 11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sprzężenie zwrotne głębi wymaga od PCSX2 udostępnienia informacji o głębi dla późniejszego rysowania bez naruszania zasad użycia celu. Direct3D 11 może wykonać kopiowanie głębi GPU, ale źródło zgłasza, że operacja ta jest szczególnie wolna. Rozwiązanie z mniejszą liczbą kopii może zatem przegrać z ścieżką, która konwertuje głębię na formę celu renderowania i wykonuje dodatkowe kopie za pomocą sprzętu i shaderów zoptymalizowanych do celów podobnych do koloru."
+    },
+    {
+      "type": "heading",
+      "text": "Strategia OpenGL depth-as-RT została dostosowana do DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14603 dodaje konwersję i urządzenia potrzebne do traktowania sprzężenia zwrotnego głębi jako kopii celu renderowania na Direct3D 11. Zmiany w shaderach ujawniają niezbędną ścieżkę formatu, a GSDevice11 śledzi zasoby używane przez konwersję. Direct3D 12 otrzymuje powiązane zmiany współdzielone, ale docelowa wydajność dotyczy DX11. Projekt jest wyraźnie testowany bez ROV, więc uporządkowane sprzężenie zwrotne nie ukrywa różnicy ścieżki kopiowania."
+    },
+    {
+      "type": "heading",
+      "text": "Więcej operacji nadal może zakończyć się szybciej, gdy każda operacja jest tańsza"
+    },
+    {
+      "type": "paragraph",
+      "text": "Główny kompromis artykułu jest mierzalny: nowa ścieżka może wykonywać dodatkowe kopie, ale unika kosztownego natywnego zachowania kopiowania głębokości. Nie powinno się jej opisywać jako uniwersalnie szybszej wyłącznie na podstawie liczby operacji. Wynik zależy od konwersji formatu, przepustowości pamięci, docelowego rozmiaru, dostawcy GPU oraz liczby zdarzeń feedback. Poprawność zależy również od zachowania precyzji głębokości poprzez reprezentację render-target."
+    },
+    {
+      "type": "heading",
+      "text": "Gry AA1 i AAT zapewniają zamierzony test obciążenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Przetestuj Final Fantasy X, Everybody's Golf i inne tytuły AA1 lub AAT na Direct3D 11 z wyłączonym ROV, utrzymując takie same rozdzielczość i scenę. Zarejestruj typy kopiowania, liczność, czas GPU i wyjście klatkowe w odniesieniu do wcześniejszej ścieżki kopiowania głębokości. Przetestuj natywne i powiększone rozmiary oraz kilku dostawców. Porównaj efekty zależne od głębokości i porządek z wartościami z dla każdego piksela; przyspieszenie, które wprowadza kwantyzację lub nieaktualną głębokość, nie jest akceptowalne."
+    },
+    {
+      "type": "callout",
+      "text": "Optymalizacja wybiera tańszą prymitywę dla DX11, a nie mniejszą liczbę: dodatkowe kopiowania render-targetów mogą przewyższyć pojedynczą drogą kosztownej kopii głębokości."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

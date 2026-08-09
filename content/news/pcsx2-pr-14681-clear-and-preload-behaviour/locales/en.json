@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 preserves untouched render-target data across partial clears",
+  "summary": "Clear and preload tracking now distinguishes a full overlap from a half-target operation, preventing valid rows from being discarded and copied back as corrupted data.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14681: GS/TC: Improve clear and preload behaviour",
+  "searchKeywords": [
+    "PCSX2",
+    "texture cache",
+    "partial clear",
+    "preload",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Improve clear and preload behaviour"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A half-target clear was invalidating the frame that came before it"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 can clear only the latter half of a render target while the first 256 lines already contain data needed for the next frame. PCSX2 previously marked the broader target invalid, then later preloaded from a range it had already declared unusable. The copy was internally consistent with the wrong validity map, producing flashing even though the game never cleared the preserved half."
+    },
+    {
+      "type": "heading",
+      "text": "Clear validity now requires a matching target or full overlap"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14681 changes when RGB and alpha channels lose their valid status. A clear can discard the tracked contents only when the target matches or completely covers the relevant range. Partial overlap keeps the untouched portion alive. The renderer also handles paired half clears more deliberately and skips a normal clear draw when one target resolves to zero, avoiding work that cannot contribute pixels."
+    },
+    {
+      "type": "heading",
+      "text": "Preload follows the surviving coverage instead of the old target label"
+    },
+    {
+      "type": "paragraph",
+      "text": "The companion preload changes matter because validity and restoration are two sides of the same cache decision. When an overlapping target is reused, PCSX2 must copy only data known to survive; otherwise a correct clear can still be followed by a stale or undefined preload. The work in GSRendererHW and GSTextureCache aligns those steps, with GS register helpers supplying the coverage information used by the decision."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3, and X-Men Origins cover different clear patterns"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source identifies Gran Turismo 4 flicker as the primary reproducer and includes before-and-after captures for Time Crisis 3 and X-Men Origins. Testing should revisit the same frames while toggling native and upscaled rendering, then watch several subsequent frames for delayed corruption. Need for Speed lighting is another requested check. A useful trace records target bounds, channel validity, and preload bounds for every overlapping clear."
+    },
+    {
+      "type": "callout",
+      "text": "The key correction is temporal: a partial clear must not erase cache knowledge about pixels the guest deliberately left for a later frame."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

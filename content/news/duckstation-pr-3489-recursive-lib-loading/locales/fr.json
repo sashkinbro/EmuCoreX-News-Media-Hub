@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation suit les bibliothèques PSF imbriquées jusqu'au véritable point d'entrée du programme",
+  "summary": "Un changement de récursion sur deux lignes permet à la _lib du parent le plus profond de fournir PC et SP, corrigeant un chargeur qui arrêtait la recherche du point d'entrée un niveau trop tôt.",
+  "heroAlt": "Preuve source de la demande de tirage DuckStation #3489 : PSFLoader : Corriger le chargement récursif de _lib",
+  "searchKeywords": [
+    "DuckStation",
+    "Chargeur PSF",
+    "_lib",
+    "compteur de programme",
+    "pointeur de pile"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Stockage",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader : Corriger le chargement récursif de _lib"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un PSF peut hériter de l'état exécutable à travers plus d'une bibliothèque"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les fichiers Portable Sound Format peuvent référencer un parent via _lib, et ce parent peut référencer une autre première bibliothèque. Le chargement récursif des données n'est pas suffisant si le chargeur choisit PC et SP au mauvais niveau. La directive sur le format citée par la modification indique que la première chaîne _lib doit être suivie jusqu'à son membre le plus profond ; ce contexte exécutable initialise la lecture après que toutes les sections héritées ont été assemblées."
+    },
+    {
+      "type": "heading",
+      "text": "L'ancienne vérification de profondeur consommait le drapeau du point d'entrée trop tôt"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader créait auparavant lib_use_pc_sp à partir de depth == 0. Cela permettait à la première bibliothèque parent de réclamer le compteur de programme et le pointeur de pile, puis empêchait la récursion plus profonde de le faire. La pull request #3489 passe plutôt le drapeau use_pc_sp de l'appelant dans LoadLibraryPSF de manière récursive et le définit sur faux seulement après que l'appel de la première bibliothèque retourne. Le parent premier le plus profond reçoit le drapeau avant que tout niveau moins profond ne le consomme."
+    },
+    {
+      "type": "heading",
+      "text": "Seule la chaîne de la première bibliothèque possède la sélection de PC et SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Effacer use_pc_sp pendant le déroulement préserve une autre règle du PSF : les bibliothèques ultérieures peuvent contribuer des données sans remplacer à plusieurs reprises les registres initiaux. Le correctif ne fusionne pas chaque _lib en une seule liste non ordonnée. Il distingue le chemin récursif du premier parent qui établit l'exécution de ses frères et sœurs chargés ensuite, en conservant le plus petit changement possible dans psf_loader.cpp plutôt que de réécrire le format du conteneur."
+    },
+    {
+      "type": "heading",
+      "text": "Un dispositif de régression nécessite au moins trois niveaux imbriqués."
+    },
+    {
+      "type": "paragraph",
+      "text": "Construisez un PSF dont la racine, le premier parent et le premier parent le plus profond déclarent chacun des valeurs de PC et SP différentes, plus une bibliothèque secondaire avec une autre paire. DuckStation doit charger toutes les données requises mais commencer à partir des registres du premier parent le plus profond ; modifier une bibliothèque non premier ne doit pas déplacer le point d'entrée. Comparez la lecture et les registres enregistrés avec Mednafen ou un autre chargeur conforme au format, puis testez les références de bibliothèque manquantes, cycliques et illisibles pour obtenir des erreurs propres plutôt qu’une récursion non bornée."
+    },
+    {
+      "type": "callout",
+      "text": "La correction concerne l'ordre de récursion : les données peuvent provenir de nombreuses bibliothèques, mais le PC et le SP initiaux appartiennent au membre le plus profond de la première chaîne _lib."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Lisez la discussion technique DuckStation et les modifications du code source"
+    }
+  ]
+}

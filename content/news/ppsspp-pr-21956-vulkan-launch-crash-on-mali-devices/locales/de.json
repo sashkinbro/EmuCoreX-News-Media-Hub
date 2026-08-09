@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP behebt eine Vulkan-Geräteerstellungsfalle auf Mali-Hardware",
+  "summary": "Der libretro-Wrapper wählt jetzt genau einen Vulkan-Feature-Kanal aus und erfüllt damit die Regel, dass pEnabledFeatures null sein muss, wenn VkPhysicalDeviceFeatures2 verkettet wird.",
+  "heroAlt": "Quellenbeleg aus PPSSPP Pull Request #21956: Libretro: behebt Vulkan-Absturz beim Start auf Mali-Geräten",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: behebt Vulkan-Absturz beim Start auf Mali-Geräten"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tolerante Treiber haben eine ungültige Create-Info-Kombination verborgen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan bietet einen Legacy-pEnabledFeatures-Zeiger und die erweiterbare VkPhysicalDeviceFeatures2-Struktur im pNext. Wenn Features2 vorhanden ist, verlangt die Spezifikation, dass der Legacy-Zeiger null ist. Der PPSSPP libretro-Wrapper konnte beide ausfüllen, während er frontend-erforderliche Funktionen hinzufügte. Einige Treiber akzeptierten die fehlerhafte Gerätes Anfrage, aber Mali gab VK_ERROR_INITIALIZATION_FAILED zurück, sodass ein von Vulkan gerenderter Core vor Beginn der Spieleausführung fehlschlug."
+    },
+    {
+      "type": "heading",
+      "text": "Der Wrapper erkennt nun, welchen Funktionspfad der Core gewählt hat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #21956 durchläuft die device-create pNext-Kette und zeichnet auf, ob sie VkPhysicalDeviceFeatures2 enthält. Falls vorhanden, werden die frontend-erforderlichen Funktionen in diese Struktur integriert und newInfo.pEnabledFeatures wird explizit auf null gesetzt. Falls nicht vorhanden, bewahrt der Wrapper das bestehende Legacy-Verhalten, indem er VkPhysicalDeviceFeatures kopiert oder erstellt und den Zeiger zuweist. Die beiden legalen Vulkan-Pfade sind daher gegenseitig exklusiv."
+    },
+    {
+      "type": "heading",
+      "text": "Die Validierung deckte sowohl strikte als auch tolerante mobile GPUs ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Autor testete das Hardware-Rendering auf Android 14 mit einem Mali-G615-Gerät und auf Android 13 mit einem Snapdragon 865 Adreno-Gerät. Beide wurden gestartet und liefen. Auf dem Mali-System zeigte das Weitergeben der Geräteerstellung ein separates Problem mit der Kapazität des virtuellen Swapchains, das durch eine andere Änderung behandelt wurde; diese Unterscheidung ist wichtig, weil das Lösen eines Start-Gates nicht dazu führen sollte, dass der Hub jede spätere Vulkan-Fehlfunktion auf die gleiche Ursache zurückführt."
+    },
+    {
+      "type": "heading",
+      "text": "Feature-Chain-Tests sollten die Struktur-Eigentümerschaft überprüfen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erfassen Sie VkDeviceCreateInfo mit Validierungsschichten für einen Legacy-Core, einen Features2-Core, Ketten mit zusätzlichen Feature-Strukturen und nicht vorhandene optionale Features. Wiederholen Sie dies auf Mali-, Adreno-, Desktop-Vulkan- und mehreren RetroArch-Versionen. Stellen Sie sicher, dass erforderliche Bits erhalten bleiben und nicht überschrieben werden, dass pNext-Zeiger durch vkCreateDevice gültig bleiben und dass pEnabledFeatures nur im Features2-Fall null ist. Testen Sie auch Software- und OpenGL-Pfade, um sicherzustellen, dass die Wrapper-Initialisierung nicht von Vulkan ausgeht."
+    },
+    {
+      "type": "callout",
+      "text": "Die Aushandlung von Vulkan-Funktionen hat zwei legale Wege; ihre Kombination kann bei nachgiebigen Treibern funktionieren, ist aber immer noch ungültig und schlägt bei strengerer Hardware fehl."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Lesen Sie die PPSSPP-Entwicklungsdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

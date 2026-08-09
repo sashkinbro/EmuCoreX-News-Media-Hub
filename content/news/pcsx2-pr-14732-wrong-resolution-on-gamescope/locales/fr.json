@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 résout le redimensionnement en deux étapes de Gamescope sans revenir à 640x480",
+  "summary": "Un événement de redimensionnement retardé pourrait survivre à une requête de fenêtre plus récente de 1280x800 ; le réordonnancement correct de l'état maintient la fenêtre finale du Steam Deck aux dimensions que Gamescope a réellement sélectionnées.",
+  "heroAlt": "Preuve source du pull request PCSX2 #14732 : Qt : Corriger la mauvaise résolution sur Gamescope",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "anti-rebond de redimensionnement",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt : Corriger la mauvaise résolution sur Gamescope"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope signale une fenêtre temporaire avant la taille réelle de l'affichage"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le mode jeu de SteamOS peut faire en sorte que Qt ouvre PCSX2 en 640x480 et le redimensionne immédiatement à l'écran 1280x800 du Steam Deck. Les deux événements sont légitimes à des moments différents. Le bug est apparu parce que le premier redimensionnement a déclenché un minuteur de rebond, tandis qu'une requête DisplaySurface ultérieure a mis à jour les dimensions conservées à la taille finale. Le rappel retardé s'est alors exécuté avec une intention obsolète de 640x480."
+    },
+    {
+      "type": "heading",
+      "text": "L'ancien minuteur pouvait écraser des informations de fenêtre plus récentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un rebond empêche normalement un travail de viewport coûteux lors d'une tempête de redimensionnement. Ici, il est devenu un risque d'ordre : les dimensions de m_last_window décrivaient déjà 1280x800, mais le rappel en attente appliquait encore la cible précédente. Big Picture est resté en plein écran au niveau du système de fenêtres tandis que le moteur de rendu utilisait un petit viewport, produisant l'image caractéristique en 640x480 dans le coin inférieur gauche."
+    },
+    {
+      "type": "heading",
+      "text": "La correction rend l'état de redimensionnement monotone tout au long de la séquence de démarrage"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #14732 ajuste la logique de redimensionnement d'affichage de Qt afin qu'un ancien événement amorti ne puisse pas l'emporter après que getWindowInfo ait observé la surface réelle. Elle cible la course entre deux sources de taille plutôt que de gérer un cas particulier pour une résolution fixe du Steam Deck. Cela est important pour d'autres appareils Gamescope, les écrans externes et les futurs panneaux dont les dimensions finales diffèrent de 1280x800."
+    },
+    {
+      "type": "heading",
+      "text": "Les lancements à froid répétés constituent le test de régression significatif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sur Steam Deck ou une autre session Gamescope, lancez à plusieurs reprises PCSX2 avec -bigpicture -fullscreen et OpenGL, en vérifiant la fenêtre d'affichage après chaque démarrage. Ajoutez des transitions de fenêtre à plein écran, des changements de moniteur externe, la suspension/reprise, et plusieurs backend de rendu. Enregistrez chaque événement de redimensionnement, la cible de l'amortissement, le résultat de getWindowInfo et la fenêtre d'affichage appliquée. Le rappel final doit utiliser les dimensions les plus récentes, tandis qu'un redimensionnement simple ordinaire attend toujours l'amortissement et s'applique correctement."
+    },
+    {
+      "type": "callout",
+      "text": "Le bug n'était pas une constante de résolution incorrecte ; c'était un ancien minuteur qui l'emportait après qu'une taille de surface plus récente soit déjà devenue autoritative."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications de source"
+    }
+  ]
+}

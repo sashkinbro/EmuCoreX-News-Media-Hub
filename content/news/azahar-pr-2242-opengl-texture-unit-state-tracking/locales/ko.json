@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar는 OpenGL 상태 추적을 가르쳐 주며, 텍스처 유닛이 2D가 아닐 수 있음을 보여줍니다.",
+  "summary": "큐브맵 바인딩은 모든 유닛이 GL_TEXTURE_2D를 가진다는 캐시 상태 가정을 드러냈습니다; 대상 유형을 추적하고 나중의 2D 작업을 복원하기 위해 null 큐브를 초기화합니다.",
+  "heroAlt": "Azahar 풀 리퀘스트 #2242의 출처 증거: renderer_gl: OpenGL 텍스처 유닛 상태 추적 수정",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "텍스처 유닛",
+    "큐브맵",
+    "상태 추적"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "그래픽",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: OpenGL 텍스처 유닛 상태 추적 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "대상 유형 없는 캐시된 텍스처 핸들은 불완전합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL는 텍스처를 유닛과 타겟 모두로 바인딩합니다. Azahar의 상태 캐시는 종종 유닛이 GL_TEXTURE_2D를 나타낸다고 가정했는데, 이는 널 큐브맵 추적이 실제 큐브맵 바인딩을 도입하기 전까지는 작동했습니다. 한 번 유닛이 GL_TEXTURE_CUBE_MAP을 보유한 후, 이후 코드는 캐시된 숫자 객체만 기반으로 바인딩을 건너뛰거나 발행할 수 있었지만, 타겟 네임스페이스와 후속 샘플링 기대치가 변경된 상황이었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "상태 기록은 이제 2D, 큐브 및 널 전환을 구분합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #2242는 래스터라이저-캐시 유틸리티 및 OpenGL 렌더러 경로를 업데이트하여 텍스처 유닛이 상태 변경이 중복인지 결정하는 데 필요한 바인딩 타겟을 유지하도록 합니다. NULL_SURFACE_CUBE_ID가 적절히 초기화되어, 서페이스 없는 큐브맵 경로에 정의된 리소스를 제공합니다. Vulkan 파일은 관련된 공유 캐시 조정을 받지만, 관찰된 실패와 상태 머신 수정은 OpenGL에서 발생합니다."
+    },
+    {
+      "type": "heading",
+      "text": "포켓몬과 WWE는 한 가지 오래된 가정으로 인해 후속 데이터 손상 현상을 보여줍니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "포켓몬 울트라 문(Pokémon Ultra Moon)과 WWE 올스타(WWE All Stars)의 전후 이미지는 결함이 누락된 큐브맵에 국한되지 않았음을 보여줍니다. 큐브맵 바인딩은 이후 텍스처 연산이 해석되는 방식을 변경하였기 때문에, 하류의 일반 표면이 잘못 렌더링될 수 있습니다. 따라서 올바른 캐싱은 단순히 설정 순간에 큐브맵을 표시하는 것이 아니라 시퀀스 전체에 걸쳐 상태를 복원해야 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "리그레션 시퀀스는 동일한 유닛에서 타겟을 번갈아 사용해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "하나의 유닛에서 2D, 큐브, 널 큐브 및 2D 텍스처를 반복해서 바인딩하고, 발생하는 GL 호출과 샘플링된 출력을 모두 확인합니다. 두 게임을 재현한 후, 그림자 맵, 환경 맵, 렌더 타겟 샘플링 및 표면 파괴를 테스트합니다. 캐시된 상태를 디버그 빌드에서 glGet 진단 결과와 비교합니다. 최적화는 여전히 객체와 타겟이 모두 일치할 때만 바인딩을 건너뛸 수 있으며, 호출 수를 줄이는 것이 이전 사용의 타겟을 유지해서는 안 됩니다."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL 상태 캐싱은 텍스처 객체뿐만 아니라 바인딩 타겟도 기억할 때만 유효합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Azahar 엔지니어링 토론 및 소스 변경 사항을 읽으십시오"
+    }
+  ]
+}

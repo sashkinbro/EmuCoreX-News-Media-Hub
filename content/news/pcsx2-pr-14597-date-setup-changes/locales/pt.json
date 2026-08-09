@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 faz com que a configuração de DATE dependa da sobreposição do teste alfa",
+  "summary": "Uma decisão focada do GS separa desenhos complexos com teste alfa que podem usar com segurança DATE daqueles desenhos sobrepostos que exigem uma barreira e devem evitar esse caminho.",
+  "heroAlt": "Evidência visual do pedido de pull PCSX2 #14597: GS/HW: alterações na configuração de DATE.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "teste alfa",
+    "barreira de textura",
+    "GS renderer"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW: alterações na configuração de DATE."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Teste de alfa complexo não é suficiente para escolher o caminho DATE"
+    },
+    {
+      "type": "paragraph",
+      "text": "A Emulação de Teste Alpha de Destino interage tanto com o teste alpha do desenho quanto com a leitura ou escrita em uma região sobreposta. A configuração anterior do PCSX2 tratava a condição de alpha complexo de forma muito ampla. A pull request #14597 adiciona sobreposição à decisão, porque o caso sem sobreposição pode usar DATE one sem o risco de ordenação que aparece quando a mesma região participa do desenho."
+    },
+    {
+      "type": "heading",
+      "text": "DATE one e a barreira DATE tornam-se escolhas deliberadas mutuamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O renderizador de hardware agora permite DATE one quando um teste alpha complexo não tem sobreposição. Se a sobreposição estiver presente, esse caminho é suprimido e a barreira DATE é habilitada em seu lugar. Este não é um novo efeito de renderização; é uma correção de roteamento dentro do GSRendererHW para que a implementação escolhida para a regra de alpha de destino corresponda ao padrão real de dependência do desenho."
+    },
+    {
+      "type": "heading",
+      "text": "A alteração em arquivo único tem uma superfície de regressão estreita, mas visível"
+    },
+    {
+      "type": "paragraph",
+      "text": "Porque o patch altera apenas a lógica de configuração, uma boa revisão deve identificar qual ramo cada desenho afetado segue, em vez de comparar saídas de renderizadores não relacionadas. O risco é simétrico: forçar a barreira em trabalhos inofensivos que não se sobrepõem pode aumentar o custo, enquanto permitir que a DATE passe por um teste de alfa complexo sobreposto pode produzir máscaras ou sombras incorretas. Portanto, o ramo deve concordar com a sobreposição calculada em cada desenho."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 e Energy Airforce ancoram as verificações visuais"
+    },
+    {
+      "type": "paragraph",
+      "text": "A fonte fornece comparações para as sombras de Persona 4 e Energy Airforce e um log de execução Direct3D 11 cobrindo mudanças adicionais de barreira e cópia. A validação deve reproduzir essas cenas com o mesmo renderizador e configurações, registrar o modo DATE, status de alfa complexo, sobreposição e seleção de barreira, e então repetir em outro hardware. O resultado esperado é a mesma imagem, com a decisão mudando apenas quando a sobreposição mudar."
+    },
+    {
+      "type": "callout",
+      "text": "A regra é condicional, não global: testes alfa complexos podem usar DATE um sem sobreposição, mas trabalhos sobrepostos exigem o caminho de barreira."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código fonte"
+    }
+  ]
+}

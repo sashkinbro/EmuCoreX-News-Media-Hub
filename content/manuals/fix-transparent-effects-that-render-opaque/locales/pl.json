@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Napraw przezroczyste efekty PS2, które renderują się jako powierzchnie stałe",
+  "summary": "Użyj powtarzalnego szkła, wody, dymu lub nakładki menu, aby odróżnić brakujące mieszanie alfa od błędów tekstury lub kolejności rysowania, zwiększaj dokładność krok po kroku i testuj niezwiązane przezroczyste warstwy przed zapisaniem nadpisania.",
+  "heroAlt": "Obraz porównawczy grafiki PCSX2 pokazujący poprawiony efekt bufora ramki",
+  "searchKeywords": [
+    "Przezroczystość PS2 nieprzezroczysta",
+    "Mieszanie alfa EmuCoreX",
+    "Naprawa stałego dymu",
+    "Problem z rendererem wody",
+    "Przezroczysty HUD"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Dokładność"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 wskazówki dotyczące kosztów mieszania",
+    "pcsx2-performance": "PCSX2 wskaźnik dokładnego mieszania"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Skategoryzuj warstwę stałą przed zmianą dokładności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nieprzezroczysty efekt jest użytecznym dowodem tylko wtedy, gdy znany jest jego zamierzony wygląd. Wybierz jeden obiekt, którego przezroczystość jest oczywista podczas normalnej rozgrywki: szklana przegroda powinna ujawniać geometrię za nią, dym powinien mieć miękkie, warstwowe krawędzie, a nakładka menu powinna zachować widok sceny poniżej. Przechwyć zepsuty wynik w natywnej rozdzielczości i zanotuj, czy warstwa ma prawidłowy kształt i kolor. Poprawna geometria z nieprawidłową przezroczystością wskazuje na mieszanie; pusty prostokąt lub splątana tekstura wymaga innego śledztwa."
+    },
+    {
+      "type": "callout",
+      "text": "Maksymalna dokładność mieszania nie jest uniwersalnym ustawieniem jakości. Może dodać znaczne prace GPU i może ukrywać, który niższy poziom faktycznie naprawia tytuł."
+    },
+    {
+      "type": "heading",
+      "text": "Test efektu przezroczystości"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Punkt kontrolny, który osiąga ten sam efekt w ciągu jednej minuty.",
+        "Odwołanie z renderowania programowego, oryginalnego przechwycenia sprzętu lub wiarygodnej dokumentacji specyficznej dla tytułu.",
+        "Natywna wewnętrzna rozdzielczość z wyłączonymi zamiennikami tekstur i shaderami.",
+        "Liczniki wydajności lub powtarzalny pomiar prędkości.",
+        "Czysta kopia zapasowa profilu dla gry."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Znajdź minimalny poziom mieszania"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Odtwórz punkt kontrolny na sterowniku systemowym i przechwyć nieprzezroczystą warstwę w tym samym momencie animacji.",
+        "2. Porównaj Vulkan i OpenGL przy wszystkich innych wartościach bez zmian; zanotuj, jeśli jedna ścieżka już poprawnie łączy efekt.",
+        "3. Jeśli obie zawiodą, uzyskaj krótki referencyjny obraz renderowany programowo i sprawdź, co powinno pozostać widoczne przez warstwę.",
+        "4. Wróć do wybranego API sprzętowego i zwiększ dokładność mieszania o dokładnie jeden poziom.",
+        "5. Uruchom ponownie punkt kontrolny po każdej zmianie; nie oceniaj wielu poziomów w jednej wznowionej sesji.",
+        "6. Zatrzymaj się na pierwszym poziomie, który przywraca przezroczystość, a następnie zmierz sekcję mocno obciążoną efektami po rozgrzaniu urządzenia.",
+        "7. Sprawdź osobną funkcję alfa, taką jak mgła, cienie, cząstki lub przyciemnianie menu pauzy.",
+        "8. Zapisz wartość tylko w profilu tej gry i udokumentuj punkt kontrolny, który ją uzasadnia."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 efekty mogą odczytywać, zapisywać i mieszać się z zawartością poprzedniego bufora klatkowego. Główna ścieżka GPU może przybliżać te operacje na różnych poziomach dokładności i kosztów. Najmniejszy działający poziom jest wartościowy, ponieważ spełnia zaobserwowaną zależność, nie płacąc za niepowiązane zachowania przy każdym rysowaniu. API renderera, które ustala przebieg na bazowym poziomie, może być preferowane w porównaniu do znacznie cięższych ustawień mieszania w innym API."
+    },
+    {
+      "type": "heading",
+      "text": "Kryteria zaliczenia przezroczystości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Korekta musi przywrócić zarówno wygląd, jak i kolejność kompozycji."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Tło geometryczne pozostaje widoczne przez zamierzone obszary efektu.",
+        "Krawędzie warstw są stabilne i nie migoczą między nieprzezroczystymi a przezroczystymi.",
+        "Elementy HUD pierwszego planu nadal pojawiają się nad efektem.",
+        "Druga półprzezroczysta scena zachowuje się poprawnie.",
+        "Prędkość sesji na ciepło nie spada poniżej poziomu grywalnego ustalonego dla tytułu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Warunki zatrzymania podczas testów mieszania"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Kształt jest uszkodzony na każdym poziomie: zamiast tego zbadaj wyjście tekstury lub geometrii.",
+        "Tylko wyższa wewnętrzna rozdzielczość łamie przezroczystość: wyizoluj ścieżkę specyficzną dla skalowania w górę.",
+        "Menu stają się przezroczyste wraz ze światem gry: zresetuj ostatni poziom i uchwyć regresję.",
+        "Poprawność kosztuje nieakceptowalną prędkość: zachowaj niższą bazę i dokumentuj renderowanie programowe wyłącznie jako odniesienie."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Usuń wydzielony eksperyment alfa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ustaw ponownie mieszanie na Automatyczne, przywróć wcześniejszy renderer, zamknij sesję emulacji i sprawdź, czy pierwotny nieprzezroczysty objaw powraca na zapisanym punkcie kontrolnym. To potwierdza zmienioną zmienną, zanim zarchiwizujesz lub zastąpisz profil testowy."
+    },
+    {
+      "type": "heading",
+      "text": "Kontrast wyświetlacza nie jest dokładnością alfa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poziom czerni OLED, konwersja HDR, zakres telewizyjny i kontrast dostępności mogą sprawić, że przezroczysta warstwa wygląda na ciemniejszą, ale nie zmieniają one kolejności rysowania. Zweryfikuj wynik bufora ramki na zrzucie ekranu przed dostosowaniem zewnętrznego łańcucha wyświetlania."
+    },
+    {
+      "type": "link",
+      "text": "Przejrzyj wymagania sprzętowe PCSX2",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 entfernt zwei Quellen von uninitialisierten Zustandsentscheidungen, die von Valgrind gefunden wurden",
+  "summary": "Die Geometrie der Debuggertabelle beginnt bei null, und die Audioeinstellungen vergleichen Felder statt roher Struct-Bytes, wodurch Zweige eliminiert werden, die durch nie geschriebenen Speicher und Padding beeinflusst werden.",
+  "heroAlt": "Quellenbelege aus dem PCSX2 Pull Request #14638: Verschiedenes: Einige Valgrind-Fehler beheben",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "uninitialisiertes Lesen",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Werkzeuge",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Verschiedenes: Einige Valgrind-Fehler beheben"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Debugger wurde mit Mitgliedern gezeichnet, die keinen definierten Anfangswert hatten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind verfolgte einen bedingten Zweig in MemoryViewTable::DrawTable zu Zeilenanzahlen, Positionen, Auswahlzuständen und Adressmitgliedern, die ohne Initialisierung deklariert wurden. Normale Größenänderungs- oder Einrichtungsrouten wiesen ihnen oft Werte vor dem Zeichnen zu, was den Defekt intermittierend machte. Ein frühzeitig eintreffendes Paint-Ereignis konnte dennoch unbestimmte Ganzzahlen lesen und das Layoutverhalten aus beliebigen Bits im Objekt auswählen."
+    },
+    {
+      "type": "heading",
+      "text": "Null-Initialisierer geben dem ersten Paint eine gültige leere Tabelle."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #14638 initialisiert rowCount, rowVisible, rowHeight, value- und text-Achsen, die Position der ersten Zeile, Start- und ausgewählte Adressen sowie selectedIndex bei der Deklaration. Null repräsentiert einen sicheren Pre-Layout-Zustand, bis die realen Dimensionen vorliegen. Die Änderung errät keine Standardadresse oder Auswahl; sie stellt sicher, dass frühe Ereignisse ein absichtlich leeres Modell anstelle undefinierter Daten sehen."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp verglich Audiofelder und unsichtbares Padding zusammen"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters implementierte die Gleichheit durch den Vergleich der rohen Bytes von sizeof(struct). C++-Padding zwischen den Mitgliedern ist kein Feld und kann unbestimmte Werte enthalten, sodass zwei logisch identische Konfigurationen ungleich sein könnten. Das trat bei SPU2-Konfigurationsprüfungen während Änderungen der Einstellungen und beim Laden von savestate auf. Der Patch ersetzt das benutzerdefinierte == und != durch einen standardmäßigen Drei-Wege-Vergleich, der die deklarierten Mitglieder entsprechend ihren Typen vergleicht und Padding niemals als Teil der Konfiguration behandelt."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind- und Verhaltenstests sollten die Ereignisreihenfolge und das Laden des Zustands abdecken."
+    },
+    {
+      "type": "paragraph",
+      "text": "Führen Sie den Debugger unter Valgrind aus, während Sie Speicheransichten öffnen, die Größe ändern, darstellen, auswählen und schließen, bevor und nachdem eine VM gestartet wurde. Laden Sie dann savestates und wenden Sie wiederholt identische Audioeinstellungen an, um zu bestätigen, dass kein unerwarteter Neustart erfolgt und kein Bericht über nicht initialisierte Vergleiche erscheint. Ändern Sie ein echtes Audiofeld, um sicherzustellen, dass die Ungleichheit weiterhin funktioniert. Compiler- und Sanitizer-Builds mit unterschiedlicher Struct-Padding sind wertvoll, da ein sauberes Ergebnis bei einem Layout nicht beweist, dass das entfernte memcmp an anderer Stelle sicher war."
+    },
+    {
+      "type": "callout",
+      "text": "Beide Korrekturen ersetzen versehentliche Speicherinhalte durch zustandsbezogene Sprachelemente: initialisierte Felder für das UI-Layout und feldweise Gleichheit für die Audiokonfiguration."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

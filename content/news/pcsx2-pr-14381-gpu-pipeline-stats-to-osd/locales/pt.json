@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 expõe contagens de invocação de shader antes que o overlay as modifique",
+  "summary": "Uma métrica OSD opcional relata invocações de vertex e pixel shader coletadas antes do desenho do ImGui, tornando as comparações de carga de trabalho do backend mais estáveis e fáceis de ler.",
+  "heroAlt": "Evidência de fonte do pull request #14381 do PCSX2: GS: Adicionar estatísticas do pipeline GPU ao OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Estatísticas do pipeline GPU",
+    "invocações de vertex shader",
+    "invocações de pixel shader",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Ferramentas",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Adicionar estatísticas do pipeline GPU ao OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A taxa de quadros não pode indicar se uma cena expandiu o trabalho do vertex ou do pixel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma regressão de desempenho pode ocorrer devido a mais vértices submetidos, mais amostras cobertas, passes extras ou sincronização. PCSX2 já exibiu várias métricas do renderizador, mas carecia de contagens diretas de invocação do pipeline. O pull request #14381 adiciona VSI e PSI para que um desenvolvedor possa ver se o GPU executou milhares de chamadas de shader de vértice ou milhões de chamadas de shader de pixel no intervalo medido."
+    },
+    {
+      "type": "heading",
+      "text": "As consultas são implementadas em todas as APIs de hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "As classes de dispositivos Direct3D 11, Direct3D 12, OpenGL, Vulkan e Metal expõem estatísticas do pipeline para métricas de desempenho comuns. A configuração aparece na configuração OSD e o overlay formata números grandes com sufixos decimais K, M e B. A coleta através de consultas de backend é necessária porque uma estimativa comum a partir de contagens de draw perderia clipping, instancing, cobertura de amostras e execução específica da API."
+    },
+    {
+      "type": "heading",
+      "text": "A amostragem antes do ImGui remove o overlay de sua própria medição"
+    },
+    {
+      "type": "paragraph",
+      "text": "Os resultados iniciais variaram drasticamente porque a consulta poderia incluir a renderização OSD e ImGui. O comportamento final reúne estatísticas antes de desenhar o overlay, estabilizando os números e tornando as comparações de cena mais significativas. A renderização de software ainda é apresentada através do Vulkan, então os valores podem aparecer ali, mas descrevem a apresentação em vez da carga de trabalho de software GS; a fonte alerta que esses números não devem ser interpretados como estatísticas de renderizador de hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Uma comparação válida fixa a cena e o intervalo da consulta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilite Mostrar Estatísticas do Pipeline GPU e mantenha uma cena estática entre os backends, verificando que VSI e PSI aparecem e se dimensionam de maneira plausível quando a resolução ou a geometria mudam. Ative/desative o próprio OSD e confirme que os valores medidos não saltam ao contar seus pixels. Exercite a reinicialização da consulta, perda do dispositivo, pausa e troca de backend. As contagens entre APIs ainda podem diferir porque as especificações e a contabilidade de amostras variam, então diagnostique tendências dentro de um backend antes de afirmar paridade exata."
+    },
+    {
+      "type": "callout",
+      "text": "O OSD relata resultados de consultas de hardware, não uma verdade universal entre APIs; pegar a amostra antes do ImGui a torna útil sem deixar o medidor medir a si mesmo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Leia a discussão de engenharia PCSX2 e alterações de código-fonte"
+    }
+  ]
+}

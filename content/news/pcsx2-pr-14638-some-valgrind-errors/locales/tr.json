@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2, Valgrind tarafından bulunan başlatılmamış durum kararlarının iki kaynağını kaldırır",
+  "summary": "Hata ayıklayıcı tablo geometrisi sıfırdan başlar ve ses ayarları alanları ham yapı baytları yerine karşılaştırır, hiç yazılmamış bellek ve dolgu tarafından etkilenen dalları ortadan kaldırır.",
+  "heroAlt": "PCSX2 pull request #14638'den kaynak kanıtı: Çeşitli: Bazı valgrind hatalarını düzelt",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "başlatılmamış okuma",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Araçlar",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Çeşitli: Bazı valgrind hatalarını düzelt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Hata ayıklayıcı, tanımlı ilk değere sahip olmayan üyelerle boyandı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind, MemoryViewTable::DrawTable içindeki bir koşullu dalı, başlatılmadan bildirilen satır sayıları, konumlar, seçim durumu ve adres üyelerine kadar izledi. Normal yeniden boyutlandırma veya kurulum yolları, boyamadan önce genellikle bunları atıyordu, bu da hatanın aralıklı olmasına neden oluyordu. Daha erken gelen bir boyama olayı yine de belirsiz tamsayıları okuyabilir ve nesneyi işgal eden herhangi bir bitten düzen davranışı seçebilirdi."
+    },
+    {
+      "type": "heading",
+      "text": "Sıfır başlatıcılar, ilk boyamaya geçerli boş bir tablo verir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14638, rowCount, rowVisible, rowHeight, value ve text eksenlerini, ilk satır konumunu, başlangıç ve seçilen adresleri ve selectedIndex'i bildirim sırasında başlatır. Sıfır, gerçek boyutlar gelene kadar güvenli bir ön düzen durumu temsil eder. Bu değişiklik varsayılan bir adres veya seçim tahmin etmez; erken olayların tanımsız veri yerine kasıtlı olarak boş bir modeli görmesini sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp, ses alanlarını ve görünmez dolgu alanını birlikte karşılaştırıyordu"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters, eşitliği struct boyutundaki ham baytları karşılaştırarak gerçekleştirdi. Üyeler arasındaki C++ dolgu alanı bir alan değildir ve belirlenmemiş değerler içerebilir, bu nedenle mantıksal olarak aynı iki yapı farklı olarak değerlendirilebilir. Bu, ayar değişiklikleri sırasında SPU2 yapılandırma kontrollerine ve savestate yüklemesine ulaştı. Yama, özel == ve != operatörlerini, bildirilen üyeleri türlerine göre karşılaştıran ve dolgu alanını asla yapılandırma olarak dikkate almayan varsayılan üç yönlü karşılaştırmayla değiştirir."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind ve davranış testleri olay sırasını ve durum yüklemesini kapsamalıdır."
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir VM başlatılmadan önce ve sonra bellek görünümlerini açarken, yeniden boyutlandırırken, boyarken, seçerken ve kapatırken debugger’ı Valgrind altında çalıştırın. Ardından savestate dosyalarını yükleyin ve aynı ses ayarlarını tekrar tekrar uygulayın; yanlışlıkla yeniden başlatma veya başlatılmamış karşılaştırma raporu olmadığından emin olun. Eşitsizliği doğrulamak için gerçek bir ses alanını değiştirin. Farklı struct dolgu ile derleyici ve sanitizer derlemeleri değerlidir çünkü bir düzen üzerinde temiz sonuç almak, kaldırılan memcmp’in başka yerlerde güvenli olduğunu kanıtlamaz."
+    },
+    {
+      "type": "callout",
+      "text": "Her iki düzeltme de rastgele bellek içeriğini dil düzeyinde durum ile değiştirir: UI düzeni için başlatılmış alanlar ve ses yapılandırması için alan bazında eşitlik."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "PCSX2 mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

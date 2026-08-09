@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Les portes PCSX2 Vulkan de profondeur en retour d'information sont basées sur la capacité qui les légalise",
+  "summary": "L'échantillonnage en lecture seule de la profondeur revient désormais à la disposition GENERAL lorsque les barrières de texture sont désactivées, évitant une disposition en boucle de rétroaction sélectionnée sans ses bits de fonctionnalité Vulkan requis.",
+  "heroAlt": "Preuve source de la pull request PCSX2 #14817 : GS:VK : n'utiliser la disposition en boucle de rétroaction pour la profondeur que si la barrière de texture est prise en charge.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "disposition en boucle de rétroaction",
+    "barrière de texture",
+    "couche de validation"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK : n'utiliser la disposition en boucle de rétroaction pour la profondeur que si la barrière de texture est prise en charge."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une disposition d'image n'est valide que lorsque son contrat de fonctionnalités est activé"
+    },
+    {
+      "type": "paragraph",
+      "text": "La disposition de boucle de rétroaction de l'attachement de Vulkan décrit une image utilisée à travers une relation de rétroaction. PCSX2 ajoute le bit de capacité correspondant uniquement lorsque la barrière de texture ou le support de rétroaction de profondeur est actif. Le chemin d'échantillonnage en lecture seule de la profondeur pourrait néanmoins choisir cette disposition après que les barrières ont été désactivées, créant une contradiction : l'enregistrement de commande revendiquait une fonctionnalité que la configuration du dispositif n'avait délibérément pas activée."
+    },
+    {
+      "type": "heading",
+      "text": "Le retour de profondeur non pris en charge utilise désormais la disposition GENERAL"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #14817 rend la sélection de la disposition conditionnelle au même test de support qui contrôle les bits de capacité. Les chemins pris en charge conservent la disposition en boucle de rétroaction spécialisée. Lorsque la fonctionnalité n'est pas disponible ou est forcée désactivée, l'échantillonnage de profondeur utilise GENERAL, une solution de repli légale avec des exigences de synchronisation plus larges. Le changement maintient l'état de l'image et les fonctionnalités du dispositif dérivées d'une seule décision au lieu de vérifications optimistes indépendantes."
+    },
+    {
+      "type": "heading",
+      "text": "Les erreurs de validation exposent une véritable faille de portabilité avant que les pixels ne tombent en panne"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un pilote peut accepter une combinaison de disposition illégale sans artefact visuel immédiat, surtout en dehors du mode débogage. Les couches de validation Vulkan signalent la non-concordance de manière déterministe, ce qui en fait la preuve appropriée pour ce correctif. Éviter l'avertissement n'est pas un simple nettoyage de journal esthétique : cela garantit que le flux de commandes reste conforme au contrat exigé entre les fournisseurs et les versions du pilote, plutôt que de se fier à un comportement permissif."
+    },
+    {
+      "type": "heading",
+      "text": "Le vidage source teste exactement la route hors capacité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Exécutez le dump Time Crisis 3 GunCon joint sur Vulkan avec les Barrières de Texture en Override réglées sur Forcer Désactivé et le périphérique de débogage activé. Le chemin corrigé ne doit émettre aucune erreur de validation de mise en page en boucle de rétroaction et doit préserver l'image. Répétez avec les barrières prises en charge pour vérifier que la mise en page spécialisée apparaît toujours, puis testez la lecture seule de profondeur, le retour de couleur, le réinitialisation du backend, et plusieurs GPUs. Capturez les transitions d'image afin qu'un avertissement manquant ne puisse pas masquer l'utilisation de la mauvaise synchronisation GENERAL."
+    },
+    {
+      "type": "callout",
+      "text": "La disposition et la capacité forment un seul contrat : si PCSX2 n'active pas la prise en charge des retours de profondeur, il ne doit pas annoncer cette prise en charge via la disposition de l'image."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

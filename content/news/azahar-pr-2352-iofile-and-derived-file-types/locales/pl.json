@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar zamienia specjalne pliki w kompozycyjną warstwową strukturę przechowywania",
+  "summary": "Nowy łańcuch IOFileBase pozwala na wzajemne owijanie się ograniczonych widoków, kompresji i szyfrowania, zastępując dziedziczenie, które stało się kruche, gdy wiele typów specjalnych plików musiało współpracować.",
+  "heroAlt": "Dowody źródłowe z Azahar pull request #2352: core: Refaktoryzacja IOFile i pochodnych typów plików",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Przechowywanie",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: Refaktoryzacja IOFile i pochodnych typów plików"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dziedziczenie przestało się skalować, gdy jeden plik potrzebował kilku zachowań"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar początkowo wyprowadzał skompresowane i zaszyfrowane pliki bezpośrednio z IOFile. Każda specjalna klasa mogła nadpisywać podstawowe operacje, ale ich łączenie wymagało sztuczek, ponieważ dziedziczenie w C++ opisuje, czym jest obiekt, a nie uporządkowany proces transformacji. Dodanie kolejnego typu pliku do nadchodzącej pracy zwiększyłoby liczbę takich kombinacji i sprawiłoby, że przesunięcia, serializacja i błędy zależałyby od tego, która podklasa przypadkowo znajdowała się na górze."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase deleguje poprzez posiadaną warstwę dziecięcą"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2352 wprowadza abstrakcyjne IOFileBase z kompletnym kontraktem dostępu i unique_ptr child_file. Warstwa nadpisuje tylko operacje, które transformuje, a w pozostałych przypadkach deleguje je do swojego dziecka. Na dole znajduje się IOFile lub NullIOFile. Skompresowane CCI RomFS może zatem być SubIOFile dla RomFS, kolejne SubIOFile dla NCCH wewnątrz NCSD, Z3DSReadIOFile dla dekompresji i IOFile dla dostępu do hosta."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile i NullIOFile czynią granice i błędy wyraźnymi obiektami"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile udostępnia ustalone okno i tłumaczy operacje seek, size, read oraz write, bez konieczności powtarzania sprawdzania przesunięć lub ograniczeń przez każdego wywołującego. Parsowanie NCSD i NCCH już z niego korzysta. NullIOFile implementuje ten sam interfejs, ale zwraca wartości błędu, umożliwiając zachowanie poprawnego grafu obiektów w przypadku nieudanej konstrukcji i serializacji, zamiast rozprzestrzeniać sprawdzenia nullptr w każdej warstwie."
+    },
+    {
+      "type": "heading",
+      "text": "Pliki zaszyfrowane zyskują tożsamość, podczas gdy starsze dane pozostają obsługiwane"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nowy CryptoIOFile zaczyna wyjście od nagłówka AZCR zawierającego wersję, rozmiar nagłówka i hash pochodzący z klucza i nonce. Azahar potrafi zidentyfikować format i odrzucić niepoprawny klucz bez zgadywania, czy odszyfrowane bajty wyglądają sensownie. Pliki bez nagłówka wciąż otwierają się dzięki logice kompatybilności. Testy powinny komponować każdą kolejność warstw, seekować w granicach podplików, serializować nieudane obiekty, weryfikować złe klucze i ponownie otwierać stare zasoby szyfrowane bez ich przepisywania."
+    },
+    {
+      "type": "callout",
+      "text": "Zmiana architektoniczna to kompozycja: każda warstwa pliku posiada jedną odpowiedzialność i przekazuje resztę w dół przez ten sam interfejs."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany w źródłach"
+    }
+  ]
+}

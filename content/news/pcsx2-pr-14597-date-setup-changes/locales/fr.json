@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 fait dépendre la configuration de DATE du chevauchement du test alpha",
+  "summary": "Une décision ciblée de GS sépare les dessins complexes testés par alpha qui peuvent utiliser en toute sécurité DATE de ceux qui se chevauchent et nécessitent une barrière et doivent éviter ce chemin.",
+  "heroAlt": "Preuves visuelles de la demande de tirage PCSX2 #14597 : GS/HW : modifications de la configuration DATE.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "test alpha",
+    "barrière de texture",
+    "GS moteur de rendu"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW : modifications de la configuration DATE."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le test alpha complexe n'est pas suffisant pour choisir le chemin DATE"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'émulation du test Alpha de Destination interagit à la fois avec le test alpha du rendu et avec la lecture ou l'écriture d'une région chevauchante. La configuration précédente de PCSX2 traitait la condition d'alpha complexe de manière trop large. La demande de tirage #14597 ajoute le chevauchement à la décision, car le cas sans chevauchement peut utiliser DATE one sans le risque d'ordre qui apparaît lorsque la même région participe au rendu."
+    },
+    {
+      "type": "heading",
+      "text": "DATE one et la barrière DATE deviennent des choix délibérés mutuels"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le moteur matériel permet désormais DATE one lorsque le test alpha complexe n'a pas de chevauchement. Si un chevauchement est présent, ce chemin est supprimé et la barrière DATE est activée à la place. Ce n'est pas un nouvel effet de rendu ; c'est une correction de routage à l'intérieur de GSRendererHW afin que l'implémentation choisie pour la règle alpha de destination corresponde au schéma de dépendance réel du rendu."
+    },
+    {
+      "type": "heading",
+      "text": "Le changement dans un seul fichier a une surface de régression étroite mais visible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Parce que le patch ne modifie que la logique de configuration, une bonne révision devrait identifier quelle branche chaque tirage affecté prend plutôt que de comparer le rendu de rendu non lié. Le risque est symétrique : forcer la barrière sur un travail inoffensif non chevauchant peut ajouter un coût, tandis que permettre à DATE d’entrer à travers un test alpha complexe et chevauchant peut produire des masques ou des ombres incorrects. La branche doit donc correspondre au chevauchement calculé sur chaque tirage."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 et Energy Airforce ancrent les vérifications visuelles"
+    },
+    {
+      "type": "paragraph",
+      "text": "La source fournit des comparaisons pour les ombres de Persona 4 et d’Energy Airforce ainsi qu’un journal d’exécution Direct3D 11 couvrant des modifications supplémentaires de barrière et de copie. La validation devrait rejouer ces scènes avec le même moteur de rendu et les mêmes paramètres, enregistrer le mode DATE, le statut alpha complexe, le chevauchement et la sélection de la barrière, puis répéter sur un autre matériel backend. Le résultat attendu est la même image avec la décision ne changeant que lorsque le chevauchement change."
+    },
+    {
+      "type": "callout",
+      "text": "La règle est conditionnelle, pas globale : les tests alpha complexes peuvent utiliser DATE un sans chevauchement, mais le travail en chevauchement nécessite le chemin de barrière."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications de source"
+    }
+  ]
+}

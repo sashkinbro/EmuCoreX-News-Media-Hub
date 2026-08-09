@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar removes signed-overflow ambiguity from Luma's memory alias",
+  "summary": "An unsigned bit-31 mask makes alias detection defined C++, while early returns and unlikely MMIO branches give the common memory paths a straighter instruction flow.",
+  "heroAlt": "Source evidence from Azahar pull request #2202: core/memory: Fix undefined behavior and optimize Luma alias path",
+  "searchKeywords": [
+    "Azahar",
+    "Luma alias",
+    "undefined behavior",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Fix undefined behavior and optimize Luma alias path"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bit 31 was being formed through signed arithmetic"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS exposes an alias address form whose high bit tells Azahar to bypass normal page tables for FCRAM or MMIO. The code tested and cleared that bit with 1 << 31. When int is 32 bits, shifting a signed one into the sign position is undefined behavior, giving an optimizing compiler permission to transform surrounding code in ways that do not preserve the intended mask."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u makes both test and clear operations defined"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2202 declares LUMA_ALIAS_BIT as the unsigned literal 0x80000000u. Read and write paths test vaddr against that constant and derive paddr by clearing it. The change is small but architectural: address manipulation should use the unsigned type that represents a VAddr, not depend on a compiler's chosen result for overflowing signed arithmetic."
+    },
+    {
+      "type": "heading",
+      "text": "Early returns separate FCRAM from the cold MMIO route"
+    },
+    {
+      "type": "paragraph",
+      "text": "The FCRAM alias remains the main useful path and ends with an immediate return. MMIO is checked afterward and marked unlikely, as is the alias entry itself relative to ordinary page-table access. Flattening the former else-if chain lets Clang place the common flow more linearly and keeps rare custom-handler code away from the instruction-cache path used by most reads and writes."
+    },
+    {
+      "type": "heading",
+      "text": "Optimization claims need compiler and alias coverage"
+    },
+    {
+      "type": "paragraph",
+      "text": "Run Luma alias reads and writes for FCRAM, valid 32-bit MMIO, an alias address outside both ranges, and normal page-table addresses. Compare Clang and GCC at multiple optimization levels with UBSan enabled, verifying no signed-shift report and identical results. Inspect generated code for the intended early returns, but prioritize correctness. MMIO widths other than the strictly supported 32-bit route must still fall through or fail according to existing semantics."
+    },
+    {
+      "type": "callout",
+      "text": "The faster path starts with defined behavior: an address flag must be an unsigned bit mask before branch hints or assembly shape can be trusted."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

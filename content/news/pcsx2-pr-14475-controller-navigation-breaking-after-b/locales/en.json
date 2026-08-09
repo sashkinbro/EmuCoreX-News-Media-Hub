@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14475-controller-navigation-breaking-after-b",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 rebuilds Big Picture controller navigation after window resize",
+  "summary": "Stale ImGui navigation rectangles, not fullscreen itself, caused focus to stop moving after a substantial size change; a resize now forces the navigation state to match the new layout.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14475: FullscreenUI: Fix controller navigation breaking after Big Picture Mode's window is resized",
+  "searchKeywords": [
+    "PCSX2",
+    "Big Picture Mode",
+    "controller navigation",
+    "window resize",
+    "ImGui"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14475": "FullscreenUI: Fix controller navigation breaking after Big Picture Mode's window is resized"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Fullscreen looked guilty because it usually resized the window"
+    },
+    {
+      "type": "paragraph",
+      "text": "Controller navigation in Big Picture Mode could stop immediately after toggling fullscreen. Testing across devices showed that fullscreen state was only the trigger most people noticed: the actual condition was a sufficiently large window-size change. Handheld windows often changed by too little to reproduce it, while a desktop window resized much smaller before the toggle failed reliably."
+    },
+    {
+      "type": "heading",
+      "text": "NavRectRel still described widgets at the old dimensions"
+    },
+    {
+      "type": "paragraph",
+      "text": "ImGui caches relative navigation rectangles used to decide which item receives focus when a controller moves up, down, left, or right. After the layout was rebuilt at a new size, those NavRectRel values could remain stale. Focus calculations then referenced geometry that no longer matched the visible controls. Pressing certain directions could incidentally restore navigation, explaining why the bug sometimes appeared to fix itself."
+    },
+    {
+      "type": "heading",
+      "text": "A resize now invalidates navigation state at the UI boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14475 changes ImGuiManager so any Big Picture window resize forces navigation reinitialization. The fix does not add timing delays or special-case fullscreen; it responds to the state change that makes the cached rectangles invalid. Keeping the repair in the resize path also covers manual window resizing, resolution changes, and other transitions that rebuild layout without changing fullscreen mode."
+    },
+    {
+      "type": "heading",
+      "text": "The regression sequence needs both large and small dimension changes"
+    },
+    {
+      "type": "paragraph",
+      "text": "On the previous code, testers should shrink the Big Picture window substantially and then toggle fullscreen to reproduce stuck controller focus. On the corrected path, navigation must continue after repeated grow, shrink, and fullscreen transitions. The matrix should include desktop and handheld-sized windows, mouse interaction between controller moves, and every tab edge. Focus position may be reset deliberately, but it must never point outside the rebuilt layout or require a recovery input."
+    },
+    {
+      "type": "callout",
+      "text": "The fix follows the real invalidation event: a window resize rebuilds layout, so controller navigation geometry must be rebuilt with it."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14475",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

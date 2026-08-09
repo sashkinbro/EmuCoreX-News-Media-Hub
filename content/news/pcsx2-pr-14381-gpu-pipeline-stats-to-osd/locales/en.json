@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 exposes shader invocation counts before the overlay changes them",
+  "summary": "An optional OSD metric reports vertex and pixel shader invocations gathered ahead of ImGui drawing, making backend workload comparisons more stable and easier to read.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14381: GS: Add GPU pipeline stats to OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "GPU pipeline statistics",
+    "vertex shader invocations",
+    "pixel shader invocations",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Add GPU pipeline stats to OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Frame rate cannot tell whether a scene expanded vertex or pixel work"
+    },
+    {
+      "type": "paragraph",
+      "text": "A performance regression may come from more submitted vertices, more covered samples, extra passes, or synchronization. PCSX2 already displayed several renderer metrics, but lacked direct pipeline invocation counts. Pull request #14381 adds VSI and PSI so a developer can see whether the GPU executed thousands of vertex shader calls or millions of pixel shader calls in the measured interval."
+    },
+    {
+      "type": "heading",
+      "text": "Queries are implemented across every hardware API"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D 11, Direct3D 12, OpenGL, Vulkan, and Metal device classes expose pipeline statistics to common performance metrics. The setting appears in OSD configuration and the overlay formats large numbers with decimal K, M, and B suffixes. Collecting through backend queries is necessary because a common estimate from draw counts would miss clipping, instancing, sample coverage, and API-specific execution."
+    },
+    {
+      "type": "heading",
+      "text": "Sampling before ImGui removes the overlay from its own measurement"
+    },
+    {
+      "type": "paragraph",
+      "text": "Early results varied dramatically because the query could include OSD and ImGui rendering. The final behavior gathers statistics before drawing the overlay, stabilizing the numbers and making scene comparisons more meaningful. Software rendering still presents through Vulkan, so values may appear there but describe presentation rather than the software GS workload; the source warns that those numbers should not be interpreted like hardware-renderer statistics."
+    },
+    {
+      "type": "heading",
+      "text": "A valid comparison fixes scene and query interval"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enable Show GPU Pipeline Statistics and hold one scene still across backends, checking that VSI and PSI appear and scale plausibly when resolution or geometry changes. Toggle the OSD itself and confirm the measured values do not jump from counting its pixels. Exercise query reset, device loss, pause, and backend switch. Cross-API counts may still differ because specifications and sample accounting vary, so diagnose trends within a backend before claiming exact parity."
+    },
+    {
+      "type": "callout",
+      "text": "The OSD reports hardware query results, not a universal cross-API truth; taking the sample before ImGui makes it useful without letting the meter measure itself."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

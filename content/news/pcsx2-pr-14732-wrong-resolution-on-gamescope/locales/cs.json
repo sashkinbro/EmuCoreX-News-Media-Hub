@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 řeší dvoustupňové spuštění Gamescope změnou velikosti bez návratu na 640x480",
+  "summary": "Zpožděná událost změny velikosti by mohla přežít novější dotaz na okno 1280x800; opravené pořadí stavů udržuje konečné zobrazení na Steam Decku ve velikosti, kterou Gamescope skutečně vybral.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PCSX2 #14732: Qt: Oprava nesprávného rozlišení na Gamescope",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "zpoždění změny velikosti",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Oprava nesprávného rozlišení na Gamescope"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope hlásí dočasné okno před skutečnou velikostí displeje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Herní režim SteamOS může způsobit, že Qt otevře PCSX2 na rozlišení 640x480 a okamžitě jej změní na obrazovku Steam Decku s rozlišením 1280x800. Obě události jsou platné v různých okamžicích. Chyba se objevila, protože prvotní změna velikosti spustila časovač debounce, zatímco pozdější dotaz DisplaySurface aktualizoval zapamatovaná rozměry na konečnou velikost. Zpožděné volání pak proběhlo se zastaralým záměrem 640x480."
+    },
+    {
+      "type": "heading",
+      "text": "Starý časovač mohl přepsat novější informace o okně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debounce obvykle zabraňuje nákladné práci s viewportem během bouře změn velikosti. Zde se stal rizikem pořadí: rozměry m_last_window již popisovaly 1280x800, ale čekající zpětné volání stále aplikovalo dřívější cíl. Big Picture zůstal na úrovni systémového okna na celou obrazovku, zatímco renderer používal malý viewport, což vytvářelo charakteristický obraz 640x480 v levém dolním rohu."
+    },
+    {
+      "type": "heading",
+      "text": "Oprava činí stav změny velikosti monotónní během sekvence spouštění"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14732 upravuje logiku změny velikosti zobrazení Qt, aby starší odložená událost nemohla zvítězit poté, co getWindowInfo zaznamenal aktuální plochu. Cílí na konflikt mezi dvěma zdroji velikosti, nikoli na speciální zacházení s pevně daným rozlišením Steam Decku. To je důležité pro další zařízení Gamescope, externí monitory a budoucí panely, jejichž konečné rozměry se liší od 1280x800."
+    },
+    {
+      "type": "heading",
+      "text": "Opakované studené spuštění je smysluplný regresní test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Na Steam Decku nebo jiné seanci Gamescope opakovaně spouštějte PCSX2 s -bigpicture -fullscreen a OpenGL a po každém spuštění kontrolujte viewport. Přidávejte přechody z okna do režimu celé obrazovky, změny externího monitoru, suspend/resume a několik renderer backendů. Logujte každou událost změny velikosti, cíl debouncu, výsledek getWindowInfo a aplikovaný viewport. Konečný callback musí použít nejnovější rozměry, zatímco obyčejná jednotlivá změna velikosti stále čeká na debounce a správně se aplikuje."
+    },
+    {
+      "type": "callout",
+      "text": "Chyba nebyla v nesprávné konstantě rozlišení; byl to starý časovač, který vítězil poté, co nová velikost povrchu již byla autoritativní."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Přečtěte si inženýrskou diskuzi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

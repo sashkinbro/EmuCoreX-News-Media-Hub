@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 在网络映射到服务器之前拒绝 NetPlay 控制器索引",
+  "summary": "签名范围检查现在在访问手柄和 Wiimote 映射之前进行，关闭了远程崩溃路径，同时保留发送者所有权验证。",
+  "heroAlt": "来自 Dolphin 拉取请求 #14677 的原始证据：NetPlayServer：通过无效手柄索引修复远程崩溃",
+  "searchKeywords": [
+    "Dolphin",
+    "NetPlay 安全性",
+    "手柄索引",
+    "远程数据包",
+    "Wiimote 映射"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "安全性",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer：通过无效手柄索引修复远程崩溃"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "来自网络的控制器编号仍然是不可信的输入"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay 数据包识别它们所携带状态的手柄或 Wii Remote。服务器以前在某些路径中检查所有权后使用 map_array.at，但无效的有符号索引可能先到达边界检查访问。然后 std::array::at 会抛出异常，将格式错误或恶意的对等端数据包变为服务器进程失败，而不是被拒绝的消息。负值在转换为 size_t 之前需要特别注意。"
+    },
+    {
+      "type": "heading",
+      "text": "一个助手在检查所有权之前确定范围"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14677 引入了 IsValidPadIndex。它首先要求索引为非负值，然后将其转换并与具体的 map 数组大小进行比较。手柄数据、手柄主机轮询和 Wiimote 数据在调用 at 之前都会调用该助手。只有映射到发送玩家的有效槽位会继续。服务器会对无效输入返回协议失败，而不是索引或允许客户端发送另一个参与者的控制。"
+    },
+    {
+      "type": "heading",
+      "text": "断开连接行为也考虑了映射的 Wiimote"
+    },
+    {
+      "type": "paragraph",
+      "text": "相同的更改会检查当游戏正在进行时，即将离开的非主机玩家是否拥有任何Wiimote映射。如果有，服务器会停止会话并广播DisableGame，这反映了需要避免在缺少同步输入的情况下继续进行的情况。该检查仅在更改运行标志时才获取游戏锁。此行为与边界验证是分开的，但涵盖了另一种控制器映射生命周期的边缘情况。"
+    },
+    {
+      "type": "heading",
+      "text": "对每条带有索引的消息进行模糊测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "通过每种手柄和Wiimote数据包类型发送最小整数、-1、零、最后有效槽、首个无效槽和最大整数。分别作为主机、映射客户端、未映射客户端，以及断开连接或重新映射后进行重复。服务器应拒绝格式错误的输入，而不会抛出异常、过度记录或更改状态。在截断值和类型边界周围添加数据包模糊测试，然后验证有效的多控制器会话和游戏中间Wiimote断开连接仍然遵循预期的关闭策略。"
+    },
+    {
+      "type": "callout",
+      "text": "范围和所有权是两个独立的问题：服务器必须首先证明一个插槽存在，然后证明远程发送者被允许控制它。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "阅读 Dolphin 工程讨论和源代码更改"
+    }
+  ]
+}

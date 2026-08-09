@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 scambia Direct3D 11 copie di profondità per copie più veloci dei render-target",
+  "summary": "Un percorso di profondità come render-target esegue più operazioni di copia ma utilizza una forma Direct3D 11 più veloce, puntando a scene con feedback elevato AA1 e AAT quando ROV è disabilitato.",
+  "heroAlt": "Evidenza sorgente dalla pull request PCSX2 #14603: GS/DX11: Backport ds come rt da GL per il feedback di profondità.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "feedback di profondità",
+    "copia del render target",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Backport ds come rt da GL per il feedback di profondità."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Solo il conteggio delle copie non predice il costo Direct3D 11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il feedback di profondità richiede a PCSX2 di rendere le informazioni di profondità disponibili per un disegno successivo senza violare le regole di utilizzo del target. Direct3D 11 può eseguire una copia di profondità GPU, ma la sorgente segnala questa operazione come particolarmente lenta. Una soluzione con meno copie può quindi essere meno efficiente rispetto a un percorso che converte la profondità in forma di render-target ed esegue copie extra tramite hardware e shader ottimizzati per target simili a colori."
+    },
+    {
+      "type": "heading",
+      "text": "La strategia OpenGL depth-as-RT è adattata a DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14603 aggiunge la conversione e le tubazioni del dispositivo necessarie per trattare il feedback di profondità come copie di render-target su Direct3D 11. Le modifiche agli shader espongono il percorso di formato necessario e GSDevice11 tiene traccia delle risorse utilizzate dalla conversione. Direct3D 12 riceve aggiustamenti condivisi correlati, ma l'obiettivo di prestazione è DX11. Il design è testato esplicitamente senza ROV in modo che il feedback ordinato non nasconda la differenza nel percorso delle copie."
+    },
+    {
+      "type": "heading",
+      "text": "Più operazioni possono comunque terminare prima quando ogni operazione è meno costosa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il compromesso centrale dell'articolo è misurabile: il nuovo percorso può eseguire copie aggiuntive, ma evita il costoso comportamento di copia in profondità nativa. Non dovrebbe essere descritto come universalmente più veloce basandosi solo sul numero di operazioni. La conversione del formato, la larghezza di banda della memoria, la dimensione del target, il fornitore GPU e il numero di eventi di feedback determinano il risultato. La correttezza dipende anche dal mantenimento della precisione della profondità attraverso la rappresentazione del render-target."
+    },
+    {
+      "type": "heading",
+      "text": "I giochi AA1 e AAT forniscono il test di stress previsto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eseguire benchmark di Final Fantasy X, Everybody's Golf e altri titoli AA1 o AAT su Direct3D 11 con ROV disattivato, mantenendo costanti risoluzione e scena. Registrare i tipi di copia, il conteggio, il tempo GPU e l'output dei frame rispetto al precedente percorso di copia in profondità. Testare dimensioni native e ingrandite e diversi fornitori. Confrontare gli effetti dipendenti dalla profondità e l'ordinamento z pixel per pixel; un aumento di velocità che introduce quantizzazione o profondità obsoleta non è accettabile."
+    },
+    {
+      "type": "callout",
+      "text": "L'ottimizzazione sceglie il primitivo più economico per DX11, non il conteggio più piccolo: copie extra di render-target possono superare una singola route costosa di copia della profondità."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

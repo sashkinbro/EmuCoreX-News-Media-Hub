@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 donne aux requêtes CDVD invalides une sortie d'état de lecteur définie",
+  "summary": "Les lectures de longueur nulle, négative et dépassant la fin mettent désormais à jour l'état prêt, le statut, l'erreur et l'interruption de manière cohérente, ainsi que les transitions correctes de CdStop et du plateau.",
+  "heroAlt": "Preuve source du pull request PCSX2 #5174 : CDVD : Certaines gestion d'erreurs, changements du drapeau Statut+Prêt et correction de CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "nombre de secteurs",
+    "statut du lecteur",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Stockage",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD : Certaines gestion d'erreurs, changements du drapeau Statut+Prêt et correction de CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Plusieurs jeux envoient des commandes de disque qui sont maladroites mais observables"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro : Enter the Dragonfly, l'épreuve de la princesse Aberanbou, la démo d'Evergrace et les secteurs d'exercices de bataille d'animation comptent ou adresses que l'ancien flux CDVD de PCSX2 n'a pas fini correctement. Un comptage nul ou négatif pourrait maintenir un chemin de lecture actif, tandis qu'une adresse au-delà du disque ne possédait pas une transition d'erreur cohérente. Le résultat allait d'un comportement LSN invalide à des ratés de TLB, un échec de démarrage ou des blocages ultérieurs de film."
+    },
+    {
+      "type": "heading",
+      "text": "Prêt et Statut deviennent des affectations explicites de l'état du lecteur"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #5174 distingue les bits prêt, occupé, données prêtes, appareil connecté et erreur au lieu de répéter ORing ou de nettoyer un drapeau sur place. cdvdUpdateStatus enregistre le statut actuel et collant, tandis que l'achèvement de la commande utilise un chemin commun IRQ. Les rappels d'ouverture, de fermeture, de recherche, de lecture, de pause, d'arrêt, d'interruption et de nouveau disque publient donc une paire cohérente de valeurs de statut et de disponibilité au lieu de laisser des bits d'une opération précédente."
+    },
+    {
+      "type": "heading",
+      "text": "Les comptages invalides et les limites du disque terminent maintenant la commande"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le lecteur enregistre MaxSector depuis le disque monté et vérifie une lecture avant de continuer au-delà. Une requête hors plage déclenche une erreur de piste la plus externe, revient en pause, efface l'attente DMA et déclenche l'interruption de commande. Un compte de secteurs inférieur ou égal à zéro termine de même et revient à prêt au lieu de programmer un autre transfert. Les résultats de CdStop et SCMD sont corrigés dans le cadre du même nettoyage de machine d'état."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de sauvegarde et multi-jeux doivent inspecter les drapeaux, pas seulement le démarrage"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement de disposition d'état a requis une mise à jour de version savestate, donc le traitement des anciens et nouveaux états doit être explicitement couvert. Reproduisez les jeux nommés et consignez la commande, LSN, le compte, Prêt, Statut, Erreur, IRQ et l'état DMA. Testez les changements de plateau, arrêt, interruption, lectures valides de fin de disque et requêtes délibérément invalides. Certains cas sources nécessitaient encore des patchs de jeu séparés ou présentaient des blocages FMV ultérieurs ; ces limites doivent rester documentées plutôt que créditées à ce nettoyage d'état."
+    },
+    {
+      "type": "callout",
+      "text": "L'amélioration est un chemin de sortie complet : même une requête de disque mal formée doit amener le lecteur, le contrôleur DMA et le contrôleur d'interruption à être d'accord sur ce qui s'est passé."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les changements de source"
+    }
+  ]
+}

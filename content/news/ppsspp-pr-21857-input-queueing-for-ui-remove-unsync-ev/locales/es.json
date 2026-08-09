@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP canaliza la entrada de la plataforma a través del bucle de eventos UI",
+  "summary": "Las devoluciones de llamada de toque, tecla y eje ahora encolan datos para su envío ordenado en el hilo de la UI, eliminando métodos de pantalla no sincronizados y un amplio bloqueo recursivo.",
+  "heroAlt": "Evidencia de origen del pull request #21857 de PPSSPP: Reestructurar la cola de entrada para UI, eliminar eventos Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "cola de entrada",
+    "ScreenManager",
+    "toque",
+    "controlador"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Entrada",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Rehacer la cola de entrada para UI, eliminar eventos Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Las devoluciones de llamada de entrada y la mutación de la pantalla compartían un límite frágil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los backends de escritorio y móviles pueden reportar eventos de toque, teclado y controlador desde contextos que no poseen la pila de pantallas actual de PPSSPP. El diseño anterior mezclaba un bloqueo de entrada recursivo con puntos de entrada UnsyncTouch, UnsyncKey y UnsyncAxis que podían atravesar vistas directamente. Por lo tanto, los cambios de pantalla, superposiciones y la distribución de eventos dependían de un bloqueo grande y de que los llamadores supieran qué método no sincronizado era seguro."
+    },
+    {
+      "type": "heading",
+      "text": "Las devoluciones de llamada ahora solo realizan una corta operación de cola"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #21857 define eventos en cola tipados para entradas de toque, tecla y eje. Las devoluciones de llamada de ScreenManager copian el evento y lo añaden mientras mantienen eventQueueLock. Durante la actualización, el hilo de la UI mueve toda la deque a una variable local, libera el mutex y distribuye los eventos en orden. La sección crítica no ejecuta código de vista, por lo que los manejadores no pueden aumentar la latencia de la devolución de llamada de la plataforma ni adquirir recursivamente el bloqueo de la cola."
+    },
+    {
+      "type": "heading",
+      "text": "Las reglas especiales de entrega permanecen explícitas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Todos los eventos de toque de liberación todavía alcanzan cada capa de la pantalla, y los eventos de liberación de teclas aún se propagan de manera que una capa de fondo no puede retener una tecla atascada después de los cambios en la pila. La entrada ordinaria va a la pantalla frontal, mientras que una superposición recibe primero el toque hacia abajo para poder descartarse a sí misma y consumir el evento. La conversión de navegación por enfoque se convierte en un asistente normal KeyEventToFocusMoves, y muchos métodos Unsync desaparecen porque ahora la distribución sucede en el hilo propietario."
+    },
+    {
+      "type": "heading",
+      "text": "El orden y las transiciones de pantalla son las pruebas difíciles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Genera eventos entrelazados de toque, tecla y eje mientras se abren y cierran ventanas emergentes, se cambian pantallas, se rota el dispositivo, se reconectan controladores y se mantienen presionados botones a través de una transición. Confirma el orden FIFO y que los eventos de liberación borren todos los estados presionados. Somete a estrés a los productores desde múltiples hilos y usa ThreadSanitizer alrededor del acceso a la cola y la pila de pantallas. Define el comportamiento cuando una pantalla cambia después de que un evento está en cola pero antes de la actualización; la implementación apunta intencionalmente a la pila actual en el momento de la distribución, por lo que las pruebas deben asegurar ese contrato."
+    },
+    {
+      "type": "callout",
+      "text": "Las devoluciones de llamada de la plataforma ahora informan la entrada; el hilo UI decide a dónde pertenece cuando procesa la cola ordenada."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Lea la discusión de ingeniería PPSSPP y los cambios en el código fuente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation memperbaiki satu register host yang salah dalam timing GTE RISC-V",
+  "summary": "EndAndLinkBlock menghitung tick penyelesaian yang benar di RARG2 tetapi menyimpan RARG1, ketidakcocokan satu instruksi yang dapat membawa kesiapan coprocessor yang salah ke blok yang dikompilasi ulang berikutnya.",
+  "heroAlt": "Bukti sumber dari permintaan tarik DuckStation #3702: CPU/RISCV64: Perbaiki penyimpanan gte_completion_tick di EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "recompiler",
+    "tick penyelesaian"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "Cpu",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Perbaiki penyimpanan gte_completion_tick di EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Perhitungannya benar hingga penyimpanan terakhir"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation melacak kapan PlayStation Geometry Transformation Engine menyelesaikan pekerjaan sehingga mengikuti instruksi CPU dapat mengamati waktu ketergantungan yang benar. Dalam jalur EndAndLinkBlock recompiler RISC-V 64, nilai penyelesaian baru sudah dihitung ke dalam RARG2. Namun, store yang diterbitkan tetap menggunakan RARG1, menulis register argumen yang berbeda ke status waktu GTE global tepat sebelum kendali berpindah ke blok lain."
+    },
+    {
+      "type": "heading",
+      "text": "Satu substitusi register menyelaraskan RISC-V dengan recompiler lain"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3702 mengubah instruksi SW untuk menyimpan RARG2 di g_state.gte_completion_tick. Tidak ada formula waktu atau perubahan decoder instruksi guest. Buktinya adalah aliran data pada titik tersebut dan perilaku yang cocok dari backend arsitektur lain. Patch kecil seperti ini sangat berharga tepat karena register yang salah dapat bertahan dalam kompilasi, menghasilkan kode mesin yang valid, dan gagal hanya pada satu keluarga host."
+    },
+    {
+      "type": "heading",
+      "text": "Tick penyelesaian yang usang mengubah kapan instruksi berikutnya percaya GTE sudah siap"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jika nilai yang salah lebih awal dari tick yang dihitung, kode guest mungkin menggunakan hasil geometri terlalu cepat; jika lebih lambat, DuckStation dapat memasukkan penantian yang tidak perlu. Kedua arah dapat mengubah permainan yang menginterleave pekerjaan CPU dengan perintah GTE meskipun aritmatika yang telah diubah itu sendiri benar. Kesalahan terbawa melintasi batas blok, jadi pengujian yang terbatas pada instruksi dalam satu blok yang dihasilkan mungkin tidak mendeteksinya."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian harus memaksa nilai penyelesaian melintasi EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengujian recompiler yang ditargetkan harus mengeluarkan perintah GTE, mengakhiri blok saat unit masih sibuk, menghubungkan ke kode yang membaca atau bergantung pada hasil, dan membandingkan interpreter, RISC-V, serta backend recompiler lainnya. Catat nilai RARG2 yang dihitung dan tick global yang disimpan. Cakup keluar bersyarat dan berbagai kasus new-PC yang ditangani oleh EndAndLinkBlock. Jalankan pengujian waktu GTE yang ada berulang-ulang pada perangkat keras RISC-V asli sehingga perbedaan alokasi register atau konvensi pemanggilan diuji."
+    },
+    {
+      "type": "callout",
+      "text": "Patch adalah satu operand, tetapi invarian bersifat arsitektural: setiap backend host harus membawa tick penyelesaian GTE yang dihitung melintasi link blok."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Baca diskusi rekayasa DuckStation dan perubahan sumber"
+    }
+  ]
+}

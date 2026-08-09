@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin odmítá indexy ovladačů NetPlay dříve, než dosáhnou map serveru",
+  "summary": "Podepsané kontrolní rozsahy nyní předcházejí přístupu k mapám ovladače a Wiimote, čímž se uzavírá cesta k vzdálenému pádu a zároveň se zachovává ověření vlastnictví odesílatele.",
+  "heroAlt": "Důkazy ze zdroje z pull requestu Dolphin #14677: NetPlayServer: Oprava vzdáleného pádu při neplatném indexu ovladače",
+  "searchKeywords": [
+    "Dolphin",
+    "Bezpečnost NetPlay",
+    "index ovladače",
+    "vzdálený paket",
+    "mapa Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Bezpečnost",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Oprava vzdáleného pádu při neplatném indexu ovladače"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Číslo ovladače ze sítě je stále nedůvěryhodný vstup"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pakety NetPlay identifikují ovladač nebo Wii Remote, jehož stav nesou. Server dříve používal map_array.at po kontrole vlastnictví v některých cestách, ale neplatný podepsaný index se mohl dostat k přístupu s kontrolou hranic jako první. std::array::at pak vyhodí výjimku, což způsobí selhání serverového procesu namísto zamítnuté zprávy. Záporné hodnoty vyžadují zvláštní péči před konverzí na size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Jeden pomocný prvek stanovuje rozsah před vlastnictvím."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14677 zavádí IsValidPadIndex. Nejprve vyžaduje, aby index byl nezáporný, poté jej převádí a porovnává s konkrétní velikostí mapovacího pole. Data ovladače, dotazy hostitele ovladače a data Wiimote volají pomocnou funkci před at. Pouze platný slot přiřazený zasílajícímu hráči pokračuje. Server vrací protokolní chybu pro neplatný vstup místo toho, aby indexoval nebo umožnil klientovi odesílat ovládací prvky pro jiného účastníka."
+    },
+    {
+      "type": "heading",
+      "text": "Chování při odpojení také zohledňuje mapované Wiimote."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta samá změna kontroluje, zda odcházející hráč, který není hostitelem, vlastní nějaké mapování Wiimote, zatímco je hra aktivní. Pokud ano, server ukončí relaci a vysílá DisableGame, což odráží nutnost vyhnout se pokračování s chybějícím synchronizovaným vstupem. Kontrola bere zámek hry pouze při změně příznaku běhu. Toto chování je oddělené od validace hranic, ale pokrývá jiný okrajový případ životního cyklu mapy ovladače."
+    },
+    {
+      "type": "heading",
+      "text": "Náhodně testujte každý zprávu, která nese index"
+    },
+    {
+      "type": "paragraph",
+      "text": "Odesílejte minimální celé číslo, -1, nulu, poslední platnou pozici, první neplatnou pozici a maximální celé číslo přes každý typ paketu pro ovladače a Wiimote. Opakujte jako hostitel, namapovaný klient, nenamapovaný klient a po odpojení nebo přemapování. Server by měl odmítat špatně formátovaný vstup bez výjimek, nadměrného logování nebo změn stavu. Přidejte testování paketů kolem ořezaných hodnot a hranic typů, poté ověřte, že platné multi-ovladačové relace a odpojení Wiimote uprostřed hry stále následují zamýšlenou politiku ukončení."
+    },
+    {
+      "type": "callout",
+      "text": "Hranice a vlastnictví jsou samostatné otázky: server musí nejprve dokázat, že slot existuje, a pak dokázat, že vzdálený odesílatel má oprávnění ho ovládat."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Přečtěte si inženýrskou diskusi Dolphin a změny zdrojového kódu"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticar sombras ausentes sem empilhar gambiarras gráficas",
+  "summary": "Capture uma cena com muitas sombras na resolução nativa, identifique se a camada ausente é geometria, profundidade ou mistura, compare APIs de hardware e uma referência de software, depois retenha apenas a menor correção por jogo.",
+  "heroAlt": "PCSX2 captura de comparação de uma correção de precisão gráfica em uma cena de jogo sombreada",
+  "searchKeywords": [
+    "PS2 sombras ausentes",
+    "EmuCoreX correção de sombras",
+    "precisão gráfica",
+    "comparação com renderizador de software",
+    "mistura de profundidade"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisão"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 contadores de gráficos e indicadores de configuração",
+    "pcsx2-report": "PCSX2 ponto de entrada para relatório de problemas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Comprove qual camada de sombra está ausente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma sombra pode ser uma textura projetada, uma passagem de framebuffer translúcido, geometria escura comum ou um efeito combinado com teste de profundidade. A primeira pergunta útil, portanto, não é qual truque ativar, mas se o jogo desenha a camada de fato. Escolha um ponto onde o mesmo personagem, luz e câmera possam ser restaurados de forma confiável. Registre o serial do jogo, renderizador ativo, driver GPU, resolução interna, configuração de mistura e quaisquer correções herdadas por jogo antes de mexer no perfil."
+    },
+    {
+      "type": "callout",
+      "text": "Não julgue a mudança a partir de um momento diferente do dia, ângulo de câmera, estado salvo ou frame de animação. A iluminação dinâmica pode fazer com que dois frames válidos pareçam uma regressão do renderizador."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare um checkpoint sombra"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um salvamento normal dentro do jogo imediatamente antes de uma cena repetível iluminada.",
+        "Uma captura de tela base com o personagem e o chão visíveis juntos.",
+        "Resolução interna nativa e pós-processamento desativado para a primeira comparação.",
+        "O driver do sistema GPU selecionado; drivers personalizados são um experimento separado.",
+        "Uma cópia escrita das substituições de gráficos globais e por jogo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Comportamento separado de desenho, mistura e profundidade"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Inicialize o título a frio e capture o ponto de verificação de referência sem carregar um estado salvo do emulador.",
+        "2. Redefina as correções manuais GS para este título, selecione a resolução interna nativa e repita o mesmo caminho de movimento.",
+        "3. Alterne apenas entre as APIs de hardware suportadas, fechando o jogo entre as execuções para que o renderizador seja inicializado de forma limpa.",
+        "4. Se ambos os caminhos de hardware omitirem a camada, use a renderização por software brevemente como referência de correção e capture a câmera idêntica.",
+        "5. Quando o software mostrar a sombra, retorne para a API de hardware mais estável e aumente a precisão de blend apenas um nível.",
+        "6. Se a mistura não alterar nada, restaure-a e teste a correção relacionada à profundidade documentada e apropriada ao título, em vez de combinar suposições.",
+        "7. Repita uma segunda cena de sombra que use uma superfície ou fonte de luz diferente.",
+        "8. Aqueça o dispositivo por dez minutos e confirme se a correção selecionada permanece rápida o suficiente para a reprodução real."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "A saída do software é uma evidência de diagnóstico, não uma promessa de velocidade jogável. Um quadro de software correto mostra que a imagem do disco e o código do jogo podem produzir o efeito, enquanto uma falha apenas no hardware restringe a pesquisa ao comportamento do renderizador. Uma alteração na mistura que restaura uma sombra translúcida é diferente de uma correção de profundidade que restaura geometria oculta pela ordem. Manter esses ramos separados torna o resultado explicável e reversível."
+    },
+    {
+      "type": "heading",
+      "text": "Aceitação da correção de sombra"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aceite o perfil apenas quando a camada estiver estável em mais de um quadro de teste original."
+    },
+    {
+      "type": "list",
+      "items": [
+        "A posição da sombra segue o sujeito em movimento em vez de permanecer como um retângulo estático.",
+        "A opacidade se assemelha à referência do software e não escurece toda a passagem do solo.",
+        "Decais próximos, névoa e transparência do HUD permanecem intactos.",
+        "O efeito sobrevive a uma inicialização a frio e a uma transição de área posterior.",
+        "A velocidade sustentada e o ritmo de quadros permanecem dentro do orçamento de referência registrado."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Evidências que apontam para outro lugar"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A sombra também está ausente no software: verifique a imagem e confirme se a cena original realmente contém uma.",
+        "Apenas o carregamento do estado salvo do emulador o quebra: teste novamente a partir de um save no jogo e descarte o estado incompatível.",
+        "Toda superfície escura desaparece: redefina a ampla omissão de desenho ou substituições manuais GS.",
+        "O conserto funciona uma vez, mas falha após retomar: capture detalhes do renderizador e do driver para um relatório de ciclo de vida."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Retorne à linha de base gráfica medida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restaure a mistura automática, desative a correção de profundidade testada, selecione novamente o renderizador original e o driver do sistema, e faça um boot a frio no checkpoint. Mantenha as capturas antes e depois com suas configurações, mas exclua estados de salvamento temporários que não consigam reproduzir a cena de forma consistente."
+    },
+    {
+      "type": "heading",
+      "text": "Não publique saves ou dados de disco protegidos por direitos autorais"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um relatório de suporte pode incluir o serial, configurações, logs e capturas de tela criadas pelo usuário, onde permitido. Não anexe uma imagem do jogo, firmware, material de criptografia ou um save contendo conteúdo distribuído por terceiros apenas para demonstrar a sombra."
+    },
+    {
+      "type": "link",
+      "text": "Leia o guia de evidências de desempenho PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

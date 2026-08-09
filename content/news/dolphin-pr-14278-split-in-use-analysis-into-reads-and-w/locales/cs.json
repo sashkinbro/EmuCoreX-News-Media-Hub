@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin učí své JIT, zda bude registr při čtení živý nebo přepsán",
+  "summary": "Oddělené masky budoucího čtení a budoucího zápisu umožňují cache x64 a ARM64 činit bezpečnější a přesnější rozhodnutí o přednačtení a vymazání než jediná příznak používanosti.",
+  "heroAlt": "Důkaz ze zdroje z žádosti o přetažení Dolphin #14278: PPCAnalyst: Rozdělit analýzu \"v použití\" na čtení a zápisy",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "cache registru",
+    "analýza živosti",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "CPU",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Rozdělit analýzu \"v použití\" na čtení a zápisy"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Být živý neříká, co udělá další instrukce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hostitelský registr může být relevantní pro zbytek bloku, protože budoucí instrukce přečte jeho aktuální hodnotu, protože budoucí instrukce ji přepíše, nebo obojí. Starší maska používaná registrem Dolphin tyto případy sloučila. Cache registru JIT pak měla omezené informace při rozhodování, zda načíst hostitelskou hodnotu, zapsat zpět špinavou hodnotu hostitele, zahodit mapování nebo ji zachovat přes hranici záložního řešení."
+    },
+    {
+      "type": "heading",
+      "text": "Dvě sady budoucího použití zpřehledňují tok dat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14278 propaguje gprWillBeRead a gprWillBeWritten, s ekvivalentními maskami pro plovoucí desetinná a stavová registru. Přednačítání zohledňuje registry, které se budou účastnit v jednom z obou směrů, přičemž stále vylučuje vstupy, které lze zahodit. Úplné vyprázdnění cílí na hodnoty již nepoužívané následnými operacemi. Výstupy, které nebudou později zapisovány, dostávají zvláštní zacházení, takže jejich současná špinavá hodnota dosáhne stavu hostitele, než je cache označí jako čistou."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty zachovává užitečné mapování po potvrzení jeho hodnoty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Refaktor přesně pojmenovává chování flush. Full zapisuje špinavá data a odstraňuje mapování. MaintainState zachovává existující stav tam, kde je to vyžadováno. Nový režim Undirty zapisuje špinavou hodnotu, ale zachovává asociaci hostitelského registru jako čistou. To je užitečné, když výstup musí být externě konzistentní na hranici, ale může být stále později čten. Obě cesty x64 a ARM64 přijímají tuto terminologii, včetně pomalého přístupu do paměti a míst pro návrat na interpret."
+    },
+    {
+      "type": "heading",
+      "text": "Diferenciální testy bloků se musí soustředit na obtížný řídicí tok"
+    },
+    {
+      "type": "paragraph",
+      "text": "Porovnejte interpret, JIT64 a JITARM64 přes generované bloky s pouze čtením, pouze zápisem, čtením a následným zápisem, zápisem a následným čtením, zahazovanými, okamžitými, s plovoucí desetinnou čárkou a se vzory registru podmínky. Přidejte výjimky, chybné přístupy do paměti, kontroly pipeline sběru, větvení, instrukce návratu na interpret a ukončení bloků na každé pozici. Instrumentujte hostitelské ztráty a zápisy hostitele pro ověření, že optimalizace skutečně snižuje práci, aniž by měnila stav. Náhodně diferenciální vykonávání by mělo porovnat všechny architektonické registry po každé vynucené hranici."
+    },
+    {
+      "type": "callout",
+      "text": "Registr živosti se stává akčním pouze tehdy, když JIT ví, zda budoucnost potřebuje dnešní hodnotu nebo pouze potřebuje název registru pro pozdější přepsání."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Přečtěte si inženýrskou diskusi Dolphin a změny zdrojového kódu"
+    }
+  ]
+}

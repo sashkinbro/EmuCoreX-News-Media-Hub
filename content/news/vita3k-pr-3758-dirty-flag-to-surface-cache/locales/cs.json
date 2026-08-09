@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K způsobuje, že zápisy do paměti hosta invalidační Vulkan povrchy",
+  "summary": "Chráněné rozsahy zálohovací paměti nyní označují kešované barevné povrchy jako špinavé, což zabraňuje opětovnému použití zastaralých GPU obrázků jako textur po tom, co CPU změnila jejich paměť.",
+  "heroAlt": "Důkaz zdroje z pull requestu Vita3K #3758: renderer/vulkan: Přidat špinavou značku do cache povrchů",
+  "searchKeywords": [
+    "Vita3K",
+    "Cache povrchů Vulkan",
+    "špinavá značka",
+    "mprotect",
+    "paměť hosta"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Přidat špinavou značku do cache povrchů"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Povrch může existovat v paměti GPU poté, co host změní jeho zálohované bajty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K ukládá do mezipaměti povrchy Vita ve formátu color jako zdroje Vulkan. Když hra zapíše odpovídající paměť hosta z CPU, uložený obrázek nemusí již reprezentovat daný rozsah adres. Jeho vrácení jako textury může zobrazit starý snímek nebo efekt. Některé lineární formáty také vyžadují synchronizaci GPU s hostem, když je CPU čte, takže chyby čtení a zápisu mají související, ale odlišný význam."
+    },
+    {
+      "type": "heading",
+      "text": "Ochranné zpětné volání nyní nesou sdílený stav synchronizace a poškození"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3758 dává každému ColorSurfaceCacheInfo sdílenou příznakovou značku špinavosti. protect_surface zarovnává bezpečně chránitelný interiér na stránky o velikosti 4 KiB. Lineární povrchy schopné synchronizace používají MemPerm::None k zachycení čtení a zápisů a k zachycení need_surface_sync; ostatní povrchy používají ReadOnly k zachycení zápisů. Zápis označí jako špinavé. U povrchu menšího než stránka je sledování špinavosti pozastaveno, protože nesouvisející data na stejné chráněné stránce by mohla vytvářet falešné neplatnosti."
+    },
+    {
+      "type": "heading",
+      "text": "Vyhledávání v mezipaměti odmítá data GPU po zápisu CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Když je barvený povrch požadován jako textura, nastaví se příznak dirty, který nevrací žádný uložený výsledek, čímž se volající odvede od zastaralého obsahu GPU. Když se stejný povrch stane znovu framebufferem, Vita3K může znovu aktivovat ochranu a vymazat příznak dirty po zavedení nového autoritativního použití. Překrývající se ochrany se kombinují pomocí most_restrictive_perm, takže přidání slabší oblasti nemůže náhodou znovu otevřít paměť, která je již silněji chráněna."
+    },
+    {
+      "type": "heading",
+      "text": "Metody mapování paměti a překrývání stránek jsou klíčové testy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vykreslete do povrchu, odeberte vzorek, přepište vše nebo část z hostitelského CPU a poté znovu odeberte vzorek pro lineární a dlaždicové formáty. Zahrňte zarovnané, nezarovnané, podstránkové, překrývající se a sdílené alokace; potvrďte, že malé povrchy se vyhnou falešným příznakům dirty, aniž by skryly skutečné změny. Test synchronizace zpětného čtení samostatně od neplatného zápisu. Opakujte na nativním mapování bufferu, dvojitém bufferování, NVIDIA a neinvidia linuxových ovladačích, Android a obnově savestate. Zaznamenejte chyby ochrany, aby bylo možné zachytit smyčky nebo nadměrné zachycení v horké cestě."
+    },
+    {
+      "type": "callout",
+      "text": "Cache je správný pouze tehdy, dokud je jeho důkaz o vlastnictví aktuální; jedno zápis hosta stačí k odvolání nároku plochy GPU na tuto paměť."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny Vita3K"
+    }
+  ]
+}

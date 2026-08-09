@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 stops failed ImGui texture allocation before it becomes a crash",
+  "summary": "Creation, upload, and destruction paths now treat missing BackendUserData as a real state, preventing an allocation failure from falling through into native-handle and map operations.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14655: GS: Better handle imgui texture creation hazards.",
+  "searchKeywords": [
+    "PCSX2",
+    "ImGui texture",
+    "allocation failure",
+    "GSTexture",
+    "crash"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Better handle imgui texture creation hazards."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui can request a texture when the GPU cannot provide one"
+    },
+    {
+      "type": "paragraph",
+      "text": "Font atlases and other interface images move through WantCreate, WantUpdates, and WantDestroy states. Texture allocation can fail because of device loss, resource pressure, unsupported dimensions, or another backend error. The old creation branch reported the failure but then continued as if a GSTexture existed, asking for its native handle and falling through to upload code. The diagnostic therefore preceded a null dereference rather than containing it."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate falls through only with valid backend data"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14655 wraps CreateTexture in a successful-pointer branch. Only a real texture receives an ImTextureID and BackendUserData before the code continues to the full-size upload. On failure, PCSX2 emits pxFailRel and breaks out of the state. WantUpdates separately checks BackendUserData before map or row-by-row Update operations, so a previous failed create cannot be mistaken for an initialized resource."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy also accepts that creation may never have completed"
+    },
+    {
+      "type": "paragraph",
+      "text": "The destruction state now recycles and invalidates the texture only when BackendUserData is non-null. That matters when ImGui discards an atlas request after an allocation failure or when a state transition races with recovery logic. The recycling behavior itself is unchanged for valid textures, including same-size atlas reuse; the patch makes the lifetime graph include an absent-resource branch from start to finish."
+    },
+    {
+      "type": "heading",
+      "text": "Failure injection is stronger than waiting for issue #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduce the linked crash dump if possible, then add a controlled backend hook that makes the next ImGui CreateTexture return null. OSD and font rendering should report failure without crashing, uploading pixels, or recycling an invalid pointer. Restore allocation and confirm a later atlas can be created and displayed. Repeat failure during resize, font eviction, device reset, and shutdown across all hardware backends, and run normal OSD tests to ensure the guarded path does not block valid updates."
+    },
+    {
+      "type": "callout",
+      "text": "The fix completes the texture state machine: allocation failure is a terminal branch for that request, not a warning followed by normal upload code."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

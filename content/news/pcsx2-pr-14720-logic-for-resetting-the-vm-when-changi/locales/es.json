@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ordena el reinicio del interruptor de disco antes de que Qt pueda despausar la VM",
+  "summary": "Un estado de reinicio diferido estaba siendo pisado por el evento de despausa de VMLock; mover la transición de la vista de emulación después de publicar el reinicio preserva el ciclo de vida de VM previsto.",
+  "heroAlt": "Evidencia de la fuente del pull request #14720 de PCSX2: Qt: Corregir la lógica para reiniciar la VM al cambiar discos",
+  "searchKeywords": [
+    "PCSX2",
+    "cambio de disco",
+    "reinicio de VM",
+    "VMLock",
+    "ventana separada"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Núcleo",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Corregir la lógica para reiniciar la VM al cambiar discos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cambiar un disco de la lista de juegos cruza los ciclos de vida de UI y VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con Render To Separate Window habilitado, Qt puede cambiar de vistas, bloquear la VM, enviar eventos y solicitar un reinicio en una sola acción del usuario. El propio reinicio fue diferido. MainWindow se movió hacia la vista de emulación mientras finalizaba el ámbito del bloqueo, y el destructor de VMLock envió un despausar. Ese evento posterior podría reemplazar VMState::Resetting antes de que el manejador de reinicio se ejecutara realmente."
+    },
+    {
+      "type": "heading",
+      "text": "La carrera es el orden de los eventos, no la sincronización faltante"
+    },
+    {
+      "type": "paragraph",
+      "text": "La VM tenía un estado de reinicio válido y un bloqueo destinado a proteger la transición. El problema era que dos cambios de estado diferidos estaban encolados en el orden equivocado. Se permitió que un despausar enviado desde la limpieza de la UI se ejecutara como si el reinicio ya hubiera terminado. Esto explica por qué cambiar discos desde una ruta particular del frontend fallaba aunque el reinicio directo y la pausa/reanudación ordinaria funcionaban."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView ahora sigue al reinicio enviado"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14720 mueve MainWindow::switchToEmulationView después de que se publica el evento de reinicio. La VM no se está ejecutando mientras se establece la solicitud de reinicio, y la transición de vista ya no puede causar que VMLock interfiera con Reiniciando mediante una pausa temprana. La fuente señala que es posible un rediseño más amplio del estado de la VM, pero este cambio corrige la falla conocida de orden sin ampliar el alcance."
+    },
+    {
+      "type": "heading",
+      "text": "Los cambios de disco en ventana separada deben repetirse a través de cada estado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilita Renderizar en Ventana Separada, inicia un título de varios discos y selecciona otro disco de la lista de juegos mientras se ejecuta, está en pausa y con un UI modal abierto. El registro publicó eventos de reinicio y de reanudación y confirma que el reinicio persiste hasta la finalización del mismo. Repite después de suspender, cargar el estado y seleccionar discos de manera consecutiva y rápida. Los cambios estándar en la misma ventana y los reinicios manuales son controles negativos; la corrección del orden no debe dejar el VM permanentemente en pausa ni cambiar de vista demasiado tarde."
+    },
+    {
+      "type": "callout",
+      "text": "El reinicio VM ya fue solicitado; la corrección asegura que no se permita que un evento de limpieza UI reanude la ejecución antes de que esa solicitud surta efecto."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios en el código fuente"
+    }
+  ]
+}

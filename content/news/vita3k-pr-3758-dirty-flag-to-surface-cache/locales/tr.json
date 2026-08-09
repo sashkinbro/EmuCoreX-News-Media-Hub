@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, misafir bellek yazmalarının Vulkan yüzeylerini geçersiz kılmasına neden olur",
+  "summary": "Korumalı destekleme alanları artık önbelleğe alınmış renk yüzeylerini kirli olarak işaretler, bu da CPU hafızalarını değiştirdikten sonra eski GPU görüntülerinin doku olarak tekrar kullanılmasını engeller.",
+  "heroAlt": "Vita3K çekme isteğinden kaynak kanıtı #3758: renderer/vulkan: Yüzey önbelleğine kirli bayrağı ekle",
+  "searchKeywords": [
+    "Vita3K",
+    "Vulkan yüzey önbelleği",
+    "kirli bayrak",
+    "mprotect",
+    "misafir belleği"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafikler",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Yüzey önbelleğine kirli bayrağı ekle"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bir yüzey, misafir destekleyici baytlarını değiştirdikten sonra GPU hafızasında var olabilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K, Vita renk yüzeylerini Vulkan kaynakları olarak önbelleğe alır. Bir oyun, CPU'den ilgili misafir belleğine yazdığında, önbelleğe alınmış görüntü artık o adres aralığını temsil etmeyebilir. Onu bir doku olarak döndürmek, eski bir kareyi veya efekti gösterebilir. Bazı lineer formatlar ayrıca CPU bunları okuduğunda GPU ile misafir senkronizasyonu gerektirir, bu nedenle okuma ve yazma hataları ilgili ama farklı anlamlara sahiptir."
+    },
+    {
+      "type": "heading",
+      "text": "Koruma geri çağrıları artık paylaşılan senkronizasyon ve kirli durumu taşır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3758 her ColorSurfaceCacheInfo'ya paylaşılan bir kirli bayrağı verir. protect_surface güvenle korunabilir içeriği 4 KiB sayfalara hizalar. Senkronizasyon yetenekli lineer yüzeyler, okuma ve yazmaları yakalamak ve need_surface_sync'i yakalamak için MemPerm::None kullanır; diğer yüzeyler yazmaları yakalamak için SadeceOku kullanır. Bir yazma, kirli olarak işaretler. Bir sayfadan daha küçük bir yüzey için, aynı korumalı sayfada alakasız veriler yanlış geçersiz kılmalara yol açacağından kirli izleme yapılmaz."
+    },
+    {
+      "type": "heading",
+      "text": "Önbellek araması, CPU yazmasından sonra GPU verilerini kabul etmez"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir renk yüzeyi doku olarak istendiğinde, bir set dirty bayrağı önbelleğe alınmış sonucu döndürmez ve çağıranı eski GPU içeriğinden uzaklaştırır. Aynı yüzey tekrar framebuffer olduğunda, Vita3K korumayı yeniden kurabilir ve yeni yetkili kullanım belirlendikten sonra dirty bayrağını temizleyebilir. Örtüşen korumalar, most_restrictive_perm ile birleştirilir, böylece daha zayıf bir aralık eklemek zaten daha güçlü şekilde korunmuş belleği yanlışlıkla yeniden açamaz."
+    },
+    {
+      "type": "heading",
+      "text": "Bellek eşleme yöntemleri ve sayfa örtüşmesi ana testlerdir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir yüzeye render yapın, onu örnekleyin, ardından misafir CPU'den tümünü veya bir kısmını yeniden yazın, sonra lineer ve tiled formatlar için tekrar örnekleyin. Hizalı, hizasız, alt sayfa, örtüşen ve paylaşılan sayfa tahsislerini dahil edin; küçük yüzeylerin gerçek değişiklikleri gizlemeden yanlış dirty bayraklarından kaçındığını doğrulayın. Okuma geri alma senkronizasyonunu yazma geçersiz kılmadan ayrı olarak test edin. Yerel tampon eşleme, çift tamponlama, NVIDIA ve NVIDIA dışı Linux sürücüleri, Android ve savestate geri getirme üzerinde tekrarlayın. Döngüleri veya aşırı sıcak yol tuzaklarını yakalamak için koruma hatalarını kaydedin."
+    },
+    {
+      "type": "callout",
+      "text": "Bir önbellek, sadece sahiplik kanıtı güncelse doğrudur; bir misafir yazması, GPU yüzeyinin o belleğe olan talebini iptal etmek için yeterlidir."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Vita3K mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

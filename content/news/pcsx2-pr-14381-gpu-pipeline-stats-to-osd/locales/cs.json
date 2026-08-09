@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 odhaluje počty volání shaderů předtím, než je změní překryv",
+  "summary": "Volitelná metrika OSD hlásí volání vertex a pixel shaderů shromážděná před vykreslováním ImGui, což činí srovnání zátěže backendu stabilnější a snazší na čtení.",
+  "heroAlt": "Důkaz ze zdrojového kódu z požadavku na stažení PCSX2 #14381: GS: Přidat statistiky pipeline GPU do OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Statistiky pipeline GPU",
+    "volání vertex shaderu",
+    "volání pixel shaderu",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Nástroje",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Přidat statistiky pipeline GPU do OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Snímková frekvence nemůže určit, zda scéna rozšířila práci vertex nebo pixel shaderu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Regrese výkonu může být způsobena větším počtem odeslaných vrcholů, větší pokrytí vzorků, dalšími průchody nebo synchronizací. PCSX2 již zobrazoval několik metrik rendereru, ale chyběl přímo počet volání pipeline. Pull request #14381 přidává VSI a PSI, takže vývojář může vidět, zda GPU vykonal tisíce volání vertex shaderů nebo miliony volání pixel shaderů v měřeném intervalu."
+    },
+    {
+      "type": "heading",
+      "text": "Dotazy jsou implementovány napříč všemi hardwarovými API."
+    },
+    {
+      "type": "paragraph",
+      "text": "Třídy zařízení Direct3D 11, Direct3D 12, OpenGL, Vulkan a Metal zpřístupňují statistiky pipeline běžným výkonovým metrikám. Nastavení se objevuje v konfiguraci OSD a překryv formátuje velká čísla s desetinnými příponami K, M a B. Sběr prostřednictvím backendových dotazů je nezbytný, protože běžný odhad z počtu vykreslení by postrádal stínování ořezáním, instancování, pokrytí vzorku a API-specifické vykonávání."
+    },
+    {
+      "type": "heading",
+      "text": "Vzorkování před ImGui odstraňuje překryv z vlastního měření"
+    },
+    {
+      "type": "paragraph",
+      "text": "Počáteční výsledky se výrazně lišily, protože dotaz mohl zahrnovat vykreslování OSD a ImGui. Konečné chování sbírá statistiky před vykreslením překryvné vrstvy, čímž se čísla stabilizují a srovnání scén se stává smysluplnější. Softwarové vykreslování se stále zobrazuje přes Vulkan, takže hodnoty se tam mohou objevit, ale popisují prezentaci spíše než softwarové zatížení GS; zdroj varuje, že tato čísla by neměla být interpretována jako statistiky hardwarového rendereru."
+    },
+    {
+      "type": "heading",
+      "text": "Platné srovnání fixuje scénu a interval dotazu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Povolte Zobrazit statistiky pipeline GPU a ponechte jednu scénu statickou napříč backendy, přičemž kontrolujte, že se VSI a PSI zobrazují a mění velikost věrohodně při změně rozlišení nebo geometrie. Přepínejte samotný OSD a potvrďte, že naměřené hodnoty neskáčou v důsledku počítání jeho pixelů. Vyzkoušejte reset dotazu, ztrátu zařízení, pauzu a přepnutí backendu. Počty Cross-API se stále mohou lišit, protože specifikace a způsob počítání vzorků se liší, takže diagnostikujte trendy v rámci jednoho backendu, než budete tvrdit přesnou shodu."
+    },
+    {
+      "type": "callout",
+      "text": "OSD hlásí výsledky dotazů na hardware, nikoli univerzální pravdu napříč API; vzít vzorek před ImGui je užitečné, aniž by se měřidlo měřilo samo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdrojového kódu"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP corrige un piège de création de périphérique Vulkan sur le matériel Mali",
+  "summary": "L'enveloppe libretro choisit désormais exactement un canal de fonctionnalité Vulkan, respectant la règle selon laquelle pEnabledFeatures doit être nul lorsque VkPhysicalDeviceFeatures2 est enchaîné.",
+  "heroAlt": "Preuve source provenant de la demande de tirage PPSSPP #21956 : Libretro : corrige le crash de lancement Vulkan sur les appareils Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro : corrige le crash de lancement Vulkan sur les appareils Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les pilotes tolérants masquaient une combinaison d'informations de création invalide"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan offre un pointeur legacy pEnabledFeatures et la structure extensible VkPhysicalDeviceFeatures2 dans pNext. Lorsque Features2 est présent, la spécification exige que le pointeur legacy soit nul. La wrapper libretro de PPSSPP pouvait remplir les deux tout en ajoutant des capacités requises par le frontend. Certains pilotes ont accepté la demande de périphérique malformée, mais Mali a retourné VK_ERROR_INITIALIZATION_FAILED, donc un cœur rendu par Vulkan a échoué avant le début de l'exécution du jeu."
+    },
+    {
+      "type": "heading",
+      "text": "Le wrapper découvre maintenant quelle route de fonctionnalités le cœur a choisie"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21956 parcourt la chaîne pNext de création de périphérique et enregistre si elle contient VkPhysicalDeviceFeatures2. Si trouvé, les fonctionnalités requises par le frontend sont fusionnées dans cette structure et newInfo.pEnabledFeatures est explicitement nul. Si absent, le wrapper préserve le comportement legacy existant en copiant ou en créant VkPhysicalDeviceFeatures et en assignant le pointeur. Les deux chemins légaux Vulkan sont donc mutuellement exclusifs."
+    },
+    {
+      "type": "heading",
+      "text": "La validation couvrait à la fois le mobile GPUs strict et tolérant"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'auteur a testé le rendu matériel sur Android 14 avec un appareil Mali-G615 et sur Android 13 avec un appareil Snapdragon 865 Adreno. Les deux ont démarré et fonctionné. Sur le système Mali, le passage de la création de l'appareil a révélé un problème de capacité de swapchain virtuel séparé, traité par un autre changement ; conserver cette distinction est important car résoudre une seule étape de démarrage ne doit pas amener le Hub à déclarer que chaque échec ultérieur de Vulkan a la même cause."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de chaîne de fonctionnalités doivent inspecter la propriété de la structure"
+    },
+    {
+      "type": "paragraph",
+      "text": "Capturer VkDeviceCreateInfo avec des couches de validation pour un cœur hérité, un cœur Features2, des chaînes avec des structures de fonctionnalités supplémentaires, et des fonctionnalités optionnelles absentes. Répéter sur Mali, Adreno, Vulkan de bureau, et plusieurs versions de RetroArch. Vérifier que les bits requis sont conservés plutôt que remplacés, que les pointeurs pNext restent valides à travers vkCreateDevice, et que pEnabledFeatures est nul uniquement dans le cas Features2. Tester également les chemins logiciel et OpenGL pour s'assurer que l'initialisation du wrapper n'assume pas Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "La négociation des fonctionnalités Vulkan a deux voies légales ; les combiner peut fonctionner sur des pilotes permissifs, mais cela reste invalide et échoue sur du matériel plus strict."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

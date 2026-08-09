@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 odmítá akumulační blendování na 16bitových cílech při maximální přesnosti",
+  "summary": "Ochrana přesnosti zakazuje optimalizaci, jejíž pořadí zaokrouhlování může přesáhnout reprezentovatelný 16bitový barevný rozsah, čímž se výstup hardwaru s vysokou přesností sladí s referencí softwaru.",
+  "heroAlt": "Důkaz ze zdroje z požadavku na stažení PCSX2 #13918: GS/HW: Vyžaduje 32bitový RT pro akumulační blendování při maximálním blendu.",
+  "searchKeywords": [
+    "PCSX2",
+    "akumulační blend",
+    "16bitový renderovací cíl",
+    "maximální blend",
+    "dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Vyžaduje 32bitový RT pro akumulační blendování při maximálním blendu."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Akumulační změny určují, která hodnota obdrží 16bitové zaokrouhlování"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 může optimalizovat některé směsi akumulací přes hostitelský renderovací cíl. Na 32bitovém cíli je dodatečná přesnost obecně kompatibilní s očekávaným výsledkem. 16bitový cíl GS kvantizuje barvu jinak: použití zaokrouhlení po špatném mezistupni může produkovat RGB 255, i když zamýšlená stupnice formátu dosahuje maximálně kolem 240. Obrázek může vypadat téměř stejně, zatímco jeho ditheringový vzor a přesné odstíny se liší."
+    },
+    {
+      "type": "heading",
+      "text": "Maximální přesnost nyní vyžaduje 32bitový cíl pro rychlou cestu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #13918 přidává jednu podmínku do GSRendererHW. Když je přesnost směsi nastavena na maximum, akumulační míchání zůstává dostupné pouze pokud je renderovací cíl 32bitový. 16bitový cíl se vrací k cestě bez akumulace, která respektuje jeho kvantizaci. Módy s nižší přesností mohou i nadále dělat své zdokumentované kompromisy ve výkonu; změna sjednocuje nejpřísnější nastavení s jeho slibovanou přesností."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity odhaluje rozdíl v detailech ditheringu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dodané porovnání Vulkan používá 16bitový rámec ze hry Sonic Riders: Zero Gravity a zahrnuje softwarové vykreslování jako referenci. Při běžné velikosti může být změna těžko viditelná, ale přiblížením ditheringového vzoru se odhalí odlišný barevný žebřík. To je důvod, proč jsou referenční obrázky na úrovni pixelů důležité: screenshot pro širokou kompatibilitu by mohl přehlédnout číselnou chybu, kterou je nastavení maximální hodnoty specificky určeno k tomu, aby se jí zabránilo."
+    },
+    {
+      "type": "heading",
+      "text": "Regresní kontroly by měly pokrýt jak cílové hloubky, tak režimy míchání."
+    },
+    {
+      "type": "paragraph",
+      "text": "Přehrávejte zdrojový dump na Vulkan a jiném hardwarovém backendu, porovnávejte bezeztrátové pixely se softwarem a ověřte, že akumulační cesta je odmítnuta pouze pro 16bitové cíle při maximálním míchání. Cíl s 32 bity by měl optimalizaci zachovat. Zaznamenejte trasování kreslení a čas GPU, protože vypnutí optimalizace může stát výkon, i když je korekce výstupu transparentní. Testujte několik ditheringových vzorů a akumulačních rovnic místo jedné referenční textury."
+    },
+    {
+      "type": "callout",
+      "text": "Maximální přesnost míchání nyní bere cílovou přesnost jako součást algoritmu: povrch s 16 bity nemůže bezpečně používat zkratku akumulace s 32 bity."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny PCSX2"
+    }
+  ]
+}

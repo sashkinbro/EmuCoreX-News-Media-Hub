@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation mantém o comprimento da cadeia de pós-processamento consistente após remoção e limpeza",
+  "summary": "A persistência corrigida do StageCount distingue uma cadeia encurtada, uma cadeia base explicitamente vazia e uma substituição vazia por jogo que deve ser removida.",
+  "heroAlt": "Evidência da origem do pull request #3698 do DuckStation: Pós-Processamento: Atualize corretamente o `StageCount` ao remover/limpar estágios",
+  "searchKeywords": [
+    "DuckStation",
+    "pós-processamento",
+    "StageCount",
+    "configurações por jogo",
+    "remoção de shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "Pós-Processamento: Atualize corretamente o `StageCount` ao remover/limpar estágios"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount é tanto um marcador de comprimento quanto de substituição"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation armazena os estágios de pós-processamento nas configurações junto com StageCount. Nas configurações base, zero explicitamente significa nenhum estágio. Em uma camada por jogo, excluir o campo pode significar que o jogo não substitui mais a cadeia global. Tratar esses casos da mesma forma causa estágios obsoletos ou impede a herança. Uma remoção que deixa dois estágios deve escrever dois; uma remoção que não deixa nenhum pode precisar apagar o campo por jogo."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage agora exclui apenas a substituição por jogo realmente vazia"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #3698 calcula new_stage_count e mantém esse valor quando permanecem estágios. O campo é removido apenas quando a interface de configurações não é a camada base e a contagem chega a zero, permitindo que uma substituição específica de jogo vazia desapareça. Anteriormente, o branch poderia apagar StageCount após qualquer remoção por jogo, perdendo o comprimento declarado da cadeia restante."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages corrige o branch oposto da camada base"
+    },
+    {
+      "type": "paragraph",
+      "text": "O caminho claro teve sua condição base-versus-jogo invertida. O código corrigido escreve StageCount = 0 para as configurações base, onde uma cadeia global explicitamente vazia é significativa, e remove o valor por jogo para que a configuração global possa fluir. Essa simetria é o núcleo da correção: encurtar, limpar globalmente e limpar uma sobreposição são três operações de persistência distintas."
+    },
+    {
+      "type": "heading",
+      "text": "Os testes de ida e volta devem cobrir cada camada e a contagem restante"
+    },
+    {
+      "type": "paragraph",
+      "text": "Crie uma cadeia global de três estágios e uma cadeia por jogo de três estágios diferente. Remova o estágio do meio por jogo, reinicie e verifique se os dois sobreviventes mantêm a ordem e os parâmetros. Remova os dois últimos e confirme se a cadeia global retorna. Em seguida, limpe a cadeia base e confirme que ela permanece vazia após reiniciar. Repita através de Qt e FullscreenUI, inspecione StageCount após cada operação e teste adicionar um estágio imediatamente após a limpeza para capturar campos indexados desatualizados."
+    },
+    {
+      "type": "callout",
+      "text": "Um comprimento de cadeia zero nem sempre é armazenado da mesma maneira: as configurações básicas registram vazio, enquanto uma camada por jogo vazia deve parar de sobrescrever a base."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Leia a discussão de engenharia DuckStation e as alterações de código-fonte"
+    }
+  ]
+}

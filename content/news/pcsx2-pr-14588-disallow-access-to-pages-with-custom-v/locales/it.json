@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 blocca i client PINE dall'accedere agli handler MMIO legati al thread",
+  "summary": "L'interfaccia di memoria esterna ora rifiuta le pagine VTLB servite dai callback dei dispositivi personalizzati, limitando le letture dirette alla memoria che è sicura al di fuori del thread di emulazione.",
+  "heroAlt": "Prova della fonte dalla pull request #14588 di PCSX2: PINE: Vietare l'accesso alle pagine con handler VTLB personalizzati",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "sicurezza del thread"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Sicurezza",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Vietare l'accesso alle pagine con handler VTLB personalizzati"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un indirizzo guest può rappresentare RAM o un registro hardware attivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE espone le operazioni di memoria agli strumenti esterni. Attraverso il livello di traduzione virtuale di PCSX2, alcuni indirizzi puntano alla RAM ordinaria supportata dall'host, mentre altri passano attraverso gestori personalizzati per i registri MMIO e periferiche emulate. Chiamare un gestore personalizzato non è una lettura passiva: può modificare lo stato del dispositivo, richiedere l'ordinamento dei thread dell'emulatore, o toccare componenti che non hanno sincronizzazione per un thread server arbitrario."
+    },
+    {
+      "type": "heading",
+      "text": "Le pagine con gestore personalizzato vengono rifiutate prima dell'accesso"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14588 modifica il percorso VTLB di PINE per riconoscere le pagine il cui accesso è implementato da un gestore personalizzato e negarne l'accesso. La memoria mappata direttamente rimane disponibile ai client. Il confine si basa su come la pagina viene servita, e non su una fragile lista di intervalli di registri codificata, quindi i nuovi gestori MMIO registrati ereditano la protezione senza un altro aggiornamento degli indirizzi specifico di PINE."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead è riscritto seguendo la stessa distinzione più sicura"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch allinea anche la dichiarazione e la definizione del template vtlb_ramRead e ne semplifica l'implementazione. Un microbenchmark sulla macchina dell'autore ha mostrato un piccolo miglioramento della velocità, ma questo è secondario. La garanzia primaria riguarda la proprietà del thread: PINE non deve far eseguire a GS, SPU, CDVD o un altro periferico callback su un thread che aggira lo scheduler della VM."
+    },
+    {
+      "type": "heading",
+      "text": "I client hanno bisogno di una chiara semantica di fallimento e di copertura delle regressioni della RAM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testare i debugger PINE esistenti contro RAM normale, scratchpad o altre mappe dirette esplicitamente supportate, confini di pagina e indirizzi non mappati. Tentare letture e scritture su pagine rappresentative MMIO e confermare un errore di protocollo pulito senza effetti collaterali sul periferico o crash. Ripetere mentre la VM è in esecuzione, in pausa, si resetta o si spegne. Questo è descritto come una correzione iniziale in attesa di un lavoro di progettazione più ampio, quindi ai client non dovrebbe essere promesso un accesso sicuro ai registri dei dispositivi fino a quando non esiste un meccanismo di thread dell'emulatore ordinato."
+    },
+    {
+      "type": "callout",
+      "text": "PINE rimane un'interfaccia di memoria, non un secondo thread di esecuzione hardware; i gestori VTLB personalizzati sono negati fino a quando non possono essere gestiti in sicurezza."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

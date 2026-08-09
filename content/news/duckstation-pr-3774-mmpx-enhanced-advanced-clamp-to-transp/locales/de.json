@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation gibt MMPX eine transparente Grenze anstelle wiederholter Randpixel",
+  "summary": "Außerhalb liegende Nachbartaps tragen jetzt null Alpha und Farbe bei, wodurch verhindert wird, dass die Kantenklemme-Duplikation Formen erfindet, die die Morphologieregeln des Scalers verwirren.",
+  "heroAlt": "Quellenbeweis aus dem DuckStation Pull-Request #3774: MMPX Verbesserte/Erweiterte Klemme-zu-transparentes Mapping außerhalb der Grenzen",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "Klemme an der Kante",
+    "transparente Pixel",
+    "Shader-Abtastung"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Verbesserte/Erweiterte Klemme-zu-transparentes Mapping außerhalb der Grenzen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Klemme-an-der-Kante erzeugt Nachbarn, die das Quellbild nicht enthält"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX entscheidet, wie Pixel erweitert werden, indem es lokale Farbformen und -trends untersucht. An einer Texturgrenze wiederholt normales geklammertes Sampling das letzte gültige Texel für jede außerhalb des Bereichs liegende Koordinate. Dieses Verhalten ist praktisch für gewöhnliches Filtering, aber ein morphologischer Skalierer interpretiert die wiederholte Farbe als zusätzliche Struktur. Ecken und Linien in der Nähe des Randes können daher anders klassifiziert werden als identische Formen in der Mitte des Bildes."
+    },
+    {
+      "type": "heading",
+      "text": "Koordinatenmasken verwandeln ungültige Abtastpunkte in transparente Samples"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #3774 ändert den srcf-Helfer sowohl in MMPX Enhanced als auch bei der Advanced Shader-Generierung. Jeder Nachbar ruft weiterhin SampleFromVRAM auf, aber das Ergebnis wird mit horizontalen und vertikalen Schrittmasken multipliziert, die die angeforderte Koordinate mit den uv_limits vergleichen. Eine Koordinate außerhalb des erlaubten Rechtecks erhält einen Multiplikator von null, wodurch das effektive Sample transparent wird, anstatt eine Kopie des Randtexels zu sein."
+    },
+    {
+      "type": "heading",
+      "text": "Die Änderung betrifft die Formanalyse lokal, nicht die globale Texturadressierung"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation ersetzt nicht das Clamp-Verhalten für jede PlayStation-Textur. Die Maske befindet sich in den generierten MMPX-Sampling-Helfern, da diese Algorithmen ein konzeptionelles leeres Umfeld über das Quellbild hinaus benötigen. Andere Shader-Pfade können weiterhin ihre etablierten Wrap- oder Clamp-Semantiken verwenden. Dieser enge Umfang verhindert, dass eine Pixel-Art-Skalierungsanpassung die Art und Weise ändert, wie Spiele selbst Texturkanten adressieren."
+    },
+    {
+      "type": "heading",
+      "text": "Randbefestigungen sollten die Innenformen genau spiegeln"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen Sie Testbilder mit Diagonalen, Ecken, ein-Pixel-Linien und vier-Pixel-Kreuzungen sowohl am Texturrand als auch einige Pixel hinein. Nach der Skalierung sollte die Randform der Innenform entsprechen, abgesehen vom fehlenden äußeren Bereich. Wiederholen Sie dies mit nicht null UV-Subrechtecken, Texturseiten, Transparenz und ungeraden Dimensionen. Vergleichen Sie Enhanced- und Advanced-Varianten und prüfen Sie alle vier Seiten; ein Vorzeichenfehler in einer Koordinatenmaske könnte die rechte Kante korrigieren, während die linke beschädigt wird."
+    },
+    {
+      "type": "callout",
+      "text": "Für die MMPX-Morphologie ist der Raum außerhalb des Bildes leer; die Wiederholung der Randfarbe ist keine harmlose Filterung, sondern ein falscher Formnachweis."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Lesen Sie die DuckStation-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

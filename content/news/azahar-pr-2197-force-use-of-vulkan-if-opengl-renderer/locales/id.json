@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar mengarahkan Android menjauh dari ANGLE tanpa menulis ulang pilihan renderer pengguna",
+  "summary": "Resolver API grafis saat runtime mendeteksi lapisan kompatibilitas OpenGL-over-Vulkan dari Android, memilih Vulkan untuk eksekusi aman, dan menjelaskan mengapa pilihan UI dinonaktifkan.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2197: android: Paksa penggunaan Vulkan jika renderer OpenGL adalah ANGLE",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "API grafis"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android: Paksa penggunaan Vulkan jika renderer OpenGL adalah ANGLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android dapat memberi label lapisan kompatibilitas sebagai OpenGL"
+    },
+    {
+      "type": "paragraph",
+      "text": "ANGLE menerjemahkan panggilan OpenGL menjadi Vulkan dan menjadi jalur default pada perangkat Android yang lebih baru. Renderer OpenGL Azahar mengharapkan perilaku driver asli dan mengalami masalah ketika ditempatkan di atas terjemahan itu. Membaca graphics_api secara langsung karenanya bisa mengembalikan OpenGL meskipun sistem akan menjalankan tumpukan kompatibilitas berbasis Vulkan yang tidak memenuhi jalur OpenGL yang diuji oleh Azahar."
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI memisahkan niat yang disimpan dari backend yang dapat dijalankan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2197 memperkenalkan Settings::GetWorkingGraphicsAPI(). Pemanggil menggunakannya alih-alih membaca pengaturan mentah. Ketika lingkungan Android melaporkan konfigurasi ANGLE yang bermasalah, fungsi mengembalikan Vulkan. Preferensi yang disimpan dibiarkan tidak berubah, sehingga Azahar tidak mengubah konfigurasi pengguna secara permanen hanya karena satu perangkat atau sesi OS tidak dapat menghormatinya dengan aman."
+    },
+    {
+      "type": "heading",
+      "text": "Pengaturan UI dapat menjelaskan pilihan yang dinonaktifkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Item pengaturan Android mendapatkan disabledMessage, digunakan di sini untuk menunjukkan mengapa pemilihan renderer tidak tersedia. Ini lebih baik daripada sebuah selector yang terlihat interaktif sementara saat runtime diabaikan secara diam-diam, dan lebih baik daripada menghapus opsi tersebut sepenuhnya. Properti ini cukup umum untuk pengaturan lain yang dinonaktifkan, tetapi perilaku artikel ini adalah pesan spesifik ANGLE dan koreksi saat runtime."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian harus membedakan antara OpenGL asli, ANGLE, dan Vulkan eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pada perangkat sebelum dan sesudah Android 17, identifikasi implementasi GLES yang sebenarnya dan bandingkan preferensi mentah dengan GetWorkingGraphicsAPI. OpenGL asli harus tetap dapat dipilih, ANGLE harus mengeksekusi Vulkan dan menampilkan alasannya, serta preferensi Vulkan eksplisit tidak boleh berubah. Mulai ulang, migrasikan pengaturan, putar atau buat ulang permukaan, dan konfirmasi setiap pemanggil grafis C++ menggunakan resolver. Fallback tidak boleh membuat dua renderer atau mengubah nilai yang tersimpan."
+    },
+    {
+      "type": "callout",
+      "text": "Azahar mempertahankan apa yang dipilih pengguna sambil secara terpisah memutuskan apa yang dapat dijalankan dengan aman oleh stack grafis Android ini."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumber"
+    }
+  ]
+}

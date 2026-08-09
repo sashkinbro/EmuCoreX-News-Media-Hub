@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar ensina OpenGL rastreamento de estado que uma unidade de textura pode parar de ser 2D",
+  "summary": "A vinculação de cubemap expôs uma suposição de estado em cache de que toda unidade mantinha GL_TEXTURE_2D; rastreando o tipo de alvo e inicializando o cubo nulo, restaura operações 2D posteriores.",
+  "heroAlt": "Evidência da fonte do pedido de pull Azahar #2242: renderer_gl: Corrigir o rastreamento de estado da unidade de textura OpenGL",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "unidade de textura",
+    "cubemap",
+    "rastreamento de estado"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Corrigir o rastreamento de estado da unidade de textura OpenGL"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um identificador de textura em cache está incompleto sem seu tipo de alvo"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL vincula texturas por unidade e alvo. O cache de estado do Azahar frequentemente assumia que uma unidade representava GL_TEXTURE_2D, o que funcionava até o rastreamento de cubemap nulo introduzir vinculações reais de cubemap. Uma vez que uma unidade tivesse mantido GL_TEXTURE_CUBE_MAP, códigos posteriores poderiam pular ou emitir uma vinculação baseada apenas no objeto numérico em cache, mesmo que o namespace do alvo e as expectativas de amostragem subsequentes tivessem mudado."
+    },
+    {
+      "type": "heading",
+      "text": "Os registros de estado agora distinguem transições 2D, cubo e nulas"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #2242 atualiza utilitários de cache do rasterizador e caminhos do renderizador OpenGL para que as unidades de textura mantenham o alvo de vinculação necessário para decidir se uma mudança de estado é redundante. NULL_SURFACE_CUBE_ID é inicializado corretamente, dando ao caminho de cubemap sem superfície um recurso definido. Arquivos Vulkan recebem ajustes relacionados ao cache compartilhado, mas a falha observada e a correção da máquina de estado estão em OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon e WWE mostram corrupção subsequente proveniente de uma suposição obsoleta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Imagens de antes e depois para Pokémon Ultra Moon e WWE All Stars demonstram que o problema não estava confinado a um cubemap ausente. Um bind de cubemap alterava a forma como operações de textura posteriores eram interpretadas, de modo que superfícies ordinárias subsequentes poderiam ser renderizadas incorretamente. Portanto, o cache correto deve restaurar o estado ao longo de uma sequência, e não apenas exibir o cubemap no momento em que ele é definido."
+    },
+    {
+      "type": "heading",
+      "text": "Uma sequência de regressão deve alternar os alvos na mesma unidade"
+    },
+    {
+      "type": "paragraph",
+      "text": "Faça bind de texturas 2D, cubo, cubo nulo e 2D repetidamente em uma unidade e verifique tanto as chamadas GL emitidas quanto a saída amostrada. Reproduza os dois jogos, depois teste mapas de sombra, mapas de ambiente, amostragem de render-target e destruição de superfície. Compare o estado em cache com o diagnóstico glGet em uma build de depuração. A otimização ainda pode pular um bind apenas quando o objeto e o alvo coincidirem; reduzir chamadas nunca deve preservar um alvo do uso anterior."
+    },
+    {
+      "type": "callout",
+      "text": "O cache de estado OpenGL é válido somente quando lembra o alvo do binding assim como o objeto de textura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Leia a discussão de engenharia Azahar e as alterações de código-fonte"
+    }
+  ]
+}

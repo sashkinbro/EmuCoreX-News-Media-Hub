@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K unterscheidet SPIR-V Objekt-IDs von Vektor-Lane-Nummern",
+  "summary": "Der Vektor-Shuffle-Aufbau kennzeichnet jetzt Quellvektoren als IDs und Komponentenwähler als Literale, wodurch verhindert wird, dass Lane Null zu einer ungültigen SPIR-V-ID wird.",
+  "heroAlt": "Quellenbeleg aus Vita3K Pull Request #4074: Shader: Behebt einen Fall von 'IDs dürfen nicht 0 sein'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "Shader-Recompiler",
+    "Uniform-Block"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "Shader: Behebt einen Fall von 'IDs dürfen nicht 0 sein'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der gleiche Ganzzahltyp kann zwei verschiedene SPIR-V-Konzepte darstellen"
+    },
+    {
+      "type": "paragraph",
+      "text": "SPIR-V-Anweisungen verweisen auf zuvor definierte Objekte über eine numerische ID, und einige enthalten auch konkrete Zahlen. OpVectorShuffle nimmt zwei Vektor-IDs gefolgt von Komponentenselektoren. Ein Selektor von null bedeutet die erste Spur des ersten Vektors; eine Objekt-ID von null ist verboten. Die Übergabe jedes Operanden über einen Vektor, der nur als spv::Id typisiert ist, verliert daher genau dort die Unterscheidung, wo eine gültige Spurennummer denselben Sentinelwert wie eine ungültige ID teilt."
+    },
+    {
+      "type": "heading",
+      "text": "Der Builder erhält nun eine explizite Art für jeden Operanden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #4074 ändert die beiden Shuffle-Operandlisten zu spv::IdImmediate. Loads von dest und dest_friend sowie der kopierte Vektor sind als IDs gekennzeichnet. Loop-generierte Spurindizes werden als unmittelbare Werte markiert, egal ob sie null, vier plus i oder ein aus start modulo vier abgeleiteter Offset sind. createOp kann dann jedes Wort gemäß der Instruktionsgrammatik codieren, anstatt seine Bedeutung aus einem C++-Alias abzuleiten."
+    },
+    {
+      "type": "heading",
+      "text": "Der betroffene Pfad verbindet uniforme Daten über vec4-Grenzen hinweg"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register behandelt einen Bereich, der den aktuellen Zielvektor und seinen Nachbarn umfasst. Es erstellt komplementäre Mischungen, sodass erhaltene Ziellanes und eingehende Quelllanes an die richtigen Positionen gelangen. Ein Start, der an ein vec4 ausgerichtet ist, nimmt einen einfacheren Weg; nicht ausgerichtete Starts nutzen die Zwei-Listen-Logik. Die Korrektur ändert nicht, welche Lanen-Formel gewählt wird. Sie macht die bereits berechneten Selektoren zu legalen Literalen."
+    },
+    {
+      "type": "heading",
+      "text": "Validator-gesteuerte Fixtures sollten jede Startlane aufzählen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Erzeuge uniforme Kopien beginnend bei den Offsets null bis drei mit Längen, die innerhalb eines vec4 bleiben und ins nächste übergehen. Überprüfe die ausgegebenen OpVectorShuffle-Wörter, führe spirv-val aus und führe Shader mit eindeutig gefärbten oder nummerierten Quelllanes aus. Schließe Selektoren null, drei, vier, sieben und jeden undefinierten Sentinel ein, den der Builder unterstützt. Teste Vulkan-Treiber mit strenger Validierung und vergleiche das gerenderte Ergebnis zwischen den Anbietern. Ein Regressionstest sollte die Operandenarten zusätzlich zu den endgültigen Pixeln prüfen."
+    },
+    {
+      "type": "callout",
+      "text": "In einer binären Shader-Sprache kann null sowohl eine völlig gültige Lane als auch eine unmögliche Objekt-ID sein; der Ersteller muss wissen, welche die Anweisung erwartet."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Lesen Sie die Vita3K Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

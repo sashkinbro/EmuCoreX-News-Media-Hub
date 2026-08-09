@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14548-sample-area-bbox-calculation-for-rt-ds",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 způsobuje, že hranice nebezpečí pro render target respektují ohraničení textury",
+  "summary": "Režimy Clamp a Wrap nyní účastní výpočtu vzorkované oblasti používaného, když kresba čte ze svého vlastního render nebo hloubkového cíle, čímž se zabrání tomu, aby kopie nebezpečí vynechala dosažitelné pixely.",
+  "heroAlt": "Vizualní důkaz z požadavku na stažení PCSX2 #14548: GS/DX11/GL: Oprava výpočtu bbox vzorkované oblasti pro nebezpečí při vzorkování RT/DS.",
+  "searchKeywords": [
+    "PCSX2",
+    "nebezpečí při vzorkování",
+    "omezující rámeček",
+    "ROV",
+    "ohraničení textury"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14548": "GS/DX11/GL: Oprava výpočtu bbox vzorkované oblasti pro nebezpečí při vzorkování RT/DS."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Samotné souřadnice primitiv nevymezují vzorkovanou oblast textury"
+    },
+    {
+      "type": "paragraph",
+      "text": "Když výběr vzorků získává data z renderovacího cíle nebo cíle hloubky, do kterého také zapisuje, může PCSX2 potřebovat bezpečnou kopii nebo bariéru. Požadovaná oblast závisí na adresaci textury. Připnutí (Clamp) může přichytit souřadnice k okraji, zatímco zalamování (Wrap) je může přesměrovat na jinou část obrázku. Starý ohraničující box vzorkovací oblasti nebrával tyto režimy úplně v úvahu, takže mohl kopírovat oblast menší nebo odlišnou od té, které shader dosáhl."
+    },
+    {
+      "type": "heading",
+      "text": "Ohraničení s ohledem na připevnění (Clamp-aware) napájí cestu rizika RT/DS"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14548 opravuje výpočet ohraničení sdílený hardware rendererem a zařízeními Direct3D 11 a OpenGL. Jakmile je známa dosahovaná vzorkovací oblast, logika rizika může chránit nebo kopírovat správné pixely. Patch také zjednodušuje zpracování plné bariéry: ukládání samostatného vzorkovacího obdélníku pro každou skupinu primitiv zvyšovalo složitost, aniž by ukazovalo dostatečný přínos pro případ bariéry."
+    },
+    {
+      "type": "heading",
+      "text": "Oprava je specifická pro závislosti samovzorkování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Toto není obecná korekce viewportu nebo nůžek. Používá se, když je renderovací nebo hloubkový cíl současně zdrojem textury, vzor, kde záleží na pořadí a vlastnictví oblasti. S povoleným ROV na Direct3D 11 byla ve dodaném dumpu Bakusou Dekotora Densetsu viditelná nesprávně zkopírovaná oblast. Ostatní běžné kreslení textur by nemělo spouštět hazardní větev a proto tvoří důležitý negativní test."
+    },
+    {
+      "type": "heading",
+      "text": "Testování by mělo samostatně prověřit trasy clamp, wrap a full-barrier."
+    },
+    {
+      "type": "paragraph",
+      "text": "Nahlášený dump byl zkontrolován na Direct3D 11 s ROV a byl jediným změněným obrazem v tomto běhu. Silnější matice by měla měnit horizontální a vertikální režimy clamp, skupiny primitiv přecházející hranici wrap, vzorkování renderovacího a hloubkového cíle a jak trasy částečného kopírování, tak trasy full-barrier. Porovnejte přesné snímky dumpu a zaznamenejte vypočítaný ohraničující box; vizuálně správný výsledek s příliš velkou kopií může stále skrývat regresi výkonu."
+    },
+    {
+      "type": "callout",
+      "text": "Bezpečnostní oblast musí popisovat adresy, kterých může shader dosáhnout po balení, nikoli pouze nemodifikované souřadnice textury předané hostitelem."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14548",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

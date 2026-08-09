@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14475-controller-navigation-breaking-after-b",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 reconstruye la navegación del controlador de Big Picture después de redimensionar la ventana",
+  "summary": "Rectángulos de navegación ImGui obsoletos, y no la pantalla completa en sí, causaban que el foco dejara de moverse tras un cambio de tamaño considerable; ahora un redimensionamiento fuerza que el estado de navegación coincida con el nuevo diseño.",
+  "heroAlt": "Evidencia visual del pull request #14475 de PCSX2: FullscreenUI: Arreglar la ruptura de la navegación del controlador después de redimensionar la ventana del Modo Big Picture",
+  "searchKeywords": [
+    "PCSX2",
+    "Modo Big Picture",
+    "navegación del controlador",
+    "redimensionamiento de la ventana",
+    "ImGui"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14475": "FullscreenUI: Arreglar la ruptura de la navegación del controlador después de redimensionar la ventana del Modo Big Picture"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Fullscreen parecía culpable porque normalmente redimensionaba la ventana"
+    },
+    {
+      "type": "paragraph",
+      "text": "La navegación con el controlador en el Modo Big Picture podría detenerse inmediatamente después de alternar a pantalla completa. Las pruebas en distintos dispositivos mostraron que el estado de pantalla completa era solo el disparador que la mayoría de la gente notaba: la condición real era un cambio de tamaño de ventana suficientemente grande. Las ventanas de dispositivos portátiles a menudo cambiaban demasiado poco para reproducirlo, mientras que una ventana de escritorio se redimensionaba mucho más antes de que el cambio fallara de manera confiable."
+    },
+    {
+      "type": "heading",
+      "text": "NavRectRel todavía describía widgets con las dimensiones antiguas"
+    },
+    {
+      "type": "paragraph",
+      "text": "ImGui almacena en caché los rectángulos de navegación relativa utilizados para decidir qué elemento recibe el foco cuando un controlador se mueve hacia arriba, abajo, izquierda o derecha. Tras reconstruir el diseño con un nuevo tamaño, esos valores de NavRectRel podrían quedar obsoletos. Los cálculos de foco entonces referenciaban geometría que ya no coincidía con los controles visibles. Presionar ciertas direcciones podría restaurar la navegación de manera incidental, explicando por qué el error a veces parecía solucionarse solo."
+    },
+    {
+      "type": "heading",
+      "text": "Un cambio de tamaño ahora invalida el estado de navegación en el límite UI"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14475 cambia ImGuiManager para que cualquier cambio de tamaño de la ventana Big Picture fuerce la reinicialización de la navegación. La corrección no agrega retrasos de tiempo ni trata casos especiales de pantalla completa; responde al cambio de estado que hace que los rectángulos almacenados en caché sean inválidos. Mantener la reparación en la ruta de cambio de tamaño también cubre el cambio de tamaño manual de la ventana, los cambios de resolución y otras transiciones que reconstruyen el diseño sin cambiar el modo de pantalla completa."
+    },
+    {
+      "type": "heading",
+      "text": "La secuencia de regresión requiere cambios tanto en dimensiones grandes como pequeñas."
+    },
+    {
+      "type": "paragraph",
+      "text": "En el código anterior, los evaluadores deberían reducir significativamente la ventana Big Picture y luego alternar pantalla completa para reproducir el problema del enfoque del controlador atrapado. En la ruta corregida, la navegación debe continuar después de repetidas transiciones de aumentar, disminuir y pantalla completa. La matriz debe incluir ventanas de tamaño de escritorio y portátil, la interacción del ratón entre movimientos del controlador y cada borde de pestaña. La posición del enfoque puede restablecerse deliberadamente, pero nunca debe apuntar fuera del diseño reconstruido ni requerir una entrada de recuperación."
+    },
+    {
+      "type": "callout",
+      "text": "La solución sigue al evento real de invalidación: un cambio de tamaño de la ventana reconstruye el diseño, por lo que la geometría de navegación del controlador debe reconstruirse con él."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14475",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de origen"
+    }
+  ]
+}

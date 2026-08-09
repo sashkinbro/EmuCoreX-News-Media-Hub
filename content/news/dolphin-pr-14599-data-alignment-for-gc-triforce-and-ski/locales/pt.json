@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin ensina sobre os discos extraídos Triforce a respeito da janela de endereço DIMM",
+  "summary": "DirectoryBlob agora evita um intervalo de memória de arcade sombreado e usa o alinhamento de arquivo menor do Triforce em vez de aplicar suposições de layout do GameCube e do Wii.",
+  "heroAlt": "Evidência de origem do pull request #14599 de Dolphin: DirectoryBlob: corrige alinhamento de dados para GC/Triforce e ignora o intervalo de memória DIMM Triforce",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "alinhamento de disco"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Armazenamento",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: corrige alinhamento de dados para GC/Triforce e ignora o intervalo de memória DIMM Triforce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um disco com suporte de diretório ainda precisa de posicionamento específico da plataforma"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin pode montar arquivos extraídos através do DirectoryBlob como se fossem uma imagem de disco. Esse layout virtual atribui deslocamentos e alinhamento a cada arquivo. Reutilizar as regras do GameCube e Wii para a plataforma arcade Triforce da Sega ignorou o hardware conectado à AMMediaboard. Endereços em uma determinada região do disco são mascarados pela SRAM e retornam conteúdos da DIMM, então um arquivo de host perfeitamente válido pode se tornar ilegível após ser colocado ali."
+    },
+    {
+      "type": "heading",
+      "text": "A flag Triforce altera duas decisões de layout"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14599 registra se o volume de origem é Triforce. Antes de colocar um arquivo, o DirectoryBlob verifica se o intervalo proposto se sobrepõe a 0x1F000000 até 0x1F800000. Se sim, o deslocamento pula para 0x1F800000, mantendo o arquivo completo fora da janela mascarada. Arquivos Triforce subsequentes se alinham a 0x20 bytes em vez do limite conservador de 0x8000 bytes usado para discos de diretório do GameCube e Wii."
+    },
+    {
+      "type": "heading",
+      "text": "Evitar sobreposição deve considerar todo o intervalo do arquivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verificar apenas um endereço inicial poderia deixar passar um arquivo que começa abaixo da janela e se estende até ela. O código compara tanto o data_offset quanto o data_offset mais o tamanho da entrada, então realoca a entrada inteira. O alinhamento menor de 32 bytes também previne lacunas desnecessárias em imagens de arcade enquanto preserva a granularidade esperada pela plataforma. Volumes Non-Triforce nunca entram em nenhum dos ramos, então seu posicionamento estabelecido continua a ser governado byte a byte pela política antiga."
+    },
+    {
+      "type": "heading",
+      "text": "Os dispositivos de limite devem sondar todos os lados do buraco"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construa árvores de diretório que coloquem arquivos de comprimento zero, minúsculos e grandes imediatamente antes, através, dentro e depois de ambos os limites de DIMM. Verifique os deslocamentos FST gerados, alinhamento 0x20, conteúdos dos arquivos lidos através da AMMediaboard emulada, e o tamanho total da imagem. Repita a mesma árvore como GameCube e Wii para provar que o alinhamento 0x8000 permanece inalterado. Inclua aritmética de fim exato e deslocamentos muito grandes para capturar overflow, então inicialize títulos representativos Triforce a partir de diretórios extraídos em vez de apenas inspecionar os metadados."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob é um construtor de disco virtual; nomes de arquivos corretos não são suficientes quando o hardware de arcade altera quais faixas de endereços físicos podem retornar dados do disco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Leia a discussão de engenharia Dolphin e as alterações de código-fonte"
+    }
+  ]
+}

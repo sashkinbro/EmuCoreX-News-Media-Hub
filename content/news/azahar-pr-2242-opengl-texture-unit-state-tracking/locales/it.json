@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar insegna a OpenGL il monitoraggio dello stato in cui un'unità di texture può smettere di essere 2D",
+  "summary": "Il binding del cubemap ha esposto un'assunzione di stato memorizzata nella cache secondo cui ogni unità mantenesse GL_TEXTURE_2D; il monitoraggio del tipo di target e l'inizializzazione del cubo nullo ripristinano successivamente le operazioni 2D.",
+  "heroAlt": "Prova dalla fonte dal pull request #2242 di Azahar: renderer_gl: Correzione del monitoraggio dello stato dell'unità di texture OpenGL",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "unità di texture",
+    "cubemap",
+    "monitoraggio dello stato"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Correzione del monitoraggio dello stato dell'unità di texture OpenGL"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un handle di texture memorizzato nella cache è incompleto senza il suo tipo di target"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL collega le texture sia per unità che per obiettivo. La cache dello stato di Azahar spesso assumeva che un'unità rappresentasse GL_TEXTURE_2D, il che funzionava fino a quando il tracciamento delle cubemap nulle ha introdotto legami reali con le cubemap. Una volta che un'unità aveva avuto GL_TEXTURE_CUBE_MAP, il codice successivo poteva saltare o eseguire un bind basandosi solo sull'oggetto numerico memorizzato nella cache, anche se lo spazio dei nomi del target e le aspettative di campionamento downstream erano cambiate."
+    },
+    {
+      "type": "heading",
+      "text": "I record dello stato ora distinguono le transizioni 2D, cubo e nulle"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2242 aggiorna le utility della cache del rasterizzatore e i percorsi del renderer OpenGL in modo che le unità di texture mantengano il target di binding necessario per decidere se un cambiamento di stato sia ridondante. NULL_SURFACE_CUBE_ID è inizializzato correttamente, dando al percorso senza superficie della cubemap una risorsa definita. I file Vulkan ricevono gli aggiustamenti correlati alla cache condivisa, ma il fallimento osservato e la correzione della macchina a stati si trovano in OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon e WWE mostrano una corruzione downstream derivante da un'ipotesi obsoleta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le immagini prima e dopo per Pokémon Ultra Moon e WWE All Stars dimostrano che il problema non era limitato a una cubemap mancante. Il bind di una cubemap modificava il modo in cui le operazioni successive sulle texture venivano interpretate, quindi le superfici normali a valle potevano essere visualizzate in modo errato. La corretta memorizzazione nella cache deve quindi ripristinare lo stato lungo una sequenza, non semplicemente visualizzare la cubemap al momento in cui viene impostata."
+    },
+    {
+      "type": "heading",
+      "text": "Una sequenza di regressione dovrebbe alternare i target sulla stessa unità"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esegui ripetutamente il bind di texture 2D, cubo, cubo nullo e 2D su un'unità e verifica sia le chiamate GL emesse sia l'output campionato. Riproduci i due giochi, quindi testa mappe d'ombra, mappe ambientali, sampling da render-target e distruzione delle superfici. Confronta lo stato nella cache con le diagnostiche glGet in una build di debug. L'ottimizzazione può ancora saltare un bind solo quando sia l'oggetto che il target corrispondono; ridurre le chiamate non deve mai conservare un target dall'uso precedente."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL il caching dello stato è valido solo quando ricorda sia il target del binding sia l'oggetto texture."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Leggi la discussione tecnica Azahar e le modifiche al codice sorgente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dokumenty PPSSPP uvádějí pravidla PSP pro násobení a dělení s přesností bitů VFPU",
+  "summary": "Referenční pomocníci vyjadřují chování při denormalizaci, podtečení, zaokrouhlování, znaménku, nekonečnu a NaN, aby bylo možné měřit hostitelské cesty JIT proti skutečným výsledkům PSP.",
+  "heroAlt": "Dokladem ze zdrojů z pull requestu PPSSPP #21815: Implementovat (doufejme) bitově přesné vmul/vdiv",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "plovoucí desetinná čárka",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implementovat (doufejme) bitově přesné vmul/vdiv"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 stále ponechává prostor pro hardwarově specifické krajní chování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Běžné násobení a dělení čísel s plovoucí desetinnou čárkou se jeví jako přenositelné, dokud vstupy nedosáhnou subnormálních čísel, podtečení, nekonečna nebo NaN. PSP VFPU se chová jako float32 zaokrouhlení-na-blízkou-hodnotu-s-vázaním-na-sudé, přičemž subnormální hodnoty jsou považovány za nulu a velmi malé výstupy jsou vypláchnuty na nulu, plus specifické pravidlo pro NaN a znaménko. Hostitelé x86, ARM a nastavení kompilátoru se mohou lišit právě na těchto hranicích, což způsobuje vzácné nesrovnalosti ve herní logice nebo grafice."
+    },
+    {
+      "type": "heading",
+      "text": "Referenční implementace pracuje s nezpracovanými bity před provedením a po provedení aritmetiky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21815 přidává explicitní pomocníky vfpu_mul a vfpu_div pro referenci. Ty čtou operandy jako hodnoty uint32, kolabují subnormální vstupy na podepsanou nulu, provádějí aritmetiku a kontrolují bity výsledku. Výstupy na nebo pod měřeným prahem pro vyplachování jsou znovu spočítány v double přesnosti, aby se rozhodlo, zda zachovat nejmenší normální výsledek nebo vrátit podepsanou nulu. Jakýkoli NaN je kanonizován na VFPU-specifickou hodnotu 0x7F800001 s znaménkem odvozeným od operandu."
+    },
+    {
+      "type": "heading",
+      "text": "Prahová hodnota zachycuje hranici, kterou nemusí hostitelské FTZ flagy sdílet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pozorovaný práh vyřazení (flush cutoff) je FLT_MIN minus čtvrtina FLT_TRUE_MIN. To se zdá odpovídat testovanému hranici flush-to-zero u x86, ale nepředpokládá se, že by odpovídalo každému hostiteli ARM. Zakódování tohoto chování do čitelné reference poskytuje backendům JIT zdroj pravdivosti, i když jejich nejrychlejší implementace používá režimy řídicích registrů, vektorové instrukce nebo korekční větvení. Pomocníci jsou referenční materiál, nikoliv tvrzení, že skalární C++ je konečná kritická cesta."
+    },
+    {
+      "type": "heading",
+      "text": "Vyčerpávající hraniční vektory by měly řídit shodu backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testujte kladnou a zápornou nulu, každou subnormální třídu, hodnoty kolem prahu vyřazení, největší konečná čísla, nekonečna, tiché a signalizační NaNy a kombinace znamének operandů. Porovnávejte interpretr, x86, ARM64 a další výsledky JIT bit po bitu pro vmul a vdiv, ne s epsilónem. Randomizované diferenční testy by měly soustředit páry exponentů blízko přetečení a podtečení. Kompilátor fast-math nesmí vymazat kanonizaci a spojené operace musí být kontrolovány samostatně, protože mají různé body zaokrouhlování."
+    },
+    {
+      "type": "callout",
+      "text": "Bitově přesná emulace začíná tam, kde přibližná číselná rovnost končí: podepsaná nula, jeden bit podtečení nebo NaN payload mohou být pozorovatelným stavem hostitele."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Přečtěte si inženýrskou diskusi PPSSPP a změny zdrojového kódu"
+    }
+  ]
+}

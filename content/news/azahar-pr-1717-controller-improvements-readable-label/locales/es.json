@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar hace que los perfiles de controlador sean portátiles sin ocultar los controles específicos del dispositivo",
+  "summary": "Una renovación de la entrada de escritorio prefiere el modelo de controlador estandarizado de SDL, mantiene la función de respaldo del joystick para botones inusuales y permite que los mapeos apunten a un dispositivo, un tipo de controlador o todos los controladores.",
+  "heroAlt": "Solicitud de extracción de tecla rápida del controlador Azahar mostrando el trabajo de mapeo de entradas y discusión de revisión",
+  "searchKeywords": [
+    "Azahar",
+    "perfiles de controlador",
+    "SDL GameController",
+    "teclas rápidas del controlador",
+    "mapeo de entradas"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Entrada",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Escritorio: Mejoras del controlador - etiquetas legibles, teclas rápidas del controlador, opción para aplicar perfiles a todos los controladores"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Los identificadores de joystick en crudo hacían que los mapeos útiles fueran difíciles de leer y reutilizar"
+    },
+    {
+      "type": "paragraph",
+      "text": "La ruta de escritorio más antigua de Azahar dependía en gran medida de la API de Joystick de SDL. Podía identificar una entrada física, pero las pantallas de configuración a menudo mostraban valores técnicos de botones en lugar de los nombres de los botones frontales que los usuarios reconocen. Los perfiles también estaban vinculados tanto a un GUID del dispositivo como a un puerto, por lo que mover el mismo controlador a otra ranura, o compartir un esquema con un controlador coincidente, podría requerir otro mapeo. La solicitud de extracción #1717 trata esos dos problemas como un único problema del modelo de entrada en lugar de un cambio cosmético de nombre."
+    },
+    {
+      "type": "heading",
+      "text": "Primero GameController, Joystick solo cuando el mapa estandarizado se agota"
+    },
+    {
+      "type": "paragraph",
+      "text": "La capa compartida SDL ahora prefiere la API de GameController cuando SDL reconoce el dispositivo. Esa ruta proporciona controles portátiles estilo A/B/X/Y y etiquetas legibles al estilo Xbox o PlayStation. Azahar mantiene la API de Joystick como un recurso de respaldo para controles fuera del modelo estándar, incluidos los botones traseros y otras entradas específicas del dispositivo. Los parámetros registran qué API produjo un mapeo, evitando que un valor de GameController almacenado se interprete más tarde como un índice de joystick sin procesar."
+    },
+    {
+      "type": "heading",
+      "text": "Tres ámbitos de mapeo resuelven diferentes problemas de perfiles"
+    },
+    {
+      "type": "paragraph",
+      "text": "El nuevo tipo de mapa es explícito. “Este controlador” mantiene el comportamiento anterior de GUID y puerto; “este tipo de controlador” usa el GUID sin fijar un puerto; y “todos los controladores” acepta entradas coincidentes de cualquier dispositivo conectado. La elección se aplica a los perfiles de entrada y a las teclas rápidas del controlador. Esto preserva configuraciones precisas de múltiples controladores mientras permite que un perfil de sala de estar sobreviva a intercambios de cables o reemplazos de pads del mismo modelo."
+    },
+    {
+      "type": "heading",
+      "text": "Las teclas rápidas del controlador se supervisan por separado de la entrada normal del juego"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt gana una página dedicada de atajos de controlador, un cuadro de diálogo de captura y un HotkeyMonitor que verifica los controles asignados con un temporizador de 16 ms. Un atajo puede contener una o dos entradas del controlador, incluyendo ejes y botones no estándar. El registro almacena la QAction asociada para que el monitor pueda invocar el mismo comando que un atajo de teclado. El estado normal del controlador sigue estando disponible para el juego; si un botón se asigna deliberadamente a ambos roles, ocurren ambas acciones en lugar de que la capa de atajos consuma silenciosamente la entrada del juego."
+    },
+    {
+      "type": "heading",
+      "text": "La asignación automática ahora respeta el orden de los botones frontales al estilo Nintendo y al estilo Xbox"
+    },
+    {
+      "type": "paragraph",
+      "text": "El aviso de escritorio pide el botón físico derecho frontal y muestra un ícono, coincidiendo con la intención del flujo móvil. Si SDL informa esa pulsación como A, Azahar la trata como una elección de diseño Nintendo o una asignación de etiqueta visible intencional. Otras pulsaciones mantienen la disposición familiar al estilo XInput. La decisión se basa en el control capturado por el usuario en lugar de asumir que cada controlador imprime las mismas letras en las mismas posiciones."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de regresión deben incluir el orden de los accesorios y las vinculaciones mixtas."
+    },
+    {
+      "type": "paragraph",
+      "text": "Los registros de origen verifican en Windows, Linux y macOS, además de gorros, disparadores analógicos y conexión en caliente del controlador después del inicio. Una prueba de seguimiento duradera también debe reabrir cada ámbito de mapeo, reconectar el dispositivo en un puerto diferente y verificar una tecla de acceso rápido de dos botones mientras ambos botones permanecen asignados en el juego. Los informes deben incluir el nombre del dispositivo SDL, GUID, tipo de mapa seleccionado y si la entrada provino de GameController o del respaldo de Joystick."
+    },
+    {
+      "type": "callout",
+      "text": "La ventaja para el usuario no son simplemente etiquetas más atractivas: los perfiles se vuelven intencionalmente portátiles, mientras que los controles inusuales todavía tienen una vía de escape específica del dispositivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Lea la arquitectura del controlador de Azahar y la discusión sobre pruebas"
+    }
+  ]
+}

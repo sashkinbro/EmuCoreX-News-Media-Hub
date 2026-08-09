@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "correct-depth-fighting-and-flickering-surfaces",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Correct depth fighting without confusing it with frame-pacing flicker",
+  "summary": "Freeze one camera where two surfaces alternate, prove the conflict in captured frames, compare native software and hardware output, then test only a documented depth-related correction while protecting decals and shadows.",
+  "heroAlt": "PCSX2 renderer comparison frame with overlapping geometry used for a depth-accuracy investigation",
+  "searchKeywords": [
+    "PS2 z fighting",
+    "EmuCoreX flickering surface",
+    "depth buffer",
+    "alternating polygons",
+    "graphics draw order"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "depth": "Depth"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 draw and renderer counters",
+    "pcsx2-upscaling": "PCSX2 host-sampling explanation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Verify that surfaces alternate at one camera position"
+    },
+    {
+      "type": "paragraph",
+      "text": "Depth fighting occurs when two draws compete for nearly the same depth and the visible winner changes with small precision or camera differences. Frame pacing can make the whole scene judder, while texture animation can intentionally switch artwork. Stop input at a camera position where only the suspect wall, road, decal, or character layer alternates. Record direct frames and note whether surrounding geometry stays stable."
+    },
+    {
+      "type": "callout",
+      "text": "Do not use broad draw skipping to silence a flicker. Removing one competing surface can also erase shadows, decals, mirrors, or later passes that share its draw pattern."
+    },
+    {
+      "type": "heading",
+      "text": "Pin a depth-conflict frame"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A normal save before a repeatable static camera position.",
+        "A short lossless capture showing which pixels alternate.",
+        "Native internal resolution and original aspect ratio.",
+        "Manual depth conversion, skip-draw, and widescreen overrides reset.",
+        "An independent scene containing decals or projected shadows."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separate precision from timing"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Hold the camera still and capture several seconds; verify that only local surfaces alternate.",
+        "2. Enable frame-time evidence and confirm the flicker is not synchronized with whole-frame stalls.",
+        "3. Retest at native resolution on both hardware APIs with no other setting changes.",
+        "4. Capture a brief software-rendered reference from the identical in-game save.",
+        "5. If software is stable, consult documentation for the title and serial before testing a depth-conversion or accuracy control.",
+        "6. Apply one depth-related change and inspect both competing surfaces from several camera distances.",
+        "7. Visit the decal-and-shadow scene to catch a fix that wins by deleting legitimate layers.",
+        "8. Warm the device and repeat the stationary capture to exclude driver or thermal instability."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "The useful evidence is spatial locality. A depth conflict changes which nearby fragment wins; frame pacing changes when complete frames arrive. Software rendering provides a correctness reference with a different host path. A correction that simply suppresses decals fails even if the original wall stops flashing."
+    },
+    {
+      "type": "heading",
+      "text": "Depth-order acceptance"
+    },
+    {
+      "type": "paragraph",
+      "text": "The stable surface must keep all intentional overlays around it."
+    },
+    {
+      "type": "list",
+      "items": [
+        "The conflicting area remains stable during stillness and slow camera movement.",
+        "Decals, projected shadows, mirrors, and particle intersections remain visible.",
+        "No distant geometry begins clipping through foreground objects.",
+        "The result survives area reload and cold boot.",
+        "Frame-time behavior remains comparable to the clean baseline."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Reject misleading depth results"
+    },
+    {
+      "type": "list",
+      "items": [
+        "The entire frame flashes with timing spikes: move to performance or driver diagnosis.",
+        "Flicker exists in software and original references: confirm intentional animation or game behavior.",
+        "A fix removes the top surface completely: restore defaults and document the deletion.",
+        "Only a widescreen patch triggers it: verify serial and patch boundaries separately."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Remove the depth override first"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disable the tested depth control, restore automatic GS fixes and the original aspect profile, then cold-boot the pinned frame. Keep the comparison clip; remove any skip-draw experiment that was not part of the accepted solution."
+    },
+    {
+      "type": "heading",
+      "text": "OLED recording can exaggerate flashing"
+    },
+    {
+      "type": "paragraph",
+      "text": "Automatic camera exposure can make a small alternating patch appear to pulse across the screen. Use direct frame captures for pixel-level evidence and include a camera recording only if the external display itself is under test."
+    },
+    {
+      "type": "link",
+      "text": "Review PCSX2 graphics counters",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

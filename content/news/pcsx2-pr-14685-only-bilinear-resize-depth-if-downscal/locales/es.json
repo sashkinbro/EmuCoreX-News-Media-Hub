@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 limita el cambio de tamaño de profundidad bilineal a reducciones reales",
+  "summary": "Un cambio de caché de texturas con una condición separa el caso que necesita suavizado de las copias donde la interpolación cambia los valores de profundidad y produce artefactos de sombra o superficie.",
+  "heroAlt": "Evidencia visual del pull request #14685 de PCSX2: GS/TC: Solo redimensionar bilineal la profundidad si se reduce",
+  "searchKeywords": [
+    "PCSX2",
+    "objetivo de profundidad",
+    "redimensionamiento bilineal",
+    "GSTextureCache",
+    "escalado nativo"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: Solo redimensionar bilineal la profundidad si se reduce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El filtrado bilineal puede inventar valores de profundidad incluso cuando el tamaño no se reduce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las texturas de profundidad no son imágenes de color ordinarias. Interpolar muestras vecinas produce valores que nunca fueron escritos por el juego, lo que puede alterar comparaciones posteriores y aparecer como sombras o bordes de geometría incorrectos. PCSX2 había habilitado el muestreo bilineal de manera amplia después de que ayudara en los casos de Native Scaling, pero esa regla también afectaba copias de profundidad del mismo tamaño y ampliadas donde el suavizado era innecesario y, a veces, visiblemente destructivo."
+    },
+    {
+      "type": "heading",
+      "text": "La nueva decisión pregunta si el objetivo de profundidad está realmente reduciendo su tamaño"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14685 mantiene la ruta de redimensionamiento en GSTextureCache pero limita su elección de filtro. Se utiliza muestreo más cercano a menos que un objetivo de profundidad se copie a dimensiones más pequeñas; solo esa reducción selecciona filtrado bilineal. La distinción preserva los valores exactos de origen cuando los píxeles se mapean directamente o se expanden, mientras que todavía promedia muestras cuando un objetivo interno más grande debe volver a la representación de menor resolución del huésped."
+    },
+    {
+      "type": "heading",
+      "text": "Kingdom Hearts y Xenosaga exponen lados opuestos de la compensación"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kingdom Hearts mostró diferencias en las sombras de los pies cuando la interpolación tocaba una copia de profundidad que no la necesitaba, y Pesadilla antes de Navidad expuso un artefacto en la superficie de piedra. Xenosaga Episodio III es la razón por la que existía el escalado descendente de profundidad bilineal: su ruta de escalado nativo se veía mal al volver a la resolución normal sin suavizado. La condición corregida es valiosa porque mantiene ambos comportamientos en lugar de elegir un juego sobre el otro."
+    },
+    {
+      "type": "heading",
+      "text": "Las comparaciones nativas y escaladas deben verificar tanto los valores como la apariencia."
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente pide a los evaluadores que comparen Kingdom Hearts, Xenosaga Episodio III y Pesadilla antes de Navidad en resoluciones nativas y escaladas. Las capturas deben mantener la escena y el renderizador constantes, luego inspeccionar los límites de las sombras, el área de piedra reportada y la línea de agua de Xenosaga. Una pasada de regresión también debe registrar las dimensiones de origen y destino para que una mejora aparente pueda vincularse a la rama más cercana o bilineal esperada en lugar de a una variación accidental de la escena."
+    },
+    {
+      "type": "callout",
+      "text": "La regla es precisa: el filtrado bilineal es una herramienta de reducción para objetivos de profundidad, no un valor predeterminado para cada operación de cambio de tamaño."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "Lee la discusión de ingeniería PCSX2 y los cambios en el código fuente"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostiquer un jeu PS2 qui affiche le HUD mais pas le monde",
+  "summary": "Utilisez le HUD restant comme preuve que la présentation est active, vérifiez l'image du disque, réinitialisez les overrides désactivant le rendu, comparez les API matérielles et une référence logicielle courte, puis capturez l'échec de géométrie du monde reproductible le plus petit.",
+  "heroAlt": "Capture de jeu PCSX2 à partir d'une comparaison de régression du rendu avec les couches d'interface et du monde",
+  "searchKeywords": [
+    "Seul le HUD PS2 est visible",
+    "Monde noir EmuCoreX",
+    "géométrie manquante",
+    "ignorer la réinitialisation du rendu",
+    "diagnostics du moteur de rendu"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphiques",
+    "diagnostics": "Diagnostics"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 ligne de base de dépannage propre",
+    "pcsx2-performance": "PCSX2 moteur de rendu et indicateurs GS"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Considérez le HUD visible comme une limite de calque"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si les compteurs, les menus ou l'interface du jeu s'affichent encore, la surface de sortie et au moins une partie du flux de commandes GS sont actifs. La partie manquante peut être la géométrie du monde, la composition du tampon d'image ou une règle manuelle générale qui ignore les dessins. Avant de modifier la précision, notez si le monde est noir, transparent, figé sur une image antérieure ou remplacé par une seule couleur unie. Ces symptômes conduisent à des tests différents."
+    },
+    {
+      "type": "callout",
+      "text": "Ne augmentez pas les valeurs d'ignorance de dessin pour faire disparaître une couche corrompue. Une règle d'ignorance peut supprimer le monde entier tout en laissant les superpositions 2D, reproduisant exactement ce symptôme."
+    },
+    {
+      "type": "heading",
+      "text": "Conservez un point de contrôle pour passer directement du démarrage au jeu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde normale en jeu qui atteint la scène affectée sans un état de sauvegarde d'émulateur.",
+        "Numéro de série, région, révision et empreinte image personnelle vérifiés.",
+        "Captures d'écran des valeurs graphiques globales et par jeu actuelles.",
+        "Pilote système GPU avec remplacements de textures et shaders désactivés.",
+        "Un court journal montrant l'initialisation du moteur de rendu et la transition vers le gameplay."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaurer les dessins avant d'ajouter de la précision"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Démarrez à froid le titre et confirmez si les menus, FMV, et le gameplay échouent à différentes frontières.",
+        "2. Réinitialisez le skip-draw, les corrections matérielles manuelles, les décalages de textures et les correctifs hérités spécifiques à chaque jeu pour ce numéro de série.",
+        "3. Retestez à la résolution interne native sur l'API matérielle originale.",
+        "4. Fermez la session, sélectionnez l'autre API matérielle prise en charge et relancez la même transition.",
+        "5. Si les deux chemins ne conservent que le HUD, exécutez brièvement la scène en rendu logiciel et vérifiez si la géométrie du monde revient.",
+        "6. Lorsque le rendu logiciel est correct, revenez au matériel et testez uniquement un moteur rendu spécifique au titre documenté ou la correction GS.",
+        "7. Si le logiciel est également vide, revérifiez l'image et testez un profil propre avant de supposer une panne uniquement graphique.",
+        "8. Capturez les journaux et les paramètres exacts du plus petit essai qui reproduit le monde manquant."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Le HUD et le monde utilisent souvent des chemins de rendu différents. Une image logicielle correcte prouve que le jeu a produit des commandes pour le monde et réduit la défaillance à la traduction matérielle ou au comportement du pilote hôte. Une défaillance sur des chemins matériels et logiciels propres renvoie à l'image, aux correctifs, à la progression du jeu ou à une régression plus large de l'émulateur. Réinitialiser les contrôles de désactivation du rendu en premier empêche un symptôme auto-créé de contaminer cette décision."
+    },
+    {
+      "type": "heading",
+      "text": "Critères de récupération du monde"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le profil corrigé doit produire plus qu'une simple image figée utile."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La géométrie du monde, les personnages, les particules et l'interface HUD apparaissent dans l'ordre prévu.",
+        "Les menus et FMV passent toujours en jeu sans qu'une image noire résiduelle n'apparaisse.",
+        "Le mouvement de la caméra ne révèle pas de grands secteurs manquants.",
+        "Une deuxième zone démarre à froid avec le même réglage par jeu.",
+        "La correction est attachée uniquement au numéro de série et à la révision vérifiés."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Preuves d'escalade"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les API logicielles et matérielles échouent sur une image vérifiée avec des paramètres propres : collectez un rapport de régression.",
+        "Un seul pilote personnalisé échoue : revenez au pilote système et signalez séparément le package du pilote.",
+        "Le monde revient lorsque skip-draw est zéro : retirez la substitution copiée.",
+        "La faute commence après le chargement d'un état enregistré : reproduisez le problème à partir d'une sauvegarde en jeu avant de déposer des preuves graphiques."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Reconstruisez le profil du titre à partir des paramètres par défaut"
+    },
+    {
+      "type": "paragraph",
+      "text": "Supprimez le profil expérimental, restaurez le rendu global enregistré, sélectionnez le pilote système et démarrez à froid à la résolution native. Réappliquez uniquement la correction vérifiée si elle a passé tous les contrôles de zone ; laissez tous les contrôles de suppression de tirage désactivés sauf si des preuves officielles spécifiques au titre l’exigent."
+    },
+    {
+      "type": "heading",
+      "text": "Un monde noir n’est pas toujours un écran noir"
+    },
+    {
+      "type": "paragraph",
+      "text": "La plage d’affichage et le niveau de noir OLED peuvent écraser les scènes sombres, mais ils ne peuvent pas faire disparaître la géométrie d’une capture d’écran directe. Inspectez une image capturée et le journal du rendu avant de modifier les paramètres de télévision ou de HDR."
+    },
+    {
+      "type": "link",
+      "text": "Suivez la procédure de dépannage générale PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

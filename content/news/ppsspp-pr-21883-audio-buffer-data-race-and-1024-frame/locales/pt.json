@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP fecha uma condição de corrida de cross-thread na entrega de áudio libretro",
+  "summary": "Cada operação no buffer compartilhado de amostras convertidas agora usa um mutex, evitando que realloc ou shutdown invalidem a memória enquanto outro thread escreve áudio.",
+  "heroAlt": "Evidência de origem do pull request #21883 do PPSSPP: libretro: corrigir condição de corrida no buffer de áudio e pushes de amostras >1024 frames",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "corrida de áudio",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Áudio",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: corrigir condição de corrida no buffer de áudio e pushes de amostras >1024 frames"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dois threads poderiam possuir o mesmo ponteiro bruto ao mesmo tempo"
+    },
+    {
+      "type": "paragraph",
+      "text": "No caminho de frontend libretro, System_AudioPushSamples converte o áudio do PSP e o adiciona ao output_audio_buffer. Com os backends OpenGL, as amostras podem chegar através da fila de comandos GL no lado da emulação, enquanto retro_run esvazia o buffer na thread libretro. Inicialização, desligamento e crescimento da capacidade também substituem ou liberam a alocação. Sem uma regra de propriedade, um realloc poderia invalidar o ponteiro enquanto a outra thread estivesse lendo ou escrevendo nele."
+    },
+    {
+      "type": "heading",
+      "text": "Um único mutex agora define o tempo de vida do buffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21883 adiciona output_audio_buffer_mutex e o utiliza na inicialização, destruição, upload e System_AudioPushSamples. A função auxiliar de capacidade é explicitamente documentada como exigindo que o chamador mantenha esse lock, então o crescimento acontece dentro da mesma seção crítica que o append que precisa dele. O upload mantém o lock durante o callback em lote e o reset de tamanho, impedindo que um produtor altere o payload no meio da entrega."
+    },
+    {
+      "type": "heading",
+      "text": "A correção protege a estrutura e as amostras juntas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloquear apenas o tamanho ou a capacidade não seria suficiente: dados, tamanho e capacidade formam um invariante. O ponteiro deve referir-se a uma alocação com pelo menos o número de elementos da capacidade, e o tamanho deve identificar amostras inicializadas dentro dela. O mutex faz com que as atualizações de todos os três sejam visíveis como uma operação única. Isso é particularmente relevante para o tempo de GL com threads, mas init e free usam a mesma regra, então reinícios rápidos do core não podem competir com um produtor tardio."
+    },
+    {
+      "type": "heading",
+      "text": "Testes de estresse devem variar o tempo de callback e do renderizador"
+    },
+    {
+      "type": "paragraph",
+      "text": "Execute libretro com OpenGL, Vulkan, e renderização por software enquanto pausa, avança rapidamente, reseta, troca de conteúdo e fecha o core repetidamente. Use callbacks de áudio que consumam rápido, devagar e em lotes irregulares, além de empurrar amostras acima dos tamanhos normais de frame. O ThreadSanitizer não deve detectar acesso não sincronizado à tupla do buffer. Ouça e faça hash do PCM capturado para identificar lacunas ou reordenações, e confirme que nenhum callback reentra em um caminho que espera pelo mesmo mutex não-recursivo."
+    },
+    {
+      "type": "callout",
+      "text": "Um buffer de áudio expansível é um objeto compartilhado, não três campos independentes; seu ponteiro, tamanho e capacidade devem atravessar threads sob o mesmo bloqueio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Leia a discussão de engenharia PPSSPP e as alterações de código-fonte"
+    }
+  ]
+}

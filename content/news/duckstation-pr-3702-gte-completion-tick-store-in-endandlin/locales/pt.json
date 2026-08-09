@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation corrige um registrador de hospedeiro errado no timing GTE do RISC-V",
+  "summary": "EndAndLinkBlock calculou o tick de conclusão correto em RARG2, mas armazenou em RARG1, uma incompatibilidade de uma instrução que poderia carregar a prontidão incorreta do coprocesso para o próximo bloco recompilado.",
+  "heroAlt": "Evidência da fonte do pull request DuckStation #3702: CPU/RISCV64: Corrigir o armazenamento de gte_completion_tick em EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "recompilador",
+    "tick de conclusão"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Corrigir o armazenamento de gte_completion_tick em EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O cálculo estava correto até o armazenamento final"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation rastreia quando o Motor de Transformação Geométrica do PlayStation conclui o trabalho, então seguindo as instruções CPU observe o tempo correto de dependência. No caminho EndAndLinkBlock do recompilador RISC-V 64, o novo valor de conclusão já havia sido calculado em RARG2. No entanto, o armazenamento emitido usou RARG1, escrevendo um registrador de argumento diferente no estado global de tempo do GTE pouco antes do controle passar para outro bloco."
+    },
+    {
+      "type": "heading",
+      "text": "Uma substituição de registrador alinha o RISC-V com os outros recompiladores"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #3702 altera a instrução SW para armazenar RARG2 em g_state.gte_completion_tick. Nenhuma fórmula de tempo ou decodificador de instrução do convidado foi alterada. A evidência é o fluxo de dados naquele ponto exato e o comportamento correspondente de outros backends de arquitetura. Pequenos patches desse tipo são valiosos justamente porque o registrador incorreto pode sobreviver à compilação, gerar código de máquina válido e falhar apenas em uma família de host."
+    },
+    {
+      "type": "heading",
+      "text": "Um tick de conclusão obsoleto altera quando instruções posteriores acreditam que o GTE está pronto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se o valor errado for anterior ao tick calculado, o código do convidado pode consumir resultados de geometria cedo demais; se for posterior, o DuckStation pode inserir espera desnecessária. Qualquer direção pode alterar jogos que intercalam o trabalho do CPU com comandos GTE, mesmo que a aritmética transformada em si esteja correta. O erro é carregado através de uma fronteira de bloco, então um teste confinado a instruções dentro de um bloco gerado pode não detectá-lo."
+    },
+    {
+      "type": "heading",
+      "text": "Os testes devem forçar o valor de conclusão através do EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um teste de recompilador direcionado deve emitir um comando GTE, terminar o bloco enquanto a unidade ainda está ocupada, vincular a um código que lê ou depende do resultado, e comparar o interpretador, RISC-V e outro backend de recompilador. Registre o valor RARG2 calculado e o tick global armazenado. Cubra saídas condicionais e diferentes casos de novo-PC tratados pelo EndAndLinkBlock. Execute os testes de temporização de GTE existentes repetidamente em hardware nativo RISC-V para que diferenças na alocação de registradores ou convenção de chamadas sejam testadas."
+    },
+    {
+      "type": "callout",
+      "text": "O patch é um operando, mas o invariante é arquitetural: todo backend hospedeiro deve transportar o tick de conclusão GTE calculado através de um link de bloco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Leia a discussão de engenharia DuckStation e as alterações de código-fonte"
+    }
+  ]
+}

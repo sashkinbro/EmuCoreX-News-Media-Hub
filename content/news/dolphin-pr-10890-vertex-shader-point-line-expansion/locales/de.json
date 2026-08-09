@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin baut breite Punkte und Linien innerhalb des Vertex-Shaders wieder auf",
+  "summary": "Die Quad-Erweiterung wird aus der Geometriephase verschoben, wodurch breite Primitiven auf Metal und MoltenVK wiederhergestellt werden, während auf einigen Desktop-GPUs ein schnellerer Pfad angeboten wird.",
+  "heroAlt": "Quellenbeweis aus dem Dolphin Pull-Request #10890: VideoCommon: Vertex-Shader Punkt-/Linienerweiterung hinzufügen",
+  "searchKeywords": [
+    "Dolphin",
+    "Vertex-Shader",
+    "Metal",
+    "MoltenVK",
+    "breite Linien"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: Vertex-Shader Punkt-/Linienerweiterung hinzufügen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Moderne APIs stellen nicht alle die alte Erweiterungsphase von Dolphin bereit"
+    },
+    {
+      "type": "paragraph",
+      "text": "GameCube- und Wii-Software kann Punkte und Linien anfordern, die breiter als ein Pixel sind. Dolphin erweitert diese Primitive traditionell mit einem Geometry-Shader, aber Metal hat keine entsprechende Stufe und MoltenVK übernimmt diese Einschränkung. Der fehlende Pfad war in Inhalten wie der Metroid Prime 2-Karte sichtbar, wo breite Linien falsch gerendert werden konnten. Geometry-Shader können auch relativ teuer sein, selbst auf Hardware, die sie unterstützt."
+    },
+    {
+      "type": "heading",
+      "text": "Index-Bits sagen dem Vertex-Shader, welche Ecke des Quads zu bauen ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull-Request #10890 stellt einen erweiterten Punkt oder eine Linie als Quad dar. Modifizierte Indizes reservieren ihre unteren beiden Bits, um die erzeugte Ecke zu identifizieren. Der Vertex-Shader lädt den zugehörigen Quellvertex oder die Endpunkte, führt die übliche Transformation durch und berechnet den Bildschirmraum-Offset, der für diese Ecke benötigt wird. Die dynamische Vertex-Loader-Verschaltung liefert die zusätzlichen Daten und Geometrie-Konstanten über backend-spezifische Ressourcenbindungen."
+    },
+    {
+      "type": "heading",
+      "text": "Die Backend-Fähigkeit entscheidet, ob der Pfad erforderlich oder optional ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal und Vulkan-bis-MoltenVK können Vertex-Erweiterung verwenden, um Funktionen zu erhalten, die sie nicht mit einem Geometry Shader ausdrücken könnten. D3D12, Vulkan, OpenGL und andere fähige Pfade zeigen Unterstützung, während eine erweiterte Präferenz es Benutzern ermöglicht, die Vertex-Erweiterung auszuwählen, wo beide Methoden existieren. Profiling auf einer Radeon Pro 5600M zeigte einen spürbaren Vorteil in der Metroid Prime 2-Karte, aber die Option bleibt kontextabhängig und ist kein universelles Leistungsversprechen."
+    },
+    {
+      "type": "heading",
+      "text": "Die Abdeckung muss primitive Semantik umfassen, nicht nur eine Karte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vergleichen Sie Punkte und Linien bei mehreren Breiten, Seitenverhältnissen, internen Auflösungen, Viewport-Skalierungen, Clipping-Grenzen und Perspektivtransformationen. Schließen Sie Texturoffset ein, da die ursprüngliche Diskussion diese als einen Bereich identifiziert hat, der mehr Spielabdeckung benötigt. Erfassen Sie Metal, MoltenVK, native Vulkan, D3D12 und OpenGL-Ausgaben im Vergleich zur Geometrieerweiterung, wo verfügbar. Überprüfen Sie provozierende Scheitelpunkte, Tiefe, Interpolation, entartete Linien, Zustandsänderungen und savestates; benchmarken Sie Pipeline-Churn getrennt von Shader-Ausführung."
+    },
+    {
+      "type": "callout",
+      "text": "Die Vertex-Erweiterung ist sowohl eine Kompatibilitätsbrücke für Metal als auch eine messbare Alternative zu Geometrie-Shadern, aber die identischen Primitivregeln bleiben der Akzeptanztest."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Lesen Sie die Dolphin-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

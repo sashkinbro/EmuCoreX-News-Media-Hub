@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 resolve o redimensionamento em duas etapas do Gamescope sem reverter para 640x480",
+  "summary": "Um evento de redimensionamento atrasado poderia sobreviver a uma consulta de janela mais recente de 1280x800; a correção da ordem de estado mantém a viewport final do Steam Deck nas dimensões que o Gamescope realmente selecionou.",
+  "heroAlt": "Evidência de origem do pull request PCSX2 #14732: Qt: Corrigir resolução incorreta no Gamescope",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "debounce de redimensionamento",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Corrigir resolução incorreta no Gamescope"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope relata uma janela temporária antes do tamanho real do display"
+    },
+    {
+      "type": "paragraph",
+      "text": "O modo de jogos do SteamOS pode fazer com que o Qt abra PCSX2 em 640x480 e imediatamente redimensione para a tela 1280x800 do Steam Deck. Ambos os eventos são legítimos em momentos diferentes. O bug apareceu porque o primeiro redimensionamento iniciou um temporizador de debounce, enquanto uma consulta posterior do DisplaySurface atualizou as dimensões lembradas para o tamanho final. O callback atrasado então disparou com a intenção desatualizada de 640x480."
+    },
+    {
+      "type": "heading",
+      "text": "O temporizador antigo poderia sobrescrever informações mais recentes da janela"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um debounce normalmente previne trabalho caro na viewport durante uma tempestade de redimensionamento. Aqui, tornou-se um risco de ordenação: as dimensões de m_last_window já descreviam 1280x800, mas o callback pendente ainda aplicava o alvo anterior. O Big Picture continuava em tela cheia no nível do sistema de janelas enquanto o renderizador usava uma viewport pequena, produzindo a imagem característica de 640x480 no canto inferior esquerdo."
+    },
+    {
+      "type": "heading",
+      "text": "A correção torna o estado de redimensionamento monótono ao longo da sequência de inicialização"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14732 ajusta a lógica de redimensionamento de exibição do Qt para que um evento anterior com debounce não prevaleça depois que getWindowInfo observou a superfície real. Ele visa a corrida entre duas fontes de tamanho, em vez de tratar especialmente uma resolução fixa do Steam Deck. Isso é importante para outros dispositivos Gamescope, monitores externos e futuros painéis cujas dimensões finais diferem de 1280x800."
+    },
+    {
+      "type": "heading",
+      "text": "Lançamentos frios repetidos são o teste de regressão significativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "No Steam Deck ou em outra sessão Gamescope, inicie repetidamente PCSX2 com -bigpicture -fullscreen e OpenGL, verificando a viewport após cada inicialização. Adicione transições de janela para tela cheia, alterações de monitor externo, suspender/retomar e vários backends de renderização. Registre cada evento de redimensionamento, alvo do debounce, resultado do getWindowInfo e viewport aplicado. O callback final deve usar as dimensões mais recentes, enquanto um único redimensionamento comum ainda espera pelo debounce e se aplica corretamente."
+    },
+    {
+      "type": "callout",
+      "text": "O bug não era uma constante de resolução incorreta; era um timer antigo prevalecendo depois que um tamanho de superfície mais recente já se tornara autoritativo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

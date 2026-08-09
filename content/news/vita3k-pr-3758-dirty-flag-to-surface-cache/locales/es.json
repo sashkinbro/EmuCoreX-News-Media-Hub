@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K hace que las escrituras en la memoria del invitado invaliden las superficies Vulkan",
+  "summary": "Los rangos de respaldo protegidos ahora marcan las superficies de color en caché como sucias, evitando que se reutilicen imágenes GPU obsoletas como texturas después de que CPU cambien su memoria.",
+  "heroAlt": "Evidencia de la fuente del pull request #3758 de Vita3K: renderer/vulkan: Agregar bandera de sucio a la caché de superficies",
+  "searchKeywords": [
+    "Vita3K",
+    "Caché de superficies Vulkan",
+    "bandera de sucio",
+    "mprotect",
+    "memoria del invitado"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Agregar bandera de sucio a la caché de superficies"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una superficie puede existir en la memoria GPU después de que el invitado cambie sus bytes de respaldo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K almacena en caché las superficies de color Vita como recursos Vulkan. Cuando un juego escribe en la memoria invitada correspondiente desde el CPU, la imagen en caché puede ya no representar ese rango de direcciones. Devolverla como textura puede mostrar un cuadro o efecto antiguo. Algunos formatos lineales también requieren sincronización GPU-a-invitado cuando el CPU los lee, por lo que los fallos de lectura y escritura tienen significados relacionados pero diferentes."
+    },
+    {
+      "type": "heading",
+      "text": "Los callbacks de protección ahora llevan estado compartido de sincronización y sucio"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #3758 da a cada ColorSurfaceCacheInfo una bandera compartida de sucio. protect_surface alinea el interior que se puede proteger de forma segura a páginas de 4 KiB. Las superficies lineales capaces de sincronización usan MemPerm::None para atrapar lecturas y escrituras y capturar need_surface_sync; otras superficies usan SoloLectura para atrapar escrituras. Una escritura marca como sucio. Para una superficie más pequeña que una página, el seguimiento de sucio se retiene porque datos no relacionados en la misma página protegida crearían invalidaciones falsas."
+    },
+    {
+      "type": "heading",
+      "text": "La búsqueda en caché rechaza los datos GPU después de una escritura CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando se solicita una superficie de color como textura, un indicador de suciedad estable no devuelve un resultado en caché, forzando al llamador a alejarse del contenido obsoleto GPU. Cuando la misma superficie vuelve a ser un framebuffer, Vita3K puede reactivar la protección y limpiar la suciedad después de establecer el nuevo uso autorizado. Las protecciones superpuestas se combinan a través de most_restrictive_perm, por lo que agregar un rango más débil no puede reabrir accidentalmente la memoria ya protegida más fuertemente."
+    },
+    {
+      "type": "heading",
+      "text": "Los métodos de mapeo de memoria y la superposición de páginas son pruebas clave"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderizar en una superficie, muestrearla, reescribir todo o parte desde el invitado CPU, luego muestrear de nuevo para formatos lineales y en mosaico. Incluir asignaciones alineadas, no alineadas, subpágina, superpuestas y de página compartida; confirmar que superficies pequeñas eviten indicadores de suciedad falsos sin ocultar cambios reales. Probar la sincronización de lectura por separado de la invalidación de escritura. Repetir en mapeo de buffer nativo, doble buffering, controladores Linux NVIDIA y no NVIDIA, Android y restauración savestate. Registrar fallos de protección para detectar bucles o trampas excesivas en la ruta crítica."
+    },
+    {
+      "type": "callout",
+      "text": "Una caché es correcta solo mientras su evidencia de propiedad esté vigente; una sola escritura de un invitado es suficiente para revocar la reclamación de la superficie GPU sobre esa memoria."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Lea la discusión de ingeniería Vita3K y los cambios de código fuente"
+    }
+  ]
+}

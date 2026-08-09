@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 lässt die hochgeladene Bildgröße den gültigen Bereich eines vorgeladenen Ziels definieren",
+  "summary": "Exakte EE-zu-GS Upload-Grenzen verhindern, dass späteres RTA-Scaling ein vollständiges Bild auf den danach gezeichneten winzigen Bereich zuschneidet, während ein-Pixel-Überlappungen das Verschieben ansonsten gültiger Ziele verhindern.",
+  "heroAlt": "Quellnachweis aus PCSX2 Pull Request #14740: GS/TC: Mindestgröße für gültige Werte basierend auf dem exakt vorgeladenen Ziel setzen",
+  "searchKeywords": [
+    "PCSX2",
+    "Textur-Cache",
+    "Vorladen",
+    "RTA-Scaling",
+    "EE zu GS Upload"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC: Mindestgröße für gültige Werte basierend auf dem exakt vorgeladenen Ziel setzen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein winziges Zeichnen könnte ein Ziel verkleinern, das bereits eine vollständige Upload hatte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Einige Spiele laden ein Bild von der Emotion Engine in den GS-Speicher hoch, laden dieses Bild als Ziel vorab und zeichnen dann nur einen kleinen Bereich. Das Preload kann korrekt sein, aber das Tracking der gültigen Größe von PCSX2 könnte der späteren Zeichnung statt dem Upload folgen. Wenn RTA Scaling dann das Ziel vergrößerte, behandelte es nur diese wenigen gezeichneten Pixel als gültig und schnitt den Rest des vorab geladenen Bildes ab."
+    },
+    {
+      "type": "heading",
+      "text": "Upload-Abdeckung liefert jetzt die minimale gültige Höhe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14740 erkennt die Dimensionen des EE-zu-GS-Uploads, der das Preload befüllte, und verwendet diese zur Festlegung der gültigen Höhe des Ziels. Nachfolgende kleine Zeichnungen können die Gültigkeit dort erweitern, wo es angebracht ist, sie jedoch nicht unter die bekannten hochgeladenen Inhalte reduzieren. Die Korrektur befindet sich in GSTextureCache, da dies Besitz- und Abdeckungs-Metadaten sind und nicht ein Shader-Effekt, der nachträglich auf das bereits abgeschnittene Bild angewendet wird."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Pixel Überlappung verschiebt die Identität des Ziels nicht mehr"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein separater Fall erlaubte ein neues Hochladen, das einen anderen Zielbereich um ein einziges Pixel überlappte, um den Start dieses Ziels anzupassen und seine Größe zu ändern. Nachschläge anhand der ursprünglichen Basisadresse schlugen dann fehl, obwohl die Ressource an dieser Basis noch gültig war. Die Handhabung des Preloads toleriert jetzt die leichte Blocküberlappung, ohne das Ziel zu verschieben, wodurch die Adressidentität erhalten bleibt, die andere Cache-Operationen zur Auffindung verwenden."
+    },
+    {
+      "type": "heading",
+      "text": "Vexx und Lucifer's Call üben die beiden unabhängigen Korrekturen aus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx ist der Quellreproduzent für ein vollständig vorgeladenes Bild, das durch die Überwachung der gültigen Größe zugeschnitten wurde. Shin Megami Tensei: Lucifer's Call behandelt das Überlappungsverhalten. Beim Testen sollten Upload-Grenzen, Zielbasis, gültige Höhe, spätere Zeichenbereiche und jede RTA-Anpassung protokolliert werden. Vergleichen Sie native und hochskalierte Frames, und fügen Sie dann einen negativen Fall mit einer echten größeren Überlappung hinzu, die dennoch das Eigentum ändern sollte. Die Korrektur der Ein-Pixel-Toleranz darf nicht dazu führen, dass widersprüchliche Ziele dauerhaft koexistieren."
+    },
+    {
+      "type": "callout",
+      "text": "Die vorab geladene Gültigkeit folgt nun den bereits im GS-Speicher vorhandenen Belegen: Exakte Upload-Größe und stabile Basisadresse haben Vorrang vor einem späteren winzigen Draw oder vernachlässigbarer Überlappung."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und die Quellcodeänderungen"
+    }
+  ]
+}

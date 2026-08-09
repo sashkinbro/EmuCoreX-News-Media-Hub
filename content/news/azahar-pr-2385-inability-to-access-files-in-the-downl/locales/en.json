@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2385-inability-to-access-files-in-the-downl",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar accepts both Android URI forms for the same Downloads file",
+  "summary": "The system file picker emits different content URIs for the Downloads sidebar and manual navigation; vanilla Azahar now resolves the provider-backed form instead of rejecting a valid selection.",
+  "heroAlt": "Source evidence from Azahar pull request #2385: android: Fix inability to access files in the Download folder in some circumstances",
+  "searchKeywords": [
+    "Azahar",
+    "Android Downloads",
+    "Storage Access Framework",
+    "content URI",
+    "file picker"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2385": "android: Fix inability to access files in the Download folder in some circumstances"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "One file can arrive with two different Android identities"
+    },
+    {
+      "type": "paragraph",
+      "text": "Selecting a file through the system picker's Downloads sidebar did not produce the same URI as navigating from the phone's root or home directory to that file. Vanilla Azahar understood the manually navigated form but not the Downloads-provider form, so two visually identical selections had different outcomes. This is a Storage Access Framework resolution gap, not a missing filesystem permission for the underlying file."
+    },
+    {
+      "type": "heading",
+      "text": "ContentResolver metadata bridges the provider-specific form"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2385 extends NativeLibrary's URI handling to query the Android content provider and resolve the Downloads representation. The query is scoped with use so the cursor closes reliably, and the resolved information joins Azahar's existing file-access path. The code does not assume that a content URI is a raw filesystem path, respecting the provider abstraction that created the differing identifier."
+    },
+    {
+      "type": "heading",
+      "text": "Verbose logs identify which resolution branch handled a URI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Additional logging records the incoming URI and the type of resolution performed. That evidence is important on Android because device vendors and picker versions can emit different authorities or document IDs. A future failure can be classified as an unsupported provider form instead of reported only as a generic inaccessible file."
+    },
+    {
+      "type": "heading",
+      "text": "The matrix must start from both picker entry points"
+    },
+    {
+      "type": "paragraph",
+      "text": "Choose the same ROM or archive from the Downloads sidebar and by manually navigating to Downloads, then compare open, reopen, recent-file, and persisted-permission behavior. Test nested folders, renamed files, multiple picker apps, Android versions, and process restart. Run the vanilla and Google Play variants separately: only vanilla should exercise the new resolver. Invalid or revoked URIs must fail cleanly and must never be converted into an unintended path."
+    },
+    {
+      "type": "callout",
+      "text": "Android file access follows URI semantics, not visual folder names; Azahar now recognizes both identities the picker gives a Downloads document."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2385",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

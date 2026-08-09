@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "HUD'u render eden ancak dünyayı render etmeyen bir PS2 oyununu teşhis edin",
+  "summary": "Hayatta kalan HUD'u, sunumun aktif olduğuna dair kanıt olarak kullanın, disk imajını doğrulayın, çizimi devre dışı bırakma üstverilerini sıfırlayın, donanım API'lerini ve kısa bir yazılım referansını karşılaştırın, ardından en küçük tekrarlanabilir dünya geometri hatasını yakalayın.",
+  "heroAlt": "Arayüz ve dünya katmanları ile bir renderer gerileme karşılaştırmasından PCSX2 oyun kaydı",
+  "searchKeywords": [
+    "Sadece HUD görünen PS2",
+    "Siyah dünya EmuCoreX",
+    "eksik geometri",
+    "çizim sıfırlamayı atla",
+    "renderer tanılama"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafikler",
+    "diagnostics": "Teşhis"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 temiz sorun giderme temeli",
+    "pcsx2-performance": "PCSX2 oluşturucu ve GS göstergeler"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Görünür HUD'u bir katman sınırı olarak kabul edin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sayıcılar, menüler veya oyunun HUD’u hâlâ çiziliyorsa, çıktı yüzeyi ve en azından GS komut akışının bir kısmı canlıdır. Eksik kısım, dünya geometrisi, framebuffer birleşimi veya çizimleri yok sayan geniş bir manuel kural olabilir. Hassasiyeti değiştirmeden önce, dünyanın siyah, şeffaf, önceki bir karede donmuş veya tek bir düz renk ile değiştirilmiş olup olmadığını kaydedin. Bu belirtiler farklı testlere yol açar."
+    },
+    {
+      "type": "callout",
+      "text": "Bozuk bir katmanı kaybolmasını sağlamak için skip-draw değerlerini artırmayın. Bir skip kuralı, 2D katmanları bırakırken tüm dünyayı kaldırabilir ve bu belirtileri tam olarak tekrar üretebilir."
+    },
+    {
+      "type": "heading",
+      "text": "Oyun başlatmadan oynanışa geçiş kontrol noktasını koruyun"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Bir emülatör kaydedilmiş durum kullanmadan etkilenen sahneye ulaşan normal bir oyun içi kayıt.",
+        "Doğrulanmış seri numarası, bölge, revizyon ve kişisel görüntü hash'i.",
+        "Mevcut genel ve oyun başına grafik değerlerinin ekran görüntüleri.",
+        "Doku değişimleri ve shader'lar devre dışı bırakılmış sistem GPU sürücüsü.",
+        "Renderer başlatmasını ve oyun geçişini gösteren kısa bir günlük."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Hassasiyet eklemeden önce çizimleri geri yükle"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Oyunu soğuk başlat ve menülerin, FMV ve oyun oynanışının farklı sınırlarda başarısız olup olmadığını doğrula.",
+        "2. Bu seri için atlanan çizim, manuel donanım düzeltmeleri, doku ofsetleri ve kalıtımlı oyun başına yamaları sıfırla.",
+        "3. Orijinal donanım API’sinde, yerel dahili çözünürlükte yeniden test et.",
+        "4. Oturumu kapat, desteklenen diğer donanım API’sini seç ve aynı geçişi tekrar oynat.",
+        "5. Her iki yol sadece HUD’u tutarsa, sahneyi kısa bir süre yazılım ile çalıştır ve dünya geometrisinin geri dönüp dönmediğini yakala.",
+        "6. Yazılım doğru olduğunda, donanıma dön ve yalnızca belgelenmiş başlığa özel bir render cihazını veya GS düzeltmesini test et.",
+        "7. Eğer yazılım da boşsa, yalnızca grafik hatası olduğunu varsaymadan önce görüntüyü tekrar doğrulayın ve temiz bir profili test edin.",
+        "8. Eksik dünyayı yeniden üreten en küçük çalıştırmadan logları ve kesin ayarları yakalayın."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "HUD ve dünya genellikle farklı çizim yolları kullanır. Doğru bir yazılım karesi, oyunun dünya komutlarını ürettiğini kanıtlar ve hatayı donanım çevirisi veya ana bilgisayar sürücüsü davranışına daraltır. Temiz donanım ve yazılım yollarında başarısızlık, görüntü, yamalar, oyun ilerlemesi veya daha geniş bir emülatör gerilemesine geri işaret eder. Önce çizim devre dışı bırakma kontrollerini sıfırlamak, kendi yarattığınız bir semptomun bu kararı etkilemesini önler."
+    },
+    {
+      "type": "heading",
+      "text": "Dünya katmanı kurtarma kriterleri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltilmiş profil, sadece uygun bir durağan kareden daha fazlasını sunmalıdır."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Dünya geometrisi, karakterler, parçacıklar ve HUD, amaçlanan sırayla görünür.",
+        "Menüler ve FMV siyah bir bekleme karesi olmadan oyuna geçiş yapar.",
+        "Kamera hareketi, büyük eksik sektörleri ortaya çıkarmaz.",
+        "İkinci bir alan, aynı oyun başına ayar ile soğuk başlatır.",
+        "Düzeltme yalnızca doğrulanmış seri ve revizyona eklenmiştir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Yükseltme kanıtı"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Yazılım ve donanım API'lerinin her ikisi de temiz ayarlara sahip doğrulanmış bir görüntüde başarısız oluyor: bir regresyon raporu toplayın.",
+        "Sadece bir özel sürücü başarısız oluyor: sistem sürücüsüne dönün ve sürücü paketini ayrı olarak rapor edin.",
+        "Skip-draw sıfır olduğunda dünya geri dönüyor: kopyalanan geçersiz kılmayı kaldırın.",
+        "Hata bir kayıt durumu yüklemesinden sonra başlıyor: grafik kanıtı sunmadan önce oyun içi bir kayıttan yeniden üretin."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Başlık profilini varsayılanlardan yeniden oluşturun"
+    },
+    {
+      "type": "paragraph",
+      "text": "Deneysel profili kaldırın, kaydedilmiş global renderlayıcıyı geri yükleyin, sistem sürücüsünü seçin ve doğal çözünürlükte soğuk başlatma yapın. Tüm alan kontrollerinden geçtiyse yalnızca doğrulanmış düzeltmeyi tekrar uygulayın; resmi başlığa özgü kanıtlar gerektirmedikçe tüm atla-çizim kontrolleri devre dışı bırakılmış bırakın."
+    },
+    {
+      "type": "heading",
+      "text": "Kara bir dünya her zaman kara bir ekran değildir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Görüntü aralığı ve OLED kara seviyesi karanlık manzaraları bastırabilir, ancak doğrudan bir ekran görüntüsündeki geometrinin yok olmasını sağlayamazlar. Televizyon veya HDR ayarlarını değiştirmeden önce yakalanan bir kareyi ve renderlayıcı günlüğünü inceleyin."
+    },
+    {
+      "type": "link",
+      "text": "PCSX2 genel sorun giderme temelini izleyin",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

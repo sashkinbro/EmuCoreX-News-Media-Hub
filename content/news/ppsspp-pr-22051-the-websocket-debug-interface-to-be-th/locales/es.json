@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP mueve el trabajo de depuración WebSocket al hilo CPU",
+  "summary": "Un puente de tareas síncronas reemplaza el bloqueo del depurador distribuido, y el desensamblador elimina las macro-operaciones combinadas que hacían ambiguo el tamaño del paso.",
+  "heroAlt": "Evidencia de la fuente del pull request #22051 de PPSSPP: Refactorizar la interfaz de depuración websocket para que sea segura para hilos, eliminar \"macro ops\" en el desensamblaje",
+  "searchKeywords": [
+    "PPSSPP",
+    "Depurador WebSocket",
+    "Hilo CPU",
+    "Puntos de interrupción",
+    "Desensamblaje"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Herramientas",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refactorizar la interfaz de depuración websocket para que sea segura para hilos, eliminar \"macro ops\" en el desensamblaje"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Las solicitudes del depurador remoto cruzaban un límite de propiedad"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un depurador WebSocket se ejecuta en un hilo de red, pero los puntos de interrupción, la ejecución paso a paso, el acceso a los registros y gran parte de la memoria emulada son propiedad del hilo de ejecución CPU. Proteger funciones individuales con bloqueos no relacionados hace que la corrección dependa del orden de los bloqueos y de que cada futuro manejador recuerde las mismas reglas. Es especialmente frágil mientras el núcleo está en pausa, porque una solicitud puede necesitar el estado del hilo CPU precisamente cuando el progreso ordinario del marco se ha detenido."
+    },
+    {
+      "type": "heading",
+      "text": "Un puente serializa las operaciones propiedad de CPU en el bucle de ejecución"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #22051 añade Core_RunOnCPUThread. Un llamador empaqueta una función en una tarea compartida, la empuja bajo un mutex de cola y espera en una variable de condición. Core_RunLoopUntil vacía la cola en la parte superior de su bucle, ejecuta funciones en el hilo CPU, las marca como completas bajo el mutex y despierta a los que esperan. Las llamadas ya en el hilo CPU se ejecutan inmediatamente, evitando un bloqueo propio. El bucle se vacía continuamente mientras se ejecuta paso a paso o está en pausa y al menos una vez por marco anfitrión mientras se ejecuta."
+    },
+    {
+      "type": "heading",
+      "text": "El desensamblaje ahora mantiene el tamaño de paso en una unidad"
+    },
+    {
+      "type": "paragraph",
+      "text": "El mismo trabajo elimina las operaciones macro del desensamblador que combinaban patrones de instrucciones, como lui más ori, en una sola línea de presentación. Aunque resulta conveniente para leer, las operaciones combinadas confunden si un tamaño de paso significa bytes, instrucciones del invitado o filas de visualización. El nuevo contrato trata stepSize como un recuento de instrucciones MIPS de cuatro bytes, y los cálculos de dirección de punto de interrupción se multiplican en consecuencia. Las vistas pueden posteriormente añadir indicios visuales sin alterar la unidad de ejecución subyacente."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de concurrencia necesitan casos pausados y reentrantes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Realice lecturas, escrituras, cambios de puntos de interrupción, exploraciones de memoria y pasos individuales simultáneamente mientras el juego se ejecuta, está en pausa y transiciona entre estados. Desconecte clientes mientras las tareas esperan, detenga el núcleo con una cola no vacía y llame al puente desde el propio hilo CPU. ThreadSanitizer no debería informar carreras del depurador. Verifique que cada solicitud reciba finalización o un error de apagado controlado, y compare las direcciones de desensamblado alrededor de patrones macro anteriores para que los pasos nunca omitan ni repitan una instrucción del invitado."
+    },
+    {
+      "type": "callout",
+      "text": "El depurador ya no solicita muchos bloqueos para imitar la propiedad de CPU; envía la operación al hilo que ya posee el estado."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de PPSSPP"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation 给 MMPX 提供了透明边界，而不是重复的边缘像素",
+  "summary": "越界的邻近采样现在贡献零 alpha 和颜色，从而防止边缘夹紧重复生成的形状混淆缩放器的形态规则。",
+  "heroAlt": "来自 DuckStation 拉取请求 #3774 的原始证据：MMPX 增强/高级 Clamp-to-transparent 越界映射",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "边缘夹紧",
+    "透明像素",
+    "着色器采样"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX 增强/高级 Clamp-to-transparent 越界映射"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "边缘夹紧制造了源图像中不存在的邻域像素"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX 通过检查局部颜色形状和趋势来决定如何扩展像素。在纹理边界处，普通的 clamped 采样会将最后有效的纹素重复用于每个超出范围的坐标。这种行为对于普通滤波很方便，但形态学放大器会将重复的颜色解释为额外的结构。因此，接近边界的角和线条可能会被分类为与图像中间相同形状不同。"
+    },
+    {
+      "type": "heading",
+      "text": "坐标掩码将无效的采样点变为透明采样"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3774 修改了 MMPX Enhanced 和 Advanced 着色器生成中的 srcf 助手。每个邻居仍然调用 SampleFromVRAM，但结果会乘以水平和垂直步长掩码，将请求的坐标与 uv_limits 进行比较。落在允许矩形之外的坐标会得到零乘数，使得有效采样变为透明，而不是边缘纹素的复制。"
+    },
+    {
+      "type": "heading",
+      "text": "此更改仅适用于形状分析，而不影响全局纹理寻址"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation 并不会替代每个 PlayStation 纹理的 clamping 行为。掩码存在于生成的 MMPX 采样辅助工具中，因为这些算法需要源图像之外的概念性空邻域。其他着色器路径可以继续使用它们既定的 wrap 或 clamp 语义。这个狭窄的范围防止了像素艺术缩放修复改变游戏本身处理纹理边缘的方式。"
+    },
+    {
+      "type": "heading",
+      "text": "边界形状应完全镜像内部形状。"
+    },
+    {
+      "type": "paragraph",
+      "text": "构建测试图像，包含对角线、角落、单像素线和四像素交点，既在纹理边缘也在内部几像素处。缩放后，边界形状应与内部形状匹配，除缺失的外部区域外。重复操作时使用非零 UV 子矩形、纹理页面、透明度和奇数尺寸。比较增强版和高级版，并检查四条边；一个坐标掩码的符号错误可能会修复右边缘却破坏左边缘。"
+    },
+    {
+      "type": "callout",
+      "text": "对于 MMPX 形态，图像外的空间是空的；重复边缘颜色并不是无害的滤波，而是错误的形状证据。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "阅读 DuckStation 的工程讨论和源代码更改"
+    }
+  ]
+}

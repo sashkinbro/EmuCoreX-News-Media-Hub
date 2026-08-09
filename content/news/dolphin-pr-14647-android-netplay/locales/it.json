@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14647-android-netplay",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin costruisce un layer completo di sessione NetPlay per Android",
+  "summary": "Un lifecycle owner in Kotlin, un ponte nativo per callback, uno stato della lobby reattivo e un'interfaccia Compose portano hosting, partecipazione, chat, sincronizzazione e avvio del gioco su mobile.",
+  "heroAlt": "Evidenza della fonte dal pull request #14647 di Dolphin: Android netplay",
+  "searchKeywords": [
+    "Dolphin",
+    "Android NetPlay",
+    "Kotlin Flow",
+    "Compose",
+    "server di traversal"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "network": "Rete",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14647": "Android netplay"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il NetPlay desktop non poteva essere semplicemente esposto come un solo pulsante Android"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una sessione multiplayer copre la scoperta o la connessione diretta, la durata del server e del client, le liste dei giocatori, la chat, la mappatura dei controller, la regolazione del buffer, la selezione del gioco, il trasferimento dei salvataggi, i controlli del digest del gioco, lo stato del server di attraversamento e l'avvio sincronizzato finale. Il dialogo del desktop di Dolphin gestisce molte di queste responsabilità tramite Qt. Android aveva bisogno di un'architettura che sopravvivesse alla navigazione tra le attività e traducesse i callback nativi nello stato dell'UI mobile senza perdere oggetti C++."
+    },
+    {
+      "type": "heading",
+      "text": "NetplaySession diventa l'unico proprietario di risorse native"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14647 aggiunge una sessione Kotlin che crea callback UI e possiede i puntatori a server, client e BootSessionData. NetplayManager serializza la creazione della sessione in modo che una nuova sessione attenda la chiusura di quella precedente. StateFlow, SharedFlow e i canali espongono cambiamenti dei giocatori, chat, autorità dell'input, progresso del trasferimento, digest del gioco, stato di attraversamento, errori di connessione e disconnessioni. Un percorso di rilascio protetto cancella ogni puntatore prima di invocare il suo distruttore nativo."
+    },
+    {
+      "type": "heading",
+      "text": "I display Compose separano la configurazione della connessione dall'hub attivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le attività dedicate alla configurazione e alla sessione supportano l'hosting e la partecipazione tramite modalità diretta o di attraversamento. I ViewModel combinano i flussi di sessione nativi nello stato della schermata, mentre la lobby può cambiare gioco, verificare se tutti i giocatori possiedono il titolo, regolare i buffer del controller, scambiare messaggi nella chat e avviare la partita. Quando l'host fornisce BootSessionData, NativeLibrary.RunNetPlay consuma il puntatore esattamente una volta e inizia l'emulazione con percorsi sincronizzati e stato Riivolution."
+    },
+    {
+      "type": "heading",
+      "text": "Il ciclo di vita mobile e le sessioni a versione mista necessitano di test approfonditi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ospita e unisciti tramite LAN diretta e traversal, ruota il dispositivo in ogni fase, metti in background e riprendi, nega la connettività, perdi la rete e chiudi mentre è attivo un salvataggio o un trasferimento digest. Verifica che i puntatori vengano rilasciati una volta, nessun callback raggiunge un oggetto Kotlin chiuso e una seconda sessione aspetta la pulizia. Mescola Android con client desktop, controller multipli, giochi mancanti, esplosioni di chat, fallimento della migrazione dell'host e uscita dall'emulazione per ritornare al lobby. I sanitizer di memoria e thread dovrebbero accompagnare i test del flusso utente."
+    },
+    {
+      "type": "callout",
+      "text": "Mobile NetPlay è principalmente un problema di ciclo di vita: l'interfaccia è affidabile solo quando ogni oggetto di sessione nativo ha un solo proprietario dalla connessione fino all'emulazione e allo smantellamento."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14647",
+      "label": "Leggi la discussione tecnica e le modifiche al codice sorgente di Dolphin"
+    }
+  ]
+}

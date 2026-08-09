@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP funnels platform input through the UI event loop",
+  "summary": "Touch, key, and axis callbacks now enqueue data for ordered dispatch on the UI thread, removing unsynchronized screen methods and a wide recursive lock.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21857: Rework input queueing for UI, remove Unsync* events",
+  "searchKeywords": [
+    "PPSSPP",
+    "input queue",
+    "ScreenManager",
+    "touch",
+    "controller"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Input",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Rework input queueing for UI, remove Unsync* events"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Input callbacks and screen mutation were sharing a fragile boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desktop and mobile backends can report touch, keyboard, and controller events from contexts that do not own PPSSPP's current screen stack. The earlier design mixed a recursive input lock with UnsyncTouch, UnsyncKey, and UnsyncAxis entry points that could traverse views directly. Screen switches, overlays, and event dispatch therefore depended on a large lock and on callers knowing which unsynchronized method was safe."
+    },
+    {
+      "type": "heading",
+      "text": "Callbacks now perform only a short queue operation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21857 defines typed queued events for touch, key, and axis input. ScreenManager callbacks copy the event and append it while holding eventQueueLock. During update, the UI thread moves the whole deque to a local variable, releases the mutex, and dispatches events in order. The critical section does not run view code, so handlers cannot lengthen platform callback latency or recursively acquire the queue lock."
+    },
+    {
+      "type": "heading",
+      "text": "Special delivery rules remain explicit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Release-all touch events still reach every screen layer, and key-up events still fan out so a background layer cannot retain a stuck key after stack changes. Ordinary input goes to the front screen, while an overlay receives touch-down first so it can dismiss itself and consume the event. Focus-navigation conversion becomes a normal KeyEventToFocusMoves helper, and many Unsync methods disappear because dispatch now happens on the owning thread."
+    },
+    {
+      "type": "heading",
+      "text": "Ordering and screen transitions are the hard tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generate interleaved touch, key, and axis events while opening and closing popups, switching screens, rotating the device, reconnecting controllers, and holding buttons across a transition. Confirm FIFO order and that release events clear every pressed state. Stress producers from multiple threads and use ThreadSanitizer around queue and screen-stack access. Define behavior when a screen changes after an event is queued but before update; the implementation intentionally targets the stack current at dispatch time, so tests must lock that contract down."
+    },
+    {
+      "type": "callout",
+      "text": "Platform callbacks now report input; the UI thread decides where it belongs when it processes the ordered queue."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K powoduje, że zapisy pamięci gościa unieważniają powierzchnie Vulkan",
+  "summary": "Chronione zakresy pamięci podrzędnej teraz oznaczają pamięci podręczne powierzchni kolorów jako brudne, zapobiegając ponownemu użyciu przestarzałych obrazów GPU jako tekstur po tym, jak CPU zmienia ich pamięć.",
+  "heroAlt": "Dowód źródłowy z pull request Vita3K #3758: renderer/vulkan: Dodaj flagę \"brudne\" do pamięci podręcznej powierzchni",
+  "searchKeywords": [
+    "Vita3K",
+    "Pamięć podręczna powierzchni Vulkan",
+    "flaga \"brudny\"",
+    "mprotect",
+    "pamięć gościa"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan: Dodaj flagę \"brudne\" do pamięci podręcznej powierzchni"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Powierzchnia może istnieć w pamięci GPU po tym, jak gość zmieni jej bajty podrzędne"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K buforuje powierzchnie kolorów Vita jako zasoby Vulkan. Gdy gra zapisuje odpowiadającą pamięć gościa z CPU, zapisany obraz w pamięci podręcznej może już nie odpowiadać temu zakresowi adresu. Zwracanie go jako tekstury może pokazać starszą klatkę lub efekt. Niektóre formaty liniowe wymagają również synchronizacji GPU-do-gościa, gdy CPU je odczytuje, więc błędy odczytu i zapisu mają powiązane, ale różne znaczenia."
+    },
+    {
+      "type": "heading",
+      "text": "Wywołania zwrotne ochrony teraz przenoszą stan współdzielony i brudny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3758 daje każdemu ColorSurfaceCacheInfo wspólną flagę brudności. protect_surface wyrównuje bezpiecznie możliwie chronione wnętrze do stron 4 KiB. Powierzchnie liniowe z możliwością synchronizacji używają MemPerm::None do przechwytywania odczytów i zapisów oraz do przechwytywania need_surface_sync; inne powierzchnie używają ReadOnly do przechwytywania zapisów. Zapis oznacza powierzchnię jako brudną. Dla powierzchni mniejszej niż strona śledzenie stanu brudności jest wstrzymane, ponieważ niespowodowane dane na tej samej chronionej stronie mogłyby stworzyć fałszywe unieważnienia."
+    },
+    {
+      "type": "heading",
+      "text": "Wyszukiwanie w pamięci podręcznej odmawia danych GPU po zapisie CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gdy powierzchnia koloru jest żądana jako tekstura, ustawiony wskaźnik dirty zwraca brak wyniku z pamięci podręcznej, zmuszając wywołującego do odejścia od przestarzałej zawartości GPU. Gdy ta sama powierzchnia ponownie staje się buforem ramki, Vita3K może ponownie włączyć ochronę i wyczyścić dirty po ustaleniu nowego autorytatywnego użycia. Nakładające się ochrony łączą się poprzez most_restrictive_perm, więc dodanie słabszego zakresu nie może przypadkowo ponownie otworzyć pamięci już silniej chronionej."
+    },
+    {
+      "type": "heading",
+      "text": "Metody mapowania pamięci i nakładające się strony są kluczowymi testami"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderuj do powierzchni, pobierz próbkę, przepisz całość lub część z gościa CPU, a następnie ponownie pobierz próbkę dla formatów liniowych i kafelkowych. Uwzględnij aligment, brak aligmentu, podstrony, nakładające się i współdzielone strony; potwierdź, że małe powierzchnie unikają fałszywych wskaźników dirty bez ukrywania rzeczywistych zmian. Testuj synchronizację odczytu osobno od unieważnienia zapisu. Powtórz na natywnym mapowaniu bufora, podwójnym buforowaniu, sterownikach Linux NVIDIA i nie-NVIDIA, Android i przy przywracaniu savestate. Zapisuj błędy ochrony, aby wychwycić pętle lub nadmierne przechwytywanie ścieżki krytycznej."
+    },
+    {
+      "type": "callout",
+      "text": "Pamięć podręczna jest poprawna tylko wtedy, gdy jej dowód własności jest aktualny; jeden zapis gościa wystarczy, aby odebrać powierzchni GPU roszczenie do tej pamięci."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Przeczytaj dyskusję inżynierską Vita3K i zmiany w źródle"
+    }
+  ]
+}

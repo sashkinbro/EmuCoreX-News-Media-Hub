@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-two-ps2-library-folders-without-duplicates",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Sloučit dvě složky knihovny PS2 s tabulkou konfliktů hashů",
+  "summary": "Konsolidovat dva hratelné kořenové adresáře do nového cíle klasifikováním identických hashů, regionálních verzí, sad s více disky a opravených pracovních kopií ještě před tím, než EmuCoreX vůbec prohledá sloučenou složku.",
+  "heroAlt": "Frontend pro uchování médií zobrazující identifikační pole optických médií používaná k rozlišení zdrojových disků během slučování",
+  "searchKeywords": [
+    "sloučit složky her PS2",
+    "odstranit duplicity v knihovně EmuCoreX",
+    "regionální varianty PS2",
+    "tabulka konfliktů hashů",
+    "sada s více disky"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Knihovna",
+    "integrity": "Integrita"
+  },
+  "sourceLabels": {
+    "powershell-hash": "SHA-256 odkaz na inventář",
+    "pcsx2-discs": "PS2 struktura disku-sady"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sloučit do třetí složky, nikdy do žádné ze zdrojových"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bezpečné sloučení zachovává složku A a složku B při vytváření prázdné složky C. Třetí umístění umožňuje učinit každý krok vratným. Kolize názvů souborů je pouze prvním signálem: identické hashe mohou používat různé názvy, zatímco shodné názvy mohou skrývat různé oblasti, revize, disky nebo externě opravené pracovní kopie. Tabulka konfliktů proto musí ukládat cestu, počet bajtů, SHA-256, sériové číslo, oblast a roli v sadě více disků."
+    },
+    {
+      "type": "callout",
+      "text": "Nenechte správce souborů odpovídat Nahradit, Přeskočit nebo Zachovat oba pro celou operaci. Tlačítka nepoznají, která kopie je ověřeným originálem, která je opravena, nebo zda disk 2 patří vedle disku 1."
+    },
+    {
+      "type": "heading",
+      "text": "Vytvořte inventáře pro A a B"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Pouze pro čtení zprávy SHA-256 pro oba zdrojové kořeny.",
+        "Dostatečná samostatná kapacita pro kompletní deduplikovanou destinaci.",
+        "Výpisy nebo sériové záznamy pro nejednoznačné regionální a revizní páry.",
+        "Konvence pojmenování, která zahrnuje číslo disku tam, kde je to požadováno.",
+        "Oba zdrojové kořeny dočasně odstraněny ze skenování EmuCoreX během konečného přijetí."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Třiďte kolize před kopírováním."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Spojte oba inventáře podle hash, abyste identifikovali soubory identické po bitech bez ohledu na název.",
+        "2. Znovu se spojte podle normalizovaného názvu souboru, abyste odhalili konflikty se stejným názvem a různým hashem.",
+        "3. U identických hashů vyberte jeden kanonický funkční název souboru a zaznamenejte, který zdroj ho poskytl.",
+        "4. U různých hashů zkontrolujte sérii, region, revizi, číslo disku a stav patche; každý legitimní variantu uchovejte pod jednoznačným názvem.",
+        "5. Zkopírujte klasifikované soubory do prázdné složky C po skupinách, poté vypočítejte nový report hashů cílové složky.",
+        "6. Porovnejte složku C s tabulkou konfliktů a ověřte, že každý plánovaný variant a komponenta vícedisku existuje pouze jednou.",
+        "7. Autorizujte pouze složku C v EmuCoreX, aktualizujte a otestujte jeden záznam z každé třídy konfliktu.",
+        "8. Zachovejte A a B jen pro čtení, dokud C nepřežije restart a každá regionální nebo multidisková identita není správná."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Opravený obraz by neměl nahrazovat nepoškozený master pro uchování. Preferujte externí opravy, kde je to podporováno, a držte master mimo aktivní skenování. Pokud soubor cue odkazuje na stopy, celý set obdrží jedno rozhodnutí o konfliktu; kopírování pouze cue nebo největšího BIN vytváří zavádějící, ale neúplný knihovní prvek."
+    },
+    {
+      "type": "heading",
+      "text": "Uzavřete každý řádek v tabulce konfliktů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučení je dokončeno, když každý vstupní soubor má zdokumentované určení a každý výstup má záznam integrity."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Každá skupina s identickým hash přispívá jednou zamýšlenou aktivní kopií.",
+        "Kolize s různým hashem mají explicitní vysvětlení v sériích, regionech, revizích nebo patchech.",
+        "Každá sada vícedisků a cue/bin je kompletní.",
+        "Destinační hash se shoduje s vybranými vstupními kopiemi.",
+        "EmuCoreX ukazuje plánované tituly bez překrývajících se zdrojových kořenů."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Konflikty, které vyžadují pozastavení"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Dva soubory mají stejný název, ale chybí sériový důkaz: zachovejte oba mimo aktivní kořen, dokud nebudou identifikovány.",
+        "Cílový hash neodpovídá žádnému zdroji: zopakujte kopírování ze vybraného ověřeného souboru.",
+        "Ukazatel se spustí bez zvuku: jeden referencovaný sklad byl přejmenován nebo vynechán.",
+        "Oblíbené jsou připojeny k nesprávnému regionu: opravte identitu obrázku před přesunem uložených souborů nebo profilů."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Odstraňte C a vraťte se ke zdrojové mapě"
+    },
+    {
+      "type": "paragraph",
+      "text": "Odeberte oprávnění složky C, aktualizujte a znovu autorizujte A a B přesně tak, jak byly. Protože nebyl upraven žádný zdroj, není potřeba žádná reverzní kopie. Zachovejte tabulku konfliktů, označte sporné řádky a složku C sestavte až po vyřešení těchto identit."
+    },
+    {
+      "type": "heading",
+      "text": "Dedublikace a uchovávání záloh jsou odlišná rozhodnutí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jedna aktivní kopie na hash zabraňuje zahlcení knihovny, ale druhá offline kopie na jiném fyzickém zařízení je legitimní odolnost. Hash tabulka by měla rozlišovat Aktivní, Hlavní kopii pro zachování a Zálohu, aby čištění nikdy neodstranilo poslední obnovitelnou kopii."
+    },
+    {
+      "type": "link",
+      "text": "Použijte oficiální referenci příkazů SHA-256",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

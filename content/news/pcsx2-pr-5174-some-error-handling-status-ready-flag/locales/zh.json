@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 对无效的 CDVD 请求给出了定义的驱动器状态退出",
+  "summary": "零长度、负值及超出末端的读取现在会一致地更新就绪、状态、错误和中断状态，同时纠正了 CdStop 和托盘转换。",
+  "heroAlt": "来自 PCSX2 拉取请求 #5174 的源证据：CDVD：一些错误处理、状态+就绪标志更改及修复 CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "扇区计数",
+    "驱动器状态",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "存储",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD：一些错误处理、状态+就绪标志更改及修复 CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一些游戏发送的光盘命令虽然笨拙但可观察到"
+    },
+    {
+      "type": "paragraph",
+      "text": "装甲核心3、Spyro：进入龙飞、电阿贝兰布公主试炼、永恒恩典演示以及动画战斗演练分区计数或地址是PCSX2的旧CDVD流程未能干净完成的。计数为零或负值可能会保持读取路径活跃，而超出光盘的地址则缺乏一致的错误转换。结果范围从无效的LSN行为到TLB未命中、启动失败或后续电影卡顿。"
+    },
+    {
+      "type": "heading",
+      "text": "就绪和状态变为明确的驱动器状态分配"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #5174 区分了 ready、busy、data-ready、device-connected 和 error 位，而不是重复使用 ORing 或在原位清除某个标志。cdvdUpdateStatus 记录当前和粘性状态，而命令完成使用一个通用的 IRQ 路径。因此，托盘打开、关闭、寻道、读取、暂停、停止、中断和新光盘回调会发布一对一致的状态和就绪值，而不是保留前一次操作的位。"
+    },
+    {
+      "type": "heading",
+      "text": "无效的计数和光盘边界现在会终止命令"
+    },
+    {
+      "type": "paragraph",
+      "text": "驱动从已挂载的光盘记录 MaxSector，并在继续操作之前检查读取。超出范围的请求会产生最外轨道错误，返回暂停状态，清除 DMA 等待，并触发命令中断。扇区计数为零或以下同样完成操作并返回就绪状态，而不是安排另一次传输。CdStop 和 SCMD 的结果记录在同一个状态机清理中得到纠正。"
+    },
+    {
+      "type": "heading",
+      "text": "保存状态和多游戏测试必须检查标志，而不仅仅是启动。"
+    },
+    {
+      "type": "paragraph",
+      "text": "状态布局的更改需要 savestate 版本更新，因此旧版和新版状态处理需要明确覆盖。重现所列游戏并记录命令、LSN、计数、就绪、状态、错误、IRQ 和 DMA 状态。测试托盘变化、停止、中断、有效的光盘结束读取以及故意的无效请求。一些源案例仍然需要单独的游戏补丁，或在后期 FMV 中出现卡顿；这些限制必须保持记录，而不是归功于此状态清理。"
+    },
+    {
+      "type": "callout",
+      "text": "改进是一个完整的退出路径：即使是格式错误的光盘请求，也必须让驱动器、DMA 引擎和中断控制器对发生的事情达成一致。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

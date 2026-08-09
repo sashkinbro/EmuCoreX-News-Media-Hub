@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation naprawia jeden niepoprawny rejestr hosta w synchronizacji GTE RISC-V",
+  "summary": "EndAndLinkBlock obliczał prawidłowy tick zakończenia w RARG2, ale zapisywał RARG1, jednoukładowe odstępstwo, które mogło przenosić niepoprawną gotowość koprocesora do następnego przebudowanego bloku.",
+  "heroAlt": "Dowody źródłowe z pull requestu DuckStation #3702: CPU/RISCV64: Popraw zapisywanie gte_completion_tick w EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "rekompilator",
+    "tick zakończenia"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "Procesor",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Popraw zapisywanie gte_completion_tick w EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Obliczenie było prawidłowe aż do finalnego zapisu"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation śledzi moment, w którym Silnik Transformacji Geometrii PlayStation kończy pracę, więc zgodnie z instrukcjami CPU obserwuj poprawny czas zależności. W ścieżce EndAndLinkBlock kompilatora RISC-V 64 nowa wartość zakończenia była już obliczona w RARG2. Emitowane przechowywanie używało jednak RARG1, zapisując inny rejestr argumentu do globalnego stanu czasu GTE tuż przed przekazaniem sterowania do innego bloku."
+    },
+    {
+      "type": "heading",
+      "text": "Jedna zamiana rejestru wyrównuje RISC-V z innymi kompilatorami"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3702 zmienia instrukcję SW, aby przechowywała RARG2 w g_state.gte_completion_tick. Bez zmian w formule czasu ani dekoderze instrukcji gościa. Dowodem jest przepływ danych w tym dokładnym punkcie oraz dopasowane zachowanie innych backendów architektury. Małe poprawki tego rodzaju są cenne właśnie dlatego, że niepoprawny rejestr może przetrwać kompilację, wytworzyć poprawny kod maszynowy i zawieść tylko na jednej rodzinie hostów."
+    },
+    {
+      "type": "heading",
+      "text": "Przestarzały tick zakończenia zmienia moment, w którym późniejsze instrukcje uznają GTE za gotowy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jeśli błędna wartość jest wcześniejsza niż obliczony zegar, kod gościa może zużywać wyniki geometrii zbyt wcześnie; jeśli późniejsza, DuckStation może wstawić niepotrzebne oczekiwanie. Każdy kierunek może zmieniać gry, które przeplatają pracę CPU z poleceniami GTE, nawet jeśli sama przekształcona arytmetyka jest poprawna. Błąd przenosi się przez granicę bloku, więc test ograniczony do instrukcji wewnątrz jednego wygenerowanego bloku może go nie wykryć."
+    },
+    {
+      "type": "heading",
+      "text": "Testy powinny wymusić wartość końcową przez EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test ukierunkowanego rekompilatora powinien wydać polecenie GTE, zakończyć blok, gdy jednostka nadal pracuje, połączyć z kodem, który odczytuje lub zależy od wyniku, i porównać interpreter, RISC-V oraz inny backend rekompilatora. Zaloguj obliczoną wartość RARG2 i zapisany globalny zegar. Uwzględnij warunkowe wyjścia i różne przypadki nowego PC obsługiwane przez EndAndLinkBlock. Uruchamiaj istniejące testy czasowe GTE wielokrotnie na natywnym sprzęcie RISC-V, aby wykorzystać różnice w alokacji rejestrów lub konwencji wywołań."
+    },
+    {
+      "type": "callout",
+      "text": "Łatka jest jednym operandem, ale inwariant jest architektoniczny: każdy hościnny backend musi przenosić obliczony tick zakończenia GTE przez łącze blokowe."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Przeczytaj dyskusję inżynieryjną DuckStation i zmiany w źródle"
+    }
+  ]
+}

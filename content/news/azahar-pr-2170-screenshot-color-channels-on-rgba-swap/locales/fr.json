@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar fait en sorte que les captures d'écran Vulkan suivent l'ordre réel des canaux de la swapchain",
+  "summary": "QImage attend des octets BGRA, mais certains pilotes Vulkan présentent RGBA ; passer le format de surface choisi dans les deux chemins de capture d'écran permet un simple interchange rouge-bleu uniquement là où c'est nécessaire.",
+  "heroAlt": "Preuve source de la pull request Azahar #2170 : renderer_vulkan : Corriger les canaux de couleur des captures d'écran sur les formats de swapchain RGBA",
+  "searchKeywords": [
+    "Azahar",
+    "Capture d'écran Vulkan",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan : Corriger les canaux de couleur des captures d'écran sur les formats de swapchain RGBA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'image affichée peut être correcte tandis que l'image sauvegardée ne l'est pas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan sélectionne un format de swapchain parmi les options prises en charge par le pilote. Certaines plateformes préfèrent BGRA et d'autres RGBA. Les shaders de présentation de Azahar géraient le format choisi, mais la mémoire de capture d'écran a été transmise à QImage::Format_RGB32, qui attend l'ordre des octets BGRA. Sur une swapchain RGBA, le rouge et le bleu ont donc été échangés uniquement dans le fichier capturé, donnant l'impression que le rendu était incorrect en dehors de la fenêtre active."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow expose le format négocié au code de capture"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2170 ajoute GetSurfaceFormat aux implémentations present-window de Vulkan et le vérifie dans les deux chemins de capture d'écran : capture par copie en staging et capture en mémoire hôte. Lorsque le format est eR8G8B8A8Unorm, Azahar parcourt largeur fois hauteur pixels et échange les octets zéro et deux. Une swapchain BGRA utilise les octets existants inchangés, évitant une conversion sur les plateformes correspondant déjà à QImage."
+    },
+    {
+      "type": "heading",
+      "text": "Le réarrangement des octets est moins coûteux que de changer le contrat de l'image frontend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Changer le format QImage nécessiterait de transmettre les informations de l'ordre des canaux plus loin dans le frontend et de s'assurer que chaque consommateur les comprenne. La permutation locale conserve le contrat RGB32 établi et coûte un échange rouge-bleu par pixel au moment de la capture d'écran, et non par image affichée. L'auteur a forcé RGBA sur un Mac préférant BGRA pour tester, tandis que Linux Mesa a été identifié comme une plateforme probablement affectée nécessitant une confirmation."
+    },
+    {
+      "type": "heading",
+      "text": "Les deux chemins de capture et l'alpha nécessitent des dispositifs de couleurs exacts"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rendez un motif de test contenant du rouge pur, du bleu, du vert, du noir, du blanc et des valeurs alpha non triviales, puis capturez via les chemins de mise en scène et de mémoire hôte sur des chaînes d'échange RGBA et BGRA natives. Comparez les octets enregistrés et la sortie affichée. Répétez avec des dimensions impaires, des mises en page mises à l'échelle et après la recréation de la chaîne d'échange. Un utilisateur Linux affecté doit confirmer le chemin de format naturel. La permutation doit se produire exactement une fois ; une double conversion peut faire croire qu'un backend est corrigé alors qu'un autre régresse."
+    },
+    {
+      "type": "callout",
+      "text": "Le code de capture d'écran convertit désormais à partir du format Vulkan réellement négocié, plutôt que de supposer que chaque pilote présente les pixels dans l'ordre préféré de QImage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications de source"
+    }
+  ]
+}

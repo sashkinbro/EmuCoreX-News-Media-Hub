@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin insegna i dischi estratti Triforce sulla finestra di indirizzi DIMM",
+  "summary": "DirectoryBlob ora evita un intervallo di memoria arcade in ombra e utilizza l'allineamento dei file più piccolo di Triforce invece di applicare le ipotesi di layout per GameCube e Wii.",
+  "heroAlt": "Prove sorgente dalla pull request Dolphin #14599: DirectoryBlob: correggi l'allineamento dei dati per GC/Triforce e salta l'intervallo di memoria DIMM Triforce",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "allineamento del disco"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Archiviazione",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: correggi l'allineamento dei dati per GC/Triforce e salta l'intervallo di memoria DIMM Triforce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un disco supportato da directory necessita ancora di una collocazione specifica per la piattaforma"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin può montare file estratti attraverso DirectoryBlob come se fossero un'immagine disco. Tale disposizione virtuale assegna offset e allineamento a ogni file. Riutilizzare le regole di GameCube e Wii per la piattaforma arcade Triforce di Sega ha trascurato l'hardware collegato alla AMMediaboard. Gli indirizzi in una particolare regione del disco sono ombreggiati dalla SRAM e restituiscono i contenuti del DIMM, pertanto un file host perfettamente valido potrebbe diventare illeggibile dopo essere stato collocato lì."
+    },
+    {
+      "type": "heading",
+      "text": "Il flag Triforce cambia due decisioni di disposizione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14599 registra se il volume sorgente è Triforce. Prima di collocare un file, DirectoryBlob controlla se l'intervallo proposto si sovrappone da 0x1F000000 a 0x1F800000. In tal caso, l'offset salta a 0x1F800000, mantenendo il file completo oltre la finestra ombreggiata. I file successivi Triforce si allineano a 0x20 byte invece del conservativo margine di 0x8000 byte usato per i dischi di directory di GameCube e Wii."
+    },
+    {
+      "type": "heading",
+      "text": "Evitare la sovrapposizione deve considerare l'intero intervallo del file"
+    },
+    {
+      "type": "paragraph",
+      "text": "Controllare solo un indirizzo iniziale farebbe perdere un file che inizia al di sotto della finestra e si estende al suo interno. Il codice confronta sia data_offset sia data_offset più la dimensione della voce, quindi riposiziona l'intera voce. L'allineamento più piccolo a 32 byte previene anche spazi inutili nelle immagini arcade pur preservando la granularità prevista dalla piattaforma. I volumi Non-Triforce non entrano mai in nessun branch, quindi la loro posizione stabilita rimane byte-per-byte regolata dalla vecchia politica."
+    },
+    {
+      "type": "heading",
+      "text": "I dispositivi di confine dovrebbero sondare ogni lato del foro"
+    },
+    {
+      "type": "paragraph",
+      "text": "Costruire alberi di directory che posizionano file di lunghezza zero, piccoli e grandi immediatamente prima, attraverso, dentro e dopo entrambe le limitazioni DIMM. Verificare gli offset FST generati, l'allineamento 0x20, il contenuto dei file letti tramite la scheda AMMediaboard emulata e la dimensione totale dell'immagine. Ripetere lo stesso albero come GameCube e Wii per dimostrare che l'allineamento 0x8000 rimane invariato. Includere aritmetica a fine esatto e offset molto grandi per catturare overflow, quindi avviare titoli rappresentativi Triforce da directory estratte piuttosto che ispezionare solo i metadati."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob è un creatore di dischi virtuali; i nomi dei file corretti non sono sufficienti quando l'hardware arcade cambia quali intervalli di indirizzi fisici possono restituire dati del disco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Leggi la discussione ingegneristica Dolphin e le modifiche al codice sorgente"
+    }
+  ]
+}

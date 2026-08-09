@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin menempatkan batas keras pada dekompresi simpanan NetPlay",
+  "summary": "Dekode LZO yang aman, akumulasi yang diperiksa, dan validasi ukuran akhir yang tepat mencegah blok simpanan jarak jauh melampaui memori atau mengarahkan alokasi tanpa terkendali.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Dolphin #14740: NetPlay: batasi keluaran dekompresi LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Simpanan NetPlay",
+    "dekompresi",
+    "keamanan buffer"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Keamanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: batasi keluaran dekompresi LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sinkronisasi terkompresi melewati batas ukuran yang berbahaya"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay dapat mentransfer file simpan atau folder dari peer lain sebelum bermain. Setiap blok LZO yang dikompresi dan ukuran akhir yang dideklarasikan berasal dari jaringan. Jalur sebelumnya memanggil decoder yang tidak diperiksa tanpa menetapkan kapasitas output, sehingga data terkompresi yang rusak dapat menulis di luar tujuan. Satu jalur buffer juga dialokasikan langsung dari ukuran yang disediakan peer, memungkinkan klaim itu sendiri menimbulkan tekanan memori sebelum dekompresi membuktikan apapun."
+    },
+    {
+      "type": "heading",
+      "text": "Setiap blok sekarang menerima kapasitas tujuan yang nyata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14740 beralih ke lzo1x_decompress_safe. Output file menginisialisasi new_len ke ukuran buffer output tetap dan memverifikasi bahwa blok yang didekodekan muat dalam sisa total yang dideklarasikan sebelum menulis. Output folder dalam memori mendekode ke dalam blok sementara yang dibatasi, memeriksa baik pengurangan ukuran yang dideklarasikan maupun aritmatika max_size vektor, kemudian menambahkan hanya byte yang berhasil dihasilkan. Total jarak jauh tidak lagi digunakan sebagai permintaan alokasi langsung."
+    },
+    {
+      "type": "heading",
+      "text": "Total akhir harus tepat, bukan sekadar di bawah batas atas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Menerima lebih sedikit byte daripada yang dinyatakan dapat meninggalkan simpanan yang terpotong yang diparse secara tidak terduga, sementara menerima lebih banyak akan melewati batas format yang dinyatakan oleh pengirim. Baik jalur file maupun buffer mengakumulasi jumlah 64-bit dan memerlukan kesetaraan di akhir. Kesalahan decoder, kondisi overflow aritmetika, output yang melebihi klaim, atau ketidakcocokan semuanya mengembalikan kegagalan dengan peringatan yang terkendali daripada menyerahkan konten sebagian untuk ekstraksi simpanan selanjutnya."
+    },
+    {
+      "type": "heading",
+      "text": "Corpus dekompresi harus menguji penggunaan sumber daya serta penulisan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Berikan transfer yang valid kosong, blok tunggal, multi-blok, dan normal maksimum, kemudian aliran yang rusak, bom ekspansi, blok yang terpotong, blok tambahan, klaim nol, klaim besar, dan total tepat di atas atau di bawah output aktual. Jalankan di bawah AddressSanitizer dan batas memori, memeriksa bahwa kegagalan menghapus file parsial dan tidak meninggalkan sesi menunggu selamanya. Uji silang versi pengirim dan penerima, folder simpanan dengan banyak entri, dan jaringan yang terputus. Batas maksimum pada tingkat protokol mungkin masih diinginkan di luar batas keamanan memori."
+    },
+    {
+      "type": "callout",
+      "text": "Dekompresi yang aman membutuhkan tiga kesepakatan: setiap blok sesuai dengan buffer-nya, byte yang terkumpul tidak boleh meluap, dan aliran yang selesai harus sama dengan payload yang dinyatakan."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Baca diskusi rekayasa Dolphin dan perubahan sumbernya"
+    }
+  ]
+}

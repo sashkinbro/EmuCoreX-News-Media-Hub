@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22015-texturereplacer-unit-test-make-replace",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP proporciona a la sustitución de texturas un entorno de prueba independiente",
+  "summary": "Un paquete sintético y un punto de entrada de prueba explícito ejercitan hashes, rangos, filtrado, mipmaps y entradas faltantes sin iniciar el renderizador del emulador.",
+  "heroAlt": "Evidencia de la fuente del pull request #22015 de PPSSPP: Agregar prueba unitaria TextureReplacer; hacer que el sustituto sea probable de forma independiente",
+  "searchKeywords": [
+    "PPSSPP",
+    "sustitución de texturas",
+    "prueba unitaria",
+    "textures.ini",
+    "mipmaps"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Herramientas",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22015": "Agregar prueba unitaria TextureReplacer; hacer que el sustituto sea probables de forma independiente"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Los paquetes de texturas combinan varias reglas que son fáciles de retroceder"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un reemplazo no se selecciona solo por el nombre del archivo. PPSSPP lee textures.ini, interpreta hashes inventados o calculados, aplica rangos de hash, elige niveles de mip, respeta las directivas de filtrado y maneja entradas faltantes o ignoradas. Probar solo lanzando un juego hace que los fallos dependan de que el título llegue al dibujo correcto, del soporte del formato del backend, del estado del sistema de archivos y de la comparación humana de imágenes. Eso es lento y deja muchos casos negativos sin cubrir."
+    },
+    {
+      "type": "heading",
+      "text": "El reemplazador ahora puede construirse fuera del renderizador"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #22015 permite un DrawContext nulo. En ese modo, los formatos comprimidos GPU simplemente reportan \"no soportado\" en lugar de desreferenciar un backend. LoadPackForTesting acepta un directorio base, habilita el reemplazo, deshabilita el guardado y analiza ese paquete directamente en lugar de consultar la configuración global o el ID de un juego en ejecución. Las funciones de búsqueda y filtrado utilizan el estado replaceEnabled de la instancia, lo que hace que el comportamiento del objeto aislado sea determinista."
+    },
+    {
+      "type": "heading",
+      "text": "Un paquete sintético proporciona evidencia legible y controlada"
+    },
+    {
+      "type": "paragraph",
+      "text": "El nuevo accesorio TestTextureReplacer crea textures.ini con hashes inventados reconocibles y archivos PNG reales. Las afirmaciones cubren la búsqueda directa, decisiones de filtrado, rangos de hashes, niveles mip, además de registros ausentes e ignorados. Debido a que cada archivo está construido con un propósito específico, una afirmación fallida puede nombrar la regla exacta que se rompió. La prueba está conectada a CMake y a las fuentes de pruebas unitarias Android, de modo que es menos probable que las diferencias de compilación de la plataforma oculten el comportamiento del parser."
+    },
+    {
+      "type": "heading",
+      "text": "La cobertura futura debería incluir paquetes malformados y sensibles a la plataforma."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ampliar los accesorios con claves duplicadas, hashes inválidos, rangos superpuestos, niveles mip ausentes, rutas con mayúsculas y minúsculas mezcladas, nombres Unicode, separadores de ruta, formatos comprimidos no soportados, datos PNG malformados y recargas de configuración. Ejecutar en el escritorio y en sistemas de archivos Android, asegurándose de que los directorios temporales estén aislados. Las afirmaciones deberían verificar tanto la sustitución elegida como la razón por la que un candidato fue rechazado. Un DrawContext nulo debe seguir siendo una capacidad de prueba explícita, y no hacer que el código de producción ignore accidentalmente el soporte de formatos."
+    },
+    {
+      "type": "callout",
+      "text": "Una canalización de reemplazo se vuelve mantenible cuando las reglas de empaquetado se pueden probar con un sistema de archivos determinista pequeño en lugar de una sesión completa del juego."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22015",
+      "label": "Lea la discusión de ingeniería PPSSPP y los cambios en el código fuente"
+    }
+  ]
+}

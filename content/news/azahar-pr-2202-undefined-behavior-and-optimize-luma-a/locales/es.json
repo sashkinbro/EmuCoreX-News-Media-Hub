@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar elimina la ambigüedad del desbordamiento con signo del alias de memoria de Luma",
+  "summary": "Una máscara sin signo de bit 31 hace que la detección de alias esté definida en C++, mientras que las devoluciones tempranas y las ramas poco probables MMIO dan a las rutas de memoria comunes un flujo de instrucciones más directo.",
+  "heroAlt": "Evidencia de fuente del pull request Azahar #2202: core/memory: Corregir comportamiento indefinido y optimizar la ruta de alias de Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias de Luma",
+    "comportamiento indefinido",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Núcleo",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Corregir comportamiento indefinido y optimizar la ruta de alias de Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El bit 31 se estaba formando mediante aritmética con signo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS expone una forma de dirección alias cuyo bit alto indica a Azahar que omita las tablas de páginas normales para FCRAM o MMIO. El código comprobaba y borraba ese bit con 1 << 31. Cuando int es de 32 bits, desplazar un uno con signo en la posición del signo es comportamiento indefinido, dando permiso a un compilador optimizador para transformar el código circundante de maneras que no preservan la máscara prevista."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u hace que tanto las operaciones de prueba como de borrado estén definidas"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #2202 declara LUMA_ALIAS_BIT como el literal sin signo 0x80000000u. Las rutas de lectura y escritura prueban vaddr contra esa constante y derivan paddr borrándolo. El cambio es pequeño pero arquitectónico: la manipulación de direcciones debe usar el tipo sin signo que representa un VAddr, no depender del resultado elegido por un compilador para aritmética con signo desbordada."
+    },
+    {
+      "type": "heading",
+      "text": "Los retornos tempranos separan FCRAM de la ruta fría MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "El alias FCRAM sigue siendo la ruta útil principal y termina con un retorno inmediato. MMIO se verifica después y se marca como poco probable, al igual que la entrada del alias en relación con el acceso ordinario a la tabla de páginas. Aplanar la anterior cadena de else-if permite a Clang colocar el flujo común de manera más lineal y mantiene el código raro del manejador personalizado fuera de la ruta de caché de instrucciones utilizada por la mayoría de las lecturas y escrituras."
+    },
+    {
+      "type": "heading",
+      "text": "Las reclamaciones de optimización necesitan cobertura de compilador y alias"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ejecute lecturas y escrituras de alias de Luma para FCRAM, MMIO de 32 bits válido, una dirección de alias fuera de ambos rangos y direcciones normales de la tabla de páginas. Compare Clang y GCC en múltiples niveles de optimización con UBSan habilitado, verificando que no haya reporte de desplazamiento con signo y resultados idénticos. Inspeccione el código generado para los retornos tempranos previstos, pero priorice la corrección. Los anchos de MMIO distintos de la ruta estrictamente soportada de 32 bits aún deben continuar o fallar según la semántica existente."
+    },
+    {
+      "type": "callout",
+      "text": "El camino más rápido comienza con un comportamiento definido: una bandera de dirección debe ser una máscara de bits sin signo antes de que se puedan confiar las sugerencias de ramificación o la forma del ensamblaje."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Lea la discusión de ingeniería Azahar y los cambios de fuente"
+    }
+  ]
+}

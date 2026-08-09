@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 dává neplatné požadavky CDVD definovaný výstup stavu mechaniky",
+  "summary": "Čtení s nulovou délkou, záporné a po konci nyní konzistentně aktualizuje stav připravenosti, stav, chybu a stav přerušení, spolu s opravenými přechody CdStop a zásobníku.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PCSX2 #5174: CDVD: Některé zpracování chyb, změny příznaků Stav+Připraveno a oprava CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "počet sektorů",
+    "stav mechaniky",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Úložiště",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Některé zpracování chyb, změny příznaků Stav+Připraveno a oprava CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Několik her posílá příkazy disku, které jsou neohrabané, ale pozorovatelné"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, zkouška princezny Aberanbou, demo Evergrace a sektorové počty nebo adresy cvičení Animation Battle řeší situace, které starší CDVD tok PCSX2 nedokončil čistě. Nulový nebo záporný počet mohl udržet cestu čtení aktivní, zatímco adresa mimo disk neměla jednu konzistentní chybu přechodu. Výsledek se pohyboval od neplatného chování LSN po chyby TLB, selhání spouštění nebo pozdější zamrznutí filmu."
+    },
+    {
+      "type": "heading",
+      "text": "Ready a Status se stávají explicitními přiřazeními stavu jednotky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #5174 rozlišuje bity připravenosti, obsazenosti, připravenosti dat, připojení zařízení a chyby, místo aby se opakovaně používalo ORing nebo vymazával jediný flag na místě. cdvdUpdateStatus zaznamenává aktuální a trvalý stav, zatímco dokončení příkazu používá společnou cestu IRQ. Odezvy otevření zásobníku, zavření, hledání, čtení, pauza, zastavení, přerušení a nový disk proto publikují koherentní dvojici stavových a připravenostních hodnot, místo aby ponechávaly bity z předchozí operace."
+    },
+    {
+      "type": "heading",
+      "text": "Neplatné počty a hranice disku nyní ukončují příkaz"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disk zaznamenává MaxSector z připojeného disku a před pokračováním za něj kontroluje čtení. Požadavek mimo rozsah nastaví chybu nejvzdálenější stopy, vrátí se do stavu pauzy, vymaže čekání DMA a vyvolá přerušení příkazu. Počet sektorů roven nebo nižší než nula rovněž dokončí operaci a vrátí se do stavu připravenosti místo naplánování dalšího přenosu. Výsledky CdStop a SCMD jsou opraveny v rámci stejného čištění stavového automatu."
+    },
+    {
+      "type": "heading",
+      "text": "Uložené stavy a testy více her musí kontrolovat příznaky, nejen spouštění"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změna uspořádání stavu vyžadovala zvýšení verze savestate, takže staré a nové zpracování stavů potřebuje explicitní pokrytí. Zopakujte uvedené hry a zaznamenejte příkaz, LSN, počet, připravenost, stav, chybu, IRQ a stav DMA. Testujte změny zásobníku, stop, prázdné přerušení, platné čtení na konci disku a záměrně neplatné požadavky. Některé zdrojové případy stále vyžadovaly samostatné opravy her nebo měly pozdější zasekávání FMV; tyto limity musí zůstat zdokumentovány a nemají být přičítány tomuto čištění stavu."
+    },
+    {
+      "type": "callout",
+      "text": "Zlepšení je kompletní výstupní cesta: i vadný požadavek disku musí opustit jednotku, DMA řadič a řadič přerušení musí se shodnout na tom, co se stalo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdrojového kódu"
+    }
+  ]
+}

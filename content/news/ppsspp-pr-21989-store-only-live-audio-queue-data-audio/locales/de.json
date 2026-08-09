@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP trimmt savestates, indem nur noch aktive Audiosamples gespeichert werden",
+  "summary": "Ein kompaktes Warteschlangenformat serialisiert die Samples, die noch abgespielt werden können, anstatt alle neun Audio-Puffer mit fester Kapazität in jeden Zustand zu kopieren.",
+  "heroAlt": "Quellenbeweis aus Pull Request #21989 von PPSSPP: Savestate: Speichere nur aktive Audio-Warteschlangendaten (AudioChannel Abschnitt v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "Audiowarteschlange",
+    "savestate Größe",
+    "Zurückspulen",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: Speichere nur aktive Audio-Warteschlangendaten (AudioChannel Abschnitt v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die feste Kapazität wurde fälschlicherweise für einen sinnvollen Zustand gehalten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jeder sceAudio-Kanal verwendet einen FixedSizeQueue mit Platz für 32768 mal acht 16-Bit-Werte, einem 512 KB großen Backing-Store. Es gibt neun Kanalwarteschlangen. Der frühere Serializer kopierte jedes Byte dieser Arrays, obwohl nur ein kleiner logischer Abschnitt zwischen Kopf und Zähler jemals herausgepoppt werden konnte. Folglich gelangten etwa 4,6 MB überwiegend ungenutzter Daten in manuelle Speicherungen, Speicherplätze, Komprimierungseingaben und jeden periodischen In-Memory-Rücksetz-Snapshot."
+    },
+    {
+      "type": "heading",
+      "text": "Die kompakte Form bewahrt die Warteschlangenreihenfolge über den Umlauf hinweg"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #21989 führt DoStateCompact als optionales Format ein. Wenn der Live-Bereich zusammenhängend ist, schreibt es ein rohes Array. Wenn Kopf plus Zähler das Ende des Speichers überschreitet, schreibt es das Ende und den Beginn als zwei Teile in Pop-Reihenfolge. POD DoArray schreibt rohe Bytes ohne pro-Aufruf-Header, sodass diese Teile denselben Strom bilden, der von einem einzelnen linearen Lesevorgang verbraucht wird. Beim Laden wird die Sequenz an Index null platziert und der neue Schwanz aus dem Zähler abgeleitet."
+    },
+    {
+      "type": "heading",
+      "text": "Versionierung schützt ältere Zustände und andere Aufrufer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der AudioChannel-Abschnitt wechselt zu einem neuen Formatlevel und wählt dort nur die kompakte Serialisierung. Ältere Abschnittsebenen verwenden weiterhin die ursprüngliche Vollspeichermethode, sodass vorhandene Speicherstände lesbar bleiben. Die alte Funktion von FixedSizeQueue bleibt unverändert, da ihr Byte-Layout nicht austauschbar ist und ein anderer Aufrufer möglicherweise darauf angewiesen ist. Der Loader lehnt außerdem eine Anzahl außerhalb von null bis zur Kapazität mit SetError ab, wodurch verhindert wird, dass eine beschädigte Datei jedes nachfolgende Feld desynchronisiert."
+    },
+    {
+      "type": "heading",
+      "text": "Gepackte, leere und volle Warteschlangen sind die wesentlichen Tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen Sie deterministische Warteschlangen, die leer, teilweise gefüllt, genau voll und bei mehreren Head-Offsets umwickelt sind. Speichern und laden Sie sie, und vergleichen Sie dann jedes herausgepopte Sample mit der Originalreihenfolge. Testen Sie alle neun Kanäle während des Gameplays, Audio-Underflow- und Overflow-Grenzwerte, Rewind-Churn, Kompressionsverhältnisse und Kompatibilität mit dem alten Zustand. Beschädigen Sie die gespeicherte Anzahl, um einen sauberen Ladefehler zu bestätigen. Messen Sie Speicherzeit und Speicherbelastung separat; ein kleinerer Payload wird erwartet, aber die Korrektheit bleibt das primäre Kriterium."
+    },
+    {
+      "type": "callout",
+      "text": "Kapazität ist ein Implementierungsdetail; ein savestate benötigt die Live-Audio-Sequenz und genügend Metadaten, um eine gleichwertige Warteschlange wiederherzustellen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Lesen Sie die PPSSPP-Entwicklungsdiskussion und Quelländerungen"
+    }
+  ]
+}

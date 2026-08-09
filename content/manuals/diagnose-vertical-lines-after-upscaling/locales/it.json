@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticare le cuciture verticali che compaiono solo dopo l'upscaling PS2",
+  "summary": "Mappare il primo moltiplicatore di risoluzione che evidenzia le cuciture, distinguere l'allineamento degli sprite dal bleeding della texture-atlas e mantenere solo una correzione documentata per gioco che lasci intatti HUD e geometria.",
+  "heroAlt": "Cattura di Tekken 5 PCSX2 con strette cuciture verticali causate da disallineamento degli sprite durante l'upscaling",
+  "searchKeywords": [
+    "Linee verticali PS2 durante l'upscaling",
+    "Cuciture nere EmuCoreX",
+    "allineare lo sprite",
+    "bleeding della texture atlas",
+    "artefatto di risoluzione interna"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "accuracy": "Precisione"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 spiegazione dei campioni non validi e delle linee verticali nere sopra la risoluzione nativa",
+    "pcsx2-gsdx-progress": "PCSX2 esempi e ambito della correzione Allinea Sprite"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identificare se ciascuna linea segue un confine dello sprite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il ridimensionamento può rivelare buchi che non esistono nella griglia di pixel nativa dello PS2. In alcuni giochi, gli sprite adiacenti sono posizionati in modo che i loro bordi si incontrino esattamente alla risoluzione nativa; dopo il ridimensionamento, l'arrotondamento può lasciare scoperta una colonna di un solo pixel. Un altro tipo di errore si verifica quando un campione attraversa una cella di un atlas di texture entrando in quella successiva. Inizia con una scena contenente sia le linee sia oggetti di riferimento stabili: un HUD 2D, uno sfondo piatto e geometria 3D ordinaria. Registra il numero seriale del gioco, il renderer, il driver, il rapporto d'aspetto, il moltiplicatore della risoluzione interna, il filtraggio delle texture e ogni correzione hardware manuale. La posizione del difetto conta più del suo colore: una linea che segue pannelli a piastrelle è diversa da una linea fissata al display fisico."
+    },
+    {
+      "type": "callout",
+      "text": "Non mascherare le cuciture con stretch, crop, overscan o zoom del display. Queste modifiche possono nascondere le colonne più esterne lasciando attivo il campionamento errato in tutta l'immagine."
+    },
+    {
+      "type": "heading",
+      "text": "Costruisci una scala di risoluzione a partire da una composizione congelata"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio in-game prima di un menu statico, arena, cielo o sfondo dove almeno tre cuciture siano facili da individuare.",
+        "Screenshot diretti alla risoluzione nativa e al moltiplicatore di upscaling attualmente preferito; le fotografie della fotocamera non sono adatte come prove a singolo pixel.",
+        "Sostituzione della texture, sharpening, post-processing, patch widescreen e scaling del display esterno disabilitati per il primo passaggio.",
+        "Il driver di sistema GPU e un'API hardware supportata selezionata, con il profilo grafico per gioco salvato.",
+        "Una semplice mappa dei difetti che indica se ogni linea attraversa l'HUD, segue il bordo di uno sprite ripetuto o si muove con la telecamera."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Individuare la soglia di scaling prima di testare l'allineamento"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avviare il titolo da zero alla risoluzione interna nativa e catturare la composizione scelta senza caricare uno stato di salvataggio dell'emulatore.",
+        "2. Aumenta la risoluzione interna di un moltiplicatore, riproduci la scena identica e segna il primo passo in cui ogni cucitura mappata diventa visibile.",
+        "3. Torna a quel primo moltiplicatore fallito e cambia solo l'API hardware; se le posizioni delle linee rimangono identiche, considera la matematica della risoluzione come prova più significativa rispetto a un errore del driver specifico per l'API.",
+        "4. Controlla se le cuciture si trovano tra sprite rettangolari o sfondi a piastrelle. Per quel modello, testa solo la correzione dell'allineamento degli sprite documentata e resa disponibile dall'emulatore per il titolo.",
+        "5. Se le linee contengono invece colori provenienti da una cella dell'atlante vicina, ripristinare l'allineamento e testare indipendentemente l'arrotondamento documentato o la correzione dello spostamento della texture.",
+        "6. Dopo qualsiasi apparente correzione, ispezionare il testo piccolo, le barre della salute, le tessere della mappa, i cartelloni delle particelle e le dissolvenze a schermo intero per elementi spostati o tagliati.",
+        "7. Aumentare la risoluzione di un ulteriore passo e riesaminare una seconda scena; una correzione che funziona solo a un moltiplicatore non è un profilo generale stabile.",
+        "8. Conservare la modifica di successo più piccola per ogni gioco, con il numero di serie e il moltiplicatore testato, invece di applicarla all'intera libreria."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Il PS2 Graphics Synthesizer funziona con un modello di indirizzi e campionamento progettato attorno alla griglia di uscita della console. L'upscaling lato host aumenta il numero rasterizzato di pixel senza cambiare ogni coordinata fornita dal gioco. Questo può esporre fori tra primitive adiacenti o richiedere un campione appena fuori dalla regione del texel prevista. L'allineamento degli sprite e le correzioni di arrotondamento affrontano aritmetiche diverse, quindi abilitare entrambi contemporaneamente distrugge il valore diagnostico del test. Un frame nativo pulito più una soglia di guasto ripetibile dimostra che il dump e la scena possono renderizzarsi correttamente e che il difetto è introdotto dal percorso di upscale."
+    },
+    {
+      "type": "heading",
+      "text": "Prove di accettazione della rimozione delle cuciture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mantieni la correzione solo se chiude le lacune mappate senza spostare altri livelli dello schermo."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ogni colonna verticale precedentemente segnata è continua sia durante la quiete che durante il movimento orizzontale della telecamera.",
+        "I glifi dell'HUD, le cornici dei ritratti e i separatori dei menu rimangono nitidi e non vengono spostati di un pixel lateralmente.",
+        "Le tessere di sfondo si incontrano in modo pulito al primo moltiplicatore che fallisce e al moltiplicatore successivo sopra di esso.",
+        "La stessa scena rimane corretta dopo un riavvio completo dell'applicazione e non solo dopo un cambio di modalità in-sessione.",
+        "Un secondo livello con dimensioni sprite diverse passa, e il frame pacing rimane all'interno della misurazione pre-fissata."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Schemi che rifiutano una diagnosi di allineamento"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La colonna rimane nella stessa posizione fisica dello schermo su menu e Android UI: ispezionare il pannello display, il cavo o il percorso di acquisizione.",
+        "Le linee esistono alla risoluzione nativa e nel rendering software: verificare l'immagine e confrontarla con un riferimento originale affidabile.",
+        "Solo le texture sostituite mostrano bordi colorati: disabilitare il pacchetto e controllare il padding dell'atlas invece di cambiare l'allineamento GS.",
+        "La correzione rimuove i vuoti ma rompe i font o le particelle: annullala e testa l'altro ramo di campionamento con una nuova baseline."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Torna all'ultimo gradino di scaling pulito"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disabilita l'allineamento o il valore di arrotondamento testato, ripristina gli offset di texture e il filtraggio predefiniti, chiudi il gioco e cattura nuovamente il moltiplicatore che fallisce. Se nessuna correzione stretta passa tutte le scene, abbassa la risoluzione interna fino al gradino più alto che è rimasto pulito e conserva la mappa dei difetti per un report di compatibilità."
+    },
+    {
+      "type": "heading",
+      "text": "Una correzione delle cuciture specifica per il titolo non è un preset di qualità dell'immagine"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli esempi storici di Align Sprite si applicano a comportamenti del motore riconoscibili, non a ogni linea verticale in ogni gioco. Le versioni dell'emulatore possono già applicare correzioni del database per seriali noti. Confermare il difetto con le impostazioni predefinite prima di aggiungere un override manuale, e rimuovere quell'override quando una versione successiva corregge automaticamente il percorso."
+    },
+    {
+      "type": "link",
+      "text": "Leggere la spiegazione tecnica PCSX2 del campionamento di upscaling",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

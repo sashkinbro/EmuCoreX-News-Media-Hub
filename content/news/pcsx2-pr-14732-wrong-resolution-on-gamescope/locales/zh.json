@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 解决了 Gamescope 的两步启动调整大小问题，而无需恢复到 640x480",
+  "summary": "延迟的调整大小事件可能会比更新的 1280x800 窗口查询存在更久；纠正后的状态顺序可使最终 Steam Deck 视口保持 Gamescope 实际选择的尺寸。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14732 的来源证据：Qt：修复 Gamescope 的错误分辨率",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "调整大小去抖动",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "前端",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt：修复 Gamescope 的错误分辨率"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope 报告临时窗口，而非真实显示尺寸"
+    },
+    {
+      "type": "paragraph",
+      "text": "SteamOS 游戏模式可以让 Qt 在 640x480 下打开 PCSX2，并立即将其调整到 Steam Deck 的 1280x800 屏幕。这两个事件在不同的时刻都是合法的。该错误出现的原因是第一次调整大小启动了一个防抖定时器，而后来的 DisplaySurface 查询将记忆的尺寸更新为最终尺寸。随后延迟的回调使用了过时的 640x480 意图。"
+    },
+    {
+      "type": "heading",
+      "text": "旧的定时器可能会覆盖更新的窗口信息"
+    },
+    {
+      "type": "paragraph",
+      "text": "防抖通常防止在调整大小风暴期间进行昂贵的视口工作。但在这里，它变成了一个顺序风险：m_last_window 尺寸已经描述为 1280x800，但挂起的回调仍然应用了先前的目标。Big Picture 在窗口系统级别保持全屏，而渲染器使用了小视口，导致左下角呈现典型的 640x480 图像。"
+    },
+    {
+      "type": "heading",
+      "text": "修复使调整大小状态在启动序列中保持单调"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14732 调整了 Qt 显示器的调整大小逻辑，以防止旧的去抖事件在 getWindowInfo 已经观察到实际表面尺寸后仍占上风。它针对的是两个尺寸来源之间的竞争，而不是针对固定的 Steam Deck 分辨率进行特殊处理。这对于其他 Gamescope 设备、外接显示器以及最终尺寸不同于 1280x800 的未来面板都很重要。"
+    },
+    {
+      "type": "heading",
+      "text": "重复进行冷启动是有意义的回归测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Steam Deck 或其他 Gamescope 会话中，反复使用 -bigpicture -fullscreen 启动 PCSX2 以及 OpenGL，并在每次启动后检查视口。加入窗口到全屏的切换、外接显示器的变化、挂起/恢复以及多个渲染器后端。记录每一个调整大小事件、去抖目标、getWindowInfo 结果以及应用的视口。最终回调必须使用最新的尺寸，而普通的单次调整大小仍然等待去抖并正确应用。"
+    },
+    {
+      "type": "callout",
+      "text": "该错误并非错误的分辨率常量；而是旧的计时器在更新的表面尺寸已经成为权威结果之后仍然获胜。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "阅读 PCSX2 工程讨论和源代码更改"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 izoluje ładowanie palety CSM2 od przestawionego porządku CSM1",
+  "summary": "Przełączenie trybu przechowywania w grze Breath of Fire ujawniło, dlaczego sekwencyjne dane CSM2 nie mogą bezpiecznie ponownie używać tymczasowego bufora CLUT wypełnionego zgodnie z regułami przestawienia CSM1.",
+  "heroAlt": "Dowody wizualne z pull request PCSX2 #14546: GS/CLUT: Obsługa szczególnego przypadku przełączenia trybu 32-bitowego CSM2",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "paleta",
+    "Breath of Fire"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT: Obsługa szczególnego przypadku przełączenia trybu 32-bitowego CSM2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jedna paleta przetrwa przełączenie trybu, ale jej kolejność nie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Breath of Fire: Dragon Quarter przeładowuje swoją tablicę wyszukiwania kolorów w trybie przechowywania CLUT 1, a następnie przełącza się na tryb przechowywania 2. CSM1 stosuje przestawioną (swizzled) aranżację, podczas gdy CSM2 adresuje wpisy palety sekwencyjnie. Ponowne użycie tymczasowych danych przygotowanych dla pierwszego trybu daje więc drugiemu trybowi poprawne kolory w niewłaściwych pozycjach. Tekst menu następnie pokazuje czarne dziury tam, gdzie powinien pojawić się główny kolor."
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 teraz odczytuje autorytatywną paletę z lokalnej pamięci GS"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14546 zmienia GSClut, tak aby tryb przechowywania 2 zawsze ładował CLUT z lokalnej pamięci, zamiast z tymczasowego bufora zorientowanego na CSM1. Podejście to wyjaśnia również wolniejsze działanie CSM2: traktuje pamięć GS jako źródło w momencie ładowania do pamięci podręcznej tekstur. Poprzez wybór źródła zgodnie z aktywnym trybem przechowywania, PCSX2 unika wymyślania konwersji między dwoma układami, których sama gra nigdy nie wymagała."
+    },
+    {
+      "type": "heading",
+      "text": "Źródło przedstawia teorię sprzętową, a nie sfabrykowaną pewność"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementacja opiera się na zachowaniu gry, czystym przebiegu zrzutu GS oraz fakcie, że żadna inna reguła ponownego użycia nie wygenerowała spójnej palety CSM2. Autor wyraźnie zaznacza, że planowano testy sprzętowe w celu potwierdzenia modelu. Ta granica ma znaczenie dla artykułu inżynierskiego: poprawka programowa ma silny odtwarzacz, ale dokładny wewnętrzny powód, dla którego oryginalny GS zachowuje się w ten sposób, pozostaje hipotezą, dopóki ślady z konsoli jej nie potwierdzą."
+    },
+    {
+      "type": "heading",
+      "text": "Testowanie powinno łączyć odtwarzacz menu z dowodami z konsoli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Natychmiastowa kontrola regresji dotyczy gry Breath of Fire: Dragon Quarter w dotkniętym menu, porównując wpisy palety przed i po przełączeniu z CSM1 na CSM2. Przydatny ślad rejestruje tryb przechowywania, adres źródłowy CLUT, kolejność wpisów i kolor używany przez uszkodzony tekst. Dodatkowe gry, które naprzemiennie używają dwóch trybów przechowywania, powinny potwierdzić, że wymuszenie ładowania z pamięci lokalnej nie zakłóca palet, które wcześniej działały. Wyniki testów sprzętowych powinny być dokumentowane oddzielnie od wniosków z emulatora."
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 naprawia zaobserwowaną korupcję palety, jednocześnie pozostając wiernym wyjaśnieniu sprzętowemu: bezpośrednie zachowanie pamięci lokalnej CSM2 jest poparte dowodami, ale wciąż czeka na mocniejsze potwierdzenie na konsoli."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "Przeczytaj dyskusję inżynieryjną PCSX2 i zmiany w źródle"
+    }
+  ]
+}

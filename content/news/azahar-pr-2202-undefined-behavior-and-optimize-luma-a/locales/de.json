@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar beseitigt die Mehrdeutigkeit von Überläufen bei Vorzeichen aus Lumas Speicher-Alias",
+  "summary": "Eine unsignierte Bit-31-Maske macht die Alias-Erkennung in C++ definiert, während frühe Rückgaben und unwahrscheinliche MMIO-Verzweigungen den normalen Speicherpfaden einen geraderen Instruktionsfluss geben.",
+  "heroAlt": "Quellenbeleg aus Azahar Pull Request #2202: core/memory: Behebt undefiniertes Verhalten und optimiert den Luma-Alias-Pfad",
+  "searchKeywords": [
+    "Azahar",
+    "Luma-Alias",
+    "undefiniertes Verhalten",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Kern",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Behebt undefiniertes Verhalten und optimiert den Luma-Alias-Pfad"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bit 31 wurde durch arithmetische Operationen mit Vorzeichen gebildet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS stellt ein Alias-Adressformular bereit, dessen höchstes Bit Azahar dazu veranlasst, normale Seitentabellen für FCRAM oder MMIO zu umgehen. Der Code testete und löschte dieses Bit mit 1 << 31. Wenn int 32 Bit hat, ist das Verschieben einer vorzeichenbehafteten Eins in die Vorzeichenposition undefiniertes Verhalten, wodurch ein optimierender Compiler die Erlaubnis erhält, den umgebenden Code auf eine Weise zu transformieren, die die beabsichtigte Maske nicht erhält."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u macht sowohl Test- als auch Löschvorgänge definiert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #2202 deklariert LUMA_ALIAS_BIT als das unsignierte Literal 0x80000000u. Lese- und Schreibpfade testen vaddr gegen diese Konstante und leiten paddr ab, indem sie sie löschen. Die Änderung ist klein, aber architektonisch: Die Adressmanipulation sollte den unvorzeichenbehafteten Typ verwenden, der eine VAddr darstellt, und sich nicht auf das vom Compiler gewählte Ergebnis für überlaufende vorzeichenbehaftete Arithmetik verlassen."
+    },
+    {
+      "type": "heading",
+      "text": "Frühe Rückgaben trennen FCRAM von der kalten MMIO-Route"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Alias FCRAM bleibt der wichtigste nützliche Pfad und endet mit einer sofortigen Rückgabe. MMIO wird anschließend überprüft und als unwahrscheinlich markiert, ebenso wie der Alias-Eintrag selbst im Vergleich zum gewöhnlichen Seiten-Tabellen-Zugriff. Das Auflösen der vorherigen else-if-Kette erlaubt es Clang, den normalen Ablauf linearer zu platzieren und den seltenen Code des benutzerdefinierten Handlers vom Befehls-Cache-Pfad fernzuhalten, der für die meisten Lese- und Schreibvorgänge genutzt wird."
+    },
+    {
+      "type": "heading",
+      "text": "Optimierungsansprüche erfordern Compiler- und Alias-Abdeckung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Führen Sie Luma-Alias-Lese- und Schreibvorgänge für FCRAM, gültiges 32-Bit-MMIO, eine Alias-Adresse außerhalb beider Bereiche und normale Seiten-Tabellen-Adressen aus. Vergleichen Sie Clang und GCC auf mehreren Optimierungsstufen mit aktiviertem UBSan, und stellen Sie sicher, dass keine Meldung über vorzeichenbehaftete Verschiebungen erscheint und die Ergebnisse identisch sind. Untersuchen Sie den generierten Code auf die vorgesehenen frühen Rückgaben, legen Sie jedoch Priorität auf die Korrektheit. MMIO-Breiten, die nicht dem streng unterstützten 32-Bit-Weg entsprechen, müssen weiterhin durchfallen oder gemäß der bestehenden Semantik fehlschlagen."
+    },
+    {
+      "type": "callout",
+      "text": "Der schnellere Weg beginnt mit definiertem Verhalten: Eine Adresskennzeichnung muss eine vorzeichenlose Bitmaske sein, bevor Sprunghinweise oder Assemblerstruktur vertraut werden können."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Lesen Sie die Azahar Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

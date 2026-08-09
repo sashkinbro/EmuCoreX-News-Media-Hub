@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21788-detect-sprites-clip-them-slightly-to-a",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP zielt auf GTA-Sprite-Nähte an der Geometrie-zu-Texel-Grenze ab",
+  "summary": "Ein Kompatibilitätspfad erkennt Zwei-Dreiecks-Sprites und verschiebt deren äußere UV-Kante nach innen, wodurch Upscaling-Artefakte reduziert werden, ohne die Texturfilterung global zu schwächen.",
+  "heroAlt": "Quellenbeweis aus dem Pull-Request #21788 von PPSSPP: GTA-Sprite-Fix: Sprites erkennen, leicht beschneiden, um Filterartefakte zu vermeiden",
+  "searchKeywords": [
+    "PPSSPP",
+    "GTA",
+    "Sprite-Rand",
+    "Texturfilterung",
+    "UV-Koordinaten"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21788": "GTA-Sprite-Fix: Sprites erkennen, leicht beschneiden, um Filterartefakte zu vermeiden"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Upscaling zeigt Pixel, die knapp außerhalb des vorgesehenen Rechtecks eines Sprites liegen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Viele PSP-Schnittstellen und Effekte zeichnen einen rechteckigen Sprite als zwei Dreiecke. Bei nativer Auflösung können Koordinaten, die auf Texel-Grenzen liegen, korrekt aussehen. Bei höherer interner Auflösung und linearer Filterung können Proben in der Nähe eines äußeren Rands mit einer benachbarten Atlas-Region oder transparenten Grenze vermischt werden. Eine globale Sampler-Änderung würde jede Textur betreffen, einschließlich 3D-Oberflächen, die gewöhnliche Filterung benötigen, daher muss die Korrektur zuerst beweisen, dass die übermittelte Geometrie tatsächlich ein Sprite ist."
+    },
+    {
+      "type": "heading",
+      "text": "Der Detektor rekonstruiert ein Quad aus geteilten Dreiecks-Eckpunkten."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #21788 untersucht benachbarte Dreiecks-Paare im Software-Transformationspfad. Es findet die beiden Indizes, die von beiden Dreiecken geteilt werden, identifiziert ihre gegenüberliegenden Ecken und überprüft die Achsenausrichtung sowie die entsprechenden UV-Beziehungen. Nur die unterstützte Orientierung wird zu einem gültigen Sprite. Die Routine leitet dann die UV-Skalierung ab und wendet eine konfigurierbare SpriteBorderFix-Menge auf die entfernten Ränder in der richtigen Gradientenrichtung an."
+    },
+    {
+      "type": "heading",
+      "text": "Position und UV bewegen sich zusammen, um die Pixel-Ausrichtung zu erhalten."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Anpassung verschiebt sowohl die ausgewählten Texturkoordinaten als auch ihre Positionen im Bildschirmraum leicht. Das Verschieben von UV allein könnte das Sprite strecken oder seinen Abtastbereich im Verhältnis zu den vorgesehenen Pixeln verschieben. Der Code vermeidet außerdem volle Bildschirmdimensionen wie 480 mal 272 und wird durch einen Kompatibilitätswert gesteuert, wodurch das Risiko auf bekannte betroffene Titel begrenzt wird. Reine Dreieckslisten und nicht unterstützte Vertex-Reihenfolgen fallen absichtlich durch, anstatt eine vermutete Korrektur zu erhalten."
+    },
+    {
+      "type": "heading",
+      "text": "Visuelle Fixtures müssen Atlanten und Fehlalarme einschließen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erfassen Sie die betroffenen GTA-Szenen in nativer und mehreren hochskalierten Auflösungen unter Verwendung von nächster Nachbarschafts- und linearer Filterung. Fügen Sie einen synthetischen Atlas mit stark gefärbten benachbarten Zellen hinzu, sodass ein abgetastetes Randpixel deutlich erkennbar ist. Testen Sie gedrehte Quads, perspektivische Geometrie, Vollbild-Effekte, Dreiecksstrips, gespiegelt UV-Verläufe, abgeschnittene Sprites und ungewöhnliche Vertex-Reihenfolgen. Bestätigen Sie, dass die Kompatibilitätsflagge titel-spezifisch bleibt und Null ein echtes No-Op ist. Vergleichen Sie die Geometrie vor und nach, um sicherzustellen, dass die Korrektur die Nähte entfernt, ohne sichtbarere Kunstwerke zu verkleinern."
+    },
+    {
+      "type": "callout",
+      "text": "Die Korrektur ist von Natur aus eng: Erkenne die Sprite-Geometrie, bewahre ihre Pixelbeziehung und lasse jede unbewiesene Zeichnung unberührt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21788",
+      "label": "Lies die PPSSPP Ingenieurdiskussion und Quelländerungen"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 přidává šejdrovou anizotropii pro textury, které musí zůstat filtrované pomocí bodů",
+  "summary": "Fallback Direct3D provádí anizotropní sampling v šejdrech, čímž se vyhýbá hardwarovým cestám, které vynucují lineární filtrování nebo odmítají textury bez mipmap na některých ovladačích AMD.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PCSX2 #14188: GS/HW: Přidat SW (na bázi šejdrů) anizotropní filtrování",
+  "searchKeywords": [
+    "PCSX2",
+    "anizotropní filtrování",
+    "bodové filtrování",
+    "Direct3D 12",
+    "test alfa kanálu"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Přidat SW (na bázi šejdrů) anizotropní filtrování"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Hardwarová anizotropie může porušit požadovaný režim filtrování textury"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D neposkytuje potřebnou kombinaci anizotropního filtrování s bodovým filtrováním v cestě PCSX2, takže předchozí povolení AF posouvalo ovlivněné textury směrem k lineárnímu vzorkování. Lineární interpolace míchá sousední barvy před testováním alfa; průhledný texel tedy může přitáhnout barvu, kterou hra nikdy nechtěla zobrazit. Výsledek je nejvíce viditelný na nakloněných površích testovaných podle alfa a na hranách textur."
+    },
+    {
+      "type": "heading",
+      "text": "Shaderová cesta explicitně řídí směrové vzorky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14188 přidává softwarový, na shaderu založený anizotropní filtr do rendererů Direct3D. Protože PCSX2 sám vybírá a kombinuje vzorky, může zachovat bodově podobná rozhodnutí o barvě při pokrytí prodloužené stopy vytvořené šikmým povrchem. Nastavení je oddělené od běžné úrovně anizotropie, a umožňuje uživatelům deliberate povolit novou cestu místo tichého nahrazení chování hardwaru."
+    },
+    {
+      "type": "heading",
+      "text": "Nemapované AMD DX12 textury získávají konzistentní alternativu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdroj také uvádí, že ovladač AMD Direct3D 12 neuplatňuje hardwarový AF na texturách bez mipmap, přestože srovnatelné vykreslování Vulkan funguje. Shaderové vzorkování obchází toto omezení hostitele a cílem je dosáhnout shody s chováním Vulkan na AMD a NVIDIA. Popisuje se jako agresivnější než hardwarový AF od NVIDIA, zejména při nativním rozlišení, takže se nevyžaduje, aby výstup byl vizuálně identický."
+    },
+    {
+      "type": "heading",
+      "text": "Testy vyžadují alfa hrany, textury bez mipmap a několik dodavatelů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Povolte anisotropní filtrování a možnost shaderu, poté porovnejte geometrii testovanou pomocí alpha proti hardwarovému AF, lineárnímu filtrování a Vulkan ve stejné scéně. Zahrňte textury bez mipmap, nativní a zvětšená rozlišení, ostré úhly pohledu a průhledné okraje z problému #14077. Zaznamenejte vzorky textury a čas GPU na AMD a NVIDIA Direct3D 11 a 12. Ověřte, že skryté barvy neprosvítají a že agresivní ostření nevytváří třpyt nebo aliasing v pohybu."
+    },
+    {
+      "type": "callout",
+      "text": "Anizotropie shaderu existuje, aby zachovala záměr filtrování hosta, když volby hardwaru Direct3D buď míchají zakázané sousedy, nebo texturu úplně přeskočí."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Přečtěte si inženýrskou diskusi PCSX2 a změny zdroje"
+    }
+  ]
+}

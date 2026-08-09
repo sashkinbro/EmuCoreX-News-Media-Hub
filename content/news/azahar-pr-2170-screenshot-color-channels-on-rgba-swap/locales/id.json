@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar membuat tangkapan layar Vulkan mengikuti urutan saluran nyata swapchain",
+  "summary": "QImage mengharapkan byte BGRA, tetapi beberapa driver Vulkan menampilkan RGBA; melewatkan format permukaan yang dipilih ke kedua jalur tangkapan layar memungkinkan swizzle merah-biru murah hanya di tempat yang diperlukan.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2170: renderer_vulkan: Perbaiki saluran warna tangkapan layar pada format swapchain RGBA",
+  "searchKeywords": [
+    "Azahar",
+    "Tangkapan layar Vulkan",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Perbaiki saluran warna tangkapan layar pada format swapchain RGBA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Frame yang ditampilkan bisa benar sementara gambar yang disimpan tidak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan memilih format swapchain dari opsi yang didukung driver. Beberapa platform lebih menyukai BGRA dan yang lain RGBA. Shader presentasi Azahar menangani format yang dipilih, tetapi memori tangkapan layar diteruskan ke QImage::Format_RGB32, yang mengharapkan urutan byte BGRA. Pada swapchain RGBA, merah dan biru oleh karena itu hanya tertukar dalam file yang ditangkap, membuat renderer terlihat salah di luar jendela langsung."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow mengekspos format yang dinegosiasikan ke kode tangkap"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2170 menambahkan GetSurfaceFormat ke implementasi present-window Vulkan dan memeriksanya di kedua jalur tangkapan layar: tangkapan staging-copy dan tangkapan memori host. Ketika formatnya adalah eR8G8B8A8Unorm, Azahar menelusuri piksel sebanyak lebar kali tinggi dan menukar byte nol dan dua. Swapchain BGRA menggunakan byte yang ada tanpa berubah, menghindari konversi pada platform yang sudah cocok dengan QImage."
+    },
+    {
+      "type": "heading",
+      "text": "Swizzling byte lebih murah dibandingkan mengubah kontrak gambar frontend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mengubah format QImage akan membutuhkan pengiriman informasi urutan saluran lebih jauh ke frontend dan memastikan setiap pengguna memahaminya. Swizzle lokal menjaga kontrak RGB32 yang sudah established dan menambah satu pertukaran merah-biru per piksel saat pengambilan screenshot, bukan per frame yang ditampilkan. Penulis memaksa RGBA pada Mac yang lebih menyukai BGRA untuk menguji, sementara Linux Mesa diidentifikasi sebagai platform yang kemungkinan terpengaruh secara alami yang perlu dikonfirmasi."
+    },
+    {
+      "type": "heading",
+      "text": "Baik jalur capture maupun alpha membutuhkan fixture warna yang tepat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Render pola uji yang berisi merah murni, biru, hijau, hitam, putih, dan alpha yang tidak sepele, lalu tangkap melalui jalur staging dan memori host pada swapchain RGBA dan BGRA asli. Bandingkan byte yang disimpan dan output yang ditampilkan. Ulangi pada dimensi ganjil, layout yang diskalakan, dan setelah pembuatan ulang swapchain. Pengguna Linux yang terpengaruh harus mengonfirmasi jalur format alami. Swizzle harus terjadi tepat sekali; konversi ganda dapat membuat satu backend terlihat teratasi sementara yang lain mundur."
+    },
+    {
+      "type": "callout",
+      "text": "Kode tangkapan layar sekarang mengonversi dari format Vulkan yang sebenarnya dinegosiasikan, daripada mengasumsikan setiap driver menyajikan piksel dalam urutan yang disukai QImage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Baca diskusi teknis Azahar dan perubahan sumber"
+    }
+  ]
+}

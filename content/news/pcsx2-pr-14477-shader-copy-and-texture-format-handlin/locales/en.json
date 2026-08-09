@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 moves texture conversion policy behind GSDevice",
+  "summary": "StretchRectAuto, CreateCompatible, and ShaderConvertSelector reorganize shader-copy and depth-format handling so the hardware renderer can request a conversion without knowing each backend's pipeline details.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14477: GS/HW: Refactor shader copy and texture format handling.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "texture conversion"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: Refactor shader copy and texture format handling."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache was carrying decisions that belong to the backend boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "Shader copies in PCSX2 must select a conversion based on source format, destination format, emulated bits per pixel, and filtering. Before pull request #14477, GSTextureCache and GSRendererHW saw too much of that machinery. The refactor moves the choice behind GSDevice so higher-level rendering code describes the copy it needs instead of selecting backend-specific shader details itself."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto and CreateCompatible express the operation, not the API"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto accepts the two textures and emulated format information, then chooses the conversion shader inside GSDevice. CreateCompatible creates a texture matching an existing texture's format. ShaderConvertSelector adds modifier bits that can represent related conversions without multiplying unrelated shader entry points. Together they prepare depth stored as R32 color and future integer-depth paths while keeping the inactive ROV depth-color support behind the same interface."
+    },
+    {
+      "type": "heading",
+      "text": "Renames make depth and primitive-ID intent explicit"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch aligns OpenGL conversion shaders more closely with Vulkan, renames stencil-image initialization to primitive-ID initialization, and changes the rgba8_16bits label to rgb5a1_16bits. Float32 becomes DepthColor, while FLOAT32, FLOAT24, and FLOAT16 selector names become DEPTH32, DEPTH24, and DEPTH16. Bilinear filtering also changes from a Boolean to an enum, leaving room for explicit modes instead of another overloaded flag."
+    },
+    {
+      "type": "heading",
+      "text": "A pure refactor needs output-identity testing on every renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "The stated contract is identical output to the previous code. Dump runs should therefore compare frame results across Direct3D, OpenGL, Vulkan, and Metal with different texture formats, depth copies, native resolution, and upscaling. Metal already received a reported dump-run check, but the broad file set means shader compilation and copy selection must also be exercised on the other hardware backends. Any pixel difference needs explanation before later ROV work uses the new path."
+    },
+    {
+      "type": "callout",
+      "text": "The user-visible promise is deliberately conservative: no new effect yet, but a narrower renderer/backend boundary that later depth formats can extend without duplicating conversion policy."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

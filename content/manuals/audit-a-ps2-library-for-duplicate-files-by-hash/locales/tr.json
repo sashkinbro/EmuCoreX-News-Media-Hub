@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "SHA-256 ile çift PS2 görsellerini bulun, hiçbir şeyi silmeden önce",
+  "summary": "Windows, Linux veya macOS üzerinde salt okunur bir hash envanteri oluşturun; byte olarak aynı kişisel disk görsellerini gruplayın; aktif kopyaları çevrimdışı yedeklerden ayırın; ve taranan klasörlerden yalnızca doğrulanmış gereksizlikleri kaldırın.",
+  "heroAlt": "Microsoft Learn Get-FileHash referansı, PowerShell SHA-256 komut sözdizimini gösterir",
+  "searchKeywords": [
+    "çift PS2 ISO",
+    "Get-FileHash SHA-256",
+    "sha256sum kütüphane denetimi",
+    "EmuCoreX çift oyunlar",
+    "aynı dosyaları doğrula"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Kütüphane",
+    "integrity": "Bütünlük"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Microsoft Get-FileHash referansı",
+    "gnu-sha2": "GNU SHA-256 yardımcı program referansı"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Taranan kökleri salt okunur modda envanterle"
+    },
+    {
+      "type": "paragraph",
+      "text": "İki dosya ancak byte’ları eşleştiğinde kopyadır, başlıkları veya dosya adları benzer göründüğünde değil. Bölgesel sürümler, revizyonlar, demo diskler, bonus diskler, CD parçaları ve yamanmış çalışan kopyalar farklı veri içerirken aynı adı paylaşabilir. Her EmuCoreX kütüphane kökünü listeleyerek başlayın ve hiç dosya taşımayın. Denetim, görüntüleri okumalı, raporunu bu köklerin dışında bir yere yazmalı ve hafıza kartları ile emülatör verilerini kapsam dışında bırakmalıdır."
+    },
+    {
+      "type": "callout",
+      "text": "Eşleşen bir SHA-256, ölçtüğünüz dosyalar arasında bayt kimliğini kanıtlar. Bu, orijinal dökümün doğru olduğunu, yeniden dağıtım için lisanslı olduğunu veya her yedekten silinmesinin güvenli olduğunu kanıtlamaz. Aktif kütüphanenin dışında bir doğrulanmış koruma ana kopyası saklayın."
+    },
+    {
+      "type": "heading",
+      "text": "Windows PowerShell hash raporunu oluşturun"
+    },
+    {
+      "type": "paragraph",
+      "text": "Depolamayı güvenilir bir Windows bilgisayara bağlayın veya zaten mevcut olan bir klasör üzerinde doğrudan çalışın. D:\\PS2'i taranan kök dizinlerinden birinin tam yolu ile değiştirin. Get-FileHash varsayılan olarak SHA-256 kullanır, ancak algoritmayı belirtmek raporu kendi başına açıklayıcı yapar. CSV olarak dışa aktarmak tam yolları korur ve konsol kesilmesini önler."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Yönetici hakları olmadan PowerShell'i açın; sıradan kütüphane dosyalarının hashlenmesi yükseltme gerektirmez.",
+        "2. Şunu çalıştırın: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. İstemin geri dönmesini bekleyin. Büyük DVD görüntüleri her baytı okumayı gerektirir, bu yüzden çıkarılabilir depolama uzun sürebilir.",
+        "4. CSV dosyasını açın ve aynı Hash değerine sahip bitişik satırları gruplayın. Rapor edilen Path değerlerinin iki kısayolla listelenmiş aynı dosya yerine ayrı dosyalara işaret ettiğini doğrulayın.",
+        "5. Komutu her çakışmayan kök için tekrar edin ve raporları denetim tarihi, sürücü kimliği ve herhangi bir okuma hatası ile birlikte saklayın."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Unix-benzeri sistemlerde sha256sum veya shasum kullanın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Linux'ta, GNU sha256sum eşdeğer özeti sağlar. Dosya listesini oluşturmak için find ile null ayırıcıları kullanın, böylece boşluklar ve sıra dışı karakterler bozulmadan kalır, ardından çıktıyı taranan dizin dışında yönlendirin. macOS'ta, shasum -a 256 genellikle mevcuttur. İnternetten alınan ve otomatik olarak dosya silen gözden geçirilmemiş komutları yapıştırmayın; bu prosedür tespit ve temizleme işlemlerini kasıtlı olarak ayırır."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Linux örneği: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "macOS örneği: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "Bir komut Girdi/Çıktı hatası bildirirse, temizlemeyi durdurun ve kaynak cihazı araştırın. Kararsız okumalardan üretilen bir özet, sağlıklı bir taşıma temelini oluşturmaz.",
+        "Cue/bin CD dökümleri için, cue sayfasını ve referans verilen her parçayı bir set olarak ele alın; sadece en büyük BIN dosyasını özetlemek eksik ses parçalarını gözden kaçırabilir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Temizlikten önce her eşleşen grubu sınıflandırın"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Başka bir aynı kopya indirme veya geçici içe aktarma klasöründe oturuyorsa, kopyayı hedeflenen taranmış kökün içinde tutun.",
+        "Eşleşen aktif kopya yeniden adlandırılmış bir çalışma dosyasıysa, koruma ana kopyasını saklayın; ana kopya her EmuCoreX tarama kökü dışında olmalıdır.",
+        "Bir kopya başka bir cihazda tek çevrimdışı yedekse, her iki fiziksel kopyayı da saklayın. Farklı yedekleme katmanlarındaki yinelenen baytlar kasıtlı bir fazlalıktır, kütüphane karmaşası değil.",
+        "Yalnızca görüntülenen başlık eşleştiği için farklı hash değerlerine sahip dosyaları birleştirmeyin. Önce seri, bölge, revizyon, disk numarası ve yama durumunu kaydedin.",
+        "Çok diskli oyunlar için, Disk 1 ve Disk 2'nin bilerek farklı olup olmadığını doğrulayın; sadece dosya adları seti daha sonra yeniden oluşturmak için yeterli değildir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "İlk geçişte silmek yerine karantinaya alın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Seçilen tüm kütüphane köklerinin dışında bir karantina klasörü oluşturun. Her onaylanmış gruptan bir yedek çalışan kopyayı buraya taşıyın, EmuCoreX'i bir kez yenileyin ve kalan girdinin beklenen bölgeyi açtığını doğrulayın. Karantinayı en az bir uygulama yeniden başlatması ve etkilenen her oyunun bir kez başlatılması boyunca tutun. Sadece o zaman yedek çalışan kopyaları silin ve yalnızca başka bir doğrulanmış korunmuş veya yedek kopya sizin kontrolünüz altında kaldıysa."
+    },
+    {
+      "type": "heading",
+      "text": "Dedup edilmiş kütüphaneyi doğrulayın"
+    },
+    {
+      "type": "list",
+      "items": [
+        "EmuCoreX girişlerinin sayısı, çoklu disk setleri dikkate alınarak planlanan oynanabilir kopyalarla eşleşir.",
+        "Etkilenen her başlık, kanonik olarak seçilen yola çözülür ve bu yoldan soğuk başlatılır.",
+        "Saklanan dosyanın SHA-256 değeri, karantinadan önce kaydedilen özet ile eşit kalır.",
+        "Favoriler ve oyun başına profiller hâlâ planlanan seri ve bölgeyi gösterir.",
+        "Çevrimdışı koruma kopyası ve denetim raporu EmuCoreX tarafından taranan bir klasörün içinde değildir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Yanlış sınıflamadan kurtul"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir başlık kaybolursa veya yanlış revizyonu açarsa, EmuCoreX'i kapatın ve karantinaya alınan dosyayı orijinal gerçek yoluna geri taşıyın. Bir kez yenileyin, seri numaralarını karşılaştırın ve isim değiştirildiyse önceki dosya adını geri yükleyin. Bölgesel girişler arasında kayıtları kopyalayarak telafi etmeyin; önce görüntü kimliğini çözün. Kaynak sürücü okuma hatası ürettiyse, sahip olunan diskin taze bir kopyası güvenilir bir ana kopya oluşturana kadar her iki kopyayı ve raporlarını saklayın."
+    },
+    {
+      "type": "link",
+      "text": "Microsoft Learn sözdizimini Get-FileHash için kontrol edin",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

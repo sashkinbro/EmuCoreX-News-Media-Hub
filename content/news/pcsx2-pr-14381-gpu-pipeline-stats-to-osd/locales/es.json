@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 expone los conteos de invocación de shaders antes de que la superposición los cambie",
+  "summary": "Una métrica OSD opcional informa las invocaciones de shaders de vértices y píxeles recopiladas antes del dibujo de ImGui, haciendo que las comparaciones de la carga de trabajo del backend sean más estables y fáciles de leer.",
+  "heroAlt": "Evidencia de fuente del pull request #14381 de PCSX2: GS: Agregar GPU estadísticas de la canalización a OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Estadísticas de la canalización GPU",
+    "Invocaciones de shader de vértices",
+    "Invocaciones de shader de píxeles",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Herramientas",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Agregar GPU estadísticas de la canalización a OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La tasa de fotogramas no puede indicar si una escena aumentó el trabajo de vértices o píxeles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una regresión de rendimiento puede provenir de más vértices enviados, más muestras cubiertas, pases adicionales o sincronización. PCSX2 ya mostraba varias métricas del renderizador, pero carecía de conteos directos de invocación de la canalización. El pull request #14381 agrega VSI y PSI para que un desarrollador pueda ver si GPU ejecutó miles de llamadas al shader de vértices o millones de llamadas al shader de píxeles en el intervalo medido."
+    },
+    {
+      "type": "heading",
+      "text": "Las consultas se implementan a través de todas las APIs de hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las clases de dispositivo Direct3D 11, Direct3D 12, OpenGL, Vulkan y Metal exponen estadísticas de la canalización a métricas de rendimiento comunes. La configuración aparece en la configuración OSD y la superposición formatea grandes números con sufijos decimales K, M y B. La recolección a través de consultas de backend es necesaria porque una estimación común a partir de conteos de draw ignoraría recorte, instanciación, cobertura de muestras y ejecución específica de la API."
+    },
+    {
+      "type": "heading",
+      "text": "Tomar muestras antes de ImGui elimina la superposición de su propia medición"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los resultados tempranos variaban drásticamente porque la consulta podía incluir renderizado OSD e ImGui. El comportamiento final recopila estadísticas antes de dibujar la superposición, estabilizando los números y haciendo que las comparaciones de escenas sean más significativas. El renderizado por software todavía se presenta a través de Vulkan, por lo que los valores pueden aparecer allí pero describen la presentación más que la carga de trabajo del software GS; la fuente advierte que esos números no deben interpretarse como estadísticas de un renderizador de hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Una comparación válida fija la escena y el intervalo de consulta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilite Mostrar estadísticas de la pipeline GPU y mantenga una escena fija en todos los backends, verificando que VSI y PSI aparezcan y escalen de manera plausible cuando cambian la resolución o la geometría. Alterne el OSD mismo y confirme que los valores medidos no salten al contar sus píxeles. Ejecute restablecimiento de consultas, pérdida del dispositivo, pausa y cambio de backend. Los conteos entre APIs aún pueden diferir porque las especificaciones y la contabilidad de muestras varían, por lo que se deben diagnosticar tendencias dentro de un backend antes de afirmar una paridad exacta."
+    },
+    {
+      "type": "callout",
+      "text": "El OSD informa los resultados de la consulta de hardware, no una verdad universal entre APIs; tomar la muestra antes de ImGui lo hace útil sin dejar que el medidor se mida a sí mismo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

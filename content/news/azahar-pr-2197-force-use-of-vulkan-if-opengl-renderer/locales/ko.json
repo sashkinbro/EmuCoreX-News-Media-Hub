@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar는 사용자의 렌더러 선택을 변경하지 않고 ANGLE에서 Android를 우회하도록 라우팅합니다.",
+  "summary": "런타임 그래픽 API 해결기는 Android의 OpenGL-over-Vulkan 호환성 레이어를 감지하고, 안전한 실행을 위해 Vulkan를 선택하며 UI 선택이 비활성화된 이유를 설명합니다.",
+  "heroAlt": "Azahar 풀 리퀘스트 #2197의 소스 증거: android: OpenGL 렌더러가 ANGLE인 경우 Vulkan 사용을 강제",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "그래픽 API"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "그래픽",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android: OpenGL 렌더러가 ANGLE인 경우 Vulkan 사용을 강제"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android는 호환성 레이어를 OpenGL로 표시할 수 있습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "ANGLE은 OpenGL 호출을 Vulkan로 변환하며, 최신 Android 장치에서 기본 경로가 되고 있습니다. Azahar의 OpenGL 렌더러는 네이티브 드라이버 동작을 기대하며, 그 변환 위에 배치될 경우 문제가 발생했습니다. 따라서 graphics_api를 직접 읽으면 시스템이 Azahar의 테스트된 OpenGL 경로를 만족시키지 않는 Vulkan 기반 호환성 스택을 실행하더라도 OpenGL를 반환할 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI는 저장된 의도를 실행 가능한 백엔드와 분리합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #2197은 Settings::GetWorkingGraphicsAPI()를 도입합니다. 호출자는 원시 설정을 읽는 대신 이를 사용합니다. Android 환경이 문제 있는 ANGLE 구성을 보고하면, 이 함수는 Vulkan를 반환합니다. 저장된 선호 설정은 그대로 두므로, Azahar는 단순히 한 장치나 OS 세션이 이를 안전하게 실행할 수 없다고 해서 사용자 구성을 영구적으로 변경하지 않습니다."
+    },
+    {
+      "type": "heading",
+      "text": "설정 UI는 비활성화된 선택 항목을 설명할 수 있습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Android 설정 항목에서 disabledMessage를 획득하며, 여기서는 렌더러 선택이 불가능한 이유를 보여주기 위해 사용됩니다. 이는 런타임에서 조용히 무시하면서 상호작용 가능해 보이는 셀렉터보다 낫고, 옵션을 완전히 삭제하는 것보다 더 낫습니다. 이 속성은 다른 비활성화된 설정에도 일반적으로 적용될 수 있지만, 이 문서에서의 동작은 ANGLE 전용 메시지와 런타임 수정입니다."
+    },
+    {
+      "type": "heading",
+      "text": "테스트는 네이티브 OpenGL, ANGLE, 명시적인 Vulkan을 구별해야 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Android 17 이전과 이후 장치에서 실제 GLES 구현을 확인하고, 원시 환경 설정을 GetWorkingGraphicsAPI와 비교합니다. 네이티브 OpenGL는 선택 가능 상태를 유지해야 하고, ANGLE은 Vulkan를 실행하여 이유를 표시해야 하며, 명시적인 Vulkan 환경 설정은 변경되지 않아야 합니다. 재시작, 설정 이전, 표면 회전 또는 재생성을 수행하고, 모든 C++ 그래픽 호출자가 해결기를 사용함을 확인합니다. 대체 방법은 두 개의 렌더러를 생성하거나 저장된 값을 변경해서는 안 됩니다."
+    },
+    {
+      "type": "callout",
+      "text": "Azahar는 사용자가 선택한 내용을 유지하면서 별도로 이 Android 그래픽 스택이 안전하게 실행할 수 있는지를 결정합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "Azahar 엔지니어링 토론 및 소스 변경 사항을 읽으십시오"
+    }
+  ]
+}

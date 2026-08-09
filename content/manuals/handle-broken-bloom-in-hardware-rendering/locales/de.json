@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Beschädigten Bloom im Hardware-Rendering wiederherstellen, ohne die Szene zu überbelichten",
+  "summary": "Verwenden Sie gepaarte helle und dunkle Checkpoints, um einen fehlenden oder falsch ausgerichteten Framebuffer-Pass zu identifizieren, vergleichen Sie eine Software-Referenz und finden Sie die kostengünstigste Blending- oder native Scaling-Korrektur.",
+  "heroAlt": "God of War PCSX2-Aufnahme, die einen falsch gerenderten hellen Bloom- und Nebel-Pass zeigt",
+  "searchKeywords": [
+    "PS2 beschädigter Bloom",
+    "EmuCoreX zu heller Glow",
+    "Hardware-Rendering-Bloom",
+    "Framebuffer-Blending",
+    "Native-Scaling-Geisterbilder"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "accuracy": "Genauigkeit"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 Beschreibung von Blending, Framebuffer-Lesungen und nativer Skalierung für Bloom",
+    "pcsx2-july-august-2015": "PCSX2 Beispiele für die Genauigkeit von Bloom und Nebel vor und nach der Anwendung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Klassifizieren Sie das Bloom als abwesend, verschoben, abgeschnitten oder übermäßig"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloom wird normalerweise aus mehr als einem Durchgang zusammengesetzt: Das Spiel isoliert helle Informationen, filtert oder verkleinert sie und fügt das Ergebnis über die Szene ein. Ein Hardware-Renderer kann daher auf mehrere sichtbar unterschiedliche Arten fehlschlagen. Fehlender Bloom lässt Lichtquellen kantig erscheinen; verschobener Bloom erzeugt ein Geisterbild versetzt von der Quelle; abgeschnittener Bloom wird zu einem Rechteck; übermäßiger Bloom überblendet die nahegelegene Geometrie. Wählen Sie einen Kontrollpunkt mit einer starken isolierten Lampe oder einem Zauber und einen anderen mit kleinen Highlights vor dunklem Hintergrund. Notieren Sie die Seriennummer des Spiels, die interne Auflösung, den Renderer, den GPU-Treiber, die Genauigkeit des Blendens, den Status der nativen Skalierung und ob manuelle Framebuffer- oder Skip-Draw-Korrekturen aktiv sind."
+    },
+    {
+      "type": "callout",
+      "text": "Beurteilen Sie Bloom nicht anhand eines einzelnen überbelichteten Handyfotos. Automatische Belichtung und HDR-Tonabbildung können Details löschen, die im tatsächlichen Frame des Emulators vorhanden sind."
+    },
+    {
+      "type": "heading",
+      "text": "Bereiten Sie zwei Bloom-Szenen mit Leuchtdichte-Referenzen vor"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ein Spielstand im Spiel vor einem wiederholbaren hellen Effekt mit sichtbarer Geometrie direkt darum herum.",
+        "Eine zweite dunkle Szene mit kleinen leuchtenden Details, sodass eine Einstellung nicht einfach durch Abdunkeln des gesamten Outputs bestehen kann.",
+        "Direkte Screenshots vom nativen Hardware-Output und eine kurze Referenz zur Korrektheit der Softwaredarstellung.",
+        "Post-Shader, Reshade-Ebenen, HDR-Konvertierung anzeigen, Texturersatz und benutzerdefinierte Farbsteuerungen deaktiviert.",
+        "Ein Leistungsbeispiel aus der warmen Sitzung der hellen Szene und ein Backup des Grafikprofils des Titels."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separate Kompositionsgenauigkeit von der Hochskalierungsanpassung"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Kaltstart des hellen Checkpoints in nativer interner Auflösung mit automatischem Blending und Erfassen der Quelle plus umgebender Details.",
+        "2. Dasselbe Moment kurz im Softwaremodus rendern und Bloom-Radius, Zentrum, Okklusion und ob Vordergrundobjekte das Leuchten korrekt blockieren, vergleichen.",
+        "3. Kehren Sie in den Hardware-Modus zurück und vergleichen Sie die unterstützten Grafik-APIs, ohne den Treiber oder die Auflösung zu ändern; behalten Sie den Pfad bei, der die Referenz am genauesten bewahrt.",
+        "4. Wenn Bloom fehlt oder in eine feste Form bei nativer Auflösung hineinragt, erhöhen Sie die Mischgenauigkeit um eine Stufe, starten Sie die Szene neu und halten Sie an der ersten Stufe an, die die Komposition wiederherstellt.",
+        "5. Wenn die native Hardware korrekt ist, Bloom aber erst nach dem Hochskalieren vom Licht getrennt wird, stellen Sie das automatische Mischen wieder her und testen Sie die dokumentierte native Skalierungskorrektur des Emulators.",
+        "6. Wiederhole den dunklen Checkpoint und bestätige, dass kleine Highlights leuchten, ohne schwarze Hintergründe anzuheben oder Charaktertexturen aufzuhellen.",
+        "7. Erwärme das Gerät, messe die effektintensive Sequenz und vergleiche Barrieren-, Render-Pass- oder Readback-Zähler, falls der Build sie anzeigt.",
+        "8. Speichere nur den erfolgreichen Zweig im Profil dieses Spiels und vermerke, ob er das Blending beim nativen Output oder die Nachbearbeitungs-Ausrichtung beim Hochskalieren behandelt."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Genauigkeit der Mischung bestimmt, wie treu die Hardware-Renderung die Interaktionen mit den vorherigen Framebuffer-Inhalten reproduziert, während das native Skalieren auf Nachbearbeitungsdurchläufe abzielt, die so erstellt wurden, dass sie im ursprünglichen Maßstab des PS2 arbeiten. Sie lösen ähnlich aussehende Symptome auf unterschiedlichen Stufen. Die Software-Renderung liefert eine Kompositionsreferenz, weil sie das Verhalten des GS direkter reproduzieren kann, aber ihre Geschwindigkeit ist nicht das Akzeptanzziel. Der Zwei-Szenen-Test verhindert eine falsche Korrektur, bei der eine Reduzierung der Helligkeit eine überbelichtete Lampe besser erscheinen lässt, während beabsichtigtes Leuchten an anderer Stelle gelöscht wird."
+    },
+    {
+      "type": "heading",
+      "text": "Akzeptanz des Bloom-Profils"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das ausgewählte Profil muss die Form des Effekts, das Tiefenverhältnis, den Tonbereich und die Spielbarkeit bewahren."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Das Leuchten ist auf das emittierende Objekt zentriert und folgt ihm bei Kamerabewegungen oder Bewegungen der Spielfigur.",
+        "Vordergrundgeometrie verdeckt das Bloom, wo die Softwarereferenz eine Blockade zeigt.",
+        "Helle Oberflächen behalten die Texturdetails bei, anstatt in eine einheitliche weiße Fläche zusammenzufallen.",
+        "Der dunkle Kontrollpunkt bewahrt schwarze Bereiche und zeigt immer noch seine kleinen beabsichtigten Highlights.",
+        "Das gleichmäßige Bildraten-Pacing bleibt nach der thermischen Stabilisierung akzeptabel und es tritt kein nicht zusammenhängender Transparenzeffekt zurück."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Bloom-Ergebnisse, die eine weitere Untersuchung erfordern"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Die Softwareausgabe zeigt das gleiche abnormale Leuchten: Szenenreferenz bestätigen und Spiel-Patches oder Texturänderungen entfernen.",
+        "Nur das physische Display zeigt Bloom, während direkte Screenshots ausgewogen sind: HDR, Farbbereich, Panel-Optimierung und Kameraexposition prüfen.",
+        "Ein höheres Mischungslevel behebt das Lampenproblem, beschädigt aber Schatten oder Nebel: auf die vorherige Einstellung zurücksetzen und einen für das jeweilige Spiel spezifischen Renderbericht erstellen.",
+        "Der Effekt driftet nur bei einer ungewöhnlichen benutzerdefinierten Auflösung: Verwenden Sie einen unterstützten ganzzahligen Multiplikator, bevor Sie einen manuellen Offset hinzufügen."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Machen Sie das teure Framebuffer-Experiment rückgängig"
+    },
+    {
+      "type": "paragraph",
+      "text": "Stellen Sie das Blending auf Automatisch, deaktivieren Sie das getestete native Skalierungs- oder Offset-Override, stellen Sie die ursprüngliche API wieder her und starten Sie die Anwendung neu. Wiederholen Sie beide Kontrollpunkte, um zu bestätigen, dass das vorherige Symptom reproduzierbar ist; wählen Sie dann die letzte niedrigere Stufe, die die Leistung bestanden hat, oder kehren Sie zur nativen Auflösung zurück, bis eine genaue Korrektur vorhanden ist."
+    },
+    {
+      "type": "heading",
+      "text": "Absichtlich erzeugtes Blenden kann visuell aggressiv sein"
+    },
+    {
+      "type": "paragraph",
+      "text": "Einige PS2-Spiele verwenden absichtlich breites, helles Bloom. Das Ziel ist die Genauigkeit gegenüber einer vertrauenswürdigen Referenz, nicht gleichmäßig gedämpftes Licht. Vermeiden Sie es, eine allgemeine Empfehlung aus einem einzigen Titel zu veröffentlichen, da sich Framebuffer-Formate, Blend-Gleichungen und Post-Process-Skalierungen zwischen Engines und sogar zwischen Szenen unterscheiden."
+    },
+    {
+      "type": "link",
+      "text": "Überprüfen Sie die PCSX2-Erklärung zum modernen Blending und nativen Scaling",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Trasy Azahar kierują Android z dala od ANGLE bez zmiany wyboru renderera przez użytkownika",
+  "summary": "Rozdzielacz API grafiki w czasie wykonywania wykrywa warstwę zgodności Android z OpenGL-nad-Vulkan, wybiera Vulkan w celu bezpiecznego uruchomienia i wyjaśnia, dlaczego opcja w UI jest wyłączona.",
+  "heroAlt": "Dowody źródłowe z pull request Azahar nr 2197: android: Wymuś użycie Vulkan, jeśli renderer OpenGL to ANGLE",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "API grafiki"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android: Wymuś użycie Vulkan, jeśli renderer OpenGL to ANGLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android może oznaczać warstwę zgodności jako OpenGL"
+    },
+    {
+      "type": "paragraph",
+      "text": "ANGLE tłumaczy wywołania OpenGL na Vulkan i staje się domyślną ścieżką na nowszych urządzeniach Android. Renderer OpenGL w Azahar oczekuje natywnego zachowania sterownika i miał problemy, gdy został umieszczony powyżej tego tłumaczenia. Bezpośrednie odczytywanie graphics_api mogłoby więc zwrócić OpenGL, chociaż system wykonałby stos kompatybilności oparty na Vulkan, który nie spełniał przetestowanej ścieżki OpenGL przez Azahar."
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI oddziela przechowywaną intencję od możliwego do uruchomienia backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2197 wprowadza Settings::GetWorkingGraphicsAPI(). Wywołujący korzystają z niego zamiast odczytywać surowe ustawienie. Gdy środowisko Android zgłasza problematyczną konfigurację ANGLE, funkcja zwraca Vulkan. Przechowywane preferencje pozostają bez zmian, więc Azahar nie zmienia trwale konfiguracji użytkownika tylko dlatego, że jedno urządzenie lub sesja OS nie może jej bezpiecznie obsłużyć."
+    },
+    {
+      "type": "heading",
+      "text": "Ustawienia UI mogą wyjaśnić wyłączony wybór"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ustawienie Android elementów gain disabledMessage, używane tutaj, aby pokazać, dlaczego wybór renderera jest niedostępny. Jest to lepsze niż selektor, który wygląda na interaktywny, podczas gdy w czasie wykonywania jest ignorowany w tle, i lepsze niż całkowite usunięcie opcji. Właściwość jest na tyle ogólna, że może dotyczyć innych wyłączonych ustawień, ale działanie opisane w tym artykule to komunikat specyficzny dla ANGLE i korekta w czasie wykonywania."
+    },
+    {
+      "type": "heading",
+      "text": "Testowanie musi odróżniać natywny OpenGL, ANGLE oraz jawny Vulkan."
+    },
+    {
+      "type": "paragraph",
+      "text": "Na urządzeniach przed i po Android 17 należy zidentyfikować rzeczywistą implementację GLES i porównać surowe ustawienie preferencji z GetWorkingGraphicsAPI. Natywny OpenGL powinien pozostać możliwy do wyboru, ANGLE powinien wykonać Vulkan i wyświetlić powód, a jawne ustawienie preferencji Vulkan powinno pozostawać niezmienione. Uruchom ponownie, przenieś ustawienia, obróć lub odtwórz powierzchnię i potwierdź, że każdy wywołujący grafikę C++ korzysta z resolvera. Fallback nie może tworzyć dwóch rendererów ani zmieniać zapisanej wartości."
+    },
+    {
+      "type": "callout",
+      "text": "Azahar zachowuje to, co użytkownik wybrał, podczas gdy osobno decyduje, co ten stos graficzny Android może bezpiecznie uruchomić."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany w źródle"
+    }
+  ]
+}

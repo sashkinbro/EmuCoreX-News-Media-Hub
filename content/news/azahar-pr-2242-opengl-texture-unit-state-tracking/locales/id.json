@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar mengajarkan OpenGL pelacakan status bahwa sebuah unit tekstur bisa berhenti menjadi 2D",
+  "summary": "Binding cubemap mengekspos asumsi status cache bahwa setiap unit menyimpan GL_TEXTURE_2D; melacak jenis target dan menginisialisasi null cube untuk mengembalikan operasi 2D kemudian.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2242: renderer_gl: Memperbaiki pelacakan status unit tekstur OpenGL",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "unit tekstur",
+    "cubemap",
+    "pelacakan status"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Memperbaiki pelacakan status unit tekstur OpenGL"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Handle tekstur yang di-cache tidak lengkap tanpa jenis targetnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL mengikat tekstur berdasarkan unit dan target. Cache status Azahar sering mengasumsikan sebuah unit yang diwakili GL_TEXTURE_2D, yang berfungsi hingga pelacakan null-cubemap memperkenalkan binding cubemap yang nyata. Setelah sebuah unit memegang GL_TEXTURE_CUBE_MAP, kode berikutnya dapat melewati atau mengeluarkan bind hanya berdasarkan objek numerik yang dicache, meskipun namespace target dan ekspektasi sampling berikutnya telah berubah."
+    },
+    {
+      "type": "heading",
+      "text": "Catatan negara bagian kini membedakan transisi 2D, kubus, dan null"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2242 memperbarui utilitas cache rasterizer dan jalur renderer OpenGL sehingga unit tekstur mempertahankan target binding yang diperlukan untuk memutuskan apakah perubahan status itu redundan. NULL_SURFACE_CUBE_ID diinisialisasi dengan benar, sehingga jalur cubemap tanpa permukaan memiliki sumber daya yang didefinisikan. File Vulkan menerima penyesuaian cache bersama terkait, tetapi kegagalan yang diamati dan koreksi state-machine berada dalam OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon dan WWE menunjukkan korupsi di hilir dari satu asumsi basi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gambar sebelum-dan-sesudah untuk Pokémon Ultra Moon dan WWE All Stars menunjukkan bahwa kesalahan tidak terbatas pada hilangnya cubemap. Sebuah binding cubemap mengubah bagaimana operasi tekstur selanjutnya diinterpretasikan, sehingga permukaan biasa di hilir bisa dirender secara salah. Oleh karena itu, caching yang benar harus memulihkan status sepanjang urutan, bukan hanya menampilkan cubemap pada saat itu diatur."
+    },
+    {
+      "type": "heading",
+      "text": "Urutan regresi harus bergantian target pada unit yang sama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bind teksur 2D, kubus, kubus null, dan 2D berulang kali pada satu unit dan verifikasikan baik panggilan GL yang dipancarkan maupun output yang diambil sampelnya. Reproduksi kedua permainan tersebut, kemudian uji peta bayangan, peta lingkungan, sampling render-target, dan penghancuran permukaan. Bandingkan status yang di-cache dengan diagnostik glGet dalam build debug. Optimisasi masih boleh melewatkan bind hanya ketika objek dan target keduanya cocok; mengurangi panggilan tidak boleh mempertahankan target dari penggunaan sebelumnya."
+    },
+    {
+      "type": "callout",
+      "text": "Caching status OpenGL hanya valid ketika mengingat target binding serta objek tekstur."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumber"
+    }
+  ]
+}

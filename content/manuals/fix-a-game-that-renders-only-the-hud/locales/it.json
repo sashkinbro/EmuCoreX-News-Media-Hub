@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticare un gioco PS2 che visualizza l'HUD ma non il mondo",
+  "summary": "Usare l'HUD sopravvissuto come prova che la presentazione è attiva, verificare l'immagine del disco, resettare le sovrascritture che disabilitano il rendering, confrontare le API hardware e un breve riferimento software, quindi catturare il più piccolo errore riproducibile della geometria del mondo.",
+  "heroAlt": "Cattura del gioco PCSX2 da un confronto di regressione del renderer con livelli di interfaccia e mondo",
+  "searchKeywords": [
+    "Solo l'HUD di PS2 visibile",
+    "Mondo nero di EmuCoreX",
+    "Geometria mancante",
+    "Saltare il reset del rendering",
+    "Diagnostica del renderer"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "diagnostics": "Diagnostica"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 pulizia della baseline di risoluzione dei problemi",
+    "pcsx2-performance": "PCSX2 renderer e GS indicatori"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Considera l'HUD visibile come un confine di livello"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se contatori, menu o l'HUD del gioco vengono ancora visualizzati, la superficie di output e almeno una parte dello stream di comandi GS sono attivi. La parte mancante potrebbe essere la geometria del mondo, la composizione del framebuffer o una regola manuale ampia che scarta i disegni. Prima di modificare la precisione, registra se il mondo è nero, trasparente, bloccato su un frame precedente o sostituito da un singolo colore uniforme. Questi sintomi portano a test diversi."
+    },
+    {
+      "type": "callout",
+      "text": "Non aumentare i valori di salto-disegno per far scomparire uno strato corrotto. Una regola di salto può rimuovere l'intero mondo lasciando intatte le sovrapposizioni 2D, riproducendo esattamente questo sintomo."
+    },
+    {
+      "type": "heading",
+      "text": "Conserva un checkpoint dal boot al gameplay"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un normale salvataggio in gioco che raggiunge la scena interessata senza uno stato di salvataggio dell'emulatore.",
+        "Seriale, regione, revisione e hash dell'immagine personale verificati.",
+        "Screenshot dei valori grafici globali e per gioco correnti.",
+        "Driver di sistema GPU con sostituzioni di texture e shader disattivati.",
+        "Un breve registro che mostra l'inizializzazione del renderer e la transizione al gameplay."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ripristinare i disegni prima di aggiungere precisione"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avviare il titolo da freddo e verificare se i menu, FMV e il gameplay falliscono a diversi confini.",
+        "2. Reimpostare skip-draw, correzioni hardware manuali, offset delle texture e patch ereditate per gioco per questo seriale.",
+        "3. Ritestare alla risoluzione interna nativa sull'API hardware originale.",
+        "4. Chiudere la sessione, selezionare l'altra API hardware supportata e riprodurre la stessa transizione.",
+        "5. Se entrambi i percorsi mantengono solo l'HUD, eseguire brevemente la scena in rendering software e rilevare se la geometria del mondo ritorna.",
+        "6. Quando il software è corretto, tornare all'hardware e testare solo un renderer specifico per il titolo documentato o la correzione GS.",
+        "7. Se anche il software è vuoto, verifica di nuovo l'immagine e testa un profilo pulito prima di presumere un guasto solo grafico.",
+        "8. Cattura i log e le impostazioni esatte dalla corsa più piccola che riproduce il mondo mancante."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "HUD e mondo spesso utilizzano percorsi di rendering diversi. Un frame software corretto prova che il gioco ha prodotto comandi per il mondo e restringe il guasto alla traduzione hardware o al comportamento del driver host. Il fallimento attraverso percorsi hardware e software puliti punta di nuovo all'immagine, alle patch, alla progressione del gioco o a una regressione più ampia dell'emulatore. Resettare per prima cosa i controlli che disabilitano il rendering previene che un sintomo auto-creato contamini quella decisione."
+    },
+    {
+      "type": "heading",
+      "text": "Criteri di recupero del livello mondiale"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il profilo corretto deve rendere più di un semplice fotogramma statico conveniente."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La geometria del mondo, i personaggi, le particelle e l'HUD appaiono nel loro ordine previsto.",
+        "I menu e FMV continuano a passare al gioco senza un fotogramma nero residuo.",
+        "Il movimento della telecamera non rivela settori mancanti di grandi dimensioni.",
+        "Una seconda area si avvia a freddo con la stessa impostazione per gioco.",
+        "La correzione è allegata solo al seriale e alla revisione verificati."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Prove di escalation"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Il software e entrambe le API hardware falliscono su un'immagine verificata con impostazioni pulite: raccogliere un rapporto di regressione.",
+        "Solo un driver personalizzato fallisce: tornare al driver di sistema e segnalare il pacchetto del driver separatamente.",
+        "Il mondo ritorna quando skip-draw è zero: ritirare l'override copiato.",
+        "Il guasto inizia dopo un caricamento dello stato salvato: riprodurre da un salvataggio in gioco prima di inviare prove grafiche."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ricostruire il profilo del titolo dai valori predefiniti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rimuovere il profilo sperimentale, ripristinare il renderer globale registrato, selezionare il driver di sistema e avviare a freddo alla risoluzione nativa. Riapplicare solo la correzione verificata se ha superato tutti i controlli dell'area; lasciare tutti i controlli di scarto-disegno disabilitati a meno che le prove ufficiali specifiche del titolo non li richiedano."
+    },
+    {
+      "type": "heading",
+      "text": "Un mondo nero non è sempre uno schermo nero"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'intervallo di visualizzazione e il livello del nero OLED possono schiacciare la scenografia scura, ma non possono far sparire la geometria da uno screenshot diretto. Ispezionare un fotogramma catturato e il registro del renderer prima di modificare le impostazioni del televisore o dell'HDR."
+    },
+    {
+      "type": "link",
+      "text": "Seguire la linea guida generale di risoluzione dei problemi PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Opravte průhledné efekty PS2, které se zobrazují jako pevné povrchy",
+  "summary": "Použijte opakovatelný skleněný, vodní, kouřový nebo menu overlay k rozlišení chybějícího alfa míchání od chyb textury nebo pořadí kreslení, zvyšujte přesnost krok za krokem a otestujte nesouvisející průhledné vrstvy před uložením nahrazení.",
+  "heroAlt": "Obraz porovnání grafiky PCSX2 ukazující opravený efekt framebufferu",
+  "searchKeywords": [
+    "PS2 průhlednost neprůhledná",
+    "EmuCoreX alfa míchání",
+    "oprava pevného kouře",
+    "problém s rendererem vody",
+    "průhledný HUD"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Přesnost"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 pokyny pro náklady na míchání",
+    "pcsx2-performance": "PCSX2 přesný indikátor míchání"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Klasifikujte pevnou vrstvu před změnou přesnosti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Neprůhledný efekt je užitečným důkazem pouze tehdy, když je známo jeho zamýšlené zobrazení. Vyberte jeden objekt, jehož průhlednost je během běžné hry zřejmá: skleněný panel by měl odhalovat geometrii za ním, kouř by měl mít jemné vrstvené okraje a překryvné menu by mělo zachovat scénu pod ním. Zachyťte nefunkční výstup v nativním rozlišení a poznamenejte si, zda má vrstva správný tvar a barvu. Správná geometrie se špatnou neprůhledností naznačuje problémy s mícháním; prázdný obdélník nebo zmatečná textura potřebují jiné vyšetření."
+    },
+    {
+      "type": "callout",
+      "text": "Maximální přesnost míchání není univerzální přednastavená kvalita. Může přidat značné množství práce GPU a může skrýt, která nižší úroveň skutečně opravuje titulek."
+    },
+    {
+      "type": "heading",
+      "text": "Test efektu poloprůhlednosti"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Kontrolní bod, který dosáhne stejného efektu během jedné minuty.",
+        "Reference ze softwarového renderování, původního hardwarového záznamu nebo spolehlivé dokumentace specifické pro titul.",
+        "Nativní interní rozlišení s vypnutými texturami a shadery.",
+        "Výkonnostní čítače nebo opakovatelný měřený čas.",
+        "Čistá záloha profilu pro každou hru."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Najděte minimální úroveň mísení"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Přehrávejte kontrolní bod na systémovém ovladači a zachyťte neprůhlednou vrstvu ve stejném okamžiku animace.",
+        "2. Porovnejte Vulkan a OpenGL se všemi ostatními hodnotami beze změny; zaznamenejte, zda jedna cesta již správně skládá efekt.",
+        "3. Pokud obě selžou, získejte krátký softwarově renderovaný referenční snímek a zkontrolujte, co by mělo zůstat viditelné skrz vrstvu.",
+        "4. Vraťte se k vybranému hardwarovému API a zvýšte přesnost míchání přesně o jednu úroveň.",
+        "5. Po každé změně proveďte studené spuštění kontrolního bodu; nevyhodnocujte více úrovní během jedné obnovené relace.",
+        "6. Zastavte na první úrovni, která obnoví průhlednost, poté změřte sekci s efekty po zahřátí zařízení.",
+        "7. Zkontrolujte samostatnou alfa funkci, například mlhu, stíny, částice nebo stmívání pauzovací nabídky.",
+        "8. Uložte hodnotu pouze do profilu tohoto titulu a zaznamenejte kontrolní bod, který ji odůvodnil."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 efekty mohou číst z předchozího framebufferu, zapisovat do něj a kombinovat jeho obsah. Hostitelská GPU cesta může tyto operace přibližovat na různých úrovních přesnosti a nákladů. Nejmenší pracovní úroveň je hodnotná, protože uspokojuje pozorovanou závislost, aniž by platila za nesouvisející chování při každém vykreslení. Rendererové API, které tuto fázi fixuje na základní úrovni, může být výhodnější než mnohem náročnější nastavení míchání na jiném API."
+    },
+    {
+      "type": "heading",
+      "text": "Kritéria pro průhlednost"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava musí obnovit jak vzhled, tak pořadí složení."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Pozadí geometrie zůstává viditelné skrz zamýšlené části efektu.",
+        "Hrany vrstev jsou stabilní a nepřecházejí mezi neprůhlednými a průhlednými.",
+        "Přední prvky HUD se stále zobrazují nad efektem.",
+        "Druhá průsvitná scéna se chová správně.",
+        "Rychlost během teplé session neklesá pod hratelný cíl titulu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Podmínky zastavení během testů míchání"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Tvar je poškozený na každé úrovni: místo toho prozkoumejte výstup textury nebo geometrie.",
+        "Pouze vyšší interní rozlišení narušuje neprůhlednost: izolujte cestu specifickou pro škálování.",
+        "Menu se stává průhledným s herním světem: resetujte poslední úroveň a zaznamenejte regresi.",
+        "Správnost stojí nesnesitelnou rychlost: udržte nižší základ a dokumentujte softwarové renderování pouze jako referenci."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Odstraňte izolovaný experiment s alfou"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nastavte mísení zpět na Automatické, obnovte předchozí renderer, ukončete emulační relaci a ověřte, že se na zaznamenaném kontrolním bodě vrací původní neprůhledný problém. To potvrzuje změněnou proměnnou, než archivujete nebo nahradíte testovací profil."
+    },
+    {
+      "type": "heading",
+      "text": "Zobrazení kontrastu není přesnost alfa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Úroveň černé OLED, konverze HDR, rozsah televize a kontrast pro zpřístupnění mohou způsobit, že průhledná vrstva vypadá tmavší, ale nemění její pořadí vykreslování. Ověřte výsledek v framebufferu na snímku obrazovky před úpravou řetězce externího displeje."
+    },
+    {
+      "type": "link",
+      "text": "Prozkoumejte hardwarové požadavky PCSX2",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

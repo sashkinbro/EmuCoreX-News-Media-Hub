@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "check-fat32-file-size-limits-before-moving-a-ps2-library",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vérifiez les limites de FAT32 avant de copier de grandes images DVD PS2",
+  "summary": "Identifiez le système de fichiers de destination, trouvez chaque image proche ou supérieure à 4 Gio, effectuez une seule copie de gros fichiers et un test de hachage, puis choisissez un format de stockage pris en charge avant de vous engager dans une migration de bibliothèque EmuCoreX.",
+  "heroAlt": "KDE Partition Manager affichant un lecteur amovible et la disposition de son système de fichiers avant la préparation des médias",
+  "searchKeywords": [
+    "FAT32 PS2 ISO 4GB",
+    "grande image DVD PS2",
+    "système de fichiers de carte SD Android",
+    "fichier trop volumineux",
+    "stockage EmuCoreX"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "storage": "Stockage",
+    "integrity": "Intégrité"
+  },
+  "sourceLabels": {
+    "microsoft-filesystems": "Comparaison des limites du système de fichiers",
+    "android-storage": "Modèle de stockage Android"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une carte peut avoir de l'espace libre et quand même rejeter un jeu"
+    },
+    {
+      "type": "paragraph",
+      "text": "FAT32 ne peut pas représenter un fichier régulier de 4 Gio ou plus. De nombreux dumps CD PS2 et DVD à couche unique sont inférieurs à cette limite, tandis que certaines images DVD ne le sont pas. L'espace libre total répond donc à une question différente de celle de la taille maximale d'un fichier unique. Diviser ou compresser une image sans support de l'émulateur n'est pas une solution sûre ; la bibliothèque a besoin d'un fichier jouable, vérifié octet par octet, sur un système de fichiers pris en charge à la fois par Android et le périphérique de stockage."
+    },
+    {
+      "type": "callout",
+      "text": "Le formatage efface le volume sélectionné. Ce guide n’autorise pas le formatage depuis Android ou un ordinateur ; sauvegardez d'abord tous les fichiers et confirmez la cible physique exacte. Si le choix du système de fichiers est incertain, utilisez plutôt le stockage interne."
+    },
+    {
+      "type": "heading",
+      "text": "Collectez les tailles avant de toucher à la destination"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un dossier source dont les sauvegardes personnelles ont déjà été vérifiées.",
+        "La taille exacte en octets de l’image la plus grande, pas une étiquette arrondie du gestionnaire de fichiers.",
+        "Le système de fichiers de la carte de destination rapporté par un outil de stockage du système d’exploitation fiable.",
+        "Deux sauvegardes complètes de tout ce qui est actuellement stocké sur la carte.",
+        "Une spécification de l'appareil ou un test direct confirmant que Android peut monter le système de fichiers proposé en lecture-écriture."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Prouver qu’une grande image peut tenir et survivre au remontage"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Trier l’inventaire source par taille en octets et marquer chaque fichier égal ou supérieur à 4 294 967 296 octets.",
+        "2. Inspecter le système de fichiers de la carte. S’il s’agit de FAT32, arrêter avant de tenter toute image marquée.",
+        "3. Calculer combien de capacité de destination reste après la bibliothèque complète plus une marge de sécurité ; ne pas se fier à la capacité indiquée sur l’étiquette de la carte.",
+        "4. Sur une destination non FAT32 supportée, copiez la plus grande image tout en laissant la source inchangée.",
+        "5. Comparez les nombres d'octets de la source et de la destination, puis calculez SHA-256 pour les deux copies.",
+        "6. Démontez et remontez la carte via le système d'exploitation, hachez à nouveau la destination, et comparez-la avec le premier digest de la destination.",
+        "7. Autorisez un dossier de test à travers le sélecteur de Android et démarrez à froid cette image exacte dans EmuCoreX.",
+        "8. Ce n'est qu'après que les tests de remontage et de lancement réussissent que le reste de la bibliothèque doit être copié."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Une archive peut stocker de grandes données sous plusieurs parties, mais EmuCoreX ne peut pas traiter des segments d'archive arbitraires comme une image de disque normale. De même, changer une extension ne change pas le fichier ni la limite du système de fichiers. Conservez l'original du dump et utilisez une disposition de stockage qui prend en charge le format de travail réel."
+    },
+    {
+      "type": "heading",
+      "text": "Enregistrez le test de frontière"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un enregistrement de stockage utile contient le système de fichiers, le nombre d'octets du plus grand fichier, les octets d'espace libre, et deux hachages effectués sur des montages différents."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Chaque image au-dessus de la limite FAT32 a été identifiée.",
+        "Le système de fichiers de destination choisi est pris en charge à la fois par l'ordinateur de préparation et par l'appareil Android.",
+        "Le fichier de destination le plus volumineux conserve son nombre total d'octets.",
+        "Les valeurs de SHA-256 avant et après le remontage sont identiques.",
+        "EmuCoreX lance le fichier de destination après que Android a accordé l'arborescence des dossiers."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "À quoi ressemble une erreur de fichier volumineux"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Fichier trop volumineux apparaît malgré un espace libre suffisant : la limitation vient du système de fichiers.",
+        "La copie s'arrête à un décalage reproductible avec une erreur E/S : vérifiez l'état de la carte et du lecteur.",
+        "Android offre un accès en lecture seule : le système de fichiers ou l'adaptateur n'est pas inscriptible dans cette configuration de l'appareil.",
+        "Les modifications du hachage après le remontage : retirez la destination de la migration jusqu'à ce que l'intégrité du stockage soit résolue."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Annulez uniquement le test incomplet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Supprimez la copie de destination incomplète après avoir confirmé son emplacement absolu, laissez la source vérifiée intacte et retirez l'accès au dossier de test de EmuCoreX. Si la carte contenait déjà des données utilisateur, ne la formatez pas et ne la réparez pas avant que ces sauvegardes ne soient ouvertes et vérifiées indépendamment."
+    },
+    {
+      "type": "heading",
+      "text": "Le support de exFAT et NTFS dépend de l'appareil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les versions de Android varient dans la prise en charge des systèmes de fichiers amovibles, et un adaptateur USB peut se comporter différemment d'un slot SD interne. Un format lisible sur Windows n'est pas automatiquement inscriptible sur le téléphone. La copie directe, le remontage, le hachage et la séquence de démarrage à froid sont le test de compatibilité qui compte."
+    },
+    {
+      "type": "link",
+      "text": "Comparer les limites officielles du système de fichiers",
+      "url": "https://learn.microsoft.com/windows/win32/fileio/filesystem-functionality-comparison"
+    }
+  ]
+}

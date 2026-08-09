@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation 修复了 RISC-V GTE 时间中一个错误的主机寄存器",
+  "summary": "EndAndLinkBlock 在 RARG2 中计算了正确的完成周期，但却存储了 RARG1，这一条指令的错位可能会将不正确的协处理器就绪状态带入下一个重编译块。",
+  "heroAlt": "来自 DuckStation 拉取请求 #3702 的源证据：CPU/RISCV64：修复 EndAndLinkBlock 中的 gte_completion_tick 存储",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "重编译器",
+    "完成周期"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64：修复 EndAndLinkBlock 中的 gte_completion_tick 存储"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "计算是正确的，直到最终的存储"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation 追踪 PlayStation 几何变换引擎完成工作的时间，因此按照 CPU 的指示观察正确的依赖时序。在 RISC-V 64 重编译器的 EndAndLinkBlock 路径中，新的完成值已经计算到 RARG2。然而，生成的存储指令仍然使用 RARG1，将不同的参数寄存器写入全局 GTE 时序状态，就在控制流转移到另一个块之前。"
+    },
+    {
+      "type": "heading",
+      "text": "一个寄存器替换将 RISC-V 与其他重编译器对齐。"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3702 将 SW 指令更改为将 RARG2 存储到 g_state.gte_completion_tick。没有更改时序公式或客户机指令解码器。证据就是正好在该点的数据流以及其他架构后端的匹配行为。这类小补丁之所以有价值，正是因为错误的寄存器可能在编译过程中存活，生成有效的机器码，并且仅在一个宿主系列上失败。"
+    },
+    {
+      "type": "heading",
+      "text": "过时的完成计数会改变后续指令认为 GTE 已准备好的时间。"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果错误的值比计算出的计时点还早，客户代码可能会过早使用几何结果；如果比计算的计时点晚，DuckStation 可能会插入不必要的等待。无论哪种情况，都可能改变那些交错执行 CPU 工作和 GTE 命令的游戏行为，即使转换后的算术本身是正确的。该错误会跨越代码块边界，所以仅限制在一个生成块内的指令测试可能无法发现它。"
+    },
+    {
+      "type": "heading",
+      "text": "测试应当强制完成值跨越 EndAndLinkBlock。"
+    },
+    {
+      "type": "paragraph",
+      "text": "一个针对重编译器的测试应当发出 GTE 命令，在单元仍然忙碌时结束块，链接到读取或依赖该结果的代码，并比较解释器、RISC-V 及其他重编译器后端。记录计算的 RARG2 值和存储的全局计时点。覆盖 EndAndLinkBlock 处理的条件退出和不同的新 PC 情况。在原生 RISC-V 硬件上反复运行现有 GTE 时序测试，以便执行寄存器分配或调用约定的不同情况。"
+    },
+    {
+      "type": "callout",
+      "text": "补丁是一个操作数，但不变量是架构上的：每个主机后端必须在块链接之间传递计算出的 GTE 完成周期。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "阅读 DuckStation 工程讨论和源代码更改"
+    }
+  ]
+}

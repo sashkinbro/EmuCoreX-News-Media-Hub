@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14548-sample-area-bbox-calculation-for-rt-ds",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 sorgt dafür, dass Render-Target-Hazard-Grenzen das Texture-Wrapping respektieren",
+  "summary": "Clamp- und Wrap-Modi beteiligen sich nun an der Berechnung des abgetasteten Bereichs, der verwendet wird, wenn ein Draw aus seinem eigenen Render- oder Depth-Target liest, wodurch verhindert wird, dass die Hazard-Kopie erreichbare Pixel überspringt.",
+  "heroAlt": "Visuelle Beweise aus dem PCSX2 Pull Request #14548: GS/DX11/GL: Behebung der Berechnung des Bounding-Box-Bereichs beim RT/DS-Sampling-Hazard.",
+  "searchKeywords": [
+    "PCSX2",
+    "Sampling-Hazard",
+    "Bounding Box",
+    "ROV",
+    "Texture-Wrap"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14548": "GS/DX11/GL: Behebung der Berechnung des Bounding-Box-Bereichs beim RT/DS-Sampling-Hazard."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Primitive Koordinaten allein definieren nicht den abgetasteten Texturbereich"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn ein Draw von dem Renderziel oder Tiefenziel sampelt, auf das es auch schreibt, benötigt PCSX2 möglicherweise eine sichere Kopie oder eine Barriere. Der erforderliche Bereich hängt von der Texturadressierung ab. Clamp kann Koordinaten an einer Kante fixieren, während Wrap sie zu einem anderen Teil des Bildes umleiten kann. Die alte Begrenzungsbox für den Sample-Bereich berücksichtigte diese Modi nicht vollständig, sodass sie einen Bereich kopieren konnte, der kleiner oder anders war, als der Shader erreichte."
+    },
+    {
+      "type": "heading",
+      "text": "Clamp-bewusste Begrenzungen speisen den RT/DS-Hazard-Pfad."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #14548 korrigiert die Begrenzungsberechnung, die vom Hardware-Renderer und den Direct3D 11- und OpenGL-Gerätepfaden geteilt wird. Sobald der erreichbare Sample-Bereich bekannt ist, kann die Hazard-Logik die korrekten Pixel schützen oder kopieren. Der Patch vereinfacht auch die Handhabung der vollständigen Barriere: Das Speichern eines separaten Sample-Rechtecks für jede Primitive-Gruppe erzeugte Komplexität, ohne im Barrierefall genügend Vorteil zu zeigen."
+    },
+    {
+      "type": "heading",
+      "text": "Die Fix ist spezifisch für Self-Sampling-Abhängigkeiten."
+    },
+    {
+      "type": "paragraph",
+      "text": "Dies ist keine allgemeine Korrektur für Ansichtsfenster oder Schere. Sie gilt, wenn ein Render- oder Tiefenziel gleichzeitig eine Texturquelle ist, ein Muster, bei dem Reihenfolge und Bereichsbesitz wichtig sind. Mit aktiviertem ROV auf Direct3D 11 war der falsche kopierte Bereich im bereitgestellten Bakusou Dekotora Densetsu-Dump sichtbar. Andere normale Texturzeichnungen sollten den Hazard-Zweig nicht nehmen und bilden daher einen wichtigen negativen Test."
+    },
+    {
+      "type": "heading",
+      "text": "Tests sollten Clamp-, Wrap- und Full-Barrier-Pfade separat prüfen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der gemeldete Dump wurde mit Direct3D 11 und ROV überprüft und war das einzige geänderte Bild in diesem Durchlauf. Eine stärkere Matrix sollte horizontale und vertikale Clamp-Modi variieren, primitive Gruppen, die eine Wrap-Grenze überschreiten, Render-Target- und Depth-Target-Abtastung sowie sowohl Partial-Copy- als auch Full-Barrier-Pfade. Vergleichen Sie exakte Dump-Bilder und notieren Sie die berechnete Begrenzungsbox; ein visuell korrektes Ergebnis mit einer übergroßen Kopie kann immer noch eine Leistungsverschlechterung verbergen."
+    },
+    {
+      "type": "callout",
+      "text": "Die Sicherheitsregion muss die Adressen beschreiben, die der Shader nach dem Wrapping erreichen kann, nicht nur die unveränderten Texturkoordinaten, die vom Gast übermittelt werden."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14548",
+      "label": "Lesen Sie die PCSX2 Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

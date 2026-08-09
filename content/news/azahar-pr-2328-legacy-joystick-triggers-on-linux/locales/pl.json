@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar kalibruje dawne centra przycisków wyzwalaczy zamiast zakładać zero",
+  "summary": "Osie wyzwalaczy Steam Deck mogą spoczywać blisko -32767 w API Joystick SDL; zapisanie początkowego środka przywraca stare mapowania, które w przeciwnym razie zgłaszałyby L i R jako wciśnięte.",
+  "heroAlt": "Dowody źródłowe z pull request Azahar #2328: BUGFIX: Legacy joystick triggers on linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "kalibracja wyzwalacza",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Wejście",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Legacy joystick triggers on linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wartość neutralna wyzwalacza zależy od API SDL i mapowania urządzenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Użytkownicy Steam Deck za pomocą EmuDeck zgłaszali, że przyciski L i R są stale wciśnięte. Ich starsze profile używały osi spustów poprzez Joystick API SDL, gdzie wartość spoczynkowa mogła wynosić -32767 zamiast zera. Nowsza implementacja bezpośredniego stanu przestała zachowywać próbki historyczne i w związku z tym ponownie używała założenia o środku zerowym, które było prawidłowe dla niektórych urządzeń, ale traktowało tę pozycję neutralną jako pełne wciśnięcie."
+    },
+    {
+      "type": "heading",
+      "text": "Inicjalizacja rejestruje rzeczywisty środek spoczynkowy urządzenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2328 dodaje kalibrację osi w warstwie starszego joysticka. Gdy urządzenie jest inicjalizowane, Azahar zapisuje aktualny środek i porównuje późniejsze wartości z nim. Mapowanie następnie mierzy ruch względem zaobserwowanego punktu neutralnego zamiast stosować na stałe interpretację zakresu SDL. Jest to szczególnie odpowiednie dla wstecznej kompatybilności, ponieważ stare zapisane przypisania mogą odnosić się do surowych osi joysticka."
+    },
+    {
+      "type": "heading",
+      "text": "Nowe mapowania zwykle używają kontrolera SDL i unikają starszej niejednoznaczności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nowoczesny standard API kontrolera Azahar ujednolica semantykę triggerów i nie jest celem tej poprawki. Użytkownicy mapujący teraz kontroler nie powinni zauważyć żadnych zmian. Łatka zachowuje starsze profile Joysticka i nietypowe elementy sterujące, które pozostają poza zunifikowanym API. Utrzymanie zachowania w określonym zakresie zapobiega zmianom w backendzie już właściwie raportującym znormalizowane trziggery kontrolera przez heurystyki kalibracji."
+    },
+    {
+      "type": "heading",
+      "text": "Testy wymagają zarówno osi wyśrodkowanych w zerze, jak i osi ze środkiem ujemnym."
+    },
+    {
+      "type": "paragraph",
+      "text": "Rozpocznij każde urządzenie z triggerami zwolnionymi, potwierdź skalibrowany środek, następnie powoli i całkowicie naciśnij i zwolnij. Testuj Steam Deck, kontroler desktopowy używający starszego API, podłączanie w trakcie pracy, zawieszanie/wznawianie oraz urządzenie podłączone podczas trzymania triggera. Istniejące profile muszą przywrócić się bez ponownego mapowania, podczas gdy nowe profile API kontrolera pozostają identyczne. Przypadek z triggerem trzymanym przy inicjalizacji wymaga udokumentowanej ścieżki odzyskiwania, aby jedno złe odczytanie nie stało się trwałym środkiem sesji."
+    },
+    {
+      "type": "callout",
+      "text": "Kalibracja przywraca brakujący punkt odniesienia: surowa wartość wyzwalacza oznacza naciśnięcie tylko w odniesieniu do obserwowanej neutralnej pozycji tego urządzenia."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany źródłowe"
+    }
+  ]
+}

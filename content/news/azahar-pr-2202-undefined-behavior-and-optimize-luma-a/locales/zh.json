@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 消除了 Luma 内存别名的有符号溢出歧义",
+  "summary": "无符号的第31位掩码使别名检测在 C++ 中有定义，同时提前返回和不太可能的 MMIO 分支给常见的内存路径更直接的指令流。",
+  "heroAlt": "来自 Azahar 拉取请求 #2202 的源证据：core/memory：修复未定义行为并优化 Luma 别名路径",
+  "searchKeywords": [
+    "Azahar",
+    "Luma 别名",
+    "未定义行为",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "核心",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory：修复未定义行为并优化 Luma 别名路径"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "第 31 位是通过有符号算术形成的"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS暴露了一种别名地址形式，其高位通知Azahar绕过FCRAM或MMIO的常规页表。代码用1 << 31测试并清除此位。当int为32位时，将有符号数的1移入符号位是未定义行为，这允许优化编译器以不保留预期掩码的方式转换周围代码。"
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u使测试和清除操作都已定义"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求#2202将LUMA_ALIAS_BIT声明为无符号字面量0x80000000u。读写路径对vaddr与该常量进行测试，并通过清除它来派生paddr。该更改虽小，但具有架构意义：地址操作应使用表示VAddr的无符号类型，而不依赖编译器对溢出有符号算术的选择结果。"
+    },
+    {
+      "type": "heading",
+      "text": "早期返回将FCRAM与冷路径MMIO分离"
+    },
+    {
+      "type": "paragraph",
+      "text": "FCRAM 别名仍然是主要有用的路径，并以立即返回结束。随后检查 MMIO 并标记为不太可能，就像相对于普通页表访问的别名条目本身一样。将前面的 else-if 链扁平化可以让 Clang 更线性地排列常见流程，并将罕见的自定义处理程序代码远离大多数读写使用的指令缓存路径。"
+    },
+    {
+      "type": "heading",
+      "text": "优化声明需要编译器和别名覆盖"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于 FCRAM、有效的 32 位 MMIO、位于两个范围之外的别名地址以及普通页表地址，运行 Luma 别名读写。比较 Clang 和 GCC 在多个优化级别下启用 UBSan 的结果，验证没有有符号移位报告并且结果相同。检查生成的代码以确认预期的提前返回，但优先保证正确性。对于严格支持的 32 位路径以外的 MMIO 宽度仍必须根据现有语义继续执行或失败。"
+    },
+    {
+      "type": "callout",
+      "text": "更快的路径从已定义的行为开始：在分支提示或汇编结构可被信任之前，地址标志必须是无符号位掩码。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "阅读 Azahar 工程讨论和源代码变更"
+    }
+  ]
+}

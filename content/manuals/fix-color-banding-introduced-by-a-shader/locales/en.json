@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Remove color banding introduced by a post-processing shader",
+  "summary": "Capture one smooth sky or fog gradient with post-processing disabled, re-enable shader stages individually, inspect output before display conversion, and keep only a preset whose precision does not crush or posterize the source.",
+  "heroAlt": "PCSX2 shader processing illustration from an official graphics progress report",
+  "searchKeywords": [
+    "PS2 shader banding",
+    "EmuCoreX gradient posterization",
+    "post processing precision",
+    "sky bands",
+    "color crush"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "post-processing": "Post-processing"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 settings and capture evidence",
+    "android-hdr": "Android display conversion context"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Prove the bands begin after the emulator frame"
+    },
+    {
+      "type": "paragraph",
+      "text": "Banding turns a smooth gradient into visible steps. The game may already use low-precision art, a shader can quantize intermediate color, screenshot encoding can reduce precision, or the display chain can crush values. Pick a large stable gradient such as dusk sky, fog, or a menu fade. Capture direct output with all post-processing disabled before judging a television photograph."
+    },
+    {
+      "type": "callout",
+      "text": "Dithering can hide steps by adding noise, but it does not recover values already clipped by an earlier shader stage. Find the stage that loses precision before treating noise as a cure."
+    },
+    {
+      "type": "heading",
+      "text": "Create a gradient reference set"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A stable in-game save with a large low-motion gradient.",
+        "Lossless or high-quality direct captures with shaders off and on.",
+        "Shader preset copied to a rollback location.",
+        "HDR conversion, night mode, and accessibility color transforms disabled for baseline.",
+        "A second gradient with different brightness and hue."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Identify the first precision-losing stage"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot with post-processing disabled and capture both gradients.",
+        "2. Enable the preset but turn off every optional stage its interface exposes.",
+        "3. Add one stage at a time, restarting the scene when the pipeline requires reinitialization.",
+        "4. Compare histogram steps and visible contour boundaries in direct captures, not recompressed previews.",
+        "5. When the responsible stage is found, reduce its strength or choose its documented higher-precision path.",
+        "6. Retest without emulator dithering, then enable only the intended dithering option if residual source steps remain.",
+        "7. Reconnect the normal display mode and verify near-black plus bright gradients separately.",
+        "8. Save a title-specific preset when other games need a different tonal pipeline."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "A shader chain is ordered: an early stage can clip, quantize, or remap values that later stages cannot reconstruct. Direct capture locates whether the loss exists before Android or the external display transforms the frame. Two brightness ranges prevent a correction for sky highlights from silently crushing dark fog."
+    },
+    {
+      "type": "heading",
+      "text": "Gradient-quality acceptance"
+    },
+    {
+      "type": "paragraph",
+      "text": "The final preset must preserve tonal detail without changing game timing or color intent."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Large gradients transition without new contour rings.",
+        "Near-black steps remain distinguishable and highlights are not clipped.",
+        "HUD whites and skin tones do not acquire a color cast.",
+        "The second gradient improves under the same stage order.",
+        "Frame pacing and sustained GPU load stay within baseline tolerance."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Banding sources outside the shader"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Bands exist with processing disabled in direct capture: compare original game output or assets.",
+        "Direct capture is smooth but the television bands: inspect RGB range, HDR, and panel processing.",
+        "Only shared screenshots show rings: use a lossless local file before changing the preset.",
+        "A stage fixes bands by blurring detail: reject it and restore the source-preserving chain."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restore the known unprocessed frame"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disable the edited preset, restore its saved file or default values, turn off experimental dithering, and capture the baseline gradient again. Re-enable display transforms only after the emulator output is proven smooth."
+    },
+    {
+      "type": "heading",
+      "text": "Screenshots can change color pipelines"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some Android capture paths tone-map HDR or store a different color space from the displayed frame. Record capture format and display mode; use both direct evidence and a calibrated display check when the problem exists only in HDR."
+    },
+    {
+      "type": "link",
+      "text": "Read Android HDR pipeline guidance",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Los documentos PPSSPP muestran las reglas exactas de bits de PSP para multiplicar y dividir VFPU",
+  "summary": "Los ayudantes de referencia explican el comportamiento de denormalización, subdesbordamiento, redondeo, signo, infinito y NaN para que las rutas del host JIT puedan compararse con los resultados reales del PSP.",
+  "heroAlt": "Evidencia de fuente del pull request #21815 de PPSSPP: Implementar (esperemos) vmul/vdiv exactos a nivel de bits",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "punto flotante",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implementar (esperemos) vmul/vdiv exactos a nivel de bits"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 todavía deja espacio para comportamientos específicos de hardware en casos límite"
+    },
+    {
+      "type": "paragraph",
+      "text": "La multiplicación y división de flotantes ordinarias parecen portables hasta que las entradas se acercan a números subnormales, desbordamiento, infinito o NaN. La PSP VFPU se comporta como float32 con redondeo al más cercano, empate a par, tratando los subnormales como cero y los resultados pequeños siendo reiniciados a cero, además de una carga útil específica de NaN y regla de signo. El host x86, ARM y la configuración del compilador pueden diferir exactamente en esos límites, causando raras discrepancias en la lógica del juego o gráficos."
+    },
+    {
+      "type": "heading",
+      "text": "La referencia trabaja a partir de bits puros antes y después de la aritmética."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #21815 agrega ayudantes explícitos vfpu_mul y vfpu_div para referencia. Ellos leen los operandos como valores uint32, colapsan las entradas subnormales a cero con signo, realizan la aritmética e inspeccionan los bits del resultado. Los resultados en o por debajo del umbral de reinicio medido se recalculan en precisión doble para decidir si se conserva el resultado normal más pequeño o se retorna cero con signo. Cualquier NaN se canoniza a la carga útil específica 0x7F800001 de VFPU con signo derivado del operando."
+    },
+    {
+      "type": "heading",
+      "text": "El umbral captura un límite que las banderas FTZ del host pueden no compartir."
+    },
+    {
+      "type": "paragraph",
+      "text": "El límite de apagado observado es FLT_MIN menos una cuarta parte de FLT_TRUE_MIN. Eso parece coincidir con el límite flush-to-zero probado en x86, pero no se asume que coincida con cada host ARM. Codificar el comportamiento en una referencia legible le da a los backends JIT una fuente de verdad, incluso si su implementación más rápida utiliza modos de registro de control, instrucciones vectoriales o ramas correctivas. Los ayudantes son material de referencia más que una afirmación de que C++ escalar es la ruta crítica final."
+    },
+    {
+      "type": "heading",
+      "text": "Los vectores de límite exhaustivos deben impulsar la conformidad del backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pruebe cero positivo y negativo, cada clase subnormal, valores alrededor del umbral de apagado, los números finitos más grandes, infinitos, NaNs silenciosos y señalizadores, y combinaciones de signos de operandos. Compare intérprete, x86, ARM64 y otros resultados JIT bit a bit para vmul y vdiv, no con un epsilon. Las pruebas diferenciales aleatorias deben concentrarse en pares de exponentes cerca del desbordamiento y el subdesbordamiento. La compilación con fast-math no debe borrar la canonización, y las operaciones fusionadas deben revisarse por separado porque tienen diferentes puntos de redondeo."
+    },
+    {
+      "type": "callout",
+      "text": "La emulación bit a bit comienza donde la igualdad numérica aproximada se detiene: cero con signo, un bit de subdesbordamiento o una carga de NaN pueden ser un estado observable del invitado."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de PPSSPP"
+    }
+  ]
+}

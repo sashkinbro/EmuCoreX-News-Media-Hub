@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 empêche l'échec de l'allocation de texture ImGui avant qu'il ne devienne un crash",
+  "summary": "Les chemins de création, de téléchargement et de destruction traitent désormais l'absence de BackendUserData comme un état réel, empêchant un échec d'allocation de se répercuter dans les opérations handle natif et map.",
+  "heroAlt": "Preuve source de la pull request PCSX2 #14655 : GS : Mieux gérer les risques liés à la création de textures imgui.",
+  "searchKeywords": [
+    "PCSX2",
+    "Texture ImGui",
+    "échec d'allocation",
+    "GSTexture",
+    "crash"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS : Mieux gérer les risques liés à la création de textures imgui."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui peut demander une texture lorsque le GPU ne peut pas en fournir une"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les atlas de polices et autres images d'interface passent par les états WantCreate, WantUpdates et WantDestroy. L'allocation de textures peut échouer à cause d'une perte de périphérique, d'une pression sur les ressources, de dimensions non prises en charge ou d'une autre erreur de backend. L'ancien branchement de création signalait l'échec mais continuait ensuite comme si un GSTexture existait, en demandant sa poignée native et en passant au code de téléchargement. Le diagnostic précédait donc une déréférence nulle plutôt que de la contenir."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate ne passe au suivant qu'avec des données backend valides"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14655 enveloppe CreateTexture dans une branche de pointeur réussi. Seule une texture réelle reçoit un ImTextureID et BackendUserData avant que le code ne continue vers le téléchargement de taille complète. En cas d'échec, PCSX2 émet pxFailRel et sort de l'état. WantUpdates vérifie séparément BackendUserData avant les opérations map ou ligne par ligne de Update, de sorte qu'une création échouée précédente ne puisse pas être confondue avec une ressource initialisée."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy accepte également que la création n'ait peut-être jamais été complétée"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'état de destruction recycle et invalide maintenant la texture uniquement lorsque BackendUserData n'est pas nul. Cela a de l'importance lorsque ImGui abandonne une requête d'atlas après un échec d'allocation ou lorsqu'une transition d'état est en concurrence avec la logique de récupération. Le comportement de recyclage en lui-même n'est pas modifié pour les textures valides, y compris la réutilisation d'un atlas de même taille ; le correctif fait en sorte que le graphe de durée de vie inclue une branche ressource absente du début à la fin."
+    },
+    {
+      "type": "heading",
+      "text": "L'injection de défaillance est plus forte que d'attendre le problème #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduisez le dump de plantage lié si possible, puis ajoutez un hook backend contrôlé qui fait que la prochaine CreateTexture d'ImGui retourne null. L'affichage OSD et le rendu de police devraient signaler un échec sans planter, télécharger des pixels ou recycler un pointeur invalide. Restaurez l'allocation et confirmez qu'un atlas ultérieur peut être créé et affiché. Répétez l'échec lors du redimensionnement, de l'éviction de police, de la réinitialisation du périphérique et de l'arrêt sur tous les backends matériels, et exécutez les tests OSD normaux pour vous assurer que le chemin protégé ne bloque pas les mises à jour valides."
+    },
+    {
+      "type": "callout",
+      "text": "La correction complète la machine à états de texture : l'échec d'allocation est une branche terminale pour cette requête, et non un avertissement suivi du code de téléchargement normal."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications de code source"
+    }
+  ]
+}

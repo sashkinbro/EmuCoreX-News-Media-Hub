@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 关闭了 libretro 音频传输中的交叉线程竞态问题",
+  "summary": "现在对共享转换样本缓冲区的每个操作都使用一个互斥锁，防止在另一个线程写入音频时重新分配或关闭使内存无效。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21883 的源码证据：libretro：修复音频缓冲区数据竞态和 >1024 帧样本推送",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "音频竞态",
+    "互斥锁",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "音频",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro：修复音频缓冲区数据竞态和 >1024 帧样本推送"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "两个线程可能同时拥有相同的原始指针"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 libretro 前端路径中，System_AudioPushSamples 将 PSP 音频转换后追加到 output_audio_buffer。对于 OpenGL 后端，样本推送可以通过仿真端的 GL 命令队列到达，而 retro_run 在 libretro 线程上清空缓冲区。初始化、关闭以及容量增长也会替换或释放分配。如果没有统一的所有权规则，realloc 可能在另一个线程正在读写指针时使其无效。"
+    },
+    {
+      "type": "heading",
+      "text": "现在单个互斥锁定义了缓冲区的生命周期"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883 添加了 output_audio_buffer_mutex，并在初始化、销毁、上传和 System_AudioPushSamples 中获取该锁。容量辅助函数明确记录需要调用者持有该锁，因此增长会在与追加所需相同的关键区内发生。上传在批处理回调和大小重置期间保持锁，防止生产者在传输过程中改变有效负载。"
+    },
+    {
+      "type": "heading",
+      "text": "该修复同时保护结构和样本"
+    },
+    {
+      "type": "paragraph",
+      "text": "仅仅锁定大小或容量是不够的：数据、大小和容量构成一个不变式。指针必须指向至少有容量个元素的分配区域，并且大小必须标识其中已初始化的样本。互斥锁使对三者的更新作为一个操作可见。这对于多线程的 GL 定时尤其重要，但初始化和释放使用相同的规则，因此快速的核心重启不会与晚到的生产者发生竞争。"
+    },
+    {
+      "type": "heading",
+      "text": "压力测试必须变化回调和渲染器的时序"
+    },
+    {
+      "type": "paragraph",
+      "text": "在多次暂停、快进、重置、切换内容和关闭核心的同时，运行 libretro 搭配 OpenGL、Vulkan 以及软件渲染。使用快速、缓慢和不规则批次的音频回调，以及超过普通帧大小的样本推送。ThreadSanitizer 不应检测到对缓冲区元组的未同步访问。监听并对捕获的 PCM 进行哈希以检测间隙或重新排序，并确认没有回调重新进入等待同一个非递归互斥锁的路径。"
+    },
+    {
+      "type": "callout",
+      "text": "可增长的音频缓冲区是一个共享对象，而不是三个独立的字段；它的指针、大小和容量必须在同一个锁下跨线程使用。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "阅读 PPSSPP 的工程讨论和源代码更改"
+    }
+  ]
+}

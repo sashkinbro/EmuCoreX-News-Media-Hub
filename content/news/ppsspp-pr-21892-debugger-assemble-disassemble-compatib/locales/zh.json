@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21892-debugger-assemble-disassemble-compatib",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 使 VFPU 通过其汇编器完成反汇编的往返",
+  "summary": "指令名称、饱和表示法、条件操作数和向量宽度现在与公认的汇编语法相匹配，并通过完整的游戏文本往返检查验证。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21892 的源证据：改进调试器汇编/反汇编兼容性",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "armips",
+    "反汇编器",
+    "MIPS 调试器"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "工具",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21892": "改进调试器汇编/反汇编兼容性"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "当调试器可以修补代码时，仅可读文本是不够的"
+    },
+    {
+      "type": "paragraph",
+      "text": "反汇编器可能会打印出可理解的助记符，但仍然无法解析回相同的机器字。PPSSPP 的调试器通过其 WebSocket 接口暴露汇编和反汇编操作，因此语法差异会成为功能性错误。重命名的 VFPU 操作、缺少 .s 后缀、目标宽度不正确或装饰性括号都可能导致汇编失败或悄悄地选择不同的编码。"
+    },
+    {
+      "type": "heading",
+      "text": "这些更改遵循对游戏可执行文件的往返验证证据"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #21892 是通过一个脚本开发的，该脚本对游戏的 .text 区段中每条指令进行反汇编，组装生成的文本，再次反汇编并比较输出。PPSSPP 还推进了其对 VFPU 解析更改的 armips 依赖。该补丁从 vpfx 源参数中去除了不适当的括号，为 vpfxd 添加了显式饱和范围，并使用与汇编器兼容的标量浮点比较名称，如 c.eq.s。"
+    },
+    {
+      "type": "heading",
+      "text": "向量转换需要从操作码中推导目标大小"
+    },
+    {
+      "type": "paragraph",
+      "text": "VFPU 转换助记符并不总是保留源宽度。新的安全四分之一、二分之一、双倍和四倍向量大小辅助工具允许反汇编器打印 vuc2ifs、vc2i、vi2uc、vi2c、vi2us 和 vi2s 系列指令的实际目标形状。条件移动和分支形式直接打印立即条件索引，而不是 CC[imm3] 显示令牌。这些细节决定文本是否能映射回原始位字段。"
+    },
+    {
+      "type": "heading",
+      "text": "更广泛的语料库应区分稳定语法和别名"
+    },
+    {
+      "type": "paragraph",
+      "text": "在商业可执行文件、家庭自制程序中重复往返操作，为每个 VFPU 编码、无效编码和边界向量大小生成覆盖率。在 UI 和 WebSocket APIs 中测试输出，然后使用确切的捆绑 armips 版本进行汇编。比较机器字，而不仅仅是归一化字符串，同时允许文档中规定的标准别名。包括饱和模式、字面数据中的 NaN、分支目标以及目标形状无效的指令，以便调试器报告错误而不是凭空生成寄存器。"
+    },
+    {
+      "type": "callout",
+      "text": "当每个打印的操作数都是指令位的可逆描述，而不仅仅是一个熟悉的标签时，调试器反汇编才变得可靠。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21892",
+      "label": "阅读 PPSSPP 的工程讨论和源代码更改"
+    }
+  ]
+}

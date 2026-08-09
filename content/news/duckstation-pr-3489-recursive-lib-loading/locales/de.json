@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation folgt verschachtelten PSF-Bibliotheken zum tatsächlichen Einstiegspunkt des Programms",
+  "summary": "Eine Änderung mit zwei Zeilen Rekursion sorgt dafür, dass die tiefste Eltern-_lib PC und SP bereitstellt, wodurch ein Loader repariert wird, der die Suche nach dem Einstiegspunkt eine Ebene zu früh gestoppt hat.",
+  "heroAlt": "Quellenbeweis aus Pull Request #3489 von DuckStation: PSFLoader: Rekursive _lib-Ladung beheben",
+  "searchKeywords": [
+    "DuckStation",
+    "PSF-Loader",
+    "_lib",
+    "Programmzähler",
+    "Stackzeiger"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Speicher",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Rekursive _lib-Ladung beheben"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein PSF kann den ausführbaren Zustand über mehr als eine Bibliothek erben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Portable Sound Format-Dateien können über _lib auf ein übergeordnetes Element verweisen, und dieses übergeordnete Element kann auf eine andere erste Bibliothek verweisen. Das rekursive Laden der Daten ist nicht ausreichend, wenn der Loader PC und SP aus der falschen Ebene auswählt. Die vom Änderungshinweis zitierte Formatvorgabe besagt, dass die erste _lib-Kette bis zu ihrem tiefsten Mitglied verfolgt werden muss; dieser ausführbare Kontext initialisiert die Wiedergabe, nachdem alle geerbten Abschnitte zusammengefügt wurden."
+    },
+    {
+      "type": "heading",
+      "text": "Die alte Tiefenprüfung hat das Entry-Point-Flag zu früh verbraucht"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader erstellte zuvor lib_use_pc_sp aus depth == 0. Dadurch konnte die erste übergeordnete Bibliothek den Programmzähler und den Stackpointer beanspruchen und verhinderte anschließend, dass tiefere Rekursion dies ebenfalls tun konnte. Pull Request #3489 übergibt stattdessen das use_pc_sp-Flag des Aufrufers rekursiv an LoadLibraryPSF und setzt es erst nach der Rückkehr des First-Library-Aufrufs auf false. Das tiefste erste übergeordnete Element erhält das Flag, bevor eine flachere Ebene es verwendet."
+    },
+    {
+      "type": "heading",
+      "text": "Nur die Kette der ersten Bibliothek besitzt die Auswahl von PC und SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Verwendung von use_pc_sp während des Unwinds bewahrt eine weitere PSF-Regel: spätere Bibliotheken können Daten beitragen, ohne wiederholt die anfänglichen Register zu ersetzen. Der Patch flacht nicht jedes _lib in eine ungeordnete Liste ab. Er unterscheidet den rekursiven First-Parent-Pfad, der die Ausführung etabliert, von den danach geladenen Geschwistern und hält die kleinstmögliche Änderung in psf_loader.cpp, anstatt das Container-Format umzuschreiben."
+    },
+    {
+      "type": "heading",
+      "text": "Eine Regressions-Fixierung benötigt mindestens drei verschachtelte Ebenen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konstruiere ein PSF, dessen Wurzel, erster Elternteil und tiefster erster Elternteil jeweils unterschiedliche PC- und SP-Werte deklarieren, plus eine sekundäre Bibliothek mit einem weiteren Paar. DuckStation sollte alle erforderlichen Daten laden, aber von den Registern des tiefsten ersten Elternteils starten; das Ändern einer nicht-ersten Bibliothek darf den Einstiegspunkt nicht verschieben. Vergleiche die Wiedergabe und die protokollierten Register mit Mednafen oder einem anderen formatkonformen Loader, teste dann fehlende, zyklische und unlesbare Bibliotheksverweise auf saubere Fehler statt auf unendliche Rekursion."
+    },
+    {
+      "type": "callout",
+      "text": "Die Korrektur betrifft die Rekursionsreihenfolge: Daten können aus vielen Bibliotheken stammen, aber der anfängliche PC und SP gehören zum tiefsten Mitglied der ersten _lib-Kette."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Lesen Sie die DuckStation-Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

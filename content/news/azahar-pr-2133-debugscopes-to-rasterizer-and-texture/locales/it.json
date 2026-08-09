@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Le etichette Azahar collegano il lavoro OpenGL con l'operazione del renderer che l'ha causato",
+  "summary": "DebugScopes nominati intorno ai percorsi draw e texture-runtime trasformano le catture GPU in una gerarchia di lavori di reinterpretazione, cancellazione, copia, caricamento, scaricamento, mipmap e ridimensionamento.",
+  "heroAlt": "Evidenza della fonte dalla pull request Azahar #2133: renderer_gl: Aggiungi `DebugScopes` al rasterizzatore e a texture-runtime",
+  "searchKeywords": [
+    "Azahar",
+    "Debugging OpenGL",
+    "DebugScope",
+    "RenderDoc",
+    "tempo di esecuzione della texture"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "Strumenti",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl: Aggiungi `DebugScopes` al rasterizzatore e a texture-runtime"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un flusso di comandi GL perde la ragione C++ dietro ogni chiamata"
+    },
+    {
+      "type": "paragraph",
+      "text": "I debugger GPU possono mostrare glBindTexture, glFramebufferTexture, draw e copy, ma una lunga cattura non indica automaticamente quale operazione Azahar le abbia generate. Diagnosticare un errore del renderer richiede quindi di correlare manualmente l'ordine delle API con le tracce CPU. La pull request #2133 aggiunge etichette strutturate ai confini del rasterizzatore e del runtime delle texture dove l'emulatore conosce ancora l'operazione semantica."
+    },
+    {
+      "type": "heading",
+      "text": "Gli scope includono parametri che distinguono operazioni simili"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch nomina RasterizerOpenGL::Draw e reinterpretazione delle texture, clear con o senza FBO, copy, blit, generazione di mipmap, handle copy, upload, custom upload, download, attach, scale-up e percorsi blit-scale. Le etichette includono formati pixel, colori di clear, conteggi di copy o valori di scale dove utile. Una cattura può quindi separare due copie visivamente simili provenienti da decisioni diverse di formato o scala."
+    },
+    {
+      "type": "heading",
+      "text": "La profondità dello scope è considerata solo quando il debug del renderer è abilitato"
+    },
+    {
+      "type": "paragraph",
+      "text": "La profondità dello scope del sampler aumenta condizionalmente in base a Settings::values.renderer_debug. Il normale gameplay non dovrebbe mantenere l'annidamento diagnostico perché non verrà mai esportato. Quando abilitato, la gerarchia può essere utilizzata dai marker di debug e dagli strumenti di cattura, collegando un gruppo di chiamate GL a uno stack di chiamate C++. Gli scope non modificano la sincronizzazione né correggono il rendering; rendono precisa l'indagine successiva."
+    },
+    {
+      "type": "heading",
+      "text": "La convalida della cattura dovrebbe coprire l'annidamento e l'overhead disabilitato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Abilitare il debug del renderer, catturare scene che caricano, reinterpretano, cancellano, copiano, scalano e scaricano texture, e confermare che ogni gruppo GL abbia il nome e i parametri corretti con un annidamento bilanciato. Attivare un ritorno anticipato o un'operazione fallita per assicurarsi che RAII chiuda lo scope. Disabilitare il debug e verificare che i marker e gli incrementi di profondità scompaiano, quindi eseguire il benchmark dell'overhead CPU. Le etichette devono identificare l'operazione effettivamente eseguita piuttosto che nomi copiati e incollati che creano prove false."
+    },
+    {
+      "type": "callout",
+      "text": "I livelli di debug non cambiano i pixel; cambiano se una cattura può rispondere a quale operazione Azahar ha prodotto quei pixel."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "Leggi la discussione ingegneristica Azahar e le modifiche al codice sorgente"
+    }
+  ]
+}

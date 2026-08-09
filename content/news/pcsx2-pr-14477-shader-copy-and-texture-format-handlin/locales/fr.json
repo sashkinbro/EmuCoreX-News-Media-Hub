@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 déplace la politique de conversion de texture derrière GSDevice",
+  "summary": "StretchRectAuto, CreateCompatible et ShaderConvertSelector réorganisent la gestion de la copie de shader et des formats de profondeur afin que le rendu matériel puisse demander une conversion sans connaître les détails du pipeline de chaque backend.",
+  "heroAlt": "Preuve visuelle de la pull request #14477 de PCSX2 : GS/HW : Refactorisation de la copie de shader et de la gestion des formats de texture.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "conversion de texture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW : Refactorisation de la copie de shader et de la gestion des formats de texture."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache portait des décisions qui appartiennent à la frontière du backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les copies de shaders dans PCSX2 doivent sélectionner une conversion basée sur le format source, le format de destination, le nombre de bits par pixel émulé et le filtrage. Avant la pull request #14477, GSTextureCache et GSRendererHW traitaient trop de cette logique. La refactorisation déplace le choix derrière GSDevice afin que le code de rendu de niveau supérieur décrive la copie dont il a besoin au lieu de sélectionner lui-même les détails spécifiques du shader backend."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto et CreateCompatible expriment l'opération, non l'API"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto accepte les deux textures et les informations de format émulé, puis choisit le shader de conversion à l'intérieur de GSDevice. CreateCompatible crée une texture correspondant au format d'une texture existante. ShaderConvertSelector ajoute des bits modificateurs qui peuvent représenter des conversions liées sans multiplier des points d'entrée de shader non liés. Ensemble, ils préparent la profondeur stockée en couleur R32 et les futures voies de profondeur entière tout en maintenant le support inactif de profondeur-couleur ROV derrière la même interface."
+    },
+    {
+      "type": "heading",
+      "text": "Les renommages rendent explicite l'intention de profondeur et d'ID de primitive"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif aligne les shaders de conversion OpenGL plus étroitement avec Vulkan, renomme l'initialisation de l'image de stencil en initialisation de l'ID de primitive, et change l'étiquette rgba8_16bits en rgb5a1_16bits. Float32 devient DepthColor, tandis que les noms de sélecteurs FLOAT32, FLOAT24 et FLOAT16 deviennent DEPTH32, DEPTH24 et DEPTH16. Le filtrage bilinéaire passe également d'un booléen à un enum, laissant de la place pour des modes explicites au lieu d'un autre flag surchargé."
+    },
+    {
+      "type": "heading",
+      "text": "Un refactor pur nécessite des tests d'identité de sortie sur chaque moteur de rendu."
+    },
+    {
+      "type": "paragraph",
+      "text": "Le contrat indiqué est une sortie identique au code précédent. Les exécutions de dump doivent donc comparer les résultats de trames à travers Direct3D, OpenGL, Vulkan et Metal avec différents formats de textures, copies de profondeur, résolution native et suréchantillonnage. Metal a déjà reçu un contrôle d'exécution de dump signalé, mais le vaste ensemble de fichiers signifie que la compilation des shaders et la sélection de copies doivent également être testées sur les autres architectures matérielles. Toute différence de pixel nécessite une explication avant que les travaux ultérieurs sur ROV n'utilisent le nouveau chemin."
+    },
+    {
+      "type": "callout",
+      "text": "La promesse visible par l'utilisateur est délibérément conservatrice : aucun nouvel effet pour l'instant, mais une frontière rendueur/backend plus étroite que les formats de profondeur ultérieurs peuvent étendre sans dupliquer la politique de conversion."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les changements de source"
+    }
+  ]
+}

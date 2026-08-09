@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 memblokir klien PINE dari mencapai penangan MMIO yang terkait dengan thread",
+  "summary": "Antarmuka memori eksternal sekarang menolak halaman VTLB yang dilayani oleh callback perangkat kustom, membatasi pembacaan langsungnya ke memori yang aman di luar thread emulasi.",
+  "heroAlt": "Bukti sumber dari pull request PCSX2 #14588: PINE: Melarang akses ke halaman dengan penangan VTLB kustom",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "keamanan thread"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Keamanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Melarang akses ke halaman dengan penangan VTLB kustom"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Alamat tamu dapat mewakili RAM atau register perangkat keras yang aktif"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE mengekspos operasi memori ke alat eksternal. Melalui lapisan translasi virtual PCSX2, beberapa alamat menunjuk ke RAM biasa yang didukung host, sementara yang lain dialihkan melalui pengelola khusus untuk register MMIO dan periferal yang diemulasikan. Memanggil pengelola khusus bukanlah pembacaan pasif: hal itu dapat mengubah status perangkat, memerlukan pengurutan thread emulator, atau menyentuh komponen yang tidak memiliki sinkronisasi untuk thread server sembarang."
+    },
+    {
+      "type": "heading",
+      "text": "Halaman pengelola khusus ditolak sebelum akses"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan tarik #14588 mengubah jalur VTLB PINE untuk mengenali halaman yang aksesnya diimplementasikan oleh pengelola khusus dan menolaknya. Memori yang langsung dipetakan tetap tersedia untuk klien. Batasan ini didasarkan pada bagaimana halaman disajikan, bukan daftar rentang register yang dikodekan secara keras dan rapuh, sehingga pengelola MMIO yang baru didaftarkan mewarisi perlindungan tanpa pembaruan alamat PINE khusus lainnya."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead ditulis ulang dengan membedakan yang lebih aman pada prinsip yang sama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini juga menyelaraskan deklarasi dan definisi template vtlb_ramRead serta menyederhanakan implementasinya. Sebuah mikrobenchmark di mesin penulis menunjukkan peningkatan kecepatan kecil, tetapi itu bersifat sekunder. Jaminan utama adalah kepemilikan thread: PINE tidak boleh membuat GS, SPU, CDVD, atau periferal lain menjalankan callback pada thread yang melewati penjadwal VM."
+    },
+    {
+      "type": "heading",
+      "text": "Klien membutuhkan semantik kegagalan yang jelas dan cakupan regresi RAM."
+    },
+    {
+      "type": "paragraph",
+      "text": "Uji debugger PINE yang ada terhadap RAM normal, scratchpad, atau mapping langsung lain yang secara eksplisit didukung, batas halaman, dan alamat yang tidak dipetakan. Coba baca dan tulis ke halaman MMIO yang representatif dan konfirmasi kesalahan protokol yang bersih tanpa efek samping periferal atau crash. Ulangi saat VM berjalan, berhenti sementara, direset, dan dimatikan. Ini dijelaskan sebagai perbaikan awal sambil menunggu pekerjaan desain yang lebih luas, jadi klien sebaiknya tidak dijanjikan akses register perangkat yang aman sampai mekanisme thread emulator yang dimarshalkan ada."
+    },
+    {
+      "type": "callout",
+      "text": "PINE tetap merupakan antarmuka memori, bukan thread eksekusi perangkat keras kedua; penangan VTLB kustom ditolak sampai dapat diatur dengan aman."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

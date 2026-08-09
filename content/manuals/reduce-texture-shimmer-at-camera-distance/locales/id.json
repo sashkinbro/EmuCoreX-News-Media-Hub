@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "reduce-texture-shimmer-at-camera-distance",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Kurangi kilau tekstur yang jauh tanpa memburamkan gambar PS2",
+  "summary": "Buat rute kamera yang dapat diulang melintasi jalan, pagar, atau medan, uji mipmapping sebelum penyaringan anisotropik, bandingkan resolusi asli dan target, dan terima hanya pengaturan yang menstabilkan detail saat bergerak.",
+  "heroAlt": "Diagram pengambilan sampel resolusi asli PCSX2 digunakan untuk menjelaskan perilaku tekstur selama peningkatan skala",
+  "searchKeywords": [
+    "Kilau tekstur PS2",
+    "Tekstur jauh EmuCoreX",
+    "Mipmapping",
+    "Penyaringan anisotropik",
+    "Kedipan gerakan kamera"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "sampling": "Sampling"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 penjelasan sampling tekstur",
+    "pcsx2-performance": "PCSX2 indikator mipmapping dan filtrasi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gunakan gerakan untuk memperlihatkan detail tekstur yang tidak stabil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Shimmer adalah masalah temporal: pola tekstur halus berubah dengan cepat saat kamera bergerak karena texel yang jauh disampling secara tidak konsisten. Gambar diam mungkin terlihat tajam sementara jalurnya berkilau saat dimainkan. Pilih jalan lurus, lantai berubin, pagar kawat, atau lereng medan dengan kecepatan kamera yang dapat dikontrol. Jalur harus cukup panjang untuk melihat transisi jarak dan cukup pendek untuk diulang dengan input yang sama."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan mulai dengan memaksakan level anisotropi tertinggi dan shader penajaman sekaligus. Keduanya dapat mengubah detail yang terlihat tanpa membuktikan apakah level mip judul dipilih dengan benar."
+    },
+    {
+      "type": "heading",
+      "text": "Buat rute stabilitas tekstur"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Simpan dalam game sebelum pergerakan kamera sepuluh hingga dua puluh detik.",
+        "Rekaman resolusi asli dan resolusi target dari rute yang tidak diubah.",
+        "Penyaringan tekstur default dan mipmapping perangkat keras otomatis direkam.",
+        "Penajaman pasca, penggantian tekstur, dan peningkatan tampilan dinonaktifkan.",
+        "Elemen UI latar depan dalam pandangan untuk mendeteksi blur global yang tidak diinginkan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Uji pemilihan mip sebelum penyaringan miring"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Jalankan rute pada resolusi asli dan tandai di mana detail jauh mulai berkedip.",
+        "2. Ulangi pada pengali skala yang dimaksud tanpa mengubah penyaringan atau renderer.",
+        "3. Jika kilau bertambah dengan resolusi, kembali ke resolusi asli dan uji tingkat akurasi mipmapping berikutnya yang didukung.",
+        "4. Rekam rute yang sama dan bandingkan transisi daripada frame tajam individual.",
+        "5. Setelah transisi mip stabil, uji penyaringan anisotropik sedang pada permukaan yang dilihat dari sudut tajam.",
+        "6. Periksa font, sprite, dan tepi atlas tekstur untuk halo, sambungan, atau pelembutan yang tidak diharapkan.",
+        "7. Kembali ke resolusi target dan ulangi setelah perangkat mencapai suhu operasi normal.",
+        "8. Simpan mipmapping dan penyaringan hanya di profil judul yang terpengaruh jika permainan kedua mengalami regresi."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Mipmaps menyediakan tingkat tekstur ter-prefilter yang lebih kecil untuk permukaan yang jauh, sementara penyaringan anisotropik meningkatkan sampel yang dilihat pada sudut miring. Mereka memecahkan masalah sampling yang terkait tetapi berbeda. Pembesaran dapat memperlihatkan celah dan asumsi atlas yang tersembunyi pada tingkat sampling PS2, jadi output yang lebih tajam tidak otomatis lebih stabil atau setia."
+    },
+    {
+      "type": "heading",
+      "text": "Lulus stabilitas tekstur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nilai jalur penuh pada kecepatan pemutaran normal dan kemudian periksa frame perwakilan."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Pola yang jauh berubah secara mulus alih-alih berkilau di antara frame.",
+        "Jalan dan lantai tetap terlihat detail pada sudut miring tanpa tepi yang merayap.",
+        "Teks HUD dan sprite 2D mempertahankan ketajaman yang diinginkan.",
+        "Tepi atlas tekstur tidak meluber ke karya seni yang berdekatan.",
+        "Kombinasi yang dipilih tidak memiliki penalti termal atau waktu frame yang berkelanjutan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Perubahan sampling ditolak"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Kilauan berkurang hanya karena seluruh frame menjadi buram: kembalikan filter sebelumnya.",
+        "Jahitan berwarna baru muncul di sekitar sprite: hapus pemfilteran paksa dan uji kembali atlas.",
+        "Hanya satu pengganda peningkatan yang gagal: pertahankan resolusi stabil terakhir daripada menumpuk koreksi.",
+        "Kedipan permukaan tetap ada di perangkat lunak pada output asli: konfirmasi apakah game asli berperilaku sama."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Kembalikan kontrol sampling ke nilai aman untuk game"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pulihkan mipmapping otomatis, filter tekstur yang dikontrol oleh game, dan resolusi internal sebelumnya. Nonaktifkan tahap penajaman yang diperkenalkan selama perbandingan, mulai ulang rute yang disimpan, dan konfirmasi pola kedipan dasar sebelum mencoba perbaikan khusus judul yang terdokumentasi."
+    },
+    {
+      "type": "heading",
+      "text": "Kompresi video menyembunyikan dan menciptakan kedipan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rekaman dengan bitrate rendah dapat mengubah detail halus menjadi blok atau menghaluskan pergerakan temporal yang lambat. Simpan tangkapan berkualitas tinggi secara lokal untuk analisis dan perlakukan versi streaming hanya sebagai alat navigasi, bukan sebagai bukti akhir."
+    },
+    {
+      "type": "link",
+      "text": "Pelajari penjelasan pengambilan sampel PCSX2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

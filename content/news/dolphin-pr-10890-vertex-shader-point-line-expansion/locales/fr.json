@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin reconstruit les points et lignes larges à l'intérieur du shader de vertex",
+  "summary": "L'expansion du quadrilatère sort de l'étape de géométrie, rétablissant les primitives larges sur Metal et MoltenVK tout en offrant un chemin plus rapide sur certains GPUs de bureau.",
+  "heroAlt": "Preuve source provenant de la pull request #10890 de Dolphin : VideoCommon : Ajouter l'expansion des points/lignes dans le shader de vertex",
+  "searchKeywords": [
+    "Dolphin",
+    "shader de vertex",
+    "Metal",
+    "MoltenVK",
+    "lignes larges"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon : Ajouter l'expansion des points/lignes dans le shader de vertex"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les APIs modernes ne fournissent pas tous l'ancien stade d'expansion du Dolphin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les logiciels GameCube et Wii peuvent demander des points et des lignes plus larges qu'un pixel. Dolphin élargit traditionnellement ces primitives avec un shader de géométrie, mais Metal n'a pas de stade équivalent et MoltenVK hérite de cette limitation. Le chemin manquant était visible dans des contenus tels que la carte de Metroid Prime 2, où les lignes larges pouvaient s'afficher incorrectement. Les shaders de géométrie peuvent également être relativement coûteux même sur le matériel qui les prend en charge."
+    },
+    {
+      "type": "heading",
+      "text": "Les bits d'index indiquent au shader de vertex quel coin du quad construire"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #10890 représente un point ou une ligne élargie sous forme de quad. Les indices modifiés réservent leurs deux bits inférieurs pour identifier le coin généré. Le shader de vertex charge le vertex source ou les extrémités associées, effectue la transformation habituelle et calcule le décalage en espace-écran nécessaire pour ce coin. La plomberie dynamique du chargeur de vertex fournit les données supplémentaires et les constantes de géométrie via des liaisons de ressources spécifiques au backend."
+    },
+    {
+      "type": "heading",
+      "text": "La capacité du backend décide si le chemin est requis ou optionnel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal et Vulkan-à-MoltenVK peuvent utiliser l'expansion de vertex pour obtenir des fonctionnalités qu'ils ne pouvaient pas exprimer avec un shader de géométrie. D3D12, Vulkan, OpenGL et d'autres chemins capables exposent le support, tandis qu'une préférence avancée permet aux utilisateurs de sélectionner l'expansion de vertex lorsque les deux méthodes existent. Le profilage sur un Radeon Pro 5600M a montré un avantage notable sur la carte Metroid Prime 2, mais l'option reste contextuelle plutôt qu'une promesse de performance universelle."
+    },
+    {
+      "type": "heading",
+      "text": "La couverture doit inclure la sémantique des primitives, pas seulement une carte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Comparer les points et les lignes à plusieurs largeurs, rapports d'aspect, résolutions internes, échelles de viewport, limites de découpe et transformations de perspective. Inclure les décalages de texture, car la discussion originale les a identifiés comme un domaine nécessitant plus de couverture de jeu. Capturer la sortie Metal, MoltenVK, Vulkan natif, D3D12 et OpenGL contre l'expansion de géométrie lorsque disponible. Vérifier les vertex provocateurs, la profondeur, l'interpolation, les lignes dégénérées, les changements d'état et les savestate ; mesurer séparément le flux du pipeline par rapport à l'exécution du shader."
+    },
+    {
+      "type": "callout",
+      "text": "L'expansion de sommet est à la fois un pont de compatibilité pour Metal et une alternative mesurable aux shaders géométriques, mais les règles de primitives identiques restent le test d'acceptation."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Lisez la discussion d'ingénierie Dolphin et les modifications du code source"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 trades Direct3D 11 depth copies for faster render-target copies",
+  "summary": "A depth-as-render-target path performs more copy operations but uses a form Direct3D 11 handles faster, targeting feedback-heavy AA1 and AAT scenes when ROV is disabled.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14603: GS/DX11: Backport ds as rt from GL for depth feedback.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "depth feedback",
+    "render target copy",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Backport ds as rt from GL for depth feedback."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Copy count alone does not predict Direct3D 11 cost"
+    },
+    {
+      "type": "paragraph",
+      "text": "Depth feedback requires PCSX2 to make depth information available to a later draw without violating target usage rules. Direct3D 11 can perform a GPU depth copy, but the source reports that operation as particularly slow. A solution with fewer copies can therefore lose to a path that converts depth into render-target form and performs extra copies through hardware and shaders optimized for color-like targets."
+    },
+    {
+      "type": "heading",
+      "text": "The OpenGL depth-as-RT strategy is adapted to DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14603 adds the conversion and device plumbing required to treat depth feedback as render-target copies on Direct3D 11. Shader changes expose the necessary format path, and GSDevice11 tracks resources used by the conversion. Direct3D 12 receives related shared adjustments, but the performance target is DX11. The design is explicitly tested without ROV so ordered feedback does not hide the copy-path difference."
+    },
+    {
+      "type": "heading",
+      "text": "More operations can still finish sooner when each operation is cheaper"
+    },
+    {
+      "type": "paragraph",
+      "text": "The article's central tradeoff is measurable: the new route may execute additional copies, yet avoids the expensive native depth-copy behavior. It should not be described as universally faster from operation counts alone. Format conversion, memory bandwidth, target size, GPU vendor, and the number of feedback events determine the result. Correctness also depends on preserving depth precision through the render-target representation."
+    },
+    {
+      "type": "heading",
+      "text": "AA1 and AAT games provide the intended stress test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Benchmark Final Fantasy X, Everybody's Golf, and other AA1 or AAT titles on Direct3D 11 with ROV disabled, holding resolution and scene constant. Record copy types, count, GPU time, and frame output against the former depth-copy path. Test native and upscaled sizes and several vendors. Compare depth-dependent effects and z ordering pixel by pixel; a speedup that introduces quantization or stale depth is not acceptable."
+    },
+    {
+      "type": "callout",
+      "text": "The optimization chooses the cheaper primitive for DX11, not the smaller count: extra render-target copies can beat a single expensive depth-copy route."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 bloque les clients PINE d'accéder aux gestionnaires MMIO liés aux threads",
+  "summary": "L'interface mémoire externe refuse désormais les pages VTLB fournies par des callbacks de périphérique personnalisés, limitant ses lectures directes à la mémoire sûre en dehors du thread d'émulation.",
+  "heroAlt": "Preuve source provenant de la pull request #14588 de PCSX2 : PINE : Interdire l'accès aux pages avec des gestionnaires VTLB personnalisés",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "sécurité des threads"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Sécurité",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE : Interdire l'accès aux pages avec des gestionnaires VTLB personnalisés"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une adresse invitée peut représenter la RAM ou un registre matériel actif"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE expose les opérations mémoire aux outils externes. Grâce à la couche de traduction virtuelle de PCSX2, certaines adresses pointent vers la RAM ordinaire soutenue par l'hôte, tandis que d'autres passent par des gestionnaires personnalisés pour les registres MMIO et les périphériques émulés. Appeler un gestionnaire personnalisé n'est pas une lecture passive : cela peut modifier l'état du dispositif, nécessiter un ordre spécifique des threads de l'émulateur ou toucher des composants qui n'ont aucune synchronisation pour un thread serveur arbitraire."
+    },
+    {
+      "type": "heading",
+      "text": "Les pages avec gestionnaire personnalisé sont rejetées avant l'accès"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14588 modifie le chemin VTLB de PINE pour reconnaître les pages dont l'accès est implémenté par un gestionnaire personnalisé et les refuser. La mémoire directement mappée reste disponible pour les clients. La limite est basée sur la manière dont la page est servie, et non sur une liste fragile codée en dur des plages de registres, donc les gestionnaires MMIO nouvellement enregistrés héritent de la protection sans mise à jour spécifique supplémentaire pour PINE."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead est réécrit autour de la même distinction plus sûre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif aligne également la déclaration et la définition du modèle vtlb_ramRead et simplifie son implémentation. Un micro-benchmark sur la machine de l'auteur a montré une légère amélioration de la vitesse, mais cela est secondaire. La garantie principale est la propriété des threads : PINE ne doit pas permettre au GS, SPU, CDVD ou à un autre périphérique d'exécuter des callbacks sur un thread qui contourne le planificateur VM."
+    },
+    {
+      "type": "heading",
+      "text": "Les clients ont besoin de sémantiques d'échec claires et d'une couverture des régressions de la RAM."
+    },
+    {
+      "type": "paragraph",
+      "text": "Tester les débogueurs PINE existants contre la RAM normale, le scratchpad ou d'autres mappings directs explicitement supportés, les limites de pages et les adresses non mappées. Tenter des lectures et écritures sur des pages MMIO représentatives et confirmer une erreur de protocole propre sans effet secondaire sur le périphérique ni crash. Répéter pendant que la VM fonctionne, est en pause, se réinitialise et s'éteint. Ceci est décrit comme une correction initiale en attente d'un travail de conception plus large, donc les clients ne doivent pas se voir promettre un accès sûr aux registres des périphériques tant qu'un mécanisme de thread émulé sérialisé n'existe pas."
+    },
+    {
+      "type": "callout",
+      "text": "PINE reste une interface mémoire, pas un second thread d'exécution matérielle ; les gestionnaires VTLB personnalisés sont refusés jusqu'à ce qu'ils puissent être orchestrés en toute sécurité."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

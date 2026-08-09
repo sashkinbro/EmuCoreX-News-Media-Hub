@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K connecte les vrais modules du noyau Vita à son graphique de modules émulé",
+  "summary": "Le démarrage et le chargement du sysmodule SKPRX rejoignent maintenant le plus large SELF, l'exportation de pilotes, TLS, gestion du cycle de vie et des correctifs nécessaires pour un chemin de module système de bas niveau.",
+  "heroAlt": "Preuve source provenant de la pull request Vita3K #3913 : modules : module noyau lle \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "Noyau LLE",
+    "SKPRX",
+    "sysmodule",
+    "chargeur de modules"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Cœur",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "modules : module noyau lle \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les modules système de bas niveau ont besoin de plus qu'un analyseur SELF"
+    },
+    {
+      "type": "paragraph",
+      "text": "Charger un vrai binaire du noyau Vita signifie résoudre ses imports et exports, attribuer la mémoire des segments, créer des informations de module, respecter le comportement de démarrage et d'arrêt, exposer les services du pilote et nettoyer chaque symbole lorsqu'il se décharge. Le binaire attend également que les champs TLS du noyau et d'autres modules système existent. Un chargeur qui copie les octets avec succès mais laisse ces relations incomplètes échouera plus tard avec un NID non résolu ou un export obsolète."
+    },
+    {
+      "type": "heading",
+      "text": "Le graphique de démarrage inclut maintenant bootimage et sysmodule"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3913 ajoute os0:kd/bootimage.skprx et os0:kd/sysmodule.skprx à la liste de préchargement. Elle étend le gestionnaire de modules, le gestionnaire de threads, le gestionnaire de processus, sysmem, debug, process-event, QAF, sysclib et les fonctions liées à sysmodule nécessaires autour d'eux. Les noms TLS du noyau gagnent des rôles de vérification de pile et de contexte de fibre. Les chemins de déchargement des imports et exports sont simplifiés pour supprimer les entrées par NID et la propriété du module sans transporter les données de relocalisation qu'ils n'utilisent plus."
+    },
+    {
+      "type": "heading",
+      "text": "Le patching se déplace vers la couche qui connaît les segments finaux"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les correctifs de jeu sont extraits du chargeur générique du noyau SELF. Après que l'exécutable principal devient un module chargé, le code d'interface récupère son SceKernelModuleInfo et copie uniquement les correctifs dont le segment existe et dont le décalage plus le nombre d'octets tient dans memsz. Cela permet de garder un correctif de titre destiné à l'utilisateur séparé du chargement des binaires système et fait que la vérification des bornes utilise les segments mappés finaux plutôt que les suppositions du parseur."
+    },
+    {
+      "type": "heading",
+      "text": "Un graphe mixte LLE et HLE nécessite des tests d'échec traçables"
+    },
+    {
+      "type": "paragraph",
+      "text": "Démarrer avec des fichiers de micrologiciel complets, image de démarrage manquante, module système manquant, binaires incompatibles et configurations ordinaires uniquement HLE. Suivre chaque import résolu, résultat de démarrage du module, valeur TLS, suppression d’exportation et arrêt en ordre inverse. Recharger les titres à plusieurs reprises pour révéler le NIDs obsolète et le module IDs. Fournir des correctifs au début du segment, à la fin exacte et un octet au-delà. Les binaires du noyau ne doivent jamais accorder l’accès à l’hôte ; tous les pointeurs restent dans les plages invitées, et les fonctions de pilote non prises en charge doivent signaler une limite précise au lieu de renvoyer un succès inventé."
+    },
+    {
+      "type": "callout",
+      "text": "LLE ne se contente pas d'exécuter plus de code de micrologiciel ; il construit un graphe de module réversible où de véritables binaires invités et des services d'émulateur se rencontrent à des importations explicites."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Lisez la discussion d'ingénierie Vita3K et les modifications de source"
+    }
+  ]
+}

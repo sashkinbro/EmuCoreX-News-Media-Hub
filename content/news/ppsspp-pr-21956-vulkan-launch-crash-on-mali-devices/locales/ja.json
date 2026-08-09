@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP は Mali ハードウェア上の Vulkan デバイス作成トラップを修正します",
+  "summary": "libretro ラッパーは現在、ちょうど 1 つの Vulkan 機能チャンネルを選択し、VkPhysicalDeviceFeatures2 がチェーンされているときに pEnabledFeatures が null でなければならないというルールを満たします。",
+  "heroAlt": "PPSSPP プルリクエスト #21956 からのソース証拠: Libretro: Mali デバイスでの Vulkan 起動クラッシュを修正",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "グラフィックス",
+    "emulation": "エミュレーション"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: Mali デバイスでの Vulkan 起動クラッシュを修正"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "寛容なドライバーは無効な作成情報の組み合わせを隠していました"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkanは、レガシーのpEnabledFeaturesポインタと拡張可能なVkPhysicalDeviceFeatures2構造体をpNext内で提供します。Features2が存在する場合、仕様ではレガシーポインタをnullにすることが求められています。PPSSPPのlibretroラッパーは、フロントエンドで必要な機能を追加しつつ両方を設定することが可能でした。一部のドライバーは不正なデバイス要求を受け入れましたが、MaliはVK_ERROR_INITIALIZATION_FAILEDを返したため、Vulkanでレンダリングされたコアはゲーム実行が始まる前に失敗しました。"
+    },
+    {
+      "type": "heading",
+      "text": "このラッパーは現在、コアがどの機能ルートを選択したかを検出します。"
+    },
+    {
+      "type": "paragraph",
+      "text": "プルリクエスト #21956 はデバイス作成時のpNextチェーンをたどり、VkPhysicalDeviceFeatures2が含まれているかを記録します。見つかった場合、フロントエンドで必要な機能はその構造に統合され、newInfo.pEnabledFeaturesは明示的にnullに設定されます。存在しない場合、ラッパーはVkPhysicalDeviceFeaturesをコピーまたは作成してポインタを割り当てることで従来の動作を保持します。したがって、2つの合法的なVulkanパスは相互に排他的です。"
+    },
+    {
+      "type": "heading",
+      "text": "検証は、厳密および寛容なモバイル GPUs の両方を対象としました"
+    },
+    {
+      "type": "paragraph",
+      "text": "著者は、Mali-G615デバイスを搭載したAndroid 14と、Snapdragon 865 Adrenoデバイスを搭載したAndroid 13でハードウェアレンダリングをテストしました。両方とも起動して動作しました。Maliシステムでは、デバイス作成を通過させることで、別の変更によって処理される仮想スワップチェーン容量の問題が露呈しました。この区別を維持することが重要です。なぜなら、1つの起動ゲートを解決しても、Hubが後のすべてのVulkanの失敗原因が同じであると主張すべきではないからです。"
+    },
+    {
+      "type": "heading",
+      "text": "機能チェインテストは構造体の所有権を検査する必要があります。"
+    },
+    {
+      "type": "paragraph",
+      "text": "VkDeviceCreateInfoをキャプチャし、レガシーコア、Features2コア、追加の機能構造体を持つチェイン、オプション機能がない場合についてバリデーションレイヤーで検証します。これをMali、Adreno、デスクトップVulkan、および複数のRetroArchバージョンで繰り返します。必要なビットが上書きされるのではなく保持されること、vkCreateDeviceを通じてpNextポインタが有効なままであること、pEnabledFeaturesがFeatures2の場合にのみnullであることを確認します。また、ソフトウェアおよびOpenGLパスのテストも行い、ラッパー初期化がVulkanを前提としないことを確認します。"
+    },
+    {
+      "type": "callout",
+      "text": "Vulkanの機能交渉には二つの法的ルートがあります。これらを組み合わせることで許容的なドライバーでは動作するかもしれませんが、それでも無効であり、より厳格なハードウェアでは失敗します。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "PPSSPPのエンジニアリングの議論とソースの変更を読んでください"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14632-navigation-history-with-back-and-forwa",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2's debugger remembers the code and memory locations you visited",
+  "summary": "A browser-style back and forward stack follows the last focused disassembly or memory view, restoring an ability from the older debugger without conflating navigation with undo.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14632: Debugger: Add navigation history with back and forward buttons",
+  "searchKeywords": [
+    "PCSX2",
+    "debugger",
+    "navigation history",
+    "disassembly",
+    "memory view"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14632": "Debugger: Add navigation history with back and forward buttons"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Following one address often loses the context that made it interesting"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debugger work moves repeatedly between a caller, callee, pointer target, table, and raw memory. Before this change, each navigation replaced the visible location, so returning to the original instruction required copying an address or repeating the search. That friction is especially visible during reverse engineering, where several branches are explored and abandoned before the useful one is found."
+    },
+    {
+      "type": "heading",
+      "text": "History belongs to views, not to program edits"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14632 adds a location stack for disassembly and memory views and toolbar buttons to move backward or forward. The action targets the most recently focused navigation-aware view, so a memory jump does not unexpectedly move an unrelated disassembly panel. It is explicitly orthogonal to undo and redo: history restores UI position, while undo would describe changes to editable state."
+    },
+    {
+      "type": "heading",
+      "text": "Forward entries must disappear after a new branch"
+    },
+    {
+      "type": "paragraph",
+      "text": "Like a browser or Ghidra, the stack needs a cursor rather than a circular list. Navigating back and then following a new address should discard the abandoned forward branch, while ordinary focus changes should not add fake locations. The patch also cleans menu sorting, but the core behavior is the state machine behind enabled toolbar buttons. A noted dark-theme contrast issue affects icons generally and remains separate."
+    },
+    {
+      "type": "heading",
+      "text": "Testing should mix views, focus, and branching history"
+    },
+    {
+      "type": "paragraph",
+      "text": "Navigate through several functions, jump into memory, switch focus between both views, and use back and forward after each step. Confirm that the last focused eligible view moves, duplicate adjacent locations are not accumulated, and a new jump after Back clears Forward. Close and reopen panels, reset the VM, and load another executable to ensure stale addresses do not survive a changed debug session. Keyboard, toolbar, and menu actions should share one history."
+    },
+    {
+      "type": "callout",
+      "text": "Navigation history restores investigative context; it never pretends that moving a debugger viewport is an undoable program edit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14632",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

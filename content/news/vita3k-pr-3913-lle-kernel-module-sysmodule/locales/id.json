@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K menghubungkan modul kernel Vita nyata ke grafik modul yang diemulasikan",
+  "summary": "Boot dan pemuatan sysmodule SKPRX sekarang bergabung dengan SELF yang lebih luas, ekspor driver, TLS, siklus hidup, dan penanganan patch yang diperlukan untuk jalur modul sistem tingkat rendah.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Vita3K #3913: modul: modul kernel lle \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "Kernel LLE",
+    "SKPRX",
+    "sysmodule",
+    "pemuat modul"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Inti",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "modul: modul kernel lle \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Modul sistem tingkat rendah membutuhkan lebih dari sekadar parser SELF"
+    },
+    {
+      "type": "paragraph",
+      "text": "Memuat binary kernel Vita nyata berarti menyelesaikan impor dan ekspor, menetapkan memori segmen, membuat informasi modul, menghormati perilaku mulai dan berhenti, mengekspos layanan driver, dan membersihkan setiap simbol saat dimuat ulang. Binary juga mengharapkan bidang TLS kernel dan modul sistem lainnya ada. Sebuah loader yang menyalin byte dengan sukses tetapi meninggalkan hubungan tersebut tidak lengkap akan gagal nanti dengan NID yang tidak terselesaikan atau ekspor yang usang."
+    },
+    {
+      "type": "heading",
+      "text": "Grafik startup sekarang mencakup bootimage dan sysmodule"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3913 menambahkan os0:kd/bootimage.skprx dan os0:kd/sysmodule.skprx ke daftar preload. Ini memperluas manajer modul, manajer thread, manajer proses, sysmem, debug, proses-event, QAF, sysclib, dan fungsi yang berhubungan dengan sysmodule yang dibutuhkan di sekitarnya. Nama TLS kernel mendapatkan peran stack-check dan fiber-context. Jalur unload impor dan ekspor disederhanakan untuk menghapus entri berdasarkan NID dan kepemilikan modul tanpa membawa data relokasi yang tidak lagi digunakan."
+    },
+    {
+      "type": "heading",
+      "text": "Patch pindah ke lapisan yang mengetahui segmen akhir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch game diambil dari loader kernel generik SELF. Setelah executable utama menjadi modul yang dimuat, kode antarmuka mengambil SceKernelModuleInfo-nya dan menyalin hanya patch yang segmennya ada dan offset ditambah jumlah byte sesuai dengan memsz. Ini menjaga patch judul yang terlihat pengguna tetap terpisah dari pemuatan binari sistem dan membuat pengecekan batas menggunakan segmen yang dipetakan akhir daripada asumsi parser."
+    },
+    {
+      "type": "heading",
+      "text": "Grafik campuran LLE dan HLE memerlukan tes kegagalan yang dapat dilacak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Boot dengan file firmware lengkap, bootimage yang hilang, sysmodule yang hilang, binari yang tidak kompatibel, dan konfigurasi biasa hanya untuk HLE. Lacak setiap import yang terselesaikan, hasil mulai modul, nilai TLS, penghapusan ekspor, dan shutdown urutan terbalik. Muat ulang judul berulang kali untuk mengekspos NIDs dan modul IDs yang ketinggalan. Berikan patch di awal segmen, akhir tepat, dan satu byte lebih jauh. Binari kernel tidak boleh pernah memberikan akses host; semua pointer tetap dalam rentang tamu, dan fungsi driver yang tidak didukung harus melaporkan batas yang tepat alih-alih mengembalikan keberhasilan yang dibuat-buat."
+    },
+    {
+      "type": "callout",
+      "text": "LLE bukan sekadar menjalankan lebih banyak kode firmware; ia membangun grafik modul yang dapat dibalik di mana binary tamu nyata dan layanan emulator bertemu pada impor yang eksplisit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Baca diskusi rekayasa Vita3K dan perubahan sumber"
+    }
+  ]
+}

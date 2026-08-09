@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14503-rov-support-for-feedback-draws",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 traz feedback ordenado de desenhos para três backends de hardware",
+  "summary": "Execução estilo ROV no Direct3D 11, Direct3D 12 e Vulkan reduz a divisão em renderizações com muito feedback, enquanto expõe cópias, barreiras e limitações do backend para validação.",
+  "heroAlt": "Evidência da fonte do pull request #14503 do PCSX2: GS/HW: suporte ROV para feedback draws.",
+  "searchKeywords": [
+    "PCSX2",
+    "ROV",
+    "feedback draw",
+    "Vulkan",
+    "Direct3D 12"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14503": "GS/HW: suporte ROV para feedback draws."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Feedback draws forçam uma escolha entre ordenação e passes adicionais"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alguns efeitos GS leem dados relacionados ao alvo que estão atualmente escrevendo, incluindo caminhos de software-blend e AA1. Sem um mecanismo de hardware ordenado, PCSX2 pode dividir o trabalho, copiar o alvo ou inserir barreiras para que fragmentos posteriores vejam os valores necessários. Essas salvaguardas preservam a correção, mas multiplicam as chamadas de desenho e o tráfego de memória em cenas onde o feedback é frequente."
+    },
+    {
+      "type": "heading",
+      "text": "DX11, DX12 e Vulkan ganham caminhos ordenados explícitos"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14503 implementa suporte a feedback em ordem de rasterizador ou equivalente em Direct3D 11, Direct3D 12 e Vulkan. Ele se baseia na refatoração anterior do formato de textura para que a profundidade armazenada para ROV possa passar pelos seletores de conversão compartilhados. A implementação do OpenGL foi removida porque os testes mostraram que era muito pouco confiável, demonstrando que o recurso é habilitado por garantias do backend em vez de ser forçado em todas as APIs."
+    },
+    {
+      "type": "heading",
+      "text": "Estatísticas e barreiras Vulkan tornam visível o custo oculto"
+    },
+    {
+      "type": "paragraph",
+      "text": "As configurações de gráficos expõem os controles ROV, e o OSD reporta chamadas de desenho, cópias e barreiras do ROV juntamente com os totais normais. O Vulkan também oferece uma opção de barreira ROV mais forte para sistemas que piscam com a sincronização padrão. Uma transição de feedback do Windows RDNA2 recebeu uma correção dedicada. O Direct3D 12 funcionou em vários sistemas, mas mostrou severo Z fighting em alguns dumps no GPU do autor, um limite não resolvido em vez de uma afirmação de sucesso universal."
+    },
+    {
+      "type": "heading",
+      "text": "As execuções de dump devem comparar a corretude e as contagens de operação juntas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ative o ROV por backend e reproduza dumps com muito feedback cobrindo blending de software, AA1, feedback de profundidade e transições de alvo. Compare a saída sem perdas com as referências sem ROV e de software, então registre desenhos, cópias, barreiras, tempo do GPU e driver. Rechecque o Vulkan com e sem a barreira mais forte. O Direct3D 12 requer atenção especial em hardware Intel, enquanto um teste OpenGL deve confirmar que a opção removida não pode selecionar o caminho conhecido por ter bugs."
+    },
+    {
+      "type": "callout",
+      "text": "ROV é valioso apenas onde a API e o driver preservam a ordem dos fragmentos; os contadores do OSD mostram se essa ordenação realmente substitui cópias e desenhos divididos."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14503",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

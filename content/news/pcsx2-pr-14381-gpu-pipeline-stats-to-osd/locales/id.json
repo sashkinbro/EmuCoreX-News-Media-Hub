@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menampilkan jumlah pemanggilan shader sebelum overlay mengubahnya",
+  "summary": "Sebuah metrik OSD opsional melaporkan pemanggilan vertex dan pixel shader yang dikumpulkan sebelum gambar ImGui dibuat, membuat perbandingan beban kerja backend lebih stabil dan lebih mudah dibaca.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14381: GS: Tambahkan statistik pipeline GPU ke OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Statistik pipeline GPU",
+    "pemanggilan vertex shader",
+    "pemanggilan pixel shader",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Peralatan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Tambahkan statistik pipeline GPU ke OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kecepatan bingkai tidak bisa memberitahu apakah sebuah adegan memperluas pekerjaan vertex atau pixel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Regresi kinerja mungkin berasal dari lebih banyak vertex yang dikirim, lebih banyak sampel yang tercakup, lintasan tambahan, atau sinkronisasi. PCSX2 sudah menampilkan beberapa metrik renderer, tetapi kurang menghitung pemanggilan pipeline secara langsung. Pull request #14381 menambahkan VSI dan PSI sehingga seorang pengembang dapat melihat apakah GPU mengeksekusi ribuan panggilan shader vertex atau jutaan panggilan shader piksel dalam interval yang diukur."
+    },
+    {
+      "type": "heading",
+      "text": "Query diimplementasikan di seluruh API perangkat keras"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kelas perangkat Direct3D 11, Direct3D 12, OpenGL, Vulkan, dan Metal menampilkan statistik pipeline ke metrik kinerja umum. Pengaturan ini muncul di konfigurasi OSD dan overlay memformat angka besar dengan akhiran desimal K, M, dan B. Pengumpulan melalui query backend diperlukan karena estimasi umum dari jumlah draw akan melewatkan clipping, instancing, cakupan sampel, dan eksekusi spesifik API."
+    },
+    {
+      "type": "heading",
+      "text": "Sampling sebelum ImGui menghapus overlay dari pengukurannya sendiri."
+    },
+    {
+      "type": "paragraph",
+      "text": "Hasil awal bervariasi secara dramatis karena kueri dapat mencakup rendering OSD dan ImGui. Perilaku akhir mengumpulkan statistik sebelum menggambar overlay, menstabilkan angka dan membuat perbandingan adegan lebih bermakna. Rendering perangkat lunak tetap hadir melalui Vulkan, jadi nilai mungkin muncul di sana tetapi menggambarkan presentasi daripada beban kerja perangkat lunak GS; sumber memperingatkan bahwa angka-angka tersebut tidak boleh diartikan seperti statistik renderer perangkat keras."
+    },
+    {
+      "type": "heading",
+      "text": "Perbandingan yang valid menetapkan adegan dan interval kueri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktifkan Tampilkan Statistik Pipeline GPU dan tahan satu adegan tetap di semua backend, memeriksa bahwa VSI dan PSI muncul dan berskala secara masuk akal ketika resolusi atau geometri berubah. Alihkan OSD itu sendiri dan konfirmasi bahwa nilai yang diukur tidak melonjak dari penghitungan pikselnya. Latih ulang reset kueri, kehilangan perangkat, jeda, dan pergantian backend. Penghitungan lintas-API mungkin masih berbeda karena spesifikasi dan perhitungan sampel bervariasi, jadi diagnosa tren di dalam backend sebelum mengklaim kesetaraan yang tepat."
+    },
+    {
+      "type": "callout",
+      "text": "OSD melaporkan hasil kueri perangkat keras, bukan kebenaran lintas-API universal; mengambil sampel sebelum ImGui membuatnya berguna tanpa membiarkan meteran mengukur dirinya sendiri."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

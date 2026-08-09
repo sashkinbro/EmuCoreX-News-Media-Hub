@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar mengubah file khusus menjadi tumpukan lapisan penyimpanan yang dapat dikomposisi",
+  "summary": "Rantai IOFileBase baru memungkinkan tampilan terbatas, kompresi, dan enkripsi saling membungkus satu sama lain, menggantikan pewarisan yang menjadi rapuh ketika beberapa tipe file khusus harus bekerja sama.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Azahar #2352: inti: Refaktor IOFile dan tipe file turunan",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Penyimpanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "inti: Refaktor IOFile dan tipe file turunan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pewarisan berhenti berkembang ketika satu file membutuhkan beberapa perilaku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar awalnya menurunkan file terkompresi dan terenkripsi langsung dari IOFile. Setiap kelas khusus bisa menimpa operasi dasar, tetapi menggabungkan mereka memerlukan trik karena pewarisan C++ menggambarkan apa itu objek, bukan urutan pipeline transformasi. Menambahkan tipe file lain untuk pekerjaan yang akan datang akan menggandakan kombinasi tersebut dan membuat offset, serialisasi, dan kesalahan tergantung pada subclass mana yang kebetulan berada di atas."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase mendelegasikan melalui lapisan anak yang dimiliki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2352 memperkenalkan IOFileBase abstrak dengan kontrak akses lengkap dan child_file unique_ptr. Sebuah lapisan hanya menimpa operasi yang diubah dan sebaliknya mendelegasikan ke anaknya. Bagian bawah adalah IOFile atau NullIOFile. Sebuah CCI RomFS yang terkompresi dapat dengan demikian menjadi SubIOFile untuk RomFS, SubIOFile lain untuk NCCH di dalam NCSD, Z3DSReadIOFile untuk dekompresi, dan IOFile untuk akses host."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile dan NullIOFile membuat batas dan kegagalan menjadi objek yang eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile menampilkan jendela tetap dan menerjemahkan operasi seek, size, read, dan write tanpa membuat setiap pemanggil mengulang offset atau pemeriksaan batas. Parsing NCSD dan NCCH sudah menggunakannya. NullIOFile mengimplementasikan antarmuka yang sama tetapi mengembalikan nilai error, memungkinkan konstruksi dan serialisasi yang gagal untuk mempertahankan grafik objek yang valid alih-alih mendistribusikan pengecekan nullptr melalui setiap lapisan."
+    },
+    {
+      "type": "heading",
+      "text": "File terenkripsi mendapatkan identitas sementara data warisan tetap didukung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Output CryptoIOFile baru dimulai dengan header AZCR yang berisi versi, ukuran header, dan hash yang berasal dari kunci dan nonce. Azahar dapat mengidentifikasi format dan menolak kunci yang salah tanpa menebak apakah byte yang didekripsi terlihat masuk akal. File warisan tanpa header masih dapat dibuka melalui logika kompatibilitas. Tes harus menyusun setiap urutan lapisan, melakukan seek melintasi batas subfile, men-serialisasi objek yang gagal, memverifikasi kunci yang salah, dan membuka kembali aset terenkripsi lama tanpa menulis ulang."
+    },
+    {
+      "type": "callout",
+      "text": "Perubahan arsitektur adalah komposisi: setiap lapisan berkas memiliki satu tanggung jawab dan meneruskan sisanya ke bawah melalui antarmuka yang sama."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Baca diskusi rekayasa Azahar dan perubahan sumbernya"
+    }
+  ]
+}

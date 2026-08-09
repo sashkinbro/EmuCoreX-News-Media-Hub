@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar, Luma'nın bellek alias'ındaki işaretli taşma belirsizliğini kaldırır",
+  "summary": "İşaretsiz bir bit-31 maskesi alias tespitini tanımlı C++ yaparken, erken dönüşler ve nadiren gerçekleşen MMIO dalları yaygın bellek yollarına daha düzgün bir talimat akışı sağlar.",
+  "heroAlt": "Azahar pull request #2202'den kaynak kanıtı: core/memory: Tanımsız davranışı düzelt ve Luma alias yolunu optimize et",
+  "searchKeywords": [
+    "Azahar",
+    "Luma alias",
+    "tanımsız davranış",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Core",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Tanımsız davranışı düzelt ve Luma alias yolunu optimize et"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "31. bit işaretli aritmetik ile oluşturuluyordu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS, yüksek biti Azahar'e FCRAM veya MMIO için normal sayfa tablolarını atlaması talimatını veren bir takma ad adres formunu açığa çıkarır. Kod, 1 << 31 ile bu biti test etti ve temizledi. int 32 bit olduğunda, işaretli bir birimi işaret pozisyonuna kaydırmak tanımsız davranıştır ve bu, optimize eden bir derleyiciye çevresindeki kodu, amaçlanan maskeyi korumayan şekillerde dönüştürme izni verir."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u hem test hem de temizleme işlemlerini tanımlı hâle getirir"
+    },
+    {
+      "type": "paragraph",
+      "text": "#2202 numaralı çekme isteği, LUMA_ALIAS_BIT'i işaretsiz literali 0x80000000u olarak ilan eder. Okuma ve yazma yolları sanal adresi bu sabite karşı test eder ve bitini temizleyerek fiziksel adresi türetir. Değişiklik küçük ama mimaridir: adres manipülasyonu, VAddr'yi temsil eden işaretsiz tipi kullanmalı, taşan işaretli aritmetik için derleyicinin seçtiği sonuca bağlı kalmamalıdır."
+    },
+    {
+      "type": "heading",
+      "text": "Erken dönüşler, FCRAM'i soğuk MMIO yolundan ayırır"
+    },
+    {
+      "type": "paragraph",
+      "text": "FCRAM takma adı ana yararlı yol olarak kalır ve hemen bir dönüşle sona erer. MMIO daha sonra kontrol edilir ve olasılık dışı olarak işaretlenir, takma ad girişi de normal sayfa tablosu erişimine kıyasla öyle işaretlenir. Önceki else-if zincirini düzleştirmek, Clang’in yaygın akışı daha doğrusal bir şekilde yerleştirmesine ve nadir özel işleyici kodunu çoğu okuma ve yazmada kullanılan talimat önbelleği yolundan uzak tutmasına olanak tanır."
+    },
+    {
+      "type": "heading",
+      "text": "Optimizasyon iddiaları, derleyici ve takma ad kapsamı gerektirir"
+    },
+    {
+      "type": "paragraph",
+      "text": "FCRAM için Luma takma adı okuma ve yazmalarını, geçerli 32-bit MMIO’yi, her iki aralığın dışında bir takma ad adresini ve normal sayfa tablosu adreslerini çalıştırın. UBSan etkinleştirilmiş olarak birden fazla optimizasyon seviyesinde Clang ve GCC’yi karşılaştırın, hiçbir imzalı kaydırma raporu olmadığını ve aynı sonuçların elde edildiğini doğrulayın. Üretilen kodu niyet edilen erken dönüşler için inceleyin, ancak doğruluğu önceliklendirin. Sıkı desteklenen 32-bit yol dışında MMIO genişlikleri, mevcut anlamsal kurallara göre yine de akmalı veya başarısız olmalıdır."
+    },
+    {
+      "type": "callout",
+      "text": "Daha hızlı yol tanımlanmış davranışla başlar: bir adres bayrağı, dallanma ipuçlarına veya montaj şekline güvenilmeden önce işaretsiz bir bit maskesi olmalıdır."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Azahar mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

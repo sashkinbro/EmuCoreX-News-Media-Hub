@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22015-texturereplacer-unit-test-make-replace",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP gives texture replacement a standalone test harness",
+  "summary": "A synthetic pack and explicit test entry point exercise hashes, ranges, filtering, mipmaps, and missing entries without booting the emulator's renderer.",
+  "heroAlt": "Source evidence from PPSSPP pull request #22015: Add TextureReplacer unit test; make replacer testable standalone",
+  "searchKeywords": [
+    "PPSSPP",
+    "texture replacement",
+    "unit test",
+    "textures.ini",
+    "mipmaps"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22015": "Add TextureReplacer unit test; make replacer testable standalone"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Texture packs combine several rules that are easy to regress"
+    },
+    {
+      "type": "paragraph",
+      "text": "A replacement is not selected by filename alone. PPSSPP reads textures.ini, interprets invented or computed hashes, applies hash ranges, chooses mip levels, respects filtering directives, and handles missing or ignored entries. Testing only by launching a game makes failures depend on a title reaching the right draw, backend format support, filesystem state, and human image comparison. That is slow and leaves many negative cases uncovered."
+    },
+    {
+      "type": "heading",
+      "text": "The replacer can now be constructed outside the renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #22015 permits a null DrawContext. In that mode, compressed GPU formats simply report unsupported rather than dereferencing a backend. LoadPackForTesting accepts a base directory, enables replacement, disables saving, and parses that pack directly instead of consulting global configuration or a running game's ID. Lookup and filtering functions use the instance's replaceEnabled state, which makes the isolated object's behavior deterministic."
+    },
+    {
+      "type": "heading",
+      "text": "A synthetic pack provides readable, controlled evidence"
+    },
+    {
+      "type": "paragraph",
+      "text": "The new TestTextureReplacer fixture creates textures.ini with recognizable invented hashes and real PNG files. Assertions cover direct lookup, filtering decisions, hash ranges, mip levels, plus missing and ignored records. Because every file is purpose-built, a failed assertion can name the exact rule that broke. The test is wired into CMake and Android unit-test sources so platform build differences are less likely to hide parser behavior."
+    },
+    {
+      "type": "heading",
+      "text": "Future coverage should include malformed and platform-sensitive packs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Extend fixtures with duplicate keys, invalid hashes, overlapping ranges, absent mip levels, mixed-case paths, Unicode names, path separators, unsupported compressed formats, malformed PNG data, and configuration reloads. Run on desktop and Android filesystems and ensure temporary directories are isolated. Assertions should verify both the chosen replacement and the reason a candidate was rejected. A null DrawContext must remain an explicit test capability, not accidentally make production code ignore format support."
+    },
+    {
+      "type": "callout",
+      "text": "A replacement pipeline becomes maintainable when pack rules can be proven with a tiny deterministic filesystem instead of a full game session."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22015",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

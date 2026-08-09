@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar lehrt OpenGL Zustandsverfolgung, dass eine Textureinheit aufhören kann, 2D zu sein",
+  "summary": "Cubemap-Bindung machte eine gespeicherte Zustandsannahme sichtbar, dass jede Einheit GL_TEXTURE_2D hielt; Verfolgung des Zieltyps und Initialisierung des Null-Würfels stellen später 2D-Operationen wieder her.",
+  "heroAlt": "Quellbeweis aus dem Azahar Pull Request #2242: renderer_gl: Behebe OpenGL Textureinheiten-Zustandsverfolgung",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "Textureinheit",
+    "Cubemap",
+    "Zustandsverfolgung"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Behebe OpenGL Textureinheiten-Zustandsverfolgung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein zwischengespeichertes Texture-Handle ist ohne seinen Zieltyp unvollständig"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL bindet Texturen sowohl nach Einheit als auch nach Ziel. Der Zustands-Cache von Azahar nahm oft an, dass eine Einheit GL_TEXTURE_2D darstellte, was funktionierte, bis die Null-Cubemap-Verfolgung echte Cubemap-Bindungen einführte. Sobald eine Einheit GL_TEXTURE_CUBE_MAP gehalten hatte, konnte späterer Code eine Bindung basierend nur auf dem zwischengespeicherten numerischen Objekt überspringen oder durchführen, obwohl der Ziel-Namespace und die nachfolgenden Sampling-Erwartungen sich geändert hatten."
+    },
+    {
+      "type": "heading",
+      "text": "Zustandsaufzeichnungen unterscheiden jetzt zwischen 2D-, Cube- und Null-Übergängen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #2242 aktualisiert Rasterizer-Cache-Dienstprogramme und OpenGL-Renderer-Pfade, sodass Textureinheiten das Bindungsziel beibehalten, das erforderlich ist, um zu entscheiden, ob eine Zustandsänderung redundant ist. NULL_SURFACE_CUBE_ID wird ordnungsgemäß initialisiert, was dem No-Surface-Cubemap-Pfad eine definierte Ressource gibt. Vulkan-Dateien erhalten damit zusammenhängende Anpassungen am gemeinsamen Cache, aber der beobachtete Fehler und die Zustandsmaschinenkorrektur befinden sich in OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon und WWE zeigen nachgelagerte Korruption durch eine veraltete Annahme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vorher-Nachher-Bilder für Pokémon Ultra Moon und WWE All Stars zeigen, dass der Fehler nicht auf eine fehlende Cubemap beschränkt war. Ein Cubemap-Bind änderte die Interpretation späterer Texture-Operationen, sodass normale Oberflächen im weiteren Verlauf falsch gerendert werden konnten. Richtiges Caching muss daher den Zustand über eine Sequenz hinweg wiederherstellen, nicht nur die Cubemap zum Zeitpunkt ihrer Einstellung anzeigen."
+    },
+    {
+      "type": "heading",
+      "text": "Eine Regressionssequenz sollte auf derselben Einheit die Ziele abwechseln."
+    },
+    {
+      "type": "paragraph",
+      "text": "Binde wiederholt 2D-, Cube-, Null-Cube- und 2D-Texturen auf einer Einheit und überprüfe sowohl die ausgegebenen GL-Aufrufe als auch die gesampelten Ausgaben. Reproduziere die beiden Spiele und teste dann Schattenkarten, Umweltkarten, Render-Target-Sampling und Oberflächenzerstörung. Vergleiche den gecachten Zustand mit glGet-Diagnosen in einer Debug-Version. Die Optimierung darf weiterhin einen Bind-Aufruf überspringen, nur wenn Objekt und Ziel übereinstimmen; die Reduzierung von Aufrufen darf niemals ein Ziel aus der vorherigen Verwendung beibehalten."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL Zustands-Caching ist nur gültig, wenn sowohl das Bindungsziel als auch das Texturobjekt gespeichert werden."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Lesen Sie die Azahar-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2's Direct3D 12 backend remembers framebuffer hits beyond the current transition",
+  "summary": "Color or depth state changes can now expand hit detection for future draws, reducing later render-pass churn instead of discarding useful coverage because the present transition was unavoidable.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14595: GS/DX12: Expand the fb optimization hit detection backport from GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "framebuffer optimization",
+    "render pass",
+    "hit detection"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Expand the fb optimization hit detection backport from GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "An unavoidable transition can still reveal useful future coverage"
+    },
+    {
+      "type": "paragraph",
+      "text": "Frame-buffer optimizations track when a later draw can remain inside compatible render-pass state. The Direct3D 12 path previously treated a color or depth state change as a reason not to expand hit detection. That was too short-sighted: the current transition may be necessary, but the affected region still tells PCSX2 that subsequent state changes can be avoided."
+    },
+    {
+      "type": "heading",
+      "text": "Either color or depth can extend the optimization window"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14595 backports broader behavior already explored in OpenGL and Direct3D 11. In GSDevice12, a hit from either attachment can expand the tracked condition even when one of them triggers a transition now. The optimization does not erase the required current barrier or render-pass change; it keeps information that makes the next compatible operation cheaper."
+    },
+    {
+      "type": "heading",
+      "text": "The patch depends on correct render-pass state management"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source notes that proper render-pass changes from related work are part of the tested base. That dependency matters because fewer passes are beneficial only if attachment load, store, and transition rules remain valid. An over-broad hit can preserve data that should have been resolved or cleared. The reported effect is a single- to double-digit reduction in render passes for the same games used by the preceding optimization work."
+    },
+    {
+      "type": "heading",
+      "text": "Performance validation must include exact-frame comparison"
+    },
+    {
+      "type": "paragraph",
+      "text": "Replay the referenced dump set on Direct3D 12, collect render-pass, barrier, copy, and GPU-time counters, and compare frames against the unoptimized path. Construct cases where only color changes, only depth changes, and both change, followed by draws that either should or should not reuse state. A pass-count drop without pixel identity is a regression. Tests also need several GPU vendors because driver render-pass behavior and transition cost can differ."
+    },
+    {
+      "type": "callout",
+      "text": "The optimization remembers a hit for what comes next; it never uses future savings to skip a transition required by the current draw."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

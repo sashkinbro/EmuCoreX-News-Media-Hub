@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 bloquea a los clientes PINE de acceder a los manejadores MMIO vinculados a hilos",
+  "summary": "La interfaz de memoria externa ahora rechaza páginas VTLB servidas por callbacks de dispositivos personalizados, limitando sus lecturas directas a memoria que es segura fuera del hilo de emulación.",
+  "heroAlt": "Evidencia de origen del pull request #14588 de PCSX2: PINE: No permitir el acceso a páginas con manejadores VTLB personalizados",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "seguridad de hilos"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Seguridad",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: No permitir el acceso a páginas con manejadores VTLB personalizados"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una dirección invitada puede representar RAM o un registro de hardware activo"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE expone las operaciones de memoria a herramientas externas. A través de la capa de traducción virtual de PCSX2, algunas direcciones apuntan a RAM común respaldada por el host, mientras que otras se enrutan a través de controladores personalizados para los registros MMIO y periféricos emulados. Llamar a un controlador personalizado no es una lectura pasiva: puede cambiar el estado del dispositivo, requerir ordenamiento de hilos del emulador o tocar componentes que no tienen sincronización para un hilo de servidor arbitrario."
+    },
+    {
+      "type": "heading",
+      "text": "Las páginas de controladores personalizados son rechazadas antes del acceso"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14588 cambia la ruta VTLB de PINE para reconocer páginas cuyo acceso está implementado por un controlador personalizado y negarlas. La memoria mapeada directamente sigue estando disponible para los clientes. El límite se basa en cómo se suministra la página, no en una lista rígida de rangos de registros codificada, por lo que los controladores MMIO recién registrados heredan la protección sin otra actualización de dirección específica de PINE."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead se reescribe alrededor de la misma distinción más segura"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche también alinea la declaración y definición de la plantilla vtlb_ramRead y simplifica su implementación. Un microbenchmark en la máquina del autor mostró una pequeña mejora de velocidad, pero eso es secundario. La garantía principal es la propiedad del hilo: PINE no debe hacer que el GS, SPU, CDVD u otro periférico ejecuten callbacks en un hilo que eluda el planificador de VM."
+    },
+    {
+      "type": "heading",
+      "text": "Los clientes necesitan una semántica clara de fallos y cobertura de regresión de RAM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pruebe los depuradores PINE existentes contra RAM normal, memoria temporal u otros mapeos directos explícitamente soportados, límites de página y direcciones no mapeadas. Intente lecturas y escrituras en páginas representativas de MMIO y confirme un error de protocolo limpio sin efectos secundarios de periféricos ni fallos. Repita mientras la VM se ejecuta, se pausa, se reinicia y se apaga. Esto se describe como una corrección inicial pendiente de un trabajo de diseño más amplio, por lo que no se debe prometer a los clientes un acceso seguro a registros de dispositivos hasta que exista un mecanismo de hilo de emulador ordenado."
+    },
+    {
+      "type": "callout",
+      "text": "PINE sigue siendo una interfaz de memoria, no un segundo hilo de ejecución de hardware; los controladores VTLB personalizados están denegados hasta que puedan ser gestionados de manera segura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de PCSX2"
+    }
+  ]
+}

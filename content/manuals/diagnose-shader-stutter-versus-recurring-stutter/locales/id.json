@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Membedakan gangguan shader pertama kali dari gangguan waktu frame yang berulang",
+  "summary": "Jalankan rute tetap dalam kondisi dingin dan hangat tanpa menghapus cache, tandai setiap lokasi gangguan, dan klasifikasikan hanya jeda kunjungan pertama sebagai kandidat kompilasi sambil mempertahankan gangguan I/O, adegan, atau siklus hidup yang berulang untuk diagnosis terpisah.",
+  "heroAlt": "Bagan optimisasi shader resmi PCSX2 yang mewakili beban kerja kompilasi dan renderer",
+  "searchKeywords": [
+    "Gangguan shader EmuCoreX",
+    "Gangguan berulang PS2",
+    "rute dingin hangat",
+    "cache shader",
+    "lonjakan waktu frame"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Kinerja",
+    "stutter": "Kelaguan"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan panduan jalur dan kinerja",
+    "pcsx2-vulkan": "PCSX2 pengembangan shader-cache"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tandai lokasi gangguan di rute dingin dan hangat yang identik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kompilasi shader biasanya terjadi saat material atau efek baru pertama kali ditemui dan seharusnya berkurang setelah jalur terkait di-cache. Kelaguan berulang muncul pada transisi yang sama, pembacaan penyimpanan, event latar belakang, atau batas pacing frame. Pilih rute deterministik yang berisi beberapa efek dan rekam cap waktu daripada mengandalkan memori."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan menghapus cache shader antara jalur cold dan warm. Melakukannya memaksa kedua jalur untuk berperilaku seperti kunjungan pertama dan menghancurkan perbandingan."
+    },
+    {
+      "type": "heading",
+      "text": "Siapkan timeline hitch"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Sebuah simpanan normal sebelum jalur deterministik dua hingga lima menit.",
+        "System driver, satu renderer, dan profil grafis yang tidak berubah.",
+        "Overlay waktu frame atau rekaman layar yang disinkronkan digunakan di setiap jalur.",
+        "Status cache yang terdokumentasi sebelum jalur pertama.",
+        "Unduhan latar belakang, tangkapan layar, dan notifikasi dikontrol."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Bandingkan kunjungan pertama, pemutaran ulang segera, dan restart aplikasi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Mulai ulang aplikasi tanpa menghapus cache grafik dan lakukan cold-boot pada rute.",
+        "2. Tandai timestamp dan konten yang terlihat untuk setiap lonjakan waktu frame.",
+        "3. Kembali ke penyimpanan normal dan putar ulang segera tanpa mengubah pengaturan.",
+        "4. Klasifikasikan gangguan yang hilang pada kunjungan kedua sebagai kandidat kompilasi.",
+        "5. Tandai jeda yang muncul kembali pada batas pemuatan atau animasi yang sama.",
+        "6. Tutup dan buka kembali aplikasi tanpa menghapus cache, kemudian jalankan lintasan ketiga.",
+        "7. Restart Android dan ulangi hanya ketika ketahanan siklus hidup sedang diuji.",
+        "8. Kirim lokasi berkala ke penyimpanan, CPU/GPU, atau diagnosis frame-pacing daripada menyebut semua stutter shader."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbandingan cache hangat mengubah waktu menjadi bukti. Jeda yang hanya terjadi saat pertama kali sesuai untuk pembuatan pipeline; hambatan yang berulang setiap pintu bisa berasal dari I/O atau sinkronisasi; gangguan pada interval reguler bisa berasal dari pekerjaan latar belakang. Lintas ketiga menguji apakah cache bertahan setelah restart aplikasi biasa."
+    },
+    {
+      "type": "heading",
+      "text": "Penerimaan klasifikasi stutter"
+    },
+    {
+      "type": "paragraph",
+      "text": "Setiap label harus didukung oleh perilakunya di seluruh lintasan."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Gangguan hanya pada kunjungan pertama menghilang atau menyusut saat diputar ulang segera.",
+        "Gangguan berulang mempertahankan cap waktu atau batas adegan yang dapat direproduksi.",
+        "Pengaturan, driver, kebijakan cache, dan rute tetap tidak berubah.",
+        "Perilaku pada lintasan ketiga menunjukkan apakah cache bertahan setelah aplikasi dimulai ulang.",
+        "Bukti waktu bingkai sesuai dengan ritme visual dan audio."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Garis waktu untuk diulang"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Musuh acak atau cuaca mengubah rute: pilih titik pemeriksaan deterministik.",
+        "Perekaman video berjalan hanya dalam satu lintasan: normalisasi overhead.",
+        "Android memperbarui atau menghapus cache di tengah uji: mulai ulang seluruh urutan.",
+        "Perubahan suhu perangkat secara signifikan: cocokkan kondisi termal sebelum perbandingan."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Kembalikan overlay dan kebijakan cache ke normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nonaktifkan overlay waktu bingkai diagnostik, pertahankan cache shader yang valid, pulihkan perilaku aplikasi latar belakang, dan lakukan boot dingin pada judul sekali saja. Jangan jadwalkan penghapusan cache rutin untuk lag yang sudah terbukti hilang setelah kompilasi."
+    },
+    {
+      "type": "heading",
+      "text": "Tidak setiap lag kunjungan pertama adalah shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Unggahan tekstur, pembacaan disk, dekompresi, dan logika permainan juga dapat terjadi sekali per area. Perlakukan hilangnya pada percobaan pertama sebagai klasifikasi kandidat, lalu gunakan penghitung dan log untuk memastikan subsistem yang bertanggung jawab. Ulangi rute yang sama setelah restart hangat dan lagi setelah kondisi pembersihan cache yang sesungguhnya hanya ketika operasi tersebut didokumentasikan dan aman. Jika lag berpindah dengan akses penyimpanan atau muncul di setiap putaran di batas aliran yang sama, pertahankan data shader dan selidiki beban kerja yang berulang alih-alih menghapus cache berulang kali."
+    },
+    {
+      "type": "link",
+      "text": "Tinjau panduan optimisasi Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

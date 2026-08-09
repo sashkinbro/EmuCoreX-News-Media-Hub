@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 将真实的 Vita 内核模块连接到其模拟模块图",
+  "summary": "启动和 sysmodule SKPRX 加载现在加入了更广泛的 SELF、驱动导出、TLS、生命周期和补丁处理，这对于低级系统模块路径是必要的。",
+  "heroAlt": "来自 Vita3K 拉取请求 #3913 的来源证据：modules: lle 内核模块 \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "LLE 内核",
+    "SKPRX",
+    "sysmodule",
+    "模块加载器"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "核心",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "modules: lle 内核模块 \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "低级系统模块需要的不仅仅是 SELF 解析器"
+    },
+    {
+      "type": "paragraph",
+      "text": "加载一个真实的 Vita 内核二进制文件意味着解析其导入和导出、分配段内存、创建模块信息、遵循启动和停止行为、公开驱动服务，并在卸载时清理每一个符号。该二进制文件还期望内核 TLS 字段和其他系统模块存在。一个仅仅成功复制字节但未完成这些关系的加载器，将在以后因为未解析的 NID 或过期的导出而失败。"
+    },
+    {
+      "type": "heading",
+      "text": "启动图现在包括 bootimage 和 sysmodule。"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #3913 将 os0:kd/bootimage.skprx 和 os0:kd/sysmodule.skprx 添加到预加载列表中。它扩展了模块管理器、线程管理器、进程管理器、sysmem、调试、进程事件、QAF、sysclib 以及面向 sysmodule 的函数。内核 TLS 名称获得堆栈检查和纤程上下文的作用。导入和导出卸载路径被简化，以通过 NID 和模块所有权移除条目，而不再携带它们不再使用的重定位数据。"
+    },
+    {
+      "type": "heading",
+      "text": "修补移动到了了解最终段的层。"
+    },
+    {
+      "type": "paragraph",
+      "text": "游戏补丁是从通用内核 SELF 加载器中提取的。主可执行文件成为已加载模块后，接口代码会检索其 SceKernelModuleInfo，并仅复制那些段存在且偏移加字节数适合 memsz 的补丁。这使面向用户的标题补丁与加载系统二进制文件分开，并使边界检查使用最终映射的段，而不是解析器假设。"
+    },
+    {
+      "type": "heading",
+      "text": "混合 LLE 和 HLE 图需要可追踪的失败测试。"
+    },
+    {
+      "type": "paragraph",
+      "text": "启动包含完整固件文件，缺少 bootimage，缺少 sysmodule，不兼容的二进制文件，以及普通的仅 HLE 配置。跟踪每个已解析的导入、模块启动结果、TLS 值、导出移除和反向顺序关机。反复重新加载标题以暴露过时的 NIDs 和模块 IDs。在段起始、精确结束以及结束后一个字节处提供补丁。内核二进制文件绝不能授予主机访问权限；所有指针保持在来宾范围内，不受支持的驱动函数应报告精确边界，而不是返回虚构的成功。"
+    },
+    {
+      "type": "callout",
+      "text": "LLE 不仅仅是在运行更多的固件代码；它正在构建一个可逆的模块图，其中真实的客户二进制文件和模拟器服务在显式导入处相遇。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "阅读 Vita3K 的工程讨论和源代码更改"
+    }
+  ]
+}

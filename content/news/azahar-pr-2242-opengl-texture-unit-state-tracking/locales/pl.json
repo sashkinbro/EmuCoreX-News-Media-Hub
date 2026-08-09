@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar uczy śledzenia stanu OpenGL, że jednostka tekstury może przestać być 2D",
+  "summary": "Powiązanie cubemapu ujawniło założenie w pamięci podręcznej, że każda jednostka posiadała GL_TEXTURE_2D; śledzenie typu celu i inicjalizacja null cubemapu przywraca później operacje 2D.",
+  "heroAlt": "Dowód źródłowy z pull request Azahar #2242: renderer_gl: Naprawa śledzenia stanu jednostki tekstury OpenGL",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "jednostka tekstury",
+    "cubemap",
+    "śledzenie stanu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Naprawa śledzenia stanu jednostki tekstury OpenGL"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uchwycenie tekstury w pamięci podręcznej jest niekompletne bez jego typu celu"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL wiąże tekstury zarówno według jednostki, jak i celu. Pamięć podręczna stanu Azahar często zakładała, że jednostka reprezentuje GL_TEXTURE_2D, co działało dopóki śledzenie null-cubemap nie wprowadziło rzeczywistych powiązań cubemap. Gdy jednostka zawierała GL_TEXTURE_CUBE_MAP, późniejszy kod mógł pominąć lub wykonać powiązanie na podstawie samego zapisnego obiektu liczbowego, nawet jeśli przestrzeń nazw celu i oczekiwania dotyczące próbkowania downstream uległy zmianie."
+    },
+    {
+      "type": "heading",
+      "text": "Rekordy stanu teraz rozróżniają przejścia 2D, cube i null"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2242 aktualizuje narzędzia rasterizer-cache i ścieżki renderera OpenGL, tak aby jednostki tekstur zachowywały cel powiązania potrzebny do decyzji o tym, czy zmiana stanu jest zbędna. NULL_SURFACE_CUBE_ID jest prawidłowo inicjalizowany, dając ścieżce cubemap bez powierzchni określony zasób. Pliki Vulkan otrzymują związane korekty współdzielonej pamięci podręcznej, ale zaobserwowane niepowodzenie i korekta maszyny stanów znajdują się w OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon i WWE pokazują downstreamową korupcję wynikającą z jednego przestarzałego założenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Obrazy przed i po dla Pokémon Ultra Moon i WWE All Stars pokazują, że problem nie ograniczał się do brakującej mapy sześciennej. Powiązanie mapy sześciennej zmieniało sposób interpretacji późniejszych operacji tekstur, więc zwykłe powierzchnie dalej mogły renderować się nieprawidłowo. Poprawne buforowanie musi więc przywracać stan w całej sekwencji, a nie tylko wyświetlać mapę sześcienną w momencie jej ustawienia."
+    },
+    {
+      "type": "heading",
+      "text": "Sekwencja regresji powinna na przemian używać celów na tej samej jednostce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wiąż tekstury 2D, sześcienne, null cube i 2D wielokrotnie na jednej jednostce i zweryfikuj zarówno wywołania GL, jak i próbki wyjściowe. Odtwórz te dwie gry, a następnie przetestuj mapy cieni, mapy środowiskowe, próbkowanie render-target oraz niszczenie powierzchni. Porównaj zapisany stan z diagnostyką glGet w wersji debug. Optymalizacja może nadal pomijać wiązanie tylko wtedy, gdy zarówno obiekt, jak i cel się zgadzają; redukcja wywołań nigdy nie może zachować celu z poprzedniego użycia."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL buforowanie stanu jest ważne tylko wtedy, gdy pamięta zarówno cel wiązania, jak i obiekt tekstury."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany w źródle"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-two-ps2-library-folders-without-duplicates",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Unire due cartelle della libreria PS2 con una tabella dei conflitti basata su hash",
+  "summary": "Consolidare due root giocabili in una nuova destinazione classificando hash identici, revisioni regionali, set multi-disc e copie funzionanti patchate prima che EmuCoreX scansioni mai la cartella unita.",
+  "heroAlt": "Frontend per la conservazione dei media che mostra campi di identità dei supporti ottici usati per distinguere i dischi sorgente durante un'unione",
+  "searchKeywords": [
+    "unire cartelle di giochi PS2",
+    "deduplicare la libreria EmuCoreX",
+    "varianti regionali PS2",
+    "tabella dei conflitti hash",
+    "set multi-disc"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Libreria",
+    "integrity": "Integrità"
+  },
+  "sourceLabels": {
+    "powershell-hash": "Riferimento inventario SHA-256",
+    "pcsx2-discs": "Struttura del disco-set PS2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Unisci in una terza cartella, mai in una delle due sorgenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una fusione sicura preserva la Cartella A e la Cartella B mentre costruisce una Cartella C vuota. Quella terza posizione rende reversibile ogni decisione. La collisione dei nomi dei file è solo il primo segnale: hash identici possono usare nomi diversi, mentre nomi corrispondenti possono nascondere regioni, revisioni, dischi o copie di lavoro esternamente patchate differenti. La tabella dei conflitti deve quindi memorizzare percorso, byte, SHA-256, seriale, regione e ruolo in un set multidsico."
+    },
+    {
+      "type": "callout",
+      "text": "Non lasciare che un file manager risponda Sostituisci, Salta, o Mantieni entrambi per tutta l'operazione. Quei pulsanti non sanno quale copia è un master verificato, quale è patchata, o se il Disco 2 appartiene accanto al Disco 1."
+    },
+    {
+      "type": "heading",
+      "text": "Costruisci inventari per A e B"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Report di sola lettura SHA-256 per entrambe le radici di origine.",
+        "Capacità separata sufficiente per la destinazione completamente deduplicata.",
+        "Scarica log o registri seriali per coppie regionali e di revisione ambigue.",
+        "Una convenzione di denominazione che includa il numero del disco dove richiesto.",
+        "Entrambe le radici di origine rimosse temporaneamente dalla scansione EmuCoreX durante l'accettazione finale."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Classificare le collisioni prima della copia"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Unire i due inventari per hash per identificare i file byte-identici indipendentemente dal nome.",
+        "2. Unire nuovamente per nome file normalizzato per esporre conflitti con lo stesso nome e hash diversi.",
+        "3. Per hash identici, scegliere un nome file canonico funzionante e registrare quale sorgente lo ha fornito.",
+        "4. Per hash diversi, controllare numero di serie, regione, revisione, numero del disco e stato della patch; mantenere ogni variante legittima sotto un nome inequivocabile.",
+        "5. Copiare i file classificati nella cartella vuota C a gruppi, quindi calcolare un nuovo rapporto degli hash di destinazione.",
+        "6. Confrontare C con la tabella dei conflitti e verificare che ogni variante pianificata e componente multidisco esista una sola volta.",
+        "7. Autorizza solo la Cartella C in EmuCoreX, aggiorna e testa una voce da ogni classe di conflitto.",
+        "8. Mantieni A e B in sola lettura finché C non sopravvive al riavvio e ogni identità regionale o multidisc è corretta."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Un'immagine patchata non dovrebbe sostituire un master di conservazione intatto. Preferisci la patch esterna dove supportata e conserva il master al di fuori delle scansioni attive. Se un file cue fa riferimento ai brani, l'intero set riceve una decisione di conflitto; copiare solo il cue o il BIN più grande crea un elemento di libreria fuorviante ma incompleto."
+    },
+    {
+      "type": "heading",
+      "text": "Chiudi ogni riga nella tabella dei conflitti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una fusione è completa quando ogni file di input ha una disposizione documentata e ogni output ha un record di integrità."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ogni gruppo con hash identico contribuisce con una copia attiva prevista.",
+        "Collisioni con hash diversi hanno spiegazioni esplicite su seriale, regione, revisione o patch.",
+        "Ogni set multidisc e cue/bin è completo.",
+        "Gli hash di destinazione corrispondono alle copie di input selezionate.",
+        "EmuCoreX mostra i titoli pianificati senza radici di origine sovrapposte."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Conflitti che richiedono una pausa"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Due file condividono un titolo ma mancano prove di seriale: conserva entrambi al di fuori della radice attiva fino a quando non siano identificati.",
+        "L'hash di destinazione non corrisponde a nessuna sorgente: ripeti la copia dal file verificato scelto.",
+        "Un cue si avvia senza audio: una traccia riferita è stata rinominata o omessa.",
+        "I preferiti sono associati alla regione sbagliata: correggi l'identità dell'immagine prima di spostare salvataggi o profili."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Scarta C e torna alla mappa di origine"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rimuovere la concessione della cartella C, aggiornare e riautorizzare A e B esattamente come erano. Poiché nessuna delle sorgenti è stata modificata, non è necessaria alcuna copia inversa. Conservare la tabella dei conflitti, contrassegnare le righe contestate e ricostruire C solo dopo che queste identità saranno risolte."
+    },
+    {
+      "type": "heading",
+      "text": "Deduplicazione e conservazione del backup sono decisioni diverse"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una copia attiva per hash previene l'ingombro della libreria, ma una seconda copia offline su un altro dispositivo fisico è una resilienza legittima. La tabella degli hash dovrebbe distinguere tra Attiva, Master di conservazione e Backup, in modo che una pulizia non rimuova mai l'ultima copia recuperabile."
+    },
+    {
+      "type": "link",
+      "text": "Usare il riferimento ufficiale ai comandi SHA-256",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 recusa a mistura de acumulação em alvos de 16 bits na máxima precisão",
+  "summary": "Um guardião de precisão desativa uma otimização cuja ordem de arredondamento pode exceder a escala de cores de 16 bits representável, alinhando a saída de hardware de alta precisão com a referência de software.",
+  "heroAlt": "Evidência de origem do pull request PCSX2 #13918: GS/HW: Exigir RT de 32 bits para mistura de acumulação no blend máximo.",
+  "searchKeywords": [
+    "PCSX2",
+    "mistura de acumulação",
+    "alvo de renderização de 16 bits",
+    "blend máximo",
+    "dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Exigir RT de 32 bits para mistura de acumulação no blend máximo."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A acumulação altera qual valor recebe o arredondamento de 16 bits"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 pode otimizar algumas misturas acumulando através de um alvo de renderização hospedeiro. Em um alvo de 32 bits, a precisão extra geralmente é compatível com o resultado pretendido. Um alvo de 16 bits GS quantiza a cor de forma diferente: aplicar arredondamento após o intermediário errado pode produzir RGB 255, mesmo que a escala pretendida pelo formato termine em torno de 240. A imagem pode parecer próxima, enquanto seu padrão de dithering e tons exatos divergem."
+    },
+    {
+      "type": "heading",
+      "text": "A precisão máxima agora requer um alvo de 32 bits para o caminho rápido"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #13918 adiciona uma condição no GSRendererHW. Quando a precisão da mistura é definida para máxima, a mistura por acumulação permanece disponível apenas se o alvo de renderização for de 32 bits. Um alvo de 16 bits retorna ao caminho sem acumulação que respeita sua quantização. Modos de precisão inferior podem continuar fazendo seus compromissos de desempenho documentados; a alteração alinha a configuração mais rigorosa com a promessa de precisão."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity expõe a diferença nos detalhes de dithering"
+    },
+    {
+      "type": "paragraph",
+      "text": "A comparação fornecida Vulkan usa um quadro de 16 bits de Sonic Riders: Zero Gravity e inclui renderização por software como referência. No tamanho normal, a mudança pode ser difícil de perceber, mas ao ampliar o padrão de dithering, revela-se a escada de cores diferente. É por isso que imagens de referência no nível de pixel são importantes: uma captura de tela de ampla compatibilidade poderia perder o erro numérico que a configuração máxima foi especificamente projetada para evitar."
+    },
+    {
+      "type": "heading",
+      "text": "As verificações de regressão devem cobrir tanto as profundidades de destino quanto os modos de mistura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduza o dump de origem no Vulkan e em outros backends de hardware, compare os pixels sem perdas com a saída de software e verifique se o caminho de acumulação é rejeitado apenas para alvos de 16 bits no modo de mistura máxima. Um alvo de 32 bits deve reter a otimização. Registre o roteamento de desenho e o tempo do GPU, porque desativar uma otimização pode afetar o desempenho mesmo quando a correção da saída é transparente. Teste vários padrões de dithering e equações de acumulação em vez de apenas uma textura de base."
+    },
+    {
+      "type": "callout",
+      "text": "A precisão máxima de mistura agora trata a precisão do alvo como parte do algoritmo: uma superfície de 16 bits não pode usar com segurança o atalho de acumulação de 32 bits."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

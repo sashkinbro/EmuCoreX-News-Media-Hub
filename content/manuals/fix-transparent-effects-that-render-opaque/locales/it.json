@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Ripara gli effetti trasparenti PS2 che appaiono come superfici solide",
+  "summary": "Usa un vetro, acqua, fumo o overlay del menu ripetibile per distinguere la mancanza di fusione alpha dai problemi di texture o di ordine di disegno, aumenta l'accuratezza un passo alla volta e testa strati traslucidi non correlati prima di salvare l'override.",
+  "heroAlt": "Immagine di confronto grafica PCSX2 che mostra un effetto framebuffer corretto",
+  "searchKeywords": [
+    "Trasparenza PS2 opaca",
+    "Fusione alpha EmuCoreX",
+    "Correzione fumo solido",
+    "Problema nel renderer dell'acqua",
+    "HUD trasparente"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "accuracy": "Precisione"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 guida al costo di miscelazione",
+    "pcsx2-performance": "PCSX2 indicatore di miscelazione accurato"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Classifica lo strato solido prima di cambiare la precisione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un effetto opaco è una prova utile solo quando il suo aspetto previsto è noto. Scegli un oggetto la cui trasparenza sia evidente durante il gioco normale: un pannello di vetro dovrebbe rivelare la geometria dietro di esso, il fumo dovrebbe avere bordi morbidi e stratificati, e un menu sovrapposto dovrebbe preservare la scena sottostante. Cattura l'uscita corrotta alla risoluzione nativa e nota se lo strato ha la forma e il colore corretti. Geometria corretta con opacità errata punta verso il blending; un rettangolo vuoto o una texture confusa necessita di un'indagine diversa."
+    },
+    {
+      "type": "callout",
+      "text": "La massima accuratezza nel blending non è un preset di qualità universale. Può aggiungere un lavoro sostanziale GPU e può nascondere quale livello inferiore in realtà corregge il titolo."
+    },
+    {
+      "type": "heading",
+      "text": "Blocca un test a effetto traslucido"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un punto di controllo che raggiunge lo stesso effetto entro un minuto.",
+        "Un riferimento da rendering software, acquisizione hardware originale o documentazione affidabile specifica del titolo.",
+        "Risoluzione interna nativa con sostituzioni di texture e shader disattivati.",
+        "Contatori di prestazioni o una misurazione di velocità ripetibile.",
+        "Un backup pulito del profilo per gioco."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Trova il livello minimo di fusione"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Ripeti il punto di controllo sul driver del sistema e cattura il livello opaco nello stesso momento dell'animazione.",
+        "2. Confronta Vulkan e OpenGL con tutti gli altri valori invariati; annota se uno dei percorsi compone già l’effetto correttamente.",
+        "3. Se entrambi falliscono, ottieni un breve riferimento renderizzato via software e verifica cosa dovrebbe rimanere visibile attraverso lo strato.",
+        "4. Torna all’API hardware scelta e aumenta l’accuratezza del blending esattamente di un livello.",
+        "5. Avvia a freddo il checkpoint dopo ogni modifica; non valutare più livelli all’interno di una singola sessione ripresa.",
+        "6. Fermati al primo livello che ripristina la traslucenza, poi misura la sezione con molti effetti dopo che il dispositivo è riscaldato.",
+        "7. Ispeziona una funzione alpha separata come nebbia, ombre, particelle o attenuazione del menu di pausa.",
+        "8. Salva il valore solo nel profilo di questo titolo e documenta il checkpoint che lo ha giustificato."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli effetti PS2 possono leggere, scrivere e combinare con i contenuti precedenti del framebuffer. Il percorso host GPU può approssimare quelle operazioni a diversi livelli di precisione e costo. Il livello funzionante più piccolo è prezioso perché soddisfa la dipendenza osservata senza pagare per comportamenti non correlati a ogni disegno. Un'API del renderer che fissa il passaggio al livello di base può essere preferibile a un'impostazione di blending molto più pesante su un'altra API."
+    },
+    {
+      "type": "heading",
+      "text": "Criteri di superamento della trasparenza"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione deve ripristinare sia l'aspetto sia l'ordine di composizione."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La geometria di sfondo rimane visibile attraverso le parti previste dell'effetto.",
+        "I bordi dei livelli sono stabili e non lampeggiano tra opaco e trasparente.",
+        "Gli elementi HUD in primo piano continuano ad apparire sopra l'effetto.",
+        "Una seconda scena translucida si comporta correttamente.",
+        "La velocità della sessione calda non scende al di sotto dell'obiettivo giocabile del titolo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Condizioni di arresto durante i test di fusione"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La forma è corrotta a ogni livello: indaga l'output della texture o della geometria invece.",
+        "Solo una risoluzione interna più alta rompe l'opacità: isola un percorso specifico per l'upscaling.",
+        "I menu diventano trasparenti con il mondo di gioco: azzera l'ultimo livello e cattura la regressione.",
+        "La correttezza costa una velocità insostenibile: mantieni la baseline inferiore e documenta il rendering software solo come riferimento."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rimuovi l'esperimento alpha isolato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ripristina la miscelazione su Automatico, ripristina il renderer precedente, chiudi la sessione di emulazione e verifica che il sintomo opaco originale ritorni al checkpoint registrato. Questo conferma la variabile modificata prima di archiviare o sostituire il profilo di test."
+    },
+    {
+      "type": "heading",
+      "text": "Il contrasto del display non è precisione alfa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il livello del nero OLED, la conversione HDR, l'intervallo televisivo e il contrasto per l'accessibilità possono far sembrare più scura una trasparenza, ma non cambiano il suo ordine di disegno. Convalida il risultato del framebuffer in uno screenshot prima di regolare la catena di display esterna."
+    },
+    {
+      "type": "link",
+      "text": "Rivedi i requisiti hardware PCSX2",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "在删除任何内容之前查找带有 SHA-256 的重复 PS2 图像",
+  "summary": "在 Windows、Linux 或 macOS 上创建只读哈希清单；将字节完全相同的个人光盘映像分组；区分活动副本与离线备份；仅从扫描的文件夹中删除经过验证的冗余内容。",
+  "heroAlt": "Microsoft Learn Get-FileHash 参考，显示 PowerShell SHA-256 命令语法",
+  "searchKeywords": [
+    "重复 PS2 ISO",
+    "Get-FileHash SHA-256",
+    "sha256sum 库审计",
+    "EmuCoreX 重复游戏",
+    "验证相同文件"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "库",
+    "integrity": "完整性"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Microsoft Get-FileHash 参考",
+    "gnu-sha2": "GNU SHA-256 工具参考"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "以只读模式清点扫描的根目录"
+    },
+    {
+      "type": "paragraph",
+      "text": "只有当两个文件的字节完全相同时，它们才是重复的，而不是标题或文件名看起来相似。区域版本、修订版、演示光盘、奖励光盘、CD 音轨和修补后的工作副本可以使用相同的名称，但包含不同的数据。首先列出每个 EmuCoreX 库的根目录，并且不要移动任何文件。审计应该读取映像，在这些根目录之外的某处写入报告，并且不涉及记忆卡和模拟器数据。"
+    },
+    {
+      "type": "callout",
+      "text": "匹配的 SHA-256 可证明你测量的文件之间字节相同。它不能证明原始转储是准确的、已获授权重新分发，或可以从所有备份中安全删除。请在活动库之外保留一个已验证的保存主副本。"
+    },
+    {
+      "type": "heading",
+      "text": "创建 Windows PowerShell 哈希报告"
+    },
+    {
+      "type": "paragraph",
+      "text": "将存储设备连接到受信任的 Windows 计算机，或直接在已有的文件夹上操作。将 D:\\PS2 替换为扫描的根目录的实际路径。Get-FileHash 默认使用 SHA-256，但指定算法可以使报告自解释。导出 CSV 可保留完整路径，并防止控制台截断。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. 在没有管理员权限的情况下打开 PowerShell；对普通库文件进行哈希计算不需要提升权限。",
+        "2. 运行：Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. 等待提示符返回。大型 DVD 镜像需要读取每个字节，因此可移动存储设备可能需要很长时间。",
+        "4. 打开 CSV 并将具有相同 Hash 值的相邻行分组。确认报告的 Path 值指向不同的文件，而不是通过两个快捷方式列出的同一文件。",
+        "5. 对每个不重叠的根重复该命令，并将报告与审核日期、驱动器标识及任何读取错误一起保留。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "在类 Unix 系统上使用 sha256sum 或 shasum"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Linux 上，GNU sha256sum 提供等效的摘要。使用 find 构建文件列表时使用空字符分隔符，以便空格和特殊字符保持不变，然后将输出重定向到扫描目录之外。在 macOS 上，通常可以使用 shasum -a 256。不要粘贴未经审核的会自动删除文件的互联网命令；此过程故意将检测与清理分开。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Linux 示例：find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "macOS 示例：find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "如果命令报告输入/输出错误，请停止清理并检查源设备。在不稳定读取后生成的摘要不是有效的迁移基线。",
+        "对于 cue/bin 光盘映像，将 cue 表和所有引用的轨道视为一组；仅对最大 BIN 进行哈希可能会忽略缺失的音轨。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "在清理之前对每个匹配组进行分类"
+    },
+    {
+      "type": "list",
+      "items": [
+        "当另一个相同的副本位于下载或临时导入文件夹时，将副本保存在预期的扫描根目录中。",
+        "当匹配的活动副本是重命名的工作文件时，保留保存主文件；主文件应位于每个EmuCoreX扫描根目录之外。",
+        "当其中一个是另一设备上唯一的离线备份时，请保留两个实体副本。在不同备份层中的重复字节是有意的冗余，而不是库杂乱。",
+        "不要仅因为显示标题匹配就合并哈希值不同的文件。应首先记录序列号、地区、修订版、光盘编号和补丁状态。",
+        "对于多光盘游戏，请确认光盘1和光盘2是故意不同的；仅凭文件名不足以在以后重建整个合集。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "首次处理时应隔离而不是删除"
+    },
+    {
+      "type": "paragraph",
+      "text": "在所有选定的库根目录之外创建一个隔离文件夹。将每个已确认分组中的一个多余工作副本移入该文件夹，刷新 EmuCoreX 一次，并验证剩余的项目是否能打开预期的区域。至少在重新启动一次应用程序并启动每个受影响的游戏后保留隔离文件夹。然后才删除多余的工作副本，并且只有在你还持有另一个已验证的保存或备份副本时才可删除。"
+    },
+    {
+      "type": "heading",
+      "text": "验证去重库"
+    },
+    {
+      "type": "list",
+      "items": [
+        "EmuCoreX 条目数量与预期的可播放副本匹配，包括多碟套装。",
+        "每个受影响的标题都解析到所选的规范路径，并从该路径冷启动。",
+        "保留文件的 SHA-256 保持与隔离前记录的摘要相等。",
+        "收藏夹和每个游戏的配置文件仍然指向预期的序列号和地区。",
+        "离线保存副本及其审核报告不在 EmuCoreX 扫描的文件夹内。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "从错误分类中恢复"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果标题消失或打开了错误的修订版，请关闭 EmuCoreX 并将隔离文件移回其原始实际路径。刷新一次，比较序列号，如果以前的文件名被更改，则恢复该文件名。不要通过在区域条目之间复制存档来补偿；首先解决映像身份问题。如果源驱动器出现读取错误，请保留两份副本及其报告，直到从自有光盘进行新的转储以建立可信的主版本。"
+    },
+    {
+      "type": "link",
+      "text": "检查 Microsoft Learn 中 Get-FileHash 的语法",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

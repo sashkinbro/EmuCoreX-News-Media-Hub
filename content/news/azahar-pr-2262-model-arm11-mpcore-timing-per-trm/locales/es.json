@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Los modelos Azahar simulan el tiempo de ejecución de las instrucciones ARM11 manteniendo una salida de emergencia heredada",
+  "summary": "Una tabla de ciclos basada en el TRM distingue los vaciados de la tubería, los retornos predichos, los modos de direccionamiento, las transferencias y las operaciones VFP en lugar de contabilizar cada instrucción con un tick.",
+  "heroAlt": "Evidencia de la fuente del pull request #2262 de Azahar: core/arm: modelar el tiempo del MPCore ARM11 según el TRM",
+  "searchKeywords": [
+    "Azahar",
+    "MPCore ARM11",
+    "Tiempo de ejecución de instrucciones",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: modelar el tiempo del MPCore ARM11 según el TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una instrucción por tick oculta las diferencias en la tubería y en las transferencias"
+    },
+    {
+      "type": "paragraph",
+      "text": "El Nintendo 3DS CPU no ejecuta cada instrucción ARM con la misma latencia. Una bifurcación que limpia una tubería de ocho etapas, un retorno predicho, una dirección de registro desplazado y una transferencia de múltiples registros o VFP tienen diferentes costos. El temporizador simple anterior de Azahar podría mover interrupciones o la lógica del juego en relación con el trabajo de CPU, particularmente en secuencias cuyo comportamiento depende de cuándo un evento se hace visible."
+    },
+    {
+      "type": "heading",
+      "text": "La tabla sigue los mecanismos MPCore de ARM11, no retrasos arbitrarios del juego."
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #2262 amplía arm_tick_counts con un modelo de limpieza de tubería de siete ciclos, un promedio más bajo para bifurcaciones indirectas, manejo especial para MOV o carga en el PC, costo de dirección de registro desplazado, transferencias múltiples de dos registros por ciclo y recuentos de transferencia VFP. Los ayudantes de extracción de campos de bits se corrigen como parte de la coincidencia de codificaciones de instrucción con la función de temporización apropiada."
+    },
+    {
+      "type": "heading",
+      "text": "Los retornos predichos difieren del flujo de control no estructurado"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr y las cargas basadas en la pila al PC pueden usar predicción de retorno y recibir un resultado más barato, mientras que otras escrituras en el PC o cargas de tabla de saltos pagan una penalización por recarga. Esa distinción evita que una constante de bifurcación amplia cobre de más los retornos de funciones normales y cobre de menos redirecciones impredecibles. El modelo describe ciclos del invitado emulados por el anfitrión; es independiente de la rapidez con la que Dynarmic ejecute el bloque traducido en el teléfono o en el escritorio."
+    },
+    {
+      "type": "heading",
+      "text": "Un interruptor heredado contiene riesgo de compatibilidad durante la validación"
+    },
+    {
+      "type": "paragraph",
+      "text": "La depuración de configuraciones CPU puede restaurar el comportamiento anterior de un ciclo por instrucción para juegos sensibles al tiempo; la secuencia de persecución de LEGO City Undercover es el ejemplo citado. Las pruebas deben comparar ambos modos a través de puntos de referencia CPU, interrupciones, audio, sondeo de entrada y esa persecución. Valide los conteos de ciclos frente a los casos del TRM y los bucles de instrucciones dirigidos. El interruptor debe cambiar de manera determinista y persistente, pero se deben investigar nuevas regresiones en lugar de ocultar permanentemente cada título detrás del tiempo heredado."
+    },
+    {
+      "type": "callout",
+      "text": "Los nuevos modelos de tabla explican por qué las instrucciones toman diferentes ciclos de invitado; el interruptor heredado mantiene el software sensible al tiempo susceptible de pruebas mientras ese modelo madura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Lea la discusión de ingeniería Azahar y los cambios de código fuente"
+    }
+  ]
+}

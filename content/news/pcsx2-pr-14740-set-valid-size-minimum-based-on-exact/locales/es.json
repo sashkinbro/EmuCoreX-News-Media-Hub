@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 permite que el tamaño de la imagen cargada defina el área válida de un objetivo precargado",
+  "summary": "Los límites exactos de carga de EE a GS evitan que la escalación RTA posterior recorte una imagen completa a la pequeña región dibujada después, mientras que los solapamientos de un solo píxel impiden reubicar objetivos que de otro modo serían válidos.",
+  "heroAlt": "Evidencia de fuente del pull request #14740 de PCSX2: GS/TC: Establecer el tamaño mínimo válido basándose en el objetivo precargado exacto",
+  "searchKeywords": [
+    "PCSX2",
+    "caché de texturas",
+    "precargar",
+    "Escalado RTA",
+    "Carga de EE a GS"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC: Establecer el tamaño mínimo válido basándose en el objetivo precargado exacto"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un dibujo pequeño podría reducir un objetivo que ya contenía una carga completa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Algunos juegos suben una imagen desde el Emotion Engine a la memoria GS, precargan esa imagen como un objetivo y luego dibujan solo una pequeña región. La precarga puede ser correcta, pero el seguimiento del tamaño válido de PCSX2 podría seguir el dibujo posterior en lugar de la subida. Si RTA Scaling luego redimensionaba el objetivo, trataba únicamente esos pocos píxeles dibujados como válidos y eliminaba el resto de la imagen precargada."
+    },
+    {
+      "type": "heading",
+      "text": "La cobertura de subida ahora proporciona la altura mínima válida"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14740 detecta las dimensiones de la subida de EE a GS que pobló la precarga y las usa para establecer la altura válida del objetivo. Los dibujos pequeños posteriores pueden ampliar la validez donde sea apropiado, pero no pueden reducirla por debajo del contenido subido conocido. La corrección reside en GSTextureCache porque esto es metadatos de propiedad y cobertura, no un efecto de shader aplicado después de que la imagen ya ha sido truncada."
+    },
+    {
+      "type": "heading",
+      "text": "La superposición de un solo píxel ya no mueve la identidad del objetivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un caso separado permitió una nueva carga que se superponía a otro objetivo por un solo píxel para ajustar el inicio de ese objetivo y cambiar su tamaño. Las búsquedas por la dirección base original luego fallaban aunque el recurso todavía fuera válido en esa base. La gestión de precarga ahora tolera la ligera superposición de bloques sin reubicar el objetivo, preservando la identidad de la dirección que otras operaciones de caché usan para localizarlo."
+    },
+    {
+      "type": "heading",
+      "text": "Vexx y Lucifer's Call ejercitan las dos correcciones independientes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx es el reproductor original para una imagen completamente precargada recortada por seguimiento de tamaño válido. Shin Megami Tensei: Lucifer's Call cubre el comportamiento de superposición. Las pruebas deberían registrar los límites de la carga, la base del objetivo, la altura válida, límites de dibujo posteriores y cualquier cambio de tamaño RTA. Compare los fotogramas nativos y escalados, luego agregue un caso negativo con una superposición genuinamente mayor que aún debería alterar la propiedad. Corregir la tolerancia de un píxel no debe permitir que objetivos en conflicto coexistan indefinidamente."
+    },
+    {
+      "type": "callout",
+      "text": "La validez precargada ahora sigue la evidencia ya en la memoria GS: el tamaño exacto de la carga y la dirección base estable tienen prioridad sobre un dibujo posterior pequeño o una superposición insignificante."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "Lea la discusión de ingeniería y los cambios de fuente de PCSX2"
+    }
+  ]
+}

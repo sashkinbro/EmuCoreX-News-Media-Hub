@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 isolates CSM2 palette loading from CSM1's swizzled order",
+  "summary": "A storage-mode switch in Breath of Fire exposed why sequential CSM2 data cannot safely reuse a temporary CLUT buffer populated under CSM1's swizzle rules.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14546: GS/CLUT: Handle special case for CSM2 32bit mode switch",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "palette",
+    "Breath of Fire"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT: Handle special case for CSM2 32bit mode switch"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "One palette survives the mode switch, but its ordering does not"
+    },
+    {
+      "type": "paragraph",
+      "text": "Breath of Fire: Dragon Quarter reloads its color lookup table in CLUT Storage Mode 1 and then switches to Storage Mode 2. CSM1 applies a swizzled arrangement, while CSM2 addresses palette entries sequentially. Reusing the temporary data prepared for the first mode therefore gives the second mode valid colors in the wrong positions. Menu text then shows black holes where the intended main color should appear."
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 now reads the authoritative palette from GS local memory"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14546 changes GSClut so storage mode 2 always loads the CLUT from local memory rather than the temporary CSM1-oriented buffer. The approach also explains CSM2's slower behavior: it treats GS memory as the source at texture-cache load time. By choosing the source according to the active storage mode, PCSX2 avoids inventing a conversion between two layouts that the game itself never requested."
+    },
+    {
+      "type": "heading",
+      "text": "The source presents a hardware theory, not a fabricated certainty"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation is based on the game's behavior, a clean GS dump run, and the fact that no other reuse rule produced a coherent CSM2 palette. The author explicitly notes that hardware testing was planned to confirm the model. That boundary matters for an engineering article: the software fix has a strong reproducer, but the precise internal reason the original GS behaves this way remains a hypothesis until console traces corroborate it."
+    },
+    {
+      "type": "heading",
+      "text": "Testing should pair the menu reproducer with console evidence"
+    },
+    {
+      "type": "paragraph",
+      "text": "The immediate regression check is Breath of Fire: Dragon Quarter at the affected menu, comparing palette entries before and after the CSM1-to-CSM2 switch. A useful trace records storage mode, CLUT source address, entry order, and the color used by the damaged text. Additional games that alternate the two storage modes should confirm that forcing local-memory loading does not disturb palettes that previously worked. Hardware results should be documented separately from emulator inference."
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 fixes the observed palette corruption while keeping the hardware explanation honest: CSM2's direct local-memory behavior is evidence-backed but still awaiting stronger console confirmation."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

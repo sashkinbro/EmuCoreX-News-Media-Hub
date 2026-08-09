@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-a-renderer-crash-during-shader-compilation",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostiquer un plantage du moteur de rendu lors de la compilation des shaders",
+  "summary": "Distinguer le travail attendu des shaders au premier lancement d'un plantage répétitif du pilote en comparant les lancements à froid et à chaud, en restaurant le pilote système, en changeant une API et en conservant la scène exacte et le journal qui déclenche la compilation.",
+  "heroAlt": "PCSX2 boîte de dialogue d'avertissement identifiant un pilote graphique obsolète lors du dépannage du moteur de rendu",
+  "searchKeywords": [
+    "EmuCoreX plantage de compilation de shader",
+    "Vulkan plantage au premier lancement",
+    "GPU pilote du moteur de rendu",
+    "cache de shaders",
+    "périphérique perdu"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphismes",
+    "crash": "Plantage"
+  },
+  "sourceLabels": {
+    "pcsx2-windows": "Causes de plantage PCSX2 Vulkan/OpenGL",
+    "pcsx2-vulkan": "Développement du moteur PCSX2 et du cache de shaders"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Séparer une première compilation lente d'un moteur échoué"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un lancement à froid peut se mettre en pause pendant que de nouvelles variantes de shaders sont compilées, mais il devrait finalement se terminer et les lancements ultérieurs devraient réutiliser le cache. Un plantage du moteur termine au lieu la session, signale une perte de périphérique ou un échec du compilateur, ou se répète au même rendu. Enregistrer si l'application se ferme, si Android la tue, si l'écran se fige ou si seul l'indicateur de progression s'arrête."
+    },
+    {
+      "type": "callout",
+      "text": "Ne supprimez pas toutes les données de l'application pour vider le cache graphique. Les cartes mémoire, profils, sauvegardes et références du firmware sont en dehors de la limite du cache de shaders jetable."
+    },
+    {
+      "type": "heading",
+      "text": "Conservez l'état d'initialisation défaillant"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde normale dans le jeu avant l'effet exact ou la zone qui déclenche la compilation.",
+        "Package du pilote système GPU et toute identité de pilote personnalisée enregistrée.",
+        "Horodatages de lancement à froid et à chaud.",
+        "Journal du rendu ou enregistrement de crash Android capturé sans contenu de fichiers privés.",
+        "Une sauvegarde des profils de titre et des données de sauvegarde utilisateur."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Testez le cache, le pilote et l'API comme des branches indépendantes"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Démarrez à froid le titre et attendez une fenêtre de compilation mesurée sans relancer à plusieurs reprises.",
+        "2. Si cela se termine, fermez normalement et répétez la même scène pour déterminer si le chemin chaud est stable.",
+        "3. Lorsque cela plante, restaurez le pilote du système GPU avant de changer l'API du rendu.",
+        "4. Réessayez la scène deux fois sur le pilote système et enregistrez le premier message de compilation ou de perte de périphérique.",
+        "5. Sélectionnez l'autre API matérielle prise en charge sans changer la résolution ni l'exactitude.",
+        "6. Effacez uniquement le cache de shaders jetable documenté de l'émulateur une fois, puis comparez les exécutions à froid et à chaud suivantes.",
+        "7. Redémarrez Android pour supprimer l'état du processus du pilote obsolète et répétez la reproduction minimale.",
+        "8. Conservez l'API stable par jeu tout en préservant le journal d'erreur pour un rapport de pilote ou d'émulateur."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Les variantes de shaders dépendent du moteur de rendu, du pilote, des dessins du jeu et des paramètres graphiques. Une reconstruction du cache devrait créer une exécution plus lente suivie d'une réutilisation stable. Un crash qui survient après un pilote personnalisé mais disparaît avec le package système implique cette branche ; un crash spécifique à une scène à travers les pilotes et les API nécessite un rapport minimal de l'émulateur."
+    },
+    {
+      "type": "heading",
+      "text": "Acceptation de la stabilité de compilation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une récupération doit passer par des comportements répétés à froid et à chaud, pas un lancement chanceux."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une compilation à froid se termine sans arrêt de l'application.",
+        "Deux lancements à chaud ultérieurs atteignent la même scène sans reconstruire tout le contenu.",
+        "Aucune perte de périphérique ou erreur du compilateur de shaders n'apparaît dans le chemin accepté.",
+        "Les titres non liés s'initialisent toujours sous le pilote et l'API sélectionnés.",
+        "Les sauvegardes et profils utilisateur restent inchangés par la maintenance du cache."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modèles de plantage à conserver pour escalade"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La même scène de shader bloque les deux API sur le pilote système : collecter un rapport minimal.",
+        "Seul un package personnalisé provoque un plantage : le retirer du profil actif.",
+        "Chaque lancement recompile les mêmes variantes : vérifier la persistance du cache et l'état du stockage.",
+        "Android bloque le processus sous pression mémoire : séparer l'épuisement des ressources de l'échec du compilateur."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Revenir au pilote système et à la politique de cache conservé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Désactivez le pilote personnalisé, restaurez l’API stable précédente, cessez de vider le cache, et lancez à froid un titre connu pour bien fonctionner. Réimportez le profil sauvegardé par jeu uniquement après avoir confirmé qu’il ne restaure pas la combinaison qui provoque le crash."
+    },
+    {
+      "type": "heading",
+      "text": "Un succès à chaud peut masquer un chemin à froid défaillant"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un shader mis en cache peut permettre aux lancements ultérieurs de réussir tandis qu’une installation fraîche ou une mise à jour du pilote provoque toujours un crash. Conservez au moins un test contrôlé du cache à froid avant de déclarer la configuration portable."
+    },
+    {
+      "type": "link",
+      "text": "Consultez les conseils sur les crashs des pilotes graphiques PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/windows/"
+    }
+  ]
+}

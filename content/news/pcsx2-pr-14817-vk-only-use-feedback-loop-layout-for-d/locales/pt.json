@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Portões PCSX2 Vulkan de feedback de profundidade no layout com base na capacidade que o legaliza",
+  "summary": "A amostragem somente leitura de profundidade agora retorna ao layout GENERAL quando barreiras de textura estão desativadas, evitando um layout de loop de feedback selecionado sem seus bits de recurso Vulkan necessários.",
+  "heroAlt": "Evidência de origem do pull request #14817 do PCSX2: GS:VK: Use layout de loop de feedback para profundidade apenas se a barreira de textura for suportada.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "layout de loop de feedback",
+    "barreira de textura",
+    "camada de validação"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Use layout de loop de feedback para profundidade apenas se a barreira de textura for suportada."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um layout de imagem é válido apenas quando seu contrato de recurso está habilitado"
+    },
+    {
+      "type": "paragraph",
+      "text": "O layout de loop de feedback de anexo de Vulkan descreve uma imagem usada através de uma relação de feedback. PCSX2 adiciona o bit de capacidade correspondente apenas quando a barreira de textura ou o suporte a feedback de profundidade está ativo. No entanto, o caminho de amostragem somente leitura de profundidade poderia escolher esse layout depois que as barreiras foram desativadas, criando uma contradição: a gravação de comandos alegava um recurso que a configuração do dispositivo deliberadamente não havia habilitado."
+    },
+    {
+      "type": "heading",
+      "text": "O feedback de profundidade não suportado agora usa o layout GENERAL"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14817 torna a seleção de layout condicional ao mesmo teste de suporte que controla os bits de capacidade. Os caminhos suportados mantêm o layout especializado de loop de feedback. Quando o recurso não está disponível ou Forçado Desabilitado, a amostragem de profundidade usa GENERAL, um fallback legal com requisitos de sincronização mais amplos. A mudança mantém o estado da imagem e os recursos do dispositivo derivados de uma decisão, em vez de verificações otimistas independentes."
+    },
+    {
+      "type": "heading",
+      "text": "Erros de validação expõem uma falha real de portabilidade antes que os pixels falhem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um driver pode aceitar uma combinação de layout ilegal sem que haja um artefato visual imediato, especialmente fora do modo de depuração. As camadas de validação Vulkan sinalizam a incompatibilidade de forma determinística, tornando-as a evidência correta para este patch. Evitar o aviso não é apenas limpeza de logs cosmética: isso garante que o fluxo de comandos permaneça dentro do contrato exigido entre fabricantes e versões de driver, em vez de depender de um comportamento permissivo."
+    },
+    {
+      "type": "heading",
+      "text": "O dump de origem testa exatamente a rota de desativação de recurso"
+    },
+    {
+      "type": "paragraph",
+      "text": "Execute o dump anexado do Time Crisis 3 GunCon em Vulkan com a opção 'Override Texture Barriers' definida como 'Forçar Desativado' e 'Usar Dispositivo de Depuração' habilitado. O caminho corrigido não deve emitir erro de validação de layout de loop de feedback e deve preservar o quadro. Repita com barreiras suportadas para verificar se o layout especializado ainda aparece, depois teste leitura apenas de profundidade, feedback de cor, reset de backend e vários GPUs. Capture as transições de imagem para que um aviso ausente não esconda o uso de sincronização GENERAL incorreta."
+    },
+    {
+      "type": "callout",
+      "text": "Layout e capacidade são um único contrato: se PCSX2 não habilitar suporte a feedback de profundidade, ele não deve anunciar esse suporte através do layout da imagem."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Leia a discussão de engenharia PCSX2 e as mudanças no código-fonte"
+    }
+  ]
+}

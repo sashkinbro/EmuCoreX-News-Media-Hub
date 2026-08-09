@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 preserva dados de render-target intactos através de limpezas parciais",
+  "summary": "O rastreamento de limpeza e pré-carregamento agora distingue uma sobreposição total de uma operação de alvo parcial, evitando que linhas válidas sejam descartadas e copiadas de volta como dados corrompidos.",
+  "heroAlt": "Evidência visual do pull request PCSX2 #14681: GS/TC: Melhorar comportamento de limpeza e pré-carregamento",
+  "searchKeywords": [
+    "PCSX2",
+    "cache de textura",
+    "limpeza parcial",
+    "pré-carregamento",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Melhorar comportamento de limpeza e pré-carregamento"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma limpeza de alvo parcial estava invalidando o quadro que veio antes dela"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 pode limpar apenas a segunda metade de um destino de renderização enquanto as primeiras 256 linhas já contêm dados necessários para o próximo quadro. PCSX2 anteriormente marcou o destino mais amplo como inválido, e depois pré-carregou de um intervalo que já havia declarado como inutilizável. A cópia era internamente consistente com o mapa de validade errado, produzindo piscadas mesmo que o jogo nunca tenha limpado a metade preservada."
+    },
+    {
+      "type": "heading",
+      "text": "Limpar a validade agora requer um destino correspondente ou sobreposição total"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14681 altera quando os canais RGB e alfa perdem seu status válido. Uma limpeza pode descartar os conteúdos rastreados apenas quando o destino coincide ou cobre completamente o intervalo relevante. A sobreposição parcial mantém a porção não tocada ativa. O renderizador também lida com limpezas de meio emparelhadas de forma mais deliberada e ignora um desenho de limpeza normal quando um destino se resolve para zero, evitando trabalhos que não podem contribuir com pixels."
+    },
+    {
+      "type": "heading",
+      "text": "O pré-carregamento segue a cobertura sobrevivente em vez do antigo rótulo de destino"
+    },
+    {
+      "type": "paragraph",
+      "text": "As alterações no preload do companheiro importam porque validade e restauração são dois lados da mesma decisão de cache. Quando um alvo sobreposto é reutilizado, PCSX2 deve copiar apenas os dados conhecidos por sobreviver; caso contrário, uma limpeza correta ainda pode ser seguida por um preload obsoleto ou indefinido. O trabalho em GSRendererHW e GSTextureCache alinha essas etapas, com os auxiliares de registro GS fornecendo as informações de cobertura usadas na decisão."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 e X-Men Origins abrangem diferentes padrões de limpeza"
+    },
+    {
+      "type": "paragraph",
+      "text": "A fonte identifica o flicker de Gran Turismo 4 como o principal reprodutor e inclui capturas de antes e depois para Time Crisis 3 e X-Men Origins. Os testes devem revisitar os mesmos quadros enquanto alternam entre renderização nativa e aumentada, e então observar vários quadros subsequentes para corrupção retardada. A iluminação de Need for Speed é outra verificação solicitada. Um rastreamento útil registra os limites do alvo, validade dos canais e limites do preload para cada limpeza sobreposta."
+    },
+    {
+      "type": "callout",
+      "text": "A correção chave é temporal: uma limpeza parcial não deve apagar o conhecimento em cache sobre pixels que o convidado deixou deliberadamente para um quadro posterior."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de origem"
+    }
+  ]
+}

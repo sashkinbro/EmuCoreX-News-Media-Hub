@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 fügt Shader-Anisotropie für Texturen hinzu, die punktgefiltert bleiben müssen",
+  "summary": "Ein Direct3D-Fallback führt anisotropes Sampling in Shadern durch und vermeidet Hardware-Pfade, die lineares Filtern erzwingen oder nicht-mipmapped Texturen bei einigen AMD-Treibern ablehnen.",
+  "heroAlt": "Beweismittel aus dem PCSX2-Pull-Request #14188: GS/HW: Füge SW(Shader-basierte) Anisotropie hinzu",
+  "searchKeywords": [
+    "PCSX2",
+    "anisotropes Filtern",
+    "Punktfilterung",
+    "Direct3D 12",
+    "Alpha-Test"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Füge SW(Shader-basierte) Anisotropie hinzu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Hardware-Anisotropie kann den erforderlichen Texturfiltermodus verletzen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D bietet nicht die benötigte Kombination aus anisotropem Filtern mit Punktfilterung im Pfad von PCSX2, sodass das vorherige Aktivieren von AF betroffene Texturen in Richtung lineares Sampling verschob. Lineare Interpolation mischt benachbarte Farben vor dem Alphatest; ein transparenter Texel kann daher eine Farbe einziehen, die das Spiel niemals anzeigen wollte. Das Ergebnis ist am auffälligsten auf geneigten, alpha-getesteten Oberflächen und Texturekanten."
+    },
+    {
+      "type": "heading",
+      "text": "Der Shader-Pfad kontrolliert Richtungsproben explizit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14188 fügt den Direct3D-Renderern einen softwarebasierten, shadergestützten anisotropen Filter hinzu. Da PCSX2 die Proben selbst auswählt und kombiniert, kann es punktähnliche Farbentscheidungen bewahren und gleichzeitig die verlängerte Fläche abdecken, die durch eine schräge Oberfläche entsteht. Die Einstellung ist vom normalen anisotropen Level getrennt, sodass Benutzer die neue Route gezielt aktivieren können, anstatt das Hardware-Verhalten stillschweigend zu ersetzen."
+    },
+    {
+      "type": "heading",
+      "text": "Nicht-mipmapierte AMD DX12-Texturen erhalten eine konsistente Alternative"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelle berichtet außerdem, dass AMDs Treiber Direct3D 12 keine Hardware-AF auf Texturen ohne Mipmaps anwendet, obwohl vergleichbare Vulkan Rendering funktioniert. Shader-Sampling umgeht diese Host-Einschränkung und strebt eine Parität mit Vulkan Verhalten zwischen AMD und NVIDIA an. Es wird als aggressiver als NVIDIA-Hardware-AF beschrieben, besonders bei nativer Auflösung, sodass die Ausgabe nicht als visuell identisch angenommen wird."
+    },
+    {
+      "type": "heading",
+      "text": "Tests benötigen Alpha-Kanten, No-Mipmap-Texturen und mehrere Anbieter"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktiviere anisotrope Filterung und die Shader-Option und vergleiche dann alpha-getestete Geometrie mit Hardware-AF, linearer Filterung und Vulkan auf derselben Szene. Fügen Sie Texturen ohne Mipmaps, native und hochskalierte Auflösungen, steile Blickwinkel und transparente Ränder aus Ausgabe #14077 ein. Nehme Texturproben und GPU Zeit auf AMD und NVIDIA Direct3D 11 und 12 auf. Überprüfen Sie, dass versteckte Farben nicht durchdringen und dass aggressives Schärfen kein Schimmern oder Aliasing in Bewegung erzeugt."
+    },
+    {
+      "type": "callout",
+      "text": "Shader-Anisotropie existiert, um die Absicht der Gäste-Filterung zu bewahren, wenn Direct3D-Hardwareoptionen entweder verbotene Nachbarn mischen oder die Textur vollständig überspringen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

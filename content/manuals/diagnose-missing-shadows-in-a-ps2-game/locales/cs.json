@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostikujte chybějící stíny bez používání hacků pro skládání grafiky",
+  "summary": "Pořiďte jednu scénu bohatou na stíny v nativním rozlišení, zjistěte, zda chybějící vrstva je geometrie, hloubka nebo míchání, porovnejte hardwarová API a softwarový referenční výsledek, poté zachovejte pouze nejmenší opravu pro každou hru.",
+  "heroAlt": "PCSX2 srovnávací snímek z oprav přesnosti grafiky ve stínované herní scéně",
+  "searchKeywords": [
+    "PS2 chybějící stíny",
+    "EmuCoreX oprava stínů",
+    "grafická přesnost",
+    "porovnání se softwarovým rendererem",
+    "míchání hloubky"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Přesnost"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 počítadla grafiky a indikátory nastavení",
+    "pcsx2-report": "PCSX2 vstupní bod pro hlášení problémů"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Prokázat, která vrstva stínu chybí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Stín může být promítaná textura, průhledný průchod rámcem po bufferu, obyčejná tmavá geometrie nebo efekt kombinovaný s hloubkovým testováním. Užitečná první otázka tedy není, který trik povolit, ale zda hra vůbec kreslí vrstvu. Vyberte místo, kde lze stejnou postavu, světlo a kameru spolehlivě obnovit. Zaznamenejte sériové číslo hry, aktivní renderovací engin, ovladač GPU, interní rozlišení, nastavení míchání a jakékoli děděné opravy pro hru, než se pustíte do profilu."
+    },
+    {
+      "type": "callout",
+      "text": "Nehodnoťte změnu z jiného času dne, úhlu kamery, uloženého stavu nebo snímku animace. Dynamické osvětlení může způsobit, že dva platné snímky vypadají jako regrese rendereru."
+    },
+    {
+      "type": "heading",
+      "text": "Připravte stínový kontrolní bod"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normální herní uložení okamžitě před opakovatelnou nasvícenou scénou.",
+        "Jeden základní snímek obrazovky, kde jsou viditelné postava a země dohromady.",
+        "Nativní interní rozlišení a post-processing vypnuty pro první srovnání.",
+        "Vybraný systémový GPU ovladač; vlastní ovladače jsou samostatný experiment.",
+        "Psaná kopie globálních a herně specifických grafických přepisů."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Oddělené chování vykreslování, míchání a hloubky"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Studeně spusťte titul a zachyťte výchozí kontrolní bod bez načítání uloženého stavu emulátoru.",
+        "2. Resetujte ruční opravy GS pro tento titul, vyberte nativní interní rozlišení a zopakujte stejnou pohybovou cestu.",
+        "3. Přepínejte pouze mezi podporovanými hardwarovými API, mezi běhy zavírejte hru, aby se renderer mohl čistě inicializovat.",
+        "4. Pokud oba hardwarové cesty vrátí vrstvu bez obsahu, použijte krátce softwarové vykreslování jako referenci správnosti a zachyťte identickou kameru.",
+        "5. Když softwarové vykreslování ukáže stín, vraťte se k stabilnějšímu hardwarovému API a zvýšte přesnost míchání jen o jednu úroveň.",
+        "6. Pokud míchání nic nezmění, obnovte to a otestujte zdokumentovanou korekci související s hloubkou, která je vhodná pro titul, místo kombinování odhadů.",
+        "7. Opakujte druhou stínovou scénu, která používá jiný povrch nebo zdroj světla.",
+        "8. Přístroj zahřejte po dobu deseti minut a potvrďte, že vybraná korekce zůstává dostatečně rychlá pro skutečnou hru."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Výstup softwaru je diagnostický důkaz, nikoli příslib hratelné rychlosti. Správný softwarový snímek ukazuje, že obraz disku a kód hry mohou vytvořit efekt, zatímco selhání pouze na hardwaru zužuje hledání na chování rendereru. Změna míchání, která obnoví průhledný stín, je jiná než oprava hloubky, která obnoví geometrii skrytou řazením. Udržování těchto větví odděleně činí výsledek vysvětlitelným a vratným."
+    },
+    {
+      "type": "heading",
+      "text": "Přijetí korekce stínu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Přijměte profil pouze tehdy, když je vrstva stabilní ve více než původním testovacím rámci."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Pozice stínu sleduje pohybující se objekt, místo aby zůstávala jako zastaralý obdélník.",
+        "Průhlednost připomíná softwarový referenční stav a nezatemňuje celý průchod terénem.",
+        "Blízké nálepky, mlha a průhlednost HUD zůstávají nedotčeny.",
+        "Efekt přežije studený start i následný přechod mezi oblastmi.",
+        "Udržovaná rychlost a snímkování zůstávají v rámci zaznamenaného základního rozpočtu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Důkazy, které ukazují jinam"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Stín je chybějící i ve softwaru: ověřte obrázek a potvrďte, že původní scéna opravdu obsahuje jeden.",
+        "Pouze načítání stavů uložených emulátorem to porušuje: otestujte znovu ze hry a odstraňte nekompatibilní stav.",
+        "Každý tmavý povrch zmizí: resetujte široké přeskočení vykreslování nebo použijte manuální přepisy GS.",
+        "Oprava funguje jednou, ale selže po obnovení: zachyťte detaily rendereru a ovladače pro zprávu o životním cyklu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vraťte se k měřené grafické základně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Obnovte automatické míchání, deaktivujte testovanou korekci hloubky, znovu vyberte původní renderer a systémový ovladač a proveďte studený restart kontrolního bodu. Uchovejte snímky před a po spolu s jejich nastavením, ale odstraňte dočasné uložené stavy, které nelze konzistentně reprodukovat."
+    },
+    {
+      "type": "heading",
+      "text": "Nepublikujte chráněná data uložená nebo na discích"
+    },
+    {
+      "type": "paragraph",
+      "text": "Podpůrná zpráva může obsahovat sériové číslo, nastavení, protokoly a snímky obrazovky vytvořené uživatelem, pokud je to povoleno. Nepřikládáte obraz hry, firmware, šifrovací materiál nebo uloženou hru obsahující obsah distribuovaný třetími stranami pouze k demonstraci stínu."
+    },
+    {
+      "type": "link",
+      "text": "Přečtěte si příručku k důkazům výkonu PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

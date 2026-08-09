@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Modely Azahar ARM11 časování instrukcí při zachování starší únikové cesty",
+  "summary": "Tabulka cyklů založená na TRM rozlišuje vyprázdnění pipeline, předpokládané návraty, režimy adresování, přenosy a operace VFP namísto účtování každé instrukce jedním tikem.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Azahar #2262: core/arm: modelování ARM11 MPCore časování podle TRM",
+  "searchKeywords": [
+    "Azahar",
+    "ARM11 MPCore",
+    "časování instrukcí",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: modelování ARM11 MPCore časování podle TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jedna instrukce na tik skrývá rozdíly v pipeline a přenosech"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nintendo 3DS CPU nevykonává každou instrukci ARM se stejnou latencí. Příkaz větvení, který vyčistí osmistupňový pipeline, predikovaný návrat, posunutá adresa registru a přenos více registrů nebo VFP mají různé náklady. Jednoduché časování Azahar dříve mohlo posouvat přerušení nebo logiku hry vzhledem k práci CPU, zejména v sekvencích, jejichž chování závisí na tom, kdy se událost stane viditelnou."
+    },
+    {
+      "type": "heading",
+      "text": "Tabulka vychází z mechanismů ARM11 MPCore, nikoli z libovolných herních zpoždění"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2262 rozšiřuje arm_tick_counts o model vyprázdnění pipeline sedm cyklů, nižší průměr pro nepřímé větvení, speciální zacházení pro MOV nebo načtení do PC, náklady posunuté adresy registru, přenosy dvou registrů za cyklus a počty VFP přenosů. Pomocníci pro extrakci bitových polí jsou opravení jako součást přiřazení kódování instrukcí k odpovídající časovací funkci."
+    },
+    {
+      "type": "heading",
+      "text": "Predikované návraty se liší od nestrukturovaného toku řízení"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr a zásobníkem založené načítání do PC může využít predikci návratu a získat levnější výsledek, zatímco jiné zápisy do PC nebo načítání z tabulky skoků platí penalizaci za doplnění. Toto rozlišení zabraňuje tomu, aby široká konstantní větev nadměrně účtovala běžné návraty funkcí a nedostatečně účtovala nepředvídatelné přesměrování. Model popisuje cykly hostem emulovaného hostitele; je nezávislý na tom, jak rychle Dynarmic provádí přeložený blok na telefonu nebo počítači."
+    },
+    {
+      "type": "heading",
+      "text": "Dědičný přepínač obsahuje riziko kompatibility během ověřování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ladicí nastavení CPU mohou obnovit starší chování jedno-tiku-na-instrukci pro časově citlivé hry; jako příklad je uváděna honička v LEGO City Undercover. Testy by měly porovnat oba režimy napříč benchmarky CPU, přerušeními, zvukem, dotazováním vstupu a tou honičkou. Ověřte počty cyklů proti případům TRM a cíleným smyčkám instrukcí. Přepínač musí přepínat deterministicky a setrvat, ale nové regresní chyby by měly být prozkoumány místo trvalého skrývání každého titulu za dědičným časováním."
+    },
+    {
+      "type": "callout",
+      "text": "Nové modely tabulek vysvětlují, proč instrukce zabírají různé cykly hostitele; starý přepínač udržuje časově citlivý software testovatelný, zatímco se tento model vyvíjí."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny Azahar"
+    }
+  ]
+}

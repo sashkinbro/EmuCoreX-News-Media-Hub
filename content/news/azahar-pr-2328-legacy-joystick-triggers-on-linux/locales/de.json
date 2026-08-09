@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar kalibriert alte Trigger-Zentren, anstatt null anzunehmen",
+  "summary": "Die Trigger-Achsen des Steam Deck können unter dem Joystick-API von SDL nahe bei -32767 ruhen; das Aufzeichnen des anfänglichen Zentrums stellt alte Zuordnungen wieder her, die sonst L und R als gehalten melden.",
+  "heroAlt": "Quellnachweis vom Azahar Pull-Request #2328: BUGFIX: Legacy-Joystick-Trigger unter Linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "Trigger-Kalibrierung",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Eingabe",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Legacy-Joystick-Trigger unter Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Neutralwert eines Triggers hängt vom SDL API und der Gerätezuordnung ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Steam Deck-Benutzer berichten über EmuDeck, dass L und R dauerhaft gedrückt sind. Ihre alten Profile verwendeten Trigger-Achsen über die Joystick-API von SDL, bei der der Ruhewert möglicherweise -32767 statt null betrug. Eine neuere Direct-State-Implementierung hörte auf, historische Samples zu speichern, und nutzte daher eine Nullmittel-Annahme wieder, die für einige Geräte gültig war, diese neutrale Position jedoch als vollständigen Druck behandelte."
+    },
+    {
+      "type": "heading",
+      "text": "Die Initialisierung erfasst die tatsächliche Ruhemitte des Geräts"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #2328 fügt der alten Joystick-Schicht eine Kalibrierung pro Achse hinzu. Wenn das Gerät initialisiert wird, zeichnet Azahar den aktuellen Mittelpunkt auf und vergleicht spätere Werte damit. Die Zuordnung misst dann die Bewegung vom beobachteten Neutralpunkt anstatt einen fest kodierten SDL-Bereich zu interpretieren. Dies ist insbesondere für die Abwärtskompatibilität sinnvoll, da alte gespeicherte Belegungen sich auf rohe Joystick-Achsen beziehen könnten."
+    },
+    {
+      "type": "heading",
+      "text": "Neue Zuordnungen verwenden normalerweise SDL Controller und vermeiden die alte Mehrdeutigkeit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der moderne Standard-Controller-API von Azahar standardisiert die Trigger-Semantik und ist nicht Ziel dieser Korrektur. Benutzer, die jetzt einen Controller zuordnen, sollten daher keine Änderung bemerken. Der Patch bewahrt Legacy-Joystick-Profile und ungewöhnliche Steuerungen, die außerhalb der standardisierten API bleiben. Das Verhalten eingeschränkt zu halten verhindert, dass Kalibrierungsheuristiken ein Backend ändern, das bereits normalisierte Controller-Trigger korrekt meldet."
+    },
+    {
+      "type": "heading",
+      "text": "Tests benötigen sowohl nullzentrierte als auch negativzentrierte Achsen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Starten Sie jedes Gerät mit losgelassenen Triggern, bestätigen Sie die kalibrierte Mitte und drücken und lösen Sie dann langsam und vollständig. Testen Sie Steam Deck, einen Desktop-Controller unter Verwendung der Legacy-API, Hot-Plug, Suspend/Resume und ein Gerät, das angeschlossen wird, während ein Trigger gehalten wird. Bestehende Profile müssen ohne Neukartierung wiederhergestellt werden, während neue Controller-API-Profile identisch bleiben. Ein beim Start gehaltenes Gerät benötigt einen dokumentierten Wiederherstellungspfad, damit eine fehlerhafte Probe nicht zur permanenten Mitte der Sitzung wird."
+    },
+    {
+      "type": "callout",
+      "text": "Die Kalibrierung stellt den fehlenden Referenzpunkt wieder her: Ein roher Auslösewert bedeutet nur im Verhältnis zur beobachteten Neutralposition dieses Geräts gedrückt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Lesen Sie die Azahar-Technikdiskussion und Quellenänderungen"
+    }
+  ]
+}

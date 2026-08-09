@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K membedakan objek SPIR-V IDs dari nomor jalur vektor",
+  "summary": "Konstruksi penyusunan-vektor sekarang menandai vektor sumber sebagai IDs dan pemilih komponen sebagai literal, mencegah jalur nol menjadi SPIR-V ID yang tidak valid.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Vita3K #4074: shader: Memperbaiki satu kasus 'id tidak bisa 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "rekompilator shader",
+    "blok uniform"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Memperbaiki satu kasus 'id tidak bisa 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tipe integer yang sama dapat mewakili dua konsep SPIR-V yang berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instruksi SPIR-V merujuk objek yang sebelumnya didefinisikan dengan ID numerik, dan beberapa juga mengandung angka literal. OpVectorShuffle mengambil dua vektor IDs diikuti oleh pemilih komponen. Pemilih nol berarti jalur pertama dari vektor pertama; objek ID bernilai nol tidak diperbolehkan. Melewatkan setiap operand melalui vektor yang hanya bertipe spv::Id dengan demikian kehilangan perbedaan tepat di mana nomor jalur yang valid berbagi nilai penjaga dari ID yang tidak valid."
+    },
+    {
+      "type": "heading",
+      "text": "Builder sekarang menerima jenis eksplisit untuk setiap operan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #4074 mengubah dua daftar operand shuffle menjadi spv::IdImmediate. Load dari dest dan dest_friend serta vektor yang disalin ditandai sebagai IDs. Indeks lane yang dihasilkan loop ditandai sebagai nilai immediate, apakah itu nol, empat ditambah i, atau offset yang berasal dari start modulo empat. createOp kemudian dapat mengkodekan setiap kata sesuai dengan tata bahasa instruksi alih-alih menafsirkan maknanya dari alias C++."
+    },
+    {
+      "type": "heading",
+      "text": "Jalur yang terdampak menggabungkan data uniform di seluruh batas vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register menangani jangkauan yang meliputi vektor tujuan saat ini dan tetangganya. Ini membangun shuffle pelengkap sehingga jalur tujuan yang dipertahankan dan jalur sumber yang masuk berada di posisi yang tepat. Jika mulai selaras dengan vec4, ambil jalur yang lebih sederhana; mulai yang tidak selaras akan menggunakan logika dua-daftar. Koreksi ini tidak mengubah jalur formula mana yang dipilih. Hal ini membuat pemilih yang sudah dihitung menjadi literal yang sah."
+    },
+    {
+      "type": "heading",
+      "text": "Fixture yang digerakkan oleh validator harus mendaftar setiap jalur awal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hasilkan salinan seragam mulai dari offset nol hingga tiga dengan panjang yang tetap berada dalam satu vec4 dan menyeberang ke vec4 berikutnya. Periksa kata OpVectorShuffle yang dihasilkan, jalankan spirv-val, dan eksekusi shader dengan jalur sumber yang berwarna atau bernomor unik. Sertakan pemilih nol, tiga, empat, tujuh, dan sentinel undef apa pun yang didukung oleh pembangun. Uji driver Vulkan dengan validasi ketat dan bandingkan output yang dirender di berbagai vendor. Tes regresi harus menegaskan jenis operand selain piksel akhir."
+    },
+    {
+      "type": "callout",
+      "text": "Dalam bahasa shader biner, nol bisa menjadi lane yang sepenuhnya valid dan ID objek yang mustahil; pembuat harus tahu mana yang diharapkan instruksi."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Baca diskusi rekayasa Vita3K dan perubahan sumber"
+    }
+  ]
+}

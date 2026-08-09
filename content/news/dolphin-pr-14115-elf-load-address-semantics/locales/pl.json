@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin oddziela adres ładowania segmentu ELF od jego adresu wirtualnego",
+  "summary": "Ładowarka teraz woli p_paddr jako adres pamięci do załadowania segmentu i używa p_vaddr tylko wtedy, gdy nie podano adresu fizycznego.",
+  "heroAlt": "Dowody źródłowe z Dolphin pull request #14115: Core/Boot: Poprawa semantyki adresu ładowania ELF",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: Poprawa semantyki adresu ładowania ELF"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF nagłówki programów mogą opisywać dwa różne adresy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ładowalny segment ELF zawiera p_vaddr, adres używany przez program podczas wykonywania, oraz p_paddr, traktowany powszechnie w środowiskach wbudowanych jako adres pamięci ładowania. Wiele plików binarnych ustawia je równe, co ukrywa ładowarki, które łączą te pola. Oprogramowanie domowe, komponenty rozruchowe lub obrazy deweloperskie mogą celowo je rozdzielać. Dolphin wcześniej kopiował bajty segmentu do p_vaddr bezwarunkowo, ignorując fizyczne umiejscowienie zakodowane w pliku."
+    },
+    {
+      "type": "heading",
+      "text": "Ładowarka teraz nadaje pierwszeństwo polu fizycznemu niezerowemu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14115 loguje obie wartości i inicjalizuje writeAddr z p_paddr. Adres fizyczny różny od zera jest mapowany do wirtualnego regionu PowerPC poprzez ustawienie bitu 0x80000000. Jeśli p_paddr wynosi zero, Dolphin używa p_vaddr jako zapasowego adresu dla zgodności. Kontrola dotycząca tylko MEM1 również przełącza się na faktyczny wybrany adres zapisu, dzięki czemu filtrowanie ocenia, gdzie będą zapisywane bajty, a nie inne pole nagłówka."
+    },
+    {
+      "type": "heading",
+      "text": "Jest to korekta semantyki ładowarki, a nie dowolne przemieszczanie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin nie oblicza nowej lokalizacji ani nie przepisuje odwołań wewnątrz binarki. Podąża za adresem ładowania podanym w nagłówku programu i zachowuje ustaloną konwencję mapowania wirtualnego. To rozróżnienie ma znaczenie dla segmentów kopiowanych do jednej lokalizacji, zanim przepływ sterowania lub kod startowy zacznie ich używać w innym miejscu. Zapobiega również przypadkowemu mapowaniu p_paddr równego zero, co jest powszechne w plikach, które nie rozróżniają adresów, na początek pamięci."
+    },
+    {
+      "type": "heading",
+      "text": "Mocowania muszą obejmować równe, osobne, zerowe i nieprawidłowe zakresy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Stwórz mały ELFs, którego p_paddr jest równy p_vaddr, wynosi zero, różni się, ale pozostaje w MEM1, ląduje blisko granicy lub wskazuje poza zapisywalną emulowaną RAM. Wypełnij każdy segment unikalnym wzorem i sprawdź dokładne miejsce docelowe, czyszczenie BSS, wykonanie wejścia i obsługę nakładania się. Przetestuj filtrowanie only_in_mem1 względem writeAddr i przejrzyj logi dla obu pól. Prawdziwe homebrew powinno być testowane wraz z uszkodzonymi plikami, aby ulepszona semantyka nie prowadziła do niekontrolowanego zapisu w pamięci gościa."
+    },
+    {
+      "type": "callout",
+      "text": "Kiedy osadzony ELF dostarcza adres pamięci docelowej, loader powinien go uwzględnić; adres wirtualny opisuje wykonywanie, a nie zawsze miejsce, gdzie bajty pierwotnie należą."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Przeczytaj dyskusję inżynieryjną Dolphin i zmiany w źródle"
+    }
+  ]
+}

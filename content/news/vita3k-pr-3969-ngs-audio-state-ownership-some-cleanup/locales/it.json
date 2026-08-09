@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K separa quattro tipi di stato all'interno del suo motore audio NGS",
+  "summary": "Byte visibili agli ospiti, buffer temporanei, logica riprendibile e oggetti runtime dell'host ora hanno proprietari distinti, rendendo più facile ragionare sul routing vocale e sulla durata del decodificatore.",
+  "heroAlt": "Prova della fonte dal pull request #3969 di Vita3K: ngs: refactor ngs/audio state ownership & some cleanup",
+  "searchKeywords": [
+    "Vita3K",
+    "Audio NGS",
+    "ATRAC9",
+    "Stato vocale",
+    "Routing audio"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: refactor ngs/audio state ownership & some cleanup"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una voce audio contiene stato con durate molto diverse"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il sistema NGS della Vita espone lo stato dei moduli leggibile dagli ospiti, ma un emulatore ha anche bisogno di oggetti decoder accessibili solo dall'host, resampler, PCM temporaneo, cronologia dei loop e riferimenti di instradamento. Tenere questi elementi in membri solo vagamente correlati rende il reset, il riutilizzo delle voci, le callback e la distruzione soggetti a puntatori obsoleti. Un blocco di memoria dell'ospite non dovrebbe possedere per errore un decoder dell'host, e un buffer temporaneo non dovrebbe essere scambiato per dati necessari a riprendere la riproduzione logica."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData ora nomina ogni categoria di proprietà"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3969 fornisce a un modulo guest_state_data per i byte visibili dall'ABI e scratch_data per il lavoro temporaneo. Un logical_state polimorfico memorizza informazioni come la cronologia ADPCM o la cronologia del decoder ATRAC9 esportata che deve sopravvivere ai confini di elaborazione. Un runtime_state separato possiede risorse dell'host come decoder attivi e resampler che possono essere cancellati o ricostruiti. Le factory dei moduli creano ogni livello e inizializzano i dati vocali attraverso un'interfaccia."
+    },
+    {
+      "type": "heading",
+      "text": "Gli instradamenti identificano le voci senza mantenere endpoint raw fragili"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli oggetti patch mantengono la sorgente e la destinazione come indici di rack e voce, quindi le risolvono attraverso il Sistema e la memoria emulata quando necessario. Questo impedisce a una patch di seguire ciecamente un puntatore Voice dopo che un rack cambia. ATRAC9 carica la storia del decoder logico salvata nel decoder runtime prima del lavoro e la esporta successivamente. I moduli Player mantengono la storia ADPCM nello stato logico, mentre i buffer di output e di risampling utilizzano contenitori runtime espliciti con operazioni chiare e compatte."
+    },
+    {
+      "type": "heading",
+      "text": "I test del ciclo di vita devono interrompere l'audio in ogni fase."
+    },
+    {
+      "type": "paragraph",
+      "text": "Crea, instrada, avvia, metti in pausa, riprendi, ferma, reimposta e distruggi le voci usando i moduli PCM, ADPCM, ATRAC9, output e resampling. Riutilizza gli slot dei rack e rimuovi uno qualsiasi degli endpoint mentre esiste una patch. Attiva callback degli ospiti, transizioni cicliche, buffer vuoti e cambiamenti di configurazione, quindi confronta l'output continuo con l'output attraverso un salvataggio dello stato logico e una ricostruzione a runtime. I sanitizzatori di thread e memoria dovrebbero coprire i punti di sblocco/riconfinamento dello scheduler, smantellamento e handle ospite malformati. Nessun puntatore host dovrebbe essere recuperabile dai byte di stato visibili all'ospite."
+    },
+    {
+      "type": "callout",
+      "text": "La correttezza audio migliora quando il motore può rispondere a quali dati appartengono all'ABI dell'ospite, allo stato del segnale ripetibile, al lavoro temporaneo e al runtime del decodificatore host."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Leggi la discussione ingegneristica Vita3K e le modifiche al codice sorgente"
+    }
+  ]
+}

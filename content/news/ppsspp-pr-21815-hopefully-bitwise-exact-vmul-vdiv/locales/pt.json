@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Documentos PPSSPP regras PSP bit-exatas para VFPU multiplicar e dividir",
+  "summary": "Ajudantes de referência descrevem comportamento de denormal, underflow, arredondamento, sinal, infinito e NaN para que os caminhos do host JIT possam ser medidos em comparação com os resultados reais do PSP.",
+  "heroAlt": "Evidência de origem do pull request #21815 do PPSSPP: Implementar (esperançosamente) vmul/vdiv bit-a-bit exatos",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "ponto flutuante",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "Cpu",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implementar (esperançosamente) vmul/vdiv bit-a-bit exatos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 ainda deixa espaço para comportamento específico de borda do hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "A multiplicação e divisão de floats comuns parecem portáveis até que as entradas se aproximem de denormais, subfluxo, infinito ou NaN. O PSP VFPU se comporta como float32 arredondando para o mais próximo, empates para o par, com denormais tratados como zero e saídas muito pequenas zeradas, além de uma regra específica de payload e sinal para NaN. O host x86, ARM e as configurações do compilador podem diferir exatamente nesses limites, causando raras discrepâncias na lógica do jogo ou gráficos."
+    },
+    {
+      "type": "heading",
+      "text": "A referência trabalha com bits brutos antes e depois da aritmética"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21815 adiciona helpers explícitos vfpu_mul e vfpu_div para referência. Eles leem os operandos como valores uint32, colapsam entradas subnormais para zero com sinal, realizam a aritmética e inspecionam os bits do resultado. Saídas no limite ou abaixo do limiar de flush medido são recalculadas em precisão dupla para decidir se mantêm o menor resultado normal ou retornam zero com sinal. Qualquer NaN é canonizado para o payload 0x7F800001 específico do VFPU com sinal derivado do operando."
+    },
+    {
+      "type": "heading",
+      "text": "O limiar captura um limite que os flags FTZ do host podem não compartilhar"
+    },
+    {
+      "type": "paragraph",
+      "text": "O corte de flush observado é FLT_MIN menos um quarto de FLT_TRUE_MIN. Isso parece corresponder ao limite de flush-to-zero testado no x86, mas não se assume que corresponda a todos os hosts ARM. Codificar o comportamento em uma referência legível fornece aos backends JIT uma fonte de verdade mesmo que sua implementação mais rápida utilize modos de registro de controle, instruções vetoriais ou ramificações corretivas. Os assistentes são material de referência em vez de uma afirmação de que C++ escalar é o caminho final mais eficiente."
+    },
+    {
+      "type": "heading",
+      "text": "Vetores de limite exaustivos devem guiar a conformidade do backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Teste zero positivo e negativo, cada classe subnormal, valores próximos ao limite de flush, os maiores números finitos, infinitos, NaNs silenciosos e sinalizadores, e combinações de sinais de operandos. Compare os resultados de interpreter, x86, ARM64 e outros JIT bit a bit para vmul e vdiv, não com um epsilon. Testes diferenciais randomizados devem se concentrar em pares de expoentes próximos a overflow e underflow. O fast-math do compilador não deve apagar a canonicalização, e operações fundidas devem ser verificadas separadamente porque possuem pontos de arredondamento diferentes."
+    },
+    {
+      "type": "callout",
+      "text": "A emulação bit-exata começa onde a igualdade numérica aproximada termina: zero com sinal, um bit de underflow ou um payload NaN podem ser estados observáveis do convidado."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Leia a discussão de engenharia PPSSPP e as mudanças de código-fonte"
+    }
+  ]
+}

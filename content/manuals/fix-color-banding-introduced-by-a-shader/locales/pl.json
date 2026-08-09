@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Usuń pasmowanie kolorów wprowadzone przez shader efektów końcowych",
+  "summary": "Uchwyć jeden gładki gradient nieba lub mgły przy wyłączonym post-processingu, włączaj ponownie etapy shaderów indywidualnie, sprawdzaj wynik przed konwersją wyświetlania i zachowaj tylko preset, którego precyzja nie zgniata ani nie posteruje źródła.",
+  "heroAlt": "PCSX2 ilustracja przetwarzania shaderów z oficjalnego raportu postępów grafiki",
+  "searchKeywords": [
+    "PS2 pasmowanie shaderów",
+    "EmuCoreX posteryzacja gradientu",
+    "precyzja post-processingu",
+    "pasmowanie nieba",
+    "zgniatanie kolorów"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "post-processing": "Postprodukcja"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "Ustawienia PCSX2 i przechwytywanie dowodów",
+    "android-hdr": "Kontekst konwersji wyświetlania Android"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Udowodnij, że pasma zaczynają się po klatce emulatora"
+    },
+    {
+      "type": "paragraph",
+      "text": "Banding zmienia gładki gradient w widoczne kroki. Gra może już korzystać z grafiki o niskiej precyzji, shader może kwantyzować kolory pośrednie, kodowanie zrzutu ekranu może zmniejszać precyzję, a łańcuch wyświetlania może zgniatać wartości. Wybierz duży, stabilny gradient, taki jak niebo o zmierzchu, mgła lub zanikanie menu. Przechwyć bezpośredni sygnał z wyłączoną całą postprodukcją przed oceną fotografii telewizyjnej."
+    },
+    {
+      "type": "callout",
+      "text": "Dithering może ukryć stopnie przez dodanie szumu, ale nie przywraca wartości już obciętych przez wcześniejszy etap shader. Znajdź etap, który traci precyzję, zanim potraktujesz szum jako lekarstwo."
+    },
+    {
+      "type": "heading",
+      "text": "Utwórz zestaw referencyjny gradientu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Stabilny zapis w grze z dużym gradientem o małym ruchu.",
+        "Bezstratne lub wysokiej jakości bezpośrednie przechwytywania z włączonymi i wyłączonymi shaderami.",
+        "Ustawienie shader skopiowane do lokalizacji przywracania.",
+        "Konwersja HDR, tryb nocny i transformacje kolorów ułatwiające dostępność wyłączone dla bazy.",
+        "Drugi gradient o innej jasności i odcieniu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zidentyfikuj pierwszy etap powodujący utratę precyzji"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Uruchom ponownie na zimno z wyłączonym przetwarzaniem końcowym i uchwyć oba gradienty.",
+        "2. Włącz ustawienie wstępne, ale wyłącz każdy opcjonalny etap, który pokazuje jego interfejs.",
+        "3. Dodawaj po jednym etapie na raz, ponownie uruchamiając scenę, gdy wymagana jest reinicjalizacja potoku.",
+        "4. Porównuj kroki histogramu i widoczne granice konturów w bezpośrednich przechwytywaniach, a nie w skompresowanych podglądach.",
+        "5. Gdy zostanie znaleziony odpowiedzialny etap, zmniejsz jego siłę lub wybierz jego udokumentowaną ścieżkę o wyższej precyzji.",
+        "6. Przetestuj ponownie bez ditheringu emulatora, a następnie włącz tylko zamierzoną opcję ditheringu, jeśli pozostałe kroki źródłowe nadal występują.",
+        "7. Ponownie podłącz tryb normalnego wyświetlania i sprawdź oddzielnie prawie czarne oraz jasne gradienty.",
+        "8. Zapisz preset specyficzny dla danej gry, gdy inne gry wymagają innej tonalnej ścieżki."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Łańcuch shaderów jest uporządkowany: wczesny etap może obcinać, kwantyzować lub przemapowywać wartości, których późniejsze etapy nie mogą odtworzyć. Bezpośredni zapis pozwala ustalić, czy utrata występuje przed Android, czy też zewnętrzny wyświetlacz przekształca klatkę. Dwa zakresy jasności zapobiegają temu, by korekta podświetleń nieba przypadkowo nie zgnieść ciemnej mgły."
+    },
+    {
+      "type": "heading",
+      "text": "Akceptacja jakości gradientu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ostateczny preset musi zachować szczegóły tonalne bez zmiany czasu gry ani intencji kolorystycznej."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Duże gradienty przechodzą płynnie, bez nowych pierścieni konturowych.",
+        "Kroki prawie czarne pozostają rozróżnialne, a światła nie są obcinane.",
+        "Białe elementy HUD i odcienie skóry nie nabierają zabarwienia.",
+        "Drugi gradient poprawia się przy tej samej kolejności etapów.",
+        "Częstotliwość klatek i utrzymane obciążenie GPU pozostają w granicach tolerancji bazowej."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Źródła efektu bandingu poza shaderem"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Pasma występują przy wyłączonym przetwarzaniu w bezpośrednim przechwytywaniu: porównaj oryginalny output gry lub zasoby.",
+        "Bezpośrednie przechwytywanie jest płynne, ale pasma na telewizorze: sprawdź zakres RGB, HDR i przetwarzanie panelu.",
+        "Tylko udostępnione zrzuty ekranu pokazują pierścienie: użyj bezstratnego pliku lokalnego przed zmianą ustawienia wstępnego.",
+        "Etap usuwa pasma, rozmywając szczegóły: odrzuć go i przywróć łańcuch zachowujący źródło."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Przywróć znaną nieprzetworzoną klatkę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyłącz edytowany preset, przywróć jego zapisany plik lub wartości domyślne, wyłącz eksperymentalne dithering, i ponownie uchwyć gradient bazowy. Ponownie włącz przekształcenia wyświetlacza dopiero po potwierdzeniu, że wyjście emulatora jest płynne."
+    },
+    {
+      "type": "heading",
+      "text": "Zrzuty ekranu mogą zmieniać pipeline kolorów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Niektóre ścieżki przechwytywania Android wykonują mapowanie tonów HDR lub przechowują inną przestrzeń kolorów niż wyświetlana klatka. Zarejestruj format przechwytywania i tryb wyświetlania; używaj zarówno bezpośrednich dowodów, jak i sprawdzenia na skalibrowanym wyświetlaczu, gdy problem występuje tylko w HDR."
+    },
+    {
+      "type": "link",
+      "text": "Przeczytaj wytyczne dotyczące pipeline HDR Android",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar calibrates legacy trigger centers instead of assuming zero",
+  "summary": "Steam Deck trigger axes can rest near -32767 under SDL's Joystick API; recording the initial center restores old mappings that otherwise report L and R as held.",
+  "heroAlt": "Source evidence from Azahar pull request #2328: BUGFIX: Legacy joystick triggers on linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "trigger calibration",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Legacy joystick triggers on linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A trigger's neutral value depends on the SDL API and device mapping"
+    },
+    {
+      "type": "paragraph",
+      "text": "Steam Deck users through EmuDeck reported L and R permanently depressed. Their legacy profiles used trigger axes through SDL's Joystick API, where the resting value may be -32767 rather than zero. A newer direct-state implementation stopped retaining historical samples and therefore reused a zero-center assumption that was valid for some devices but treated this neutral position as a full press."
+    },
+    {
+      "type": "heading",
+      "text": "Initialization captures the device's actual resting center"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2328 adds per-axis calibration to the legacy joystick layer. When the device is initialized, Azahar records the current center and compares later values against it. The mapping then measures movement from the observed neutral point instead of hard-coding one SDL range interpretation. This is especially appropriate for backwards compatibility because old saved bindings may refer to raw joystick axes."
+    },
+    {
+      "type": "heading",
+      "text": "New mappings normally use SDL Controller and avoid the legacy ambiguity"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar's modern default Controller API standardizes trigger semantics and is not the target of this fix. Users mapping a controller now should therefore see no change. The patch preserves legacy Joystick profiles and unusual controls that remain outside the standardized API. Keeping the behavior scoped prevents calibration heuristics from altering a backend that already reports normalized controller triggers correctly."
+    },
+    {
+      "type": "heading",
+      "text": "Tests need both zero-centered and negative-centered axes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Start each device with triggers released, confirm the calibrated center, then press and release slowly and fully. Test Steam Deck, a desktop controller using the legacy API, hot-plug, suspend/resume, and a device connected while a trigger is held. Existing profiles must recover without remapping, while new Controller-API profiles remain identical. A held-at-initialization case needs a documented recovery path so one bad sample does not become the session's permanent center."
+    },
+    {
+      "type": "callout",
+      "text": "Calibration restores the missing reference point: a raw trigger value means pressed only relative to that device's observed neutral position."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

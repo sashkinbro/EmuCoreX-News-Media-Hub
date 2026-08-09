@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin trennt die Ladespeicheradresse eines ELF-Segments von seiner virtuellen Adresse",
+  "summary": "Der Loader bevorzugt nun p_paddr als Ladespeicheradresse des Segments und fällt nur auf p_vaddr zurück, wenn keine physische Adresse angegeben ist.",
+  "heroAlt": "Quellennachweis aus dem Dolphin Pull-Request #14115: Core/Boot: Behebt ELF Ladespeicheradresssemantik",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "Homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: Behebt ELF Ladespeicheradresssemantik"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF Programm-Header können zwei verschiedene Adressen beschreiben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein ladbares ELF-Segment enthält p_vaddr, die Adresse, die vom Programm während der Ausführung verwendet wird, und p_paddr, die in eingebetteten Umgebungen üblicherweise als Speicherladeadresse behandelt wird. Viele Binärdateien setzen sie gleich, was Loader verschleiert, die die Felder zusammenfassen. Homebrew, Boot-Komponenten oder Entwicklungsimages können sie absichtlich trennen. Dolphin kopierte zuvor Segmentbytes bedingungslos zu p_vaddr und ignorierte die physische Platzierung, die in der Datei kodiert ist."
+    },
+    {
+      "type": "heading",
+      "text": "Der Loader gibt jetzt dem nicht nullen physischen Feld den ersten Vorrang."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull-Request #14115 protokolliert beide Werte und initialisiert writeAddr aus p_paddr. Eine nicht null physische Adresse wird durch Setzen des Bits 0x80000000 in den PowerPC-Virtualbereich gemappt. Wenn p_paddr null ist, verwendet Dolphin p_vaddr als Kompatibilitäts-Fallback. Die MEM1-exklusive Überprüfung wechselt ebenfalls zur tatsächlich gewählten Schreibadresse, sodass die Filterung bewertet, wohin Bytes geschrieben werden, anstatt ein anderes Headerfeld."
+    },
+    {
+      "type": "heading",
+      "text": "Dies ist eine semantische Korrektur des Loaders, keine willkürliche Umplatzierung."
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin berechnet keinen neuen Speicherort und schreibt keine Referenzen innerhalb der Binärdatei um. Es folgt der vom Programmkopf angegebenen Ladeadresse und behält das etablierte virtuelle Abbildungssystem bei. Diese Unterscheidung ist wichtig für Segmente, die an einem Ort kopiert werden, bevor der Kontrollfluss oder der Startcode sie an einem anderen verwendet. Sie verhindert auch, dass eine p_paddr von null, die in Dateien häufig vorkommt, die keine Adressen unterscheiden, versehentlich auf den Speicherbeginn abgebildet wird."
+    },
+    {
+      "type": "heading",
+      "text": "Fixtures müssen gleiche, separate, null und ungültige Bereiche abdecken"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen Sie kleine ELFs, deren p_paddr gleich p_vaddr ist, null ist, sich unterscheidet, aber innerhalb von MEM1 bleibt, in der Nähe einer Grenze liegt oder außerhalb des beschreibbaren emulierten RAM zeigt. Füllen Sie jedes Segment mit einem einzigartigen Muster und überprüfen Sie das exakte Ziel, die BSS-Löschung, die Ausführung des Einstiegs und die Handhabung von Überlappungen. Üben Sie nur die only_in_mem1-Filterung gegen writeAddr und prüfen Sie die Protokolle für beide Felder. Echte Homebrew sollte zusammen mit fehlerhaften Dateien getestet werden, damit verbesserte Semantik nicht zu unbeaufsichtigten Gast-Speicherzugriffen führt."
+    },
+    {
+      "type": "callout",
+      "text": "Wenn ein eingebetteter ELF eine Lastspeicheradresse liefert, sollte der Loader sie berücksichtigen; die virtuelle Adresse beschreibt die Ausführung, nicht immer, wo die Bytes zuerst hingehören."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Lesen Sie die Dolphin Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

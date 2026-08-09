@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13377-degenerate-primitive-testing-in-vertex",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 juge les primitives dégénérées par les pixels qu'elles peuvent réellement couvrir",
+  "summary": "L'arrondi des points et des lignes ainsi que l'anticrénelage participent désormais aux tests de zone nulle partagés par le vertex kick et le rendu logiciel, alignant les limites avec les cas particuliers de numérisation.",
+  "heroAlt": "preuves sources du pull request #13377 de PCSX2 : GS : Améliorer les tests de primitives dégénérées dans vertex kick et le calcul de la boîte englobante en SW. Autres corrections mineures.",
+  "searchKeywords": [
+    "PCSX2",
+    "primitive dégénérée",
+    "anticrénelage",
+    "rendu logiciel",
+    "boîte englobante"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13377": "GS : Améliorer les tests de primitives dégénérées dans vertex kick et le calcul de la boîte englobante en SW. Autres corrections mineures."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une zone mathématique nulle ne signifie pas toujours des pixels rasterisés nuls"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une ligne ou un point peut apparaître dégénéré dans les coordonnées des sommets mais couvrir quand même des pixels après l'application par GS de la taille des points, de l'arrondi des lignes ou des règles d'anticrénelage. Inversement, une primitive qui passe un simple test de coordonnées peut ne rien contribuer à l'intérieur du ciseau. PCSX2 utilisait des vérifications de dégénérescence à la fois dans le kick de sommet et le rendu logiciel, et un désaccord sur les cas limites pouvait éliminer du travail visible ou envoyer du travail vide plus profondément dans le pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "L'arrondissement et AA deviennent des entrées pour un test cohérent"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #13377 met à jour le test de kick de sommet pour tenir compte de l'arrondi des lignes et des points et de l'anticrénelage, puis applique la même correction au rendu logiciel. Partager la règle est important car la préparation matérielle et le rastérisation logicielle ne devraient pas être en désaccord sur la question de savoir si le client a soumis une primitive dessinable. Le correctif simplifie également les calculs de boîte englobante et de ciseau afin que la décision de couverture et les limites qu'elle produit suivent la même géométrie."
+    },
+    {
+      "type": "heading",
+      "text": "L'optimisation des lignes horizontales et le nettoyage des assertions restent secondaires"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le rasteriseur logiciel bénéficie d'une petite optimisation pour les lignes horizontales, et une assertion est ajustée pour éviter les faux positifs. Il s'agit d'un nettoyage lié aux bornes corrigées, et non d'une preuve d'une réécriture globale de la performance. L'objectif déclaré est la précision, avec peu de changement de performance attendu. Le problème n°8677 est le cas concret, tandis que les discussions issues de travaux antérieurs ont fourni des scénarios supplémentaires."
+    },
+    {
+      "type": "heading",
+      "text": "Les images de régression nécessitent des combinaisons de sous-pixels, de ciseaux et d'AA."
+    },
+    {
+      "type": "paragraph",
+      "text": "Points de test, lignes horizontales, verticales et de longueur quasi nulle à des coordonnées fractionnaires avec AA activé et désactivé. Déplacez-les à travers chaque bord de ciseau et comparez la sortie matérielle et logicielle aux résolutions native et agrandie. Inclure des primitives qui devraient disparaître complètement et celles qui gagnent un seul pixel couvert par arrondi. Les captures de trame doivent montrer des décisions d'acceptation/rejet identiques ; les vérifications de performance doivent seulement confirmer que le nouveau test et le chemin rapide horizontal n'introduisent pas de régressions mesurables."
+    },
+    {
+      "type": "callout",
+      "text": "La dégénérescence est une question de rasterisation, pas seulement une question de géométrie : l'arrondi et l'AA peuvent transformer un primitif mathématiquement fin en une couverture de pixels réelle."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13377",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications de source"
+    }
+  ]
+}

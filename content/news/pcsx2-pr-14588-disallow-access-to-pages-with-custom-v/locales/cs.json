@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 blokuje klienty PINE v přístupu k obslužným rutinám MMIO vázaným na vlákno",
+  "summary": "Externí paměťové rozhraní nyní odmítá stránky VTLB poskytované vlastními zpětnými voláními zařízení, omezující jeho přímé čtení na paměť, která je bezpečná mimo vlákno emulace.",
+  "heroAlt": "Zdrojový důkaz z pull requestu PCSX2 č. 14588: PINE: Zakázat přístup na stránky s vlastními zpracovateli VTLB",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "bezpečnost vláken"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Bezpečnost",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Zakázat přístup na stránky s vlastními obslužnými rutinami VTLB"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Adresa hostitele může představovat RAM nebo aktivní hardwarový registr"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE zpřístupňuje operace s pamětí externím nástrojům. Prostřednictvím virtuální překladové vrstvy PCSX2 některé adresy odkazují na běžnou RAM hostitele, zatímco jiné jsou směrovány přes vlastní handlery pro registry MMIO a emulované periferie. Zavolání vlastního handleru není pasivní čtení: může to změnit stav zařízení, vyžadovat pořadí vláken emulátoru nebo zasahovat do komponent, které nemají synchronizaci pro libovolné serverové vlákno."
+    },
+    {
+      "type": "heading",
+      "text": "Stránky s vlastním handlerem jsou odmítnuty před přístupem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14588 mění cestu VTLB v PINE tak, aby rozpoznala stránky, jejichž přístup je implementován vlastním handlerem, a zamítla je. Paměť mapovaná přímo zůstává klientům dostupná. Hranice je založena na tom, jak je stránka poskytována, nikoli na křehkém pevně stanoveném seznamu rozsahů registrů, takže nově registrované handlery MMIO dědí ochranu bez další aktualizace adres specifické pro PINE."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead je přepsán kolem stejného bezpečnějšího rozlišení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Záplata také slaďuje deklaraci a definici šablony vtlb_ramRead a zjednodušuje její implementaci. Mikrobenchmark na autorově počítači ukázal mírné zrychlení, ale to je druhořadé. Hlavní zárukou je vlastnictví vlákna: PINE nesmí způsobit, aby GS, SPU, CDVD nebo jiný periferní prvek prováděl zpětné volání ve vlákně, které obchází plánovač VM."
+    },
+    {
+      "type": "heading",
+      "text": "Klienti potřebují jasnou sémantiku selhání a pokrytí regresí RAM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testujte stávající PINE debuggery proti běžné RAM, scratchpadu nebo jiným explicitně podporovaným přímým mapováním, hranicím stránek a nemapovaným adresám. Pokuste se číst a zapisovat na reprezentativní stránky MMIO a potvrďte čistou protokolovou chybu bez vedlejšího efektu na periférii nebo pádu. Opakujte, zatímco VM běží, pozastaví se, resetuje a vypíná se. Toto je popsáno jako počáteční oprava čekající na širší návrhovou práci, takže klientům by neměl být slibován bezpečný přístup k registrům zařízení, dokud neexistuje mechanismus převoditelného vlákna emulátoru."
+    },
+    {
+      "type": "callout",
+      "text": "PINE zůstává rozhraním paměti, nikoli druhým hardwarovým výkonnostním vláknem; vlastní handlery VTLB jsou odmítnuty, dokud nemohou být bezpečně spravovány."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

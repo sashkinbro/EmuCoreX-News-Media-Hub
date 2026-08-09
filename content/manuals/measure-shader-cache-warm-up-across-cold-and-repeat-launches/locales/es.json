@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "measure-shader-cache-warm-up-across-cold-and-repeat-launches",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Medir el calentamiento de la caché de shaders a través de lanzamientos fríos y repetidos de PS2",
+  "summary": "Usar una ruta de efecto determinista en la primera visita, repetición inmediata, reinicio de la aplicación y reinicio del sistema opcional para aprender qué tartamudeos desaparecen después de la compilación de la canalización y si la caché persiste normalmente.",
+  "heroAlt": "Gráfico Vulkan 1.3 que representa el comportamiento de la canalización de gráficos y la caché de shaders",
+  "searchKeywords": [
+    "Calentamiento de la caché de shaders PS2",
+    "Tartamudeo en la primera ejecución EmuCoreX",
+    "Tartamudeo de compilación Vulkan",
+    "Reinicio de la aplicación de la caché",
+    "Rendimiento de lanzamientos repetidos"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "performance": "Rendimiento",
+    "shaders": "Shaders"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan contexto de la canalización",
+    "pcsx2-vulkan": "PCSX2 Vulkan contexto de desarrollo del renderizador"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mapear los efectos del primer encuentro a través de los límites del ciclo de vida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un caché de shader o de pipeline debería reducir parte del trabajo de compilación al primer encuentro después de que se hayan visto materiales y efectos. Para probarlo, use una ruta con puntos de referencia de efectos nombrados y preserve el caché entre pases. Compare una primera visita, una reproducción inmediata, un reinicio ordinario de la aplicación y solo entonces un reinicio opcional de Android. No borre los datos de la aplicación a menos que el comportamiento de reconstrucción del caché sea el experimento separado explícito."
+    },
+    {
+      "type": "callout",
+      "text": "Borrar el caché entre cada pase hace que todos los lanzamientos sean en frío y evita la medición de persistencia. Haga una copia de seguridad de la configuración antes de cualquier prueba deliberada de borrado de datos."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare una tabla de puntos de referencia y ciclo de vida"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una guardada normal antes de una ruta determinista que contiene varios efectos distintos.",
+        "Un motor de render y controlador del sistema mantenidos constantes a lo largo de la secuencia.",
+        "Una superposición de tiempo de fotograma o grabación sincronizada con sobrecarga estable.",
+        "El estado inicial de la caché documentado antes de la primera visita.",
+        "Suficiente espacio de almacenamiento y sin utilidad de limpieza programada durante las pruebas."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ejecutar primera visita, reproducción, reinicio de la aplicación y reinicio del sistema."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Documentar el estado de la caché y realizar un arranque en frío de la ruta sin eliminar archivos.",
+        "2. Marque cada tropiezo con la marca de tiempo y el hito de efecto visible.",
+        "3. Vuelva a la misma partida guardada y reproduzca inmediatamente sin cambios de configuración.",
+        "4. Cierre el emulador normalmente, vuelva a abrirlo y ejecute una tercera pasada.",
+        "5. Compare qué tropiezos desaparecen, se reducen o ocurren de nuevo en los mismos hitos.",
+        "6. Reinicie Android y repita solo si la persistencia del ciclo de vida del sistema es importante.",
+        "7. Inspeccione registros y marcas de tiempo de la caché sin modificar su contenido.",
+        "8. Almacene la tabla de cuatro pasadas antes de probar cualquier eliminación deliberada de la caché."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Pruebas de repetición inmediata reutilizando la sesión; reiniciar la aplicación prueba si los datos compilados sobreviven a un ciclo de vida normal del proceso; reiniciar el sistema prueba la persistencia a lo largo de un límite más amplio. Un obstáculo que se repite en cada puerta idéntica puede ser trabajo de almacenamiento o sincronización, mientras que obstáculos irregulares al final de la sesión pueden ser térmicos o actividad en segundo plano."
+    },
+    {
+      "type": "heading",
+      "text": "Patrón de aceptación de calentamiento de caché"
+    },
+    {
+      "type": "paragraph",
+      "text": "La clasificación debe seguir un comportamiento de referencia repetible a lo largo de las etapas definidas del ciclo de vida."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Los obstáculos en la primera visita se asignan a efectos o ubicaciones nombradas.",
+        "La repetición inmediata usa la misma ruta y perfil sin cambios.",
+        "El reinicio de la aplicación ocurre sin la eliminación de la caché.",
+        "El reinicio del sistema se prueba por separado y solo cuando es necesario.",
+        "Los registros o marcas de tiempo respaldan la conclusión de persistencia."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Secuencias para reiniciar desde el principio"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Android o un limpiador elimina la caché en medio de la secuencia: deshabilite la limpieza y repita.",
+        "Un controlador o renderizador cambia entre pasadas: comience una nueva tabla.",
+        "Encuentros aleatorios alteran efectos: elija un guardado determinista.",
+        "La segunda pasada comienza más caliente: normalice el estado térmico."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Preserve la caché probada y el ciclo de vida normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desactive las superposiciones de diagnóstico, mantenga la caché válida, restaure la política normal de limpieza en segundo plano y reinicie el título desde cero una vez. Si más adelante se probó una eliminación deliberada, permita una ruta completa de calentamiento antes de juzgar nuevamente el rendimiento diario."
+    },
+    {
+      "type": "heading",
+      "text": "El trabajo único no es automáticamente compilación de sombreado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las cargas de texturas, la descompresión, las lecturas de disco y la inicialización del juego también pueden desaparecer en la repetición. Use los registros del renderizador y la correlación de efectos para respaldar una etiqueta de sombreado, y mantenga los tropiezos inciertos clasificados como eventos de primera visita en lugar de exagerar la causa."
+    },
+    {
+      "type": "link",
+      "text": "Revisar la orientación Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

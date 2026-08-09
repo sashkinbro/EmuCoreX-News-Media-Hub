@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 remove o registro de buffer de desenho quando nenhum lote pode usá-lo",
+  "summary": "Desenhos desativados ou imediatamente não bufferizáveis não copiam nem restauram mais os ambientes GS, enquanto referências locais substituem o tráfego de ponteiro adicionado aos caminhos de renderização quentes.",
+  "heroAlt": "Evidência da fonte do pull request PCSX2 #14729: GS: Otimizar buffering de desenho e lógica de ponteiro",
+  "searchKeywords": [
+    "PCSX2",
+    "buffering de desenho",
+    "thread GS",
+    "caminho quente",
+    "desempenho"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Otimizar buffering de desenho e lógica de ponteiro"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma otimização desativada ainda estava pagando seu custo de configuração"
+    },
+    {
+      "type": "paragraph",
+      "text": "O buffer de desenho pode combinar trabalhos compatíveis, mas PCSX2 pode desativá-lo globalmente ou descobrir que o próximo desenho não pode ser armazenado em buffer. A implementação ainda fez backup do ambiente de desenho e o restaurou durante os flushes, mesmo que nenhum batch futuro pudesse consumir aquele snapshot. Em uma carga de trabalho pesada de GS, cópias repetidas transformam um recurso inativo em um overhead mensurável de CPU."
+    },
+    {
+      "type": "heading",
+      "text": "As cópias do ambiente agora seguem a elegibilidade real do buffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14729 restringe as operações de backup e restauração a caminhos onde o buffer de desenho pode reter trabalhos subsequentes. Se o buffer estiver desativado ou a compatibilidade falhar imediatamente, o renderizador continua usando o contexto atual sem criar uma cópia de recuperação. Isso preserva o comportamento funcional do flush enquanto remove o tráfego de estado cujo único propósito era desfazer um batch que nunca existiu."
+    },
+    {
+      "type": "heading",
+      "text": "Referências locais substituem o rastreamento de ponteiros nos caminhos mais críticos"
+    },
+    {
+      "type": "paragraph",
+      "text": "A implementação anterior de buffer introduziu ponteiros usados em todo o processamento de desenho para que o código pudesse alternar entre estado ativo e em buffer. Onde essa indireção não é mais necessária, o patch usa referências locais. Referências permitem que o compilador mantenha o estado acessado com frequência mais próximo da operação e reduza carregamentos repetidos de ponteiro, sem alterar a propriedade ou o tempo de vida do contexto GS subjacente."
+    },
+    {
+      "type": "heading",
+      "text": "Testes de throughput devem manter o estado do buffer visível"
+    },
+    {
+      "type": "paragraph",
+      "text": "Use jogos e dumps pesados de GS para comparar FPS máximo, tempo de thread GS e contagens de cópia de ambiente com o buffer ativado, desativado e frequentemente rejeitado. CPUs mais fracos são os beneficiários esperados. A comparação de quadros sem perda ainda é necessária porque um backup pulado em uma fronteira de compatibilidade pode vazar estado modificado para o próximo desenho. Faça o perfil das causas representativas de flush e verifique se a melhoria não é apenas um caso artificial de execução."
+    },
+    {
+      "type": "callout",
+      "text": "A otimização remove trabalho de caminhos que não podem se beneficiar do buffer; ela não enfraquece a restauração do estado necessária por um lote realmente bufferizado."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Leia a discussão de engenharia e as mudanças de código PCSX2"
+    }
+  ]
+}

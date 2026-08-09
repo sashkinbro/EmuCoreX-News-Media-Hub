@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar는 Vulkan 스크린샷이 스왑체인의 실제 채널 순서를 따르도록 합니다",
+  "summary": "QImage는 BGRA 바이트를 예상하지만, 일부 Vulkan 드라이버는 RGBA를 제공합니다; 선택된 표면 형식을 두 스크린샷 경로에 전달하면 필요한 곳에서만 저렴한 빨강-파랑 스위즐이 가능합니다.",
+  "heroAlt": "Azahar 풀 리퀘스트 #2170의 소스 증거: renderer_vulkan: RGBA 스왑체인 형식에서 스크린샷 색상 채널 수정",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan 스크린샷",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "그래픽",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: RGBA 스왑체인 형식에서 스크린샷 색상 채널 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "화면에 표시되는 프레임은 올바를 수 있지만 저장된 이미지는 그렇지 않을 수 있습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan는 드라이버에서 지원하는 옵션 중에서 스왑체인 포맷을 선택합니다. 일부 플랫폼은 BGRA를 선호하고, 다른 플랫폼은 RGBA를 선호합니다. Azahar의 프레젠테이션 셰이더는 선택된 포맷을 처리했지만, 스크린샷 메모리는 BGRA 바이트 순서를 기대하는 QImage::Format_RGB32로 전달되었습니다. 따라서 RGBA 스왑체인에서는 빨간색과 파란색이 캡처된 파일에서만 교환되며, 라이브 윈도우 외부에서 렌더러가 잘못 표시된 것처럼 보였습니다."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow는 캡처 코드에 협상된 포맷을 노출합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #2170은 Vulkan의 present-window 구현에 GetSurfaceFormat를 추가하고, 스테이징 카피 캡처와 호스트 메모리 캡처 두 가지 스크린샷 경로에서 이를 확인합니다. 포맷이 eR8G8B8A8Unorm인 경우, Azahar는 너비 곱하기 높이 픽셀 수만큼 순회하며 바이트 0과 2를 교환합니다. BGRA 스왑체인은 기존 바이트를 그대로 사용하여, 이미 QImage와 일치하는 플랫폼에서는 변환을 피합니다."
+    },
+    {
+      "type": "heading",
+      "text": "바이트 스위즐링은 프론트엔드 이미지 계약을 변경하는 것보다 저렴합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "QImage 형식을 변경하려면 채널 순서 정보를 프런트엔드에 더 전달하고 모든 소비자가 이를 이해하도록 해야 합니다. 로컬 스위즐은 기존 RGB32 계약을 유지하며, 표시되는 프레임 당이 아니라 스크린샷 시에 픽셀마다 빨강-파랑 교환 비용이 발생합니다. 저자는 테스트를 위해 BGRA를 선호하는 Mac에서 RGBA를 강제로 사용했으며, Linux Mesa가 자연스럽게 영향을 받을 가능성이 있는 플랫폼으로 확인되었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "캡처 경로와 알파 모두 정확한 색상 고정값이 필요합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "순수한 빨강, 파랑, 녹색, 검정, 흰색과 비자명한 알파를 포함한 테스트 패턴을 렌더링한 후, 원래의 RGBA 및 BGRA 스왑체인에서 스테이징 및 호스트 메모리 경로를 통해 캡처합니다. 저장된 바이트와 표시된 출력 결과를 비교합니다. 홀수 차원, 확대된 레이아웃, 스왑체인 재생성 후에도 반복합니다. 영향을 받는 Linux 사용자가 자연스러운 형식 경로를 확인해야 합니다. 스위즐은 정확히 한 번만 발생해야 하며, 이중 변환은 한 백엔드는 수정된 것으로 보이게 하지만 다른 백엔드는 되돌아갈 수 있습니다."
+    },
+    {
+      "type": "callout",
+      "text": "스크린샷 코드는 이제 모든 드라이버가 QImage가 선호하는 순서로 픽셀을 제공한다고 가정하는 대신 실제로 협상된 형식인 Vulkan에서 변환됩니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Azahar 엔지니어링 토론 및 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

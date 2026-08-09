@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation dà a MMPX un confine trasparente invece di pixel di bordo ripetuti",
+  "summary": "I pixel vicini fuori dai limiti ora contribuiscono con alpha e colore zero, evitando che la duplicazione clamp-to-edge inventi forme che confondono le regole morfologiche dello scaler.",
+  "heroAlt": "Evidenza della fonte dalla pull request DuckStation #3774: MMPX Mappatura avanzata/ migliorata clamp-a-trasparente fuori dai limiti",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "clamp ai bordi",
+    "pixel trasparenti",
+    "campionamento shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Mappatura avanzata/migliorata clamp-a-trasparente fuori dai limiti"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Clamp-to-edge crea vicini che l'immagine sorgente non contiene"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX decide come espandere i pixel esaminando le forme e le tendenze locali dei colori. A un confine di texture, il campionamento normale limitato ripete l'ultimo texel valido per ogni coordinata fuori dall'intervallo. Questo comportamento è comodo per il filtraggio ordinario, ma uno scaler morfologico interpreta il colore ripetuto come struttura aggiuntiva. Angoli e linee vicino al bordo possono quindi essere classificati diversamente rispetto a forme identiche nel mezzo dell'immagine."
+    },
+    {
+      "type": "heading",
+      "text": "Le maschere di coordinata trasformano i campioni non validi in campioni trasparenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3774 modifica l'helper srcf sia nella generazione shader MMPX Enhanced sia Advanced. Ogni vicino chiama ancora SampleFromVRAM, ma il risultato viene moltiplicato per maschere di passo orizzontale e verticale confrontando la coordinata richiesta con uv_limits. Una coordinata al di fuori del rettangolo consentito riceve un moltiplicatore zero, rendendo il campione effettivo trasparente invece di una copia del texel di bordo."
+    },
+    {
+      "type": "heading",
+      "text": "La modifica è locale all'analisi delle forme, non all'indirizzamento globale della texture"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation non sostituisce il comportamento di clamp per ogni texture PlayStation. La maschera risiede nei helper di campionamento MMPX generati perché questi algoritmi richiedono un concetto di vicinato vuoto oltre l'immagine sorgente. Altri percorsi shader possono continuare a usare le loro semantiche di wrap o clamp già stabilite. Questo ambito ristretto impedisce a una correzione per la scalatura dei pixel-art di modificare il modo in cui i giochi stessi gestiscono i bordi delle texture."
+    },
+    {
+      "type": "heading",
+      "text": "I fissaggi dei bordi dovrebbero rispecchiare esattamente le forme interne"
+    },
+    {
+      "type": "paragraph",
+      "text": "Costruire immagini di test contenenti diagonali, angoli, linee di un pixel e intersezioni di quattro pixel sia al bordo della texture che a qualche pixel verso l'interno. Dopo la scalatura, la forma del bordo dovrebbe corrispondere alla forma interna eccetto per l’area esterna mancante. Ripetere con sottomatrici UV non nulle, pagine di texture, trasparenza e dimensioni dispari. Confrontare le varianti Enhanced e Advanced e ispezionare tutti e quattro i lati; un errore di segno in una maschera di coordinate potrebbe correggere il bordo destro mentre rompe quello sinistro."
+    },
+    {
+      "type": "callout",
+      "text": "Per la morfologia MMPX, lo spazio all'esterno dell'immagine è vuoto; ripetere il colore del bordo non è un filtraggio innocuo ma una falsa prova di forma."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Leggi la discussione ingegneristica DuckStation e le modifiche del codice sorgente"
+    }
+  ]
+}

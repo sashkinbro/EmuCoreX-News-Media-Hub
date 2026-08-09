@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K sposta la distribuzione degli argomenti HLE dal runtime nei template",
+  "summary": "I layout degli argomenti ARM a tempo di compilazione e i puntatori a funzione semplici riducono la meccanica del ponte per ogni importazione mantenendo esplicita la conversione di scalari, varargs e valori di ritorno.",
+  "heroAlt": "Prove sorgente dalla pull request #3881 di Vita3K: modulo/bridge: HLE dispatch a tempo di compilazione, evitare ulteriore indirezione del puntatore",
+  "searchKeywords": [
+    "Vita3K",
+    "Ponte HLE",
+    "ARM ABI",
+    "modelli",
+    "funzione invio"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Nucleo",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "modulo/ponte: HLE invio a tempo di compilazione, evitare indirezione aggiuntiva del puntatore"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ogni importazione ospite attraversa la stessa barriera di traduzione ABI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una chiamata di funzione Vita arriva con argomenti distribuiti tra i registri generali ARM, i registri a virgola mobile e lo stack. Il bridge Vita3K di HLE deve localizzarli, convertire i puntatori e le rappresentazioni del guest in tipi host, invocare l'export corretto e scrivere un valore di ritorno. Il vecchio bridge costruiva lo stato del layout e catturava un puntatore e un nome di export in std::function, aggiungendo macchinario runtime a scopo generale a un percorso percorso da quasi tutte le chiamate di servizio emulate."
+    },
+    {
+      "type": "heading",
+      "text": "La funzione di export diventa parte del tipo di ponte"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3881 introduce make_bridge con ExportFn come parametro di template non di tipo. lay_out viene eseguito come constexpr per il pacchetto di argomenti dell'export, producendo voci ArgLayout fisse e stato varargs. Una funzione generata senza cattura legge ciascun argomento tramite read_bridged_arg, chiama ExportFn direttamente e scrive condizionatamente il risultato a meno che il tipo di ritorno non sia void. ImportFn può quindi essere un semplice puntatore a funzione."
+    },
+    {
+      "type": "heading",
+      "text": "I tipi di ponte mantengono il contratto guest-to-host"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il layout a tempo di compilazione non significa reinterpretare i registri come oggetti C++ arbitrari. BridgeTypes seleziona la rappresentazione ARM di ciascun argomento e la converte usando la memoria emulata ove necessario. module::vargs porta il suo stato calcolato invece di fingere di essere un singolo argomento scalare. Gli scope di Tracy ricevono comunque il nome di esportazione tramite archiviazione statica, preservando il profiling per funzione mentre si rimuove la precedente cattura della closure."
+    },
+    {
+      "type": "heading",
+      "text": "La conformità ABI richiede test a tempo di compilazione ed esecuzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Istanziate bridge per zero argomenti, quattro e cinque interi, valori allineati a 64 bit, float, puntatori, strutture rappresentate da tipi bridge, varargs, ritorni void e codici di errore. Confrontate registri e posizioni dello stack con l'ABI Vita e l'implementazione precedente. Compilate ogni modulo generato sui compilatori supportati, ispezionate le dimensioni del codice e la forma delle chiamate e benchmarkate i carichi di lavoro intensivi in importazioni. Tipi non validi o non supportati dovrebbero fallire durante la compilazione con un diagnostico chiaro anziché selezionare silenziosamente un layout sbagliato."
+    },
+    {
+      "type": "callout",
+      "text": "L'ottimizzazione funziona perché la firma di esportazione contiene già i fatti ABI; i template possono trasformare questi fatti in un ponte fisso prima che inizi l'emulazione."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Leggi la discussione ingegneristica Vita3K e le modifiche del codice sorgente"
+    }
+  ]
+}

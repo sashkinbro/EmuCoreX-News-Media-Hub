@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14475-controller-navigation-breaking-after-b",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 在窗口调整大小后重建大屏幕控制器导航",
+  "summary": "陈旧的 ImGui 导航矩形，而不是全屏本身，导致在窗口尺寸发生重大变化后焦点停止移动；现在调整大小会强制导航状态与新布局匹配。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14475 的可视化证据：FullscreenUI：修复在大屏模式窗口调整大小后控制器导航中断的问题",
+  "searchKeywords": [
+    "PCSX2",
+    "大屏幕模式",
+    "控制器导航",
+    "窗口调整大小",
+    "ImGui"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "前端",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14475": "FullscreenUI：修复在大屏模式窗口调整大小后控制器导航中断的问题"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "全屏看起来像是有问题，因为它通常会调整窗口大小"
+    },
+    {
+      "type": "paragraph",
+      "text": "在大屏模式下切换全屏后，控制器导航可能会立即停止。跨设备测试显示，全屏状态只是大多数人注意到的触发因素：实际条件是窗口尺寸变化足够大。手持设备的窗口变化通常太小，无法重现，而桌面窗口在切换失败前缩小得更多。"
+    },
+    {
+      "type": "heading",
+      "text": "NavRectRel 仍然描述的是旧尺寸的小部件"
+    },
+    {
+      "type": "paragraph",
+      "text": "ImGui 会缓存相对导航矩形，用于决定当控制器向上、向下、向左或向右移动时哪个项目获得焦点。在布局以新尺寸重建后，这些 NavRectRel 值可能仍然是过时的。随后，焦点计算会参考与可见控件不匹配的几何信息。按某些方向可能会意外恢复导航，这解释了为什么该错误有时会自行修复。"
+    },
+    {
+      "type": "heading",
+      "text": "现在，调整大小会在 UI 边界使导航状态失效"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14475 对 ImGuiManager 进行了更改，以便任何 Big Picture 窗口的调整大小都会强制重新初始化导航。该修复不会增加时间延迟或针对全屏模式做特殊处理；它会响应使缓存矩形无效的状态变化。将修复保留在调整大小路径中也涵盖了手动窗口调整大小、分辨率更改以及其他在不改变全屏模式的情况下重建布局的转换。"
+    },
+    {
+      "type": "heading",
+      "text": "回归测试序列需要同时进行大尺寸和小尺寸的变化"
+    },
+    {
+      "type": "paragraph",
+      "text": "在之前的代码上，测试人员应显著缩小 Big Picture 窗口，然后切换全屏以重现控制器焦点卡住的问题。在更正后的路径上，导航必须在多次增长、缩小和全屏转换后继续进行。矩阵应包括桌面和便携设备尺寸的窗口、控制器移动之间的鼠标交互，以及每个选项卡边缘。焦点位置可能会被刻意重置，但绝不能指向重建布局外部或需要恢复输入。"
+    },
+    {
+      "type": "callout",
+      "text": "修复遵循真实的失效事件：窗口大小调整会重建布局，因此控制器导航几何必须随之重建。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14475",
+      "label": "阅读 PCSX2 工程讨论和源代码更改"
+    }
+  ]
+}

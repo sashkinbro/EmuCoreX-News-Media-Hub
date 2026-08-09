@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 interrompe l'allocazione fallita di texture ImGui prima che diventi un crash",
+  "summary": "I percorsi di creazione, caricamento e distruzione ora trattano i dati mancanti di BackendUserData come uno stato reale, prevenendo che un fallimento di allocazione si propaghi in operazioni su handle nativi e mappe.",
+  "heroAlt": "Prova sorgente dalla pull request PCSX2 #14655: GS: Migliore gestione dei rischi nella creazione di texture imgui.",
+  "searchKeywords": [
+    "PCSX2",
+    "Texture ImGui",
+    "fallimento di allocazione",
+    "GSTexture",
+    "crash"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Migliore gestione dei rischi nella creazione di texture imgui."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui può richiedere una texture quando GPU non può fornirne una"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli atlanti dei font e altre immagini dell'interfaccia passano attraverso gli stati WantCreate, WantUpdates e WantDestroy. L'allocazione della texture può fallire a causa di perdita del dispositivo, pressione sulle risorse, dimensioni non supportate o un altro errore del backend. Il vecchio ramo di creazione segnalava il fallimento ma poi continuava come se esistesse una GSTexture, richiedendone il handle nativo e passando al codice di caricamento. La diagnostica, quindi, precedeva un dereferenziamento nullo anziché contenerlo."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate passa soltanto con dati validi del backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14655 avvolge CreateTexture in un ramo a puntatore riuscito. Solo una texture reale riceve un ImTextureID e BackendUserData prima che il codice continui al caricamento a piena dimensione. In caso di fallimento, PCSX2 emette pxFailRel e esce dallo stato. WantUpdates controlla separatamente BackendUserData prima delle operazioni di aggiornamento mappa o riga per riga, quindi una creazione fallita precedente non può essere scambiata per una risorsa inizializzata."
+    },
+    {
+      "type": "heading",
+      "text": "Anche Destroy accetta che la creazione potrebbe non essersi mai completata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lo stato di distruzione ora ricicla e invalida la texture solo quando BackendUserData non è nullo. Questo è importante quando ImGui scarta una richiesta di atlas dopo un fallimento di allocazione o quando una transizione di stato compete con la logica di recupero. Il comportamento di riciclo stesso non cambia per le texture valide, incluso il riutilizzo di atlas della stessa dimensione; la patch fa sì che il grafico del ciclo di vita includa un ramo per risorse assenti dall'inizio alla fine."
+    },
+    {
+      "type": "heading",
+      "text": "L'iniezione di fallimento è più forte che aspettare il problema #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Riproduci il dump di crash collegato se possibile, poi aggiungi un hook backend controllato che faccia sì che la prossima creazione di texture in ImGui ritorni nullo. L'OSD e il rendering dei font devono riportare il fallimento senza andare in crash, caricando pixel o riciclando un puntatore non valido. Ripristina l'allocazione e conferma che un atlas successivo possa essere creato e visualizzato. Ripeti il fallimento durante il ridimensionamento, l'evizione dei font, il reset del dispositivo e lo spegnimento su tutte le backend hardware, e esegui i normali test OSD per garantire che il percorso protetto non blocchi aggiornamenti validi."
+    },
+    {
+      "type": "callout",
+      "text": "La correzione completa la macchina a stati della texture: il fallimento dell'allocazione è un branch terminale per quella richiesta, non un avviso seguito dal normale codice di upload."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Leggere la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

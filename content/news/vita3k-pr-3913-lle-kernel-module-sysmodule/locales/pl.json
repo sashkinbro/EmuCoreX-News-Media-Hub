@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K łączy prawdziwe moduły jądra Vita ze swoim emulowanym grafem modułów",
+  "summary": "Ładowanie Boot i sysmodule SKPRX teraz łączy się z szerszym SELF, eksportem sterowników, TLS, obsługą cyklu życia i łatkami potrzebnymi dla ścieżki modułu systemowego niskiego poziomu.",
+  "heroAlt": "Dowody źródłowe z pull requestu Vita3K #3913: moduły: moduł jądra lle \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "Jądro LLE",
+    "SKPRX",
+    "sysmodule",
+    "ładowarka modułów"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Rdzeń",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "moduły: moduł jądra lle \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Moduły systemu niskiego poziomu potrzebują więcej niż parser SELF"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ładowanie prawdziwego binarnego jądra Vita oznacza rozwiązywanie jego importów i eksportów, przypisywanie pamięci segmentów, tworzenie informacji o module, przestrzeganie zachowań startu i zatrzymania, udostępnianie usług sterowników oraz czyszczenie każdego symbolu podczas jego rozładowywania. Binarne oczekuje również istnienia pól TLS jądra i innych modułów systemowych. Loader, który kopiuje bajty pomyślnie, ale pozostawia te zależności niekompletne, później zawiedzie z nierozwiązanym NID lub przestarzałym eksporterem."
+    },
+    {
+      "type": "heading",
+      "text": "Graf początkowy teraz obejmuje bootimage i sysmodule"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3913 dodaje os0:kd/bootimage.skprx i os0:kd/sysmodule.skprx do listy preload. Rozszerza managera modułów, managera wątków, managera procesów, sysmem, debug, process-event, QAF oraz funkcje związane z sysmodule potrzebne wokół nich. Nazwy TLS jądra zyskują role stack-check i fiber-context. Ścieżki rozładowywania importów i eksportów są uproszczone, aby usuwać wpisy według NID i własności modułu bez przenoszenia danych relokacji, których już nie używają."
+    },
+    {
+      "type": "heading",
+      "text": "Patching przenosi się do warstwy, która zna końcowe segmenty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatki do gry są pobierane z ogólnego ładowacza jądra SELF. Po tym jak główny plik wykonywalny stanie się załadowanym modułem, kod interfejsu pobiera jego SceKernelModuleInfo i kopiuje tylko łatki, których segment istnieje, a suma przesunięcia i liczby bajtów mieści się w memsz. To utrzymuje łatkę widoczną dla użytkownika oddzielnie od ładowania binariów systemowych i sprawia, że kontrola granic używa ostatecznie zmapowanych segmentów, zamiast założeń parsera."
+    },
+    {
+      "type": "heading",
+      "text": "Mieszany wykres LLE i HLE wymaga możliwych do śledzenia testów awarii"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uruchom system z kompletnymi plikami oprogramowania sprzętowego, brakującym obrazem startowym, brakującym modułem systemowym, niekompatybilnymi plikami binarnymi oraz zwykłymi konfiguracjami tylko dla HLE. Śledź każdy rozwiązany import, wynik uruchomienia modułu, wartość TLS, usunięcie eksportu oraz zamykanie w kolejności odwrotnej. Wielokrotnie przeładowuj tytuły, aby wykryć nieaktualny NIDs i moduł IDs. Podawaj poprawki na początku segmentu, dokładnym końcu oraz o jeden bajt poza nim. Pliki binarne jądra nigdy nie mogą przyznawać dostępu hostowi; wszystkie wskaźniki pozostają w zakresie gościa, a nieobsługiwane funkcje sterownika powinny zgłaszać dokładną granicę zamiast zwracać wymyślony sukces."
+    },
+    {
+      "type": "callout",
+      "text": "LLE nie polega tylko na uruchamianiu większej ilości kodu firmware; buduje odwracalny wykres modułów, w którym prawdziwe binaria gościa i usługi emulatora spotykają się przy wyraźnych importach."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Przeczytaj dyskusję inżynieryjną Vita3K i zmiany w źródłach"
+    }
+  ]
+}

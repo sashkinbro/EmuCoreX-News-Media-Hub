@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K déplace la répartition des arguments HLE du runtime vers les templates",
+  "summary": "Les dispositions des arguments ARM au moment de la compilation et les pointeurs de fonction simples réduisent le mécanisme par-importation du pont tout en conservant explicites les conversions de scalaires, varargs et valeurs de retour.",
+  "heroAlt": "Preuve source tirée de la pull request Vita3K #3881 : module/bridge : distribution au moment de la compilation HLE, éviter une indirection de pointeur supplémentaire",
+  "searchKeywords": [
+    "Vita3K",
+    "pont HLE",
+    "ABI ARM",
+    "templates",
+    "distribution de fonction"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Cœur",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge : distribution au moment de la compilation HLE, éviter une indirection de pointeur supplémentaire"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Chaque importation invitée traverse la même frontière de traduction ABI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un appel de fonction Vita arrive avec des arguments répartis entre les registres généraux ARM, les registres à virgule flottante et la pile. Le pont Vita3K de HLE doit les localiser, convertir les pointeurs et représentations invités en types hôtes, invoquer l'exportation correcte et écrire une valeur de retour. L'ancien pont construisait l'état de mise en page et capturait un pointeur et un nom d'exportation dans std::function, ajoutant des mécanismes d'exécution à usage général à un chemin utilisé par presque tous les appels de services émulateurs."
+    },
+    {
+      "type": "heading",
+      "text": "La fonction d'exportation devient partie du type de pont"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3881 introduit make_bridge avec ExportFn comme paramètre de template non typé. lay_out s'exécute en tant que constexpr pour le paquet d'arguments de l'exportation, produisant des entrées ArgLayout fixes et un état varargs. Une fonction générée sans capture lit chaque argument via read_bridged_arg, appelle directement ExportFn et écrit conditionnellement le résultat à moins que le type de retour soit void. ImportFn peut donc être un simple pointeur de fonction."
+    },
+    {
+      "type": "heading",
+      "text": "Les types de pont conservent le contrat invité-vers-hôte"
+    },
+    {
+      "type": "paragraph",
+      "text": "La mise en page à la compilation ne signifie pas reinterpret-caster des registres en objets C++ arbitraires. BridgeTypes sélectionne la représentation ARM de chaque argument et la convertit en utilisant la mémoire émulée lorsque nécessaire. module::vargs transporte son état calculé plutôt que de prétendre être un argument scalaire unique. Les portées de Tracy reçoivent toujours le nom d'exportation via le stockage statique, préservant le profilage par fonction tout en supprimant la capture de closure précédente."
+    },
+    {
+      "type": "heading",
+      "text": "La conformité ABI nécessite des tests à la compilation et à l'exécution"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instancier des ponts pour zéro argument, quatre et cinq entiers, des valeurs alignées sur 64 bits, des floats, des pointeurs, des structures représentées par des types de pont, des varargs, des retours void et des codes d'erreur. Comparer les emplacements dans les registres et la pile avec l'ABI Vita et l'implémentation précédente. Compiler chaque module généré sur les compilateurs pris en charge, inspecter la taille du code et la forme des appels, et mesurer les performances des charges de travail très importantes. Les types invalides ou non pris en charge doivent échouer lors de la compilation avec un diagnostic clair plutôt que de sélectionner silencieusement une mise en page incorrecte."
+    },
+    {
+      "type": "callout",
+      "text": "L'optimisation fonctionne parce que la signature d'exportation contient déjà les informations ABI ; les modèles peuvent transformer ces informations en un pont fixe avant le début de l'émulation."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Lisez la discussion d'ingénierie Vita3K et les modifications de source"
+    }
+  ]
+}

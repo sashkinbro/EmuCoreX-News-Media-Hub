@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin odděluje adresu načtení segmentu ELF od jeho virtuální adresy",
+  "summary": "Loader nyní upřednostňuje p_paddr jako adresu paměti pro načtení segmentu a používá p_vaddr pouze, pokud není k dispozici fyzická adresa.",
+  "heroAlt": "Důkaz ze zdrojového kódu z PR #14115 projektu Dolphin: Core/Boot: Oprava semantics adresy načtení ELF",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: Oprava semantics adresy načtení ELF"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF hlavičky programů mohou popisovat dvě různé adresy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Načitatelný segment ELF obsahuje p_vaddr, adresu používanou programem při vykonávání, a p_paddr, často v embedded prostředích považovanou za adresu pro načtení do paměti. Mnoho binárních souborů je nastavuje stejně, což skrývá loadery, které tyto pole slučují. Homebrew, bootovací komponenty nebo vývojové obrazy je mohou záměrně oddělit. Dolphin dříve kopíroval bajty segmentu na p_vaddr bez ohledu na fyzické umístění zakódované v souboru."
+    },
+    {
+      "type": "heading",
+      "text": "Loader nyní dává přednost nenulovému fyzickému poli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14115 zaznamenává obě hodnoty a inicializuje writeAddr z p_paddr. Nenulová fyzická adresa je mapována do virtuální oblasti PowerPC nastavením bitu 0x80000000. Pokud je p_paddr nulová, Dolphin používá p_vaddr jako kompatibilní náhradní řešení. Kontrola pouze pro MEM1 se také přepíná na skutečnou vybranou adresu zápisu, takže filtrování hodnotí, kam budou bajty zapisovány, místo aby hodnotilo jiné pole záhlaví."
+    },
+    {
+      "type": "heading",
+      "text": "Toto je oprava sémantiky loaderu, nikoliv libovolné přemisťování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin nepřepočítává novou lokaci ani nepřepisuje odkazy uvnitř binárního souboru. Řídí se adresou načtení poskytnutou v hlavičce programu a zachovává zavedenou konvenci virtuálního mapování. Tento rozdíl je důležitý pro segmenty zkopírované na jedno místo předtím, než je řídicí tok nebo startovací kód použijí na jiném místě. Také zabraňuje tomu, aby nulová p_paddr, běžná u souborů, které nerozlišují adresy, omylem namapovala na základní adresu paměti."
+    },
+    {
+      "type": "heading",
+      "text": "Konstrukce musí pokrývat rovné, oddělené, nulové a neplatné rozsahy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvořte malý ELFs, jehož p_paddr se rovná p_vaddr, je nula, liší se, ale zůstává v MEM1, přistává blízko hranice nebo ukazuje mimo zapisovatelný emulovaný RAM. Naplňte každý segment jedinečným vzorem a ověřte přesný cíl, vyčištění BSS, provedení vstupu a zpracování překrytí. Procvičte filtraci only_in_mem1 proti writeAddr a zkontrolujte protokoly pro obě pole. Skutečné domácí programy by měly být testovány spolu s poškozenými soubory, aby se zlepšená sémantika nestala nekontrolovanými zápisy do paměti hosta."
+    },
+    {
+      "type": "callout",
+      "text": "Když vestavěný ELF poskytuje adresu paměti pro zátěž, měl by ji loader respektovat; virtuální adresa popisuje provádění, ne vždy místo, kam by bity měly nejprve patřit."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Přečtěte si inženýrskou diskusi Dolphin a změny zdrojového kódu"
+    }
+  ]
+}

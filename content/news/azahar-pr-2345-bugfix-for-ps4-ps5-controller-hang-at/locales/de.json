@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar initialisiert PlayStation-Tastenbelegungen, bevor die Bewegung aktiviert wird",
+  "summary": "Die Neuordnung und Doppelung der SDL-Bewegungsaktivierung beseitigt eine Threading-Gefahr beim Start, die spezifisch für DualShock 4 und DualSense HIDAPI Controller-Setup ist.",
+  "heroAlt": "Belegquellen aus dem Azahar Pull Request #2345: Bugfix für ps4/ps5 Controller-Hänger beim Start",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "Bewegungseingabe"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Eingabe",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Bugfix für ps4/ps5 Controller-Hänger beim Start"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Bewegungsstart trat in SDL ein, bevor die Controller-Zuordnung bereit war"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar ermöglicht Gyroskop- und Beschleunigungssensoreingaben über den Controller-Pfad von SDL. Bei PS4- und PS5-Geräten, die HIDAPI verwenden, konnte das Aufrufen von EnableMotion vor dem Vorhandensein von Tastenbelegungen ein Threading-Problem auslösen und gelegentlich den Emulator beim Start zum Absturz bringen. Die ältere Joystick-API nahm diesen Pfad nicht, was erklärt, warum das Problem erst nach der Verschiebung der Controller-Initialisierung auf die moderne API auftrat."
+    },
+    {
+      "type": "heading",
+      "text": "Die Initialisierung erstellt jetzt zuerst die Belegung, bevor ein Motion-Aufruf erfolgt."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #2345 entfernt doppelte EnableMotion-Aufrufe aus SDLState und CreateControllerButtonMap und belässt die Aktivierung im SDLJoystick, nachdem der Konstruktionszustand hergestellt wurde. Die wichtige Änderung betrifft Reihenfolge und Einzigartigkeit, nicht eine Verzögerung: Die Tastenbelegung wird abgeschlossen, dann wird die Motion-Unterstützung einmal aktiviert. Das verhindert, dass Rückrufe oder HIDAPI-Arbeiten ein halb initialisiertes Controller-Objekt beobachten."
+    },
+    {
+      "type": "heading",
+      "text": "Doppelte Aufrufe machten das Rennen schwieriger nachzuvollziehen."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Bewegungsaktivierung aus mehreren Schichten kann harmlos erscheinen, wenn SDL sie als idempotent behandelt, aber jeder Aufruf kann in den Gerätescode gelangen, Sensoren zuweisen oder Sperren übernehmen. Das Entfernen redundanter Einstiegspunkte macht die Verantwortung klar und reduziert die Anzahl der Pläne, die zu einer Deadlock-Situation führen können. Standardtasten und analoge Eingaben initialisieren sich weiterhin normal, und Controller ohne Bewegung sollten dieselbe Sequenz durchlaufen, ohne einen Sensor zu erfinden."
+    },
+    {
+      "type": "heading",
+      "text": "Startschleifen müssen Hot-Plug- und Bewegungs-deaktivierte Fälle enthalten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kaltstart Azahar wiederholt mit DualShock 4 und DualSense, die über USB und Bluetooth verbunden sind, mit aktivierter und deaktivierter Bewegung. Füge Hot-Plug während des Starts hinzu, trenne und verbinde nach Beginn der Emulation erneut und initialisiere mehrere Controller. Protokolliere die Kartenvollendung und die einzige Bewegungsaktivierung. Teste ein Legacy-Joystick-Gerät als Negativkontrolle. Die Fehlerbehebung muss Hänger entfernen, ohne Gyrodaten, Tastenbeschriftungen oder Zuordnungen zu verlieren, und das Herunterfahren muss die HIDAPI-Threads sauber schließen."
+    },
+    {
+      "type": "callout",
+      "text": "Die Controller-Konfiguration hat jetzt einen Eigentümer und einen Auftrag: zuerst die Eingaben zuordnen, dann SDL die Bewegungs-Hardware starten lassen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Lesen Sie die Azahar Ingenieurdiskussion und Quelländerungen"
+    }
+  ]
+}

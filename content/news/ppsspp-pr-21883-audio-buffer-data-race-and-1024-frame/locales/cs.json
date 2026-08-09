@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP uzavírá závod napříč vlákny v doručování zvuku libretro",
+  "summary": "Každá operace na sdíleném vyconvertovaném bufferu vzorků nyní používá jeden mutex, což zabraňuje tomu, aby realloc nebo shutdown neplatně upravily paměť, zatímco jiné vlákno zapisuje zvuk.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PPSSPP #21883: libretro: oprava závodu u bufferu zvuku a pushů vzorků větších než 1024 rámců",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "závod zvuku",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Zvuk",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: oprava závodu u bufferu zvuku a pushů vzorků větších než 1024 rámců"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dvě vlákna mohou současně vlastnit stejný surový ukazatel"
+    },
+    {
+      "type": "paragraph",
+      "text": "V cestě frontend libretro převádí System_AudioPushSamples zvuk z PSP a přidává jej do output_audio_buffer. U backendů OpenGL mohou vzorky přicházet přes frontu příkazů GL na straně emulace, zatímco retro_run vyprázdňuje buffer ve vláknu libretro. Inicializace, ukončení a růst kapacity také nahrazují nebo uvolňují alokaci. Bez jednoho pravidla vlastnictví by realloc mohl neplatně změnit ukazatel, zatímco druhé vlákno jej četlo nebo zapisovalo."
+    },
+    {
+      "type": "heading",
+      "text": "Jedno mutex nyní určuje životnost bufferu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883 přidává output_audio_buffer_mutex a používá jej při inicializaci, destrukci, nahrávání a System_AudioPushSamples. Pomocník pro kapacitu je explicitně zdokumentován jako vyžadující od volajícího držení tohoto zámku, takže růst se děje uvnitř téže kritické sekce jako přírůstek, který jej vyžaduje. Nahrávání udržuje zámek prostřednictvím callbacku dávky a resetování velikosti, čímž zabraňuje producentovi změnit obsah uprostřed přenosu."
+    },
+    {
+      "type": "heading",
+      "text": "Oprava chrání strukturu a vzorky společně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uzamknutí pouze velikosti nebo kapacity by nebylo dostačující: data, velikost a kapacita tvoří jeden invariant. Ukazatel musí odkazovat na alokaci alespoň o délce kapacity prvků a velikost musí identifikovat inicializované vzorky v rámci ní. Mutex zajišťuje, že aktualizace všech tří jsou viditelné jako jedna operace. To je obzvláště relevantní pro vícevláknové GL načasování, ale init a free používají stejná pravidla, takže rychlé restartování jádra nemůže vést k závodní podmínce s pozdním producentem."
+    },
+    {
+      "type": "heading",
+      "text": "Zátěžové testování musí měnit načasování callbacků a rendereru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spusťte libretro s OpenGL, Vulkan a softwarovým renderováním při opakovaném pozastavování, rychlém přeskočení, resetování, přepínání obsahu a zavírání jádra. Používejte audio callbacky, které spotřebovávají rychle, pomalu a nepravidelně, plus push vzorků nad běžnou velikost snímků. ThreadSanitizer by neměl zaznamenat žádný nesynchronizovaný přístup k n-tici bufferů. Poslouchejte a hasheujte zachycené PCM kvůli mezerám nebo přeuspořádání a ověřte, že žádný callback se neopakovaně nevkládá do cesty, která čeká na stejný nerekurzivní mutex."
+    },
+    {
+      "type": "callout",
+      "text": "Rostoucí zvukový buffer je jeden sdílený objekt, ne tři nezávislá pole; jeho ukazatel, velikost a kapacita musí přecházet mezi vlákny pod stejným zámkem."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PPSSPP"
+    }
+  ]
+}

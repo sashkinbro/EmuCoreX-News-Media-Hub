@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3661-preserve-hardcore-mode-when-toggling-e",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation reloads achievement data without tearing down hardcore mode",
+  "summary": "Mid-session RetroAchievements options now refresh the current game's data on the existing client, preserving hardcore state that a full Shutdown and Initialize cycle discarded.",
+  "heroAlt": "Visual evidence from DuckStation pull request #3661: Achievements: Preserve hardcore mode when toggling encore/spectator/unofficial settings",
+  "searchKeywords": [
+    "DuckStation",
+    "RetroAchievements",
+    "hardcore mode",
+    "Encore Mode",
+    "rc_client"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3661": "Achievements: Preserve hardcore mode when toggling encore/spectator/unofficial settings"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A settings toggle was rebuilding more state than it owned"
+    },
+    {
+      "type": "paragraph",
+      "text": "Changing Encore Mode, Spectator Mode, or unofficial-achievement testing while a game was running previously called Shutdown() and Initialize() for the RetroAchievements client. That full lifecycle did apply the option, but it also disabled hardcore mode until the game itself was reset. The setting change therefore leaked into a separate integrity state that the player had not chosen to abandon."
+    },
+    {
+      "type": "heading",
+      "text": "ClearGameInfo and BeginLoadGame preserve the client boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3661 keeps the existing rc_client alive. It unloads the current game's achievement information with ClearGameInfo(), then calls BeginLoadGame() to fetch and apply the selected rules again. The reload is enough for Encore to reset unlock state and for spectator or unofficial options to take effect; rebuilding the network client and its hardcore state is unnecessary."
+    },
+    {
+      "type": "heading",
+      "text": "Encore can be applied repeatedly within one emulation session"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source specifically notes that Encore Mode can be toggled more than once and still refresh achievement unlocks correctly. That is an important lifecycle test because a one-shot implementation could appear fixed after the first transition but retain stale game data on the second. The visible before-and-after evidence also shows hardcore remaining enabled after the option reload."
+    },
+    {
+      "type": "heading",
+      "text": "Validation must track client state and achievement state separately"
+    },
+    {
+      "type": "paragraph",
+      "text": "Start a hardcore session, toggle Encore, spectator, and unofficial testing individually, and verify the intended achievement set reloads while hardcore remains active. Repeat each toggle several times, sign out and back in, and test a title with unlocked achievements so reset behavior is observable. Network failure during BeginLoadGame() must not corrupt the existing client. A genuine hardcore-disabling action, such as the emulator's documented reset path, should still behave normally."
+    },
+    {
+      "type": "callout",
+      "text": "The fix narrows the lifecycle: reload game-specific achievement data, but do not destroy the client state that owns hardcore mode."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3661",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

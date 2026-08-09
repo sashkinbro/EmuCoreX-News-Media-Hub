@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21892-debugger-assemble-disassemble-compatib",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP hace que VFPU realice un viaje de ida y vuelta de desensamblaje a través de su ensamblador",
+  "summary": "Los nombres de las instrucciones, la notación de saturación, los operandos de condición y los anchos de vector ahora coinciden con la sintaxis de ensamblador aceptada, respaldada por una verificación completa de ida y vuelta con el texto del juego.",
+  "heroAlt": "Evidencia de la fuente de la solicitud de extracción PPSSPP #21892: Mejorar la compatibilidad del ensamblador/desensamblador del depurador",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "armips",
+    "desensamblador",
+    "depurador MIPS"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Herramientas",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21892": "Mejorar la compatibilidad del ensamblador/desensamblador del depurador"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El texto legible no es suficiente cuando un depurador puede parchear el código"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un desensamblador puede imprimir un mnemónico comprensible que aún no se pueda volver a analizar en la misma palabra de máquina. El depurador de PPSSPP expone operaciones de ensamblaje y desensamblaje a través de su interfaz WebSocket, por lo que las diferencias de sintaxis se convierten en errores funcionales. Una operación renombrada VFPU, la ausencia del sufijo .s, un ancho de destino incorrecto o corchetes decorativos pueden causar fallos en el ensamblaje o seleccionar silenciosamente una codificación diferente."
+    },
+    {
+      "type": "heading",
+      "text": "Los cambios siguen la evidencia de ida y vuelta en un ejecutable de juego."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #21892 fue desarrollada con un script que desensambló cada instrucción en la sección .text de un juego, ensambló el texto resultante, desensambló nuevamente y comparó las salidas. PPSSPP también actualiza su dependencia armips para los cambios de análisis de VFPU. El parche elimina corchetes de los parámetros de origen vpfx donde no corresponden, añade rangos de saturación explícitos para vpfxd y usa nombres de comparación FPU escalares compatibles con el ensamblador, como c.eq.s."
+    },
+    {
+      "type": "heading",
+      "text": "Las conversiones vectoriales necesitan tamaños de destino derivados del código de operación."
+    },
+    {
+      "type": "paragraph",
+      "text": "Los mnemónicos de conversión VFPU no siempre preservan el ancho de origen. Nuevos ayudantes seguros de tamaño vectorial de un cuarto, medio, doble y cuádruple permiten que el desensamblador imprima la forma de destino real para las familias vuc2ifs, vc2i, vi2uc, vi2c, vi2us y vi2s. Las formas de movimiento condicional y de rama imprimen el índice de condición inmediato directamente en lugar de un token de visualización CC[imm3]. Esos detalles deciden si el texto se asigna de nuevo a los campos de bits originales."
+    },
+    {
+      "type": "heading",
+      "text": "Un corpus más amplio debería distinguir la sintaxis estable de los alias."
+    },
+    {
+      "type": "paragraph",
+      "text": "Repite el viaje de ida y vuelta a través de ejecutables comerciales, homebrew, cobertura generada para cada codificación VFPU, codificaciones inválidas y tamaños de vectores límite. Prueba la salida a través de UI y WebSocket APIs, luego ensambla con la revisión exacta de armips incluida. Compara palabras de máquina, no solo cadenas normalizadas, mientras permites alias canónicos documentados. Incluye modos de saturación, NaNs en datos literales, objetivos de salto e instrucciones cuya forma de destino es inválida para que el depurador informe un error en lugar de inventar un registro."
+    },
+    {
+      "type": "callout",
+      "text": "El desensamblado del depurador se vuelve confiable cuando cada operando impreso es una descripción reversible de los bits de instrucción, y no simplemente una etiqueta familiar."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21892",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de PPSSPP"
+    }
+  ]
+}

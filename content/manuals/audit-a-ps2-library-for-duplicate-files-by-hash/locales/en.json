@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Find duplicate PS2 images with SHA-256 before deleting anything",
+  "summary": "Create a read-only hash inventory on Windows, Linux, or macOS; group byte-identical personal disc images; distinguish active copies from offline backups; and remove only verified redundancy from scanned folders.",
+  "heroAlt": "Microsoft Learn Get-FileHash reference showing the PowerShell SHA-256 command syntax",
+  "searchKeywords": [
+    "duplicate PS2 ISO",
+    "Get-FileHash SHA-256",
+    "sha256sum library audit",
+    "EmuCoreX duplicate games",
+    "verify identical files"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Library",
+    "integrity": "Integrity"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Microsoft Get-FileHash reference",
+    "gnu-sha2": "GNU SHA-256 utility reference"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inventory the scanned roots in read-only mode"
+    },
+    {
+      "type": "paragraph",
+      "text": "Two files are duplicates only when their bytes match, not when titles or filenames look similar. Regional editions, revisions, demo discs, bonus discs, CD tracks, and patched working copies can share a name while containing different data. Begin by listing every EmuCoreX library root and moving no files. The audit should read the images, write its report somewhere outside those roots, and leave memory cards and emulator data out of scope."
+    },
+    {
+      "type": "callout",
+      "text": "A matching SHA-256 proves byte identity between the files you measured. It does not prove that the original dump was accurate, licensed for redistribution, or safe to delete from every backup. Keep one verified preservation master outside the active library."
+    },
+    {
+      "type": "heading",
+      "text": "Create the Windows PowerShell hash report"
+    },
+    {
+      "type": "paragraph",
+      "text": "Connect the storage to a trusted Windows computer or work directly on a folder already available there. Replace D:\\PS2 with the literal path to one scanned root. Get-FileHash uses SHA-256 by default, but specifying the algorithm makes the report self-explanatory. Exporting CSV preserves full paths and prevents console truncation."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Open PowerShell without administrator rights; hashing ordinary library files does not require elevation.",
+        "2. Run: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. Wait for the prompt to return. Large DVD images require reading every byte, so removable storage can take a long time.",
+        "4. Open the CSV and group adjacent rows with the same Hash value. Confirm that the reported Path values point to separate files rather than the same file listed through two shortcuts.",
+        "5. Repeat the command for each non-overlapping root and keep the reports together with the audit date, drive identity, and any read errors."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Use sha256sum or shasum on Unix-like systems"
+    },
+    {
+      "type": "paragraph",
+      "text": "On Linux, GNU sha256sum provides the equivalent digest. Build the file list with find using null delimiters so spaces and unusual characters remain intact, then redirect output outside the scanned directory. On macOS, shasum -a 256 is commonly available. Do not paste unreviewed internet commands that delete files automatically; this procedure intentionally separates detection from cleanup."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Linux example: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "macOS example: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "If a command reports Input/output error, stop cleanup and investigate the source device. A digest produced after unstable reads is not a healthy migration baseline.",
+        "For cue/bin CD dumps, treat the cue sheet and every referenced track as one set; hashing only the largest BIN can overlook missing audio tracks."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Classify each matching group before cleanup"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Keep the copy inside the intended scanned root when another identical copy sits in a downloads or temporary-import folder.",
+        "Keep the preservation master when the matching active copy is a renamed working file; the master belongs outside every EmuCoreX scan root.",
+        "Keep both physical copies when one is the only offline backup on another device. Duplicate bytes in different backup tiers are deliberate redundancy, not library clutter.",
+        "Do not merge files with different hashes merely because their displayed title matches. Record serial, region, revision, disc number, and patch status first.",
+        "For multidisc games, confirm that Disc 1 and Disc 2 are intentionally different; filenames alone are not enough to reconstruct the set later."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Quarantine instead of deleting on the first pass"
+    },
+    {
+      "type": "paragraph",
+      "text": "Create a quarantine folder outside all selected library roots. Move one redundant working copy from each confirmed group into it, refresh EmuCoreX once, and verify that the remaining entry opens the expected region. Keep the quarantine through at least one app restart and one launch of every affected title. Only then delete redundant working copies, and only if another verified preservation or backup copy remains under your control."
+    },
+    {
+      "type": "heading",
+      "text": "Validate the deduplicated library"
+    },
+    {
+      "type": "list",
+      "items": [
+        "The number of EmuCoreX entries matches the intended playable copies, accounting for multidisc sets.",
+        "Every affected title resolves to the path chosen as canonical and cold-boots from that path.",
+        "The kept file's SHA-256 remains equal to the digest recorded before quarantine.",
+        "Favorites and per-game profiles still point to the intended serial and region.",
+        "The offline preservation copy and its audit report are not inside a folder scanned by EmuCoreX."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Recover from a mistaken classification"
+    },
+    {
+      "type": "paragraph",
+      "text": "If a title disappears or opens the wrong revision, close EmuCoreX and move the quarantined file back to its original literal path. Refresh once, compare serials, and restore the prior filename if it was changed. Do not compensate by copying saves between regional entries; resolve the image identity first. If the source drive produced read errors, preserve both copies and their reports until a fresh dump from the owned disc establishes a trustworthy master."
+    },
+    {
+      "type": "link",
+      "text": "Check Microsoft Learn syntax for Get-FileHash",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

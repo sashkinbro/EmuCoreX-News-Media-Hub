@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K rozlišuje objekt SPIR-V od čísel vektorových řad IDs",
+  "summary": "Konstrukce míchání vektorů nyní označuje zdrojové vektory jako IDs a výběry komponent jako literály, čímž se zabraňuje tomu, aby se nultý kanál stal neplatným SPIR-V ID.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Vita3K #4074: shader: Oprava jednoho případu 'ID nemohou být 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "překompilátor shaderu",
+    "jednotný blok"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Oprava jednoho případu 'ID nemohou být 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Stejný celočíselný typ může reprezentovat dva různé koncepty SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instrukce SPIR-V odkazují na dříve definované objekty podle číselného ID a některé také obsahují doslovná čísla. OpVectorShuffle bere dva vektorové IDs následované selektory komponent. Selektor nula znamená první dráhu prvního vektoru; objekt ID s hodnotou nula je zakázaný. Předávání každého operandu přes vektor typovaný pouze jako spv::Id proto ztrácí rozlišení právě tam, kde platné číslo dráhy sdílí sentinelovou hodnotu neplatného ID."
+    },
+    {
+      "type": "heading",
+      "text": "Sestavovač nyní přijímá explicitní typ pro každý operand."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #4074 mění dva seznamy operandů shuffle na spv::IdImmediate. Načtení dest a dest_friend a vektoru, který je kopírován, jsou označena jako IDs. Indices lane generované smyčkou jsou označeny jako okamžité hodnoty, ať už jsou nula, čtyři plus i, nebo posun odvozený ze start modulo čtyři. createOp pak může zakódovat každé slovo podle gramatiky instrukce místo odvozování jeho významu z aliasu v C++."
+    },
+    {
+      "type": "heading",
+      "text": "Ovlivněná cesta spojuje uniformní data přes hranice vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register zvládá rozsah, který zahrnuje aktuální cílový vektor a jeho souseda. Vytváří doplňkové shuffle, takže zachované cílové dráhy a přicházející zdrojové dráhy se dostanou na správná místa. Začátky zarovnané na vec4 volí jednodušší cestu; nezarovnané začátky prověřují logiku dvou seznamů. Oprava nemění, která formule dráhy je vybrána. Umožňuje, aby již vypočítané selektory byly legální literály."
+    },
+    {
+      "type": "heading",
+      "text": "Fixury řízené validátorem by měly vyjmenovat každou počáteční dráhu."
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvořte uniformní kopie začínající s offsety od nuly do tří s délkami, které zůstávají v rámci jednoho vec4 a zasahují do dalšího. Prohlédněte si vydaná slova OpVectorShuffle, spusťte spirv-val a provádějte shadery s unikátně barevnými nebo číslovanými zdrojovými dráhami. Zahrňte selektory nula, tři, čtyři, sedm a jakýkoli undef sentinel, který builder podporuje. Testujte ovladače Vulkan s přísnou validací a porovnejte vykreslený výstup mezi výrobci. Regresní test by měl ověřovat druhy operandů kromě konečných pixelů."
+    },
+    {
+      "type": "callout",
+      "text": "V binárním shaderovém jazyce může být nula zcela platným vláknem a nemožným ID objektu; tvůrce musí vědět, kterou z těchto hodnot instrukce očekává."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu Vita3K"
+    }
+  ]
+}

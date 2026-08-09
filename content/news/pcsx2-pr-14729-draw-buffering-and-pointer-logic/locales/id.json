@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menghapus pencatatan draw-buffer ketika tidak ada batch yang dapat menggunakannya",
+  "summary": "Gambar yang dinonaktifkan atau segera tidak dapat dibuffer lagi tidak lagi menyalin dan mengembalikan lingkungan GS, sementara referensi lokal menggantikan lalu lintas pointer yang ditambahkan ke jalur rendering panas.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14729: GS: Optimalkan buffering gambar dan logika pointer",
+  "searchKeywords": [
+    "PCSX2",
+    "buffering gambar",
+    "GS utas",
+    "jalur panas",
+    "kinerja"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Optimalkan buffering gambar dan logika pointer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sebuah optimisasi yang dinonaktifkan masih mengeluarkan biaya setup"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembuferan gambar dapat menggabungkan pekerjaan yang kompatibel, tetapi PCSX2 mungkin menonaktifkannya secara global atau menemukan bahwa gambar berikutnya tidak dapat diproses melalui pembuferan. Implementasi ini tetap melakukan backup lingkungan gambar dan memulihkannya selama flush, meskipun tidak ada batch masa depan yang dapat menggunakan snapshot tersebut. Pada beban kerja yang berat dengan GS, salinan yang berulang mengubah fitur yang tidak aktif menjadi overhead CPU yang terukur."
+    },
+    {
+      "type": "heading",
+      "text": "Salinan lingkungan kini mengikuti kelayakan pembuferan yang sebenarnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan pull #14729 mempersempit operasi backup dan pemulihan ke jalur di mana pembuferan gambar dapat mempertahankan pekerjaan selanjutnya. Jika pembuferan dinonaktifkan atau kompatibilitas gagal segera, renderer tetap menggunakan konteks saat ini tanpa membuat salinan pemulihan. Ini menjaga perilaku flush fungsional sambil menghapus lalu lintas status yang satu-satunya tujuannya adalah untuk membatalkan batch yang tidak pernah ada."
+    },
+    {
+      "type": "heading",
+      "text": "Referensi lokal menggantikan pencarian pointer pada jalur yang paling sering digunakan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementasi buffering sebelumnya memperkenalkan pointer yang digunakan di seluruh proses gambar sehingga kode dapat beralih antara keadaan langsung dan buffered. Di mana pengalihan tersebut tidak lagi diperlukan, patch menggunakan referensi lokal. Referensi memungkinkan compiler menjaga status yang sering diakses lebih dekat dengan operasi dan mengurangi pemuatan pointer berulang, tanpa mengubah kepemilikan atau umur konteks GS yang mendasarinya."
+    },
+    {
+      "type": "heading",
+      "text": "Tes throughput harus menjaga status buffering tetap terlihat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gunakan game dan dump GS-berat untuk membandingkan maksimum FPS, waktu thread GS, dan jumlah salinan lingkungan dengan buffering diaktifkan, dinonaktifkan, dan sering ditolak. CPUs yang lebih lemah adalah penerima manfaat yang diharapkan. Perbandingan frame tanpa kehilangan masih diperlukan karena cadangan yang dilewati pada satu batas kompatibilitas dapat membocorkan status yang dimodifikasi ke gambar berikutnya. Profil penyebab flush yang representatif dan verifikasi perbaikan tidak hanya merupakan kasus runner buatan."
+    },
+    {
+      "type": "callout",
+      "text": "Optimisasi ini menghapus pekerjaan dari jalur yang tidak dapat diuntungkan oleh buffering; ini tidak melemahkan pemulihan status yang diperlukan oleh batch berbuffer nyata."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

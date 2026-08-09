@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP corrige una trampa de creación de dispositivos Vulkan en hardware Mali",
+  "summary": "El envoltorio libretro ahora elige exactamente un canal de función Vulkan, cumpliendo la regla de que pEnabledFeatures debe ser nulo cuando VkPhysicalDeviceFeatures2 está encadenado.",
+  "heroAlt": "Evidencia de la fuente del pull request #21956 de PPSSPP: Libretro: corrige el fallo de lanzamiento Vulkan en dispositivos Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: corrige el fallo de lanzamiento Vulkan en dispositivos Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Los controladores tolerantes ocultaban una combinación de create-info no válida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan ofrece un puntero legacy pEnabledFeatures y la estructura extensible VkPhysicalDeviceFeatures2 en pNext. Cuando Features2 está presente, la especificación requiere que el puntero legacy sea nulo. El wrapper libretro de PPSSPP podría llenar ambos al mismo tiempo que añadía capacidades requeridas por el frontend. Algunos drivers aceptaron la solicitud de dispositivo malformada, pero Mali devolvió VK_ERROR_INITIALIZATION_FAILED, por lo que un núcleo renderizado por Vulkan falló antes de que comenzara la ejecución del juego."
+    },
+    {
+      "type": "heading",
+      "text": "El wrapper ahora descubre cuál ruta de características eligió el núcleo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #21956 recorre la cadena pNext de creación de dispositivo y registra si contiene VkPhysicalDeviceFeatures2. Si se encuentra, las características requeridas por el frontend se fusionan en esa estructura y newInfo.pEnabledFeatures se establece explícitamente en nulo. Si está ausente, el wrapper preserva el comportamiento legacy existente copiando o creando VkPhysicalDeviceFeatures y asignando el puntero. Por lo tanto, los dos caminos legales Vulkan son mutuamente exclusivos."
+    },
+    {
+      "type": "heading",
+      "text": "La validación cubrió tanto el móvil GPUs estricto como el tolerante"
+    },
+    {
+      "type": "paragraph",
+      "text": "El autor probó la renderización de hardware en Android 14 con un dispositivo Mali-G615 y en Android 13 con un dispositivo Snapdragon 865 Adreno. Ambos se iniciaron y funcionaron. En el sistema Mali, pasar la creación del dispositivo expuso un problema de capacidad de cadena virtual separada, manejado por otro cambio; mantener esa distinción es importante porque resolver una barrera de inicio no debería llevar al Hub a afirmar que cada fallo posterior de Vulkan tiene la misma causa."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de cadena de funciones deberían inspeccionar la propiedad de la estructura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Capturar VkDeviceCreateInfo con capas de validación para un núcleo heredado, un núcleo Features2, cadenas con estructuras de características adicionales y características opcionales ausentes. Repetir en Mali, Adreno, escritorio Vulkan y múltiples versiones de RetroArch. Verificar que los bits requeridos se conserven en lugar de sobrescribirse, que los punteros pNext permanezcan válidos a través de vkCreateDevice, y que pEnabledFeatures sea nulo solo en el caso de Features2. También probar rutas de software y OpenGL para asegurar que la inicialización del envoltorio no asuma Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "La negociación de funciones Vulkan tiene dos vías legales; combinarlas puede funcionar en controladores permisivos, pero sigue siendo inválido y falla en hardware más estricto."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Lea la discusión de ingeniería PPSSPP y los cambios en el código fuente"
+    }
+  ]
+}

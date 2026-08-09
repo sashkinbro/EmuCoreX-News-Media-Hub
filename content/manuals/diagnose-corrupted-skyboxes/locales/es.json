@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-corrupted-skyboxes",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostica skyboxes PS2 corruptos a través de ángulos de cámara y reinicios en frío",
+  "summary": "Separa una textura de cielo defectuosa del orden de profundidad, caché gráfica obsoleta, escalado y comportamiento del driver grabando una ruta panorámica a salida nativa y cambiando una capa desechable a la vez.",
+  "heroAlt": "Escena PCSX2 antes de la corrección mostrando una corrupción gráfica visible en una capa de fondo grande",
+  "searchKeywords": [
+    "Skybox PS2 roto",
+    "Cielo EmuCoreX corrupto",
+    "Caché de texturas",
+    "Parpadeo de capa de fondo",
+    "Error gráfico del ángulo de cámara"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisión"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "Contadores de textura y objetivo PCSX2",
+    "pcsx2-report": "Punto de entrada para reportes de problemas PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Registrar cómo la corrupción sigue a la cámara"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un skybox puede ser una malla distante, una cúpula texturizada, una secuencia de sprites de fondo o una capa de framebuffer. Rota la cámara a través de un barrido completo y observa si el defecto permanece fijo en la pantalla, sigue la dirección del mundo, aparece solo cerca de la geometría, o cambia después de cargar un área. Un bloque fijo en la pantalla sugiere composición; una costura fija en el mundo sugiere muestreo de textura o malla; el parpadeo en intersecciones sugiere ordenación de profundidad."
+    },
+    {
+      "type": "callout",
+      "text": "Borra solo la caché que el emulador documente explícitamente como desechable. Las tarjetas de memoria, los guardados del juego, los perfiles, el firmware y las imágenes de juego no son caché gráfica."
+    },
+    {
+      "type": "heading",
+      "text": "Construye una ruta panorámica del cielo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un guardado dentro del juego en un área exterior con movimiento libre de cámara.",
+        "Una panorámica en resolución nativa capturada en un perfil limpio del título.",
+        "Se registraron el renderizador, el controlador GPU, la precarga de texturas y los valores de mipmapping.",
+        "Una lista de ubicaciones de caché gráfica desechable según los propios controles o documentación de la aplicación.",
+        "Un área exterior posterior para confirmación independiente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Distinguir textura, profundidad y estado en caché"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Arranque en frío y rote la cámara lentamente a través de los mismos puntos de referencia mientras graba la salida directa.",
+        "2. Restablezca los reemplazos de textura, el posprocesamiento y los desplazamientos manuales; repita a la resolución interna nativa.",
+        "3. Compare las APIs de hardware compatibles manteniendo fijo el controlador y todos los valores de precisión.",
+        "4. Use un panorama renderizado por software corto para establecer si los datos de fondo en sí son correctos.",
+        "5. Si el fallo aparece solo después de un bloqueo o reanudación, reinicie Android y reconstruya solo la caché de gráficos desechable documentada una vez.",
+        "6. Cuando la ampliación por sí sola expone costuras, retroceda al último multiplicador limpio antes de evaluar una solución de muestreo específica del título.",
+        "7. Verifique la segunda área exterior en busca de la misma dirección mundial, intersección de profundidad o comportamiento de caché.",
+        "8. Archive las capturas con estado frío/cálido para que una reconstrucción de caché única no sea confundida con una solución permanente."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Los fondos grandes amplifican pequeños errores de coordenadas y profundidad. Su textura puede permanecer estable mientras la geometría del primer plano cambia, lo que hace que la evidencia relativa a la cámara sea especialmente útil. La reconstrucción de la caché solo está justificada cuando una ejecución en frío limpia difiere de una ejecución posterior a un fallo; no debería convertirse en un ritual después de cada error visual."
+    },
+    {
+      "type": "heading",
+      "text": "Prueba de estabilidad del skybox"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un pase requiere cobertura espacial, del ciclo de vida y de área."
+    },
+    {
+      "type": "list",
+      "items": [
+        "El panorama no tiene nuevas uniones, mosaicos desordenados ni sectores faltantes.",
+        "La geometría del primer plano oculta el cielo en el orden correcto.",
+        "El resultado sobrevive a dos reinicios completos sin borrar la caché nuevamente.",
+        "Un área exterior posterior se renderiza correctamente bajo el mismo perfil.",
+        "Los cambios de resolución interna no reintroducen HUD o artefactos de textura no relacionados."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Patrones que reducen el informe"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Solo fallan las sesiones posteriores al bloqueo: incluya evidencia del ciclo de vida y reconstrucción de la caché.",
+        "Una única dirección del mundo muestra una costura por encima de la resolución nativa: informe el multiplicador exacto y la orientación de la cámara.",
+        "La salida del software también está corrupta en una imagen verificada: pruebe parches limpios y la progresión del juego.",
+        "El cielo cambia solo con un controlador personalizado: vuelva al controlador del sistema y aísle ese paquete."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaurar la caché y los límites del renderizador"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vuelva al controlador del sistema, API de hardware original, controles automáticos de textura y última resolución limpia. Si se admite la copia de seguridad de la caché, restaure sus metadatos solo cuando la reconstrucción haya empeorado el comportamiento; de lo contrario, permita que el emulador regenere datos desechables una vez desde un inicio en frío."
+    },
+    {
+      "type": "heading",
+      "text": "Los cambios de nube y clima necesitan partidas guardadas coincidentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los juegos pueden animar el clima o elegir variantes del cielo según el tiempo, el estado de la misión o semillas aleatorias. Compare la misma partida guardada y ruta en el juego para que los cambios legítimos de fondo no se etiqueten como corrupción."
+    },
+    {
+      "type": "link",
+      "text": "Lea la guía de informes PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

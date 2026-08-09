@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 supprime deux sources de décisions à l'état non initialisé trouvées par Valgrind",
+  "summary": "La géométrie de la table du débogueur commence à zéro, et les paramètres audio comparent les champs au lieu des octets bruts de la structure, éliminant ainsi les branches influencées par la mémoire et le remplissage jamais écrits.",
+  "heroAlt": "Preuve source provenant de la demande de tirage PCSX2 #14638 : Divers : Corriger certaines erreurs Valgrind",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "Lecture non initialisée",
+    "MemoryView",
+    "ParamètresAudioStream"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Outils",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Divers : Corriger certaines erreurs Valgrind"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le débogueur a peint avec des membres qui n'avaient pas de première valeur définie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind a tracé une branche conditionnelle dans MemoryViewTable::DrawTable vers des nombres de lignes, des positions, l'état de sélection et des membres d'adresse qui avaient été déclarés sans initialisation. Les chemins normaux de redimensionnement ou de configuration leur attribuaient souvent des valeurs avant le rendu, ce qui rendait le défaut intermittent. Un événement de peinture arrivant plus tôt pouvait néanmoins lire des entiers indéterminés et choisir le comportement de mise en page à partir des bits occupant l'objet."
+    },
+    {
+      "type": "heading",
+      "text": "Les initialiseurs à zéro donnent à la première peinture une table vide valide"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14638 initialise rowCount, rowVisible, rowHeight, les axes value et text, la position de la première ligne, les adresses start et selected, et selectedIndex lors de la déclaration. Le zéro représente un état sûr avant mise en page jusqu'à ce que les dimensions réelles arrivent. La modification ne devine pas d'adresse ou de sélection par défaut ; elle garantit que les premiers événements voient un modèle intentionnellement vide au lieu de données indéfinies."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp comparait ensemble les champs audio et le remplissage invisible"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters implémentait l'égalité en comparant les octets bruts sizeof(struct). Le remplissage C++ entre les membres n'est pas un champ et peut conserver des valeurs indéterminées, donc deux configurations logiquement identiques pourraient être considérées inégales. Cela atteignait les vérifications de configuration SPU2 lors des changements de paramètres et du chargement savestate. Le correctif remplace == et != personnalisés par une comparaison à trois voies par défaut, qui compare les membres déclarés selon leurs types et ne considère jamais le remplissage comme une configuration."
+    },
+    {
+      "type": "heading",
+      "text": "Valgrind et les tests comportementaux devraient couvrir l'ordre des événements et le chargement d'état."
+    },
+    {
+      "type": "paragraph",
+      "text": "Exécutez le débogueur sous Valgrind tout en ouvrant, redimensionnant, peignant, sélectionnant et fermant les vues mémoire avant et après le démarrage d'une VM. Ensuite, chargez savestate et appliquez à plusieurs reprises des paramètres audio identiques, en confirmant qu'il n'y a pas de redémarrage involontaire et pas de rapport de comparaison non initialisée. Modifiez un vrai champ audio pour vous assurer que l'inégalité fonctionne toujours. Les compilations avec compilateur et analyseur ayant un remplissage struct différent sont précieuses, car un résultat correct sur une disposition ne prouve pas que le memcmp supprimé était sûr ailleurs."
+    },
+    {
+      "type": "callout",
+      "text": "Les deux corrections remplacent les contenus mémoire accidentels par l'état au niveau du langage : des champs initialisés pour la disposition UI et l'égalité champ par champ pour la configuration audio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications de source"
+    }
+  ]
+}

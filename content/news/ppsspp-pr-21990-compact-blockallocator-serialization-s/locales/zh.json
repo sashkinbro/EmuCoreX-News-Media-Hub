@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 以更精简的 savestate 格式提供内核内存映射",
+  "summary": "BlockAllocator 现在每个块写入一个紧凑记录，并在创建标签时保证零填充，从而减少大型内存映射的结构工作。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21990 的源证据：Savestate：紧凑 BlockAllocator 序列化（v2 节）",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "内核内存",
+    "序列化",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "保存状态",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate：紧凑 BlockAllocator 序列化（v2 节）"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一千个块乘以小的序列化成本"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP 对用户、内核和易失性内存的链式块列表进行序列化。一个正在运行的游戏大约可以保持一千个块存活。先前的布局为每个块打开一个命名的序列化 Section，这会重复添加头部工作和有效载荷。它还在每次保存时调用 strlen 和 memset 来清除固定标记缓冲区中未使用的字节，因为复制标记的辅助函数没有初始化剩余的填充。"
+    },
+    {
+      "type": "heading",
+      "text": "新的记录只包含定义块的字段"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #21990 添加了 BlockAllocator section v2。它的紧凑分支直接写入 start、size、taken 和完整的固定大小标记数组，不包含嵌套块 Section。读取时执行相同的字段顺序。这有意成为 BlockAllocator 级别的选择，而不是对旧块方法的隐式更改，因为每当字节布局不同，序列化格式都需要明确的边界。"
+    },
+    {
+      "type": "heading",
+      "text": "标记清理移至变更点"
+    },
+    {
+      "type": "paragraph",
+      "text": "Block construction 和 SetAllocated 现在在将文本复制到标签缓冲区之前，会清空整个标签缓冲区。这使得对象生命周期内的填充变得确定性，并移除了热保存路径中重复的 strlen 和 memset 操作。它还防止未初始化的进程内存进入状态文件。版本一仍然可用于加载旧状态，而新写入的紧凑状态遵循区块突变的正常前向不兼容性规则。"
+    },
+    {
+      "type": "heading",
+      "text": "分配器拓扑结构比单纯的文件大小更重要"
+    },
+    {
+      "type": "paragraph",
+      "text": "构建状态，包括空列表、一个块、成千上万个交替的空闲和占用块、最大长度标签、重用块、易失性内存，以及自顶向下和自底向上的分配。加载旧的 v1 固定装置和新的 v2 固定装置，比较列表顺序和每个边界，然后在恢复后进行分配和释放以暴露断链。检查输出以确保标签填充确定性且没有未初始化字节。只有在结构等效性和损坏处理通过后，才进行大小和序列化时间的基准测试。"
+    },
+    {
+      "type": "callout",
+      "text": "当在变更时就确定了确定性对象状态，而不是每次保存时都修复时，紧凑序列化是最安全的。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "阅读 PPSSPP 工程讨论和源代码更改"
+    }
+  ]
+}

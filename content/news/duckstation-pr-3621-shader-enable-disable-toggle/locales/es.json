@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3621-shader-enable-disable-toggle",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation permite que una etapa de postprocesamiento duerma sin olvidar su ajuste",
+  "summary": "Los interruptores de activación por shader preservan el orden de la cadena y los parámetros personalizados, separando el bypass temporal de la eliminación destructiva tanto en Qt como en FullscreenUI.",
+  "heroAlt": "Evidencia de fuente del pull request #3621 de DuckStation: Qt, FullscreenUI, PostProcessing: Añadir interruptor de activación/desactivación de shader.",
+  "searchKeywords": [
+    "DuckStation",
+    "postprocesamiento",
+    "cadena de shaders",
+    "parámetros",
+    "FullscreenUI"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3621": "Qt, FullscreenUI, PostProcessing: Añadir interruptor de activación/desactivación de shader."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eliminar un shader era la única manera de bypassarlo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una cadena de posprocesamiento a menudo contiene varios efectos cuyos parámetros fueron ajustados en conjunto. Antes del pull request #3621, verificar temporalmente la imagen sin una etapa significaba retirarla, luego recrear el shader y sus valores más tarde. Eso convierte una simple comparación en trabajo de configuración y facilita perder un preset cuidadosamente ajustado o restaurar el efecto en la posición incorrecta."
+    },
+    {
+      "type": "heading",
+      "text": "El estado habilitado se convierte en parte de la etapa, no en un reemplazo vacío"
+    },
+    {
+      "type": "paragraph",
+      "text": "La representación compartida de posprocesamiento ahora registra si un shader individual se ejecuta. Una etapa deshabilitada permanece en la cadena con sus valores de parámetros y orden intactos; el renderizador simplemente omite su trabajo. Por lo tanto, volver a habilitarla restaura el mismo efecto en lugar de crear una instancia predeterminada. Esto difiere de eliminar una etapa, lo cual sigue siendo la operación correcta cuando el usuario desea que la definición de la cadena cambie."
+    },
+    {
+      "type": "heading",
+      "text": "Qt y FullscreenUI exponen el mismo control no destructivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación abarca la capa de utilidad de post-procesamiento, el widget de configuración de Qt y la configuración de FullscreenUI. Eso asegura que la bandera activada no sea solo una decoración del frontend: cualquier interfaz edita el estado que consume el renderizador. También permite a los usuarios configurar la misma cadena desde una ventana de escritorio o una pantalla con control principal sin que un lado descarte silenciosamente la nueva propiedad."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de persistencia y de orden de cadena son más importantes que una captura de pantalla"
+    },
+    {
+      "type": "paragraph",
+      "text": "Crea una cadena con varios shaders, modifica múltiples parámetros y desactiva una etapa en el medio. La salida debe coincidir con una cadena que omita ese efecto mientras las etapas posteriores permanecen en el mismo orden. Guarda la configuración, reinicia y confirma que el estado deshabilitado y los parámetros se mantengan; luego vuelve a habilitar y compara con la captura original. Prueba ambos frontends, importación de presets, eliminación de etapas y alternancia rápida. El tiempo GPU solo debería disminuir por el trabajo de la etapa saltada."
+    },
+    {
+      "type": "callout",
+      "text": "Desactivar ahora es una opción de ejecución reversible; eliminar sigue siendo una edición estructural de la cadena de post-procesamiento."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3621",
+      "label": "Lee la discusión de ingeniería DuckStation y los cambios en el código fuente"
+    }
+  ]
+}

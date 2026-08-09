@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "fa",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP مشکل تله ایجاد دستگاه Vulkan را در سخت‌افزار Mali رفع می‌کند",
+  "summary": "اکنون پرده‌پوش libretro دقیقاً یک کانال ویژگی Vulkan را انتخاب می‌کند و قاعده‌ای که pEnabledFeatures باید زمانی که VkPhysicalDeviceFeatures2 زنجیره‌ای است null باشد را رعایت می‌کند.",
+  "heroAlt": "شواهد منبع از درخواست کشش PPSSPP شماره 21956: Libretro: رفع مشکل کرش هنگام راه‌اندازی Vulkan بر روی دستگاه‌های Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "گرافیک",
+    "emulation": "شبیه‌سازی"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: رفع مشکل کرش هنگام راه‌اندازی Vulkan بر روی دستگاه‌های Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "درایورهای مقاوم ترکیب create-info نامعتبر را پنهان کردند"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan یک اشاره‌گر pEnabledFeatures قدیمی و ساختار قابل‌توسعه VkPhysicalDeviceFeatures2 را در pNext ارائه می‌دهد. وقتی Features2 موجود باشد، مشخصات نیاز دارد که اشاره‌گر قدیمی null باشد. بسته‌بندی libretro در PPSSPP می‌توانست هر دو را پر کند در حالی که قابلیت‌های مورد نیاز frontend را اضافه می‌کرد. برخی از درایورها درخواست دستگاه نامعتبر را پذیرفتند، اما Mali VK_ERROR_INITIALIZATION_FAILED را برگرداند، بنابراین هسته رندر شده توسط Vulkan قبل از آغاز اجرای بازی شکست خورد."
+    },
+    {
+      "type": "heading",
+      "text": "این بسته‌بندی اکنون کشف می‌کند که هسته کدام مسیر ویژگی را انتخاب کرده است"
+    },
+    {
+      "type": "paragraph",
+      "text": "درخواست pull #21956 زنجیره pNext ایجاد دستگاه را دنبال می‌کند و ثبت می‌کند که آیا شامل VkPhysicalDeviceFeatures2 است یا خیر. اگر یافت شد، ویژگی‌های مورد نیاز frontend در آن ساختار ادغام می‌شوند و newInfo.pEnabledFeatures به طور صریح null تنظیم می‌شود. اگر موجود نباشد، بسته‌بندی رفتار قدیمی موجود را با کپی یا ایجاد VkPhysicalDeviceFeatures و اختصاص اشاره‌گر حفظ می‌کند. بنابراین، دو مسیر قانونی Vulkan با یکدیگر متقابل هستند."
+    },
+    {
+      "type": "heading",
+      "text": "اعتبارسنجی شامل هر دو حالت سختگیرانه و ملایم موبایل GPUs بود"
+    },
+    {
+      "type": "paragraph",
+      "text": "نویسنده رندر سخت‌افزاری را روی Android 14 با دستگاه Mali-G615 و Android 13 با دستگاه Snapdragon 865 Adreno آزمایش کرد. هر دو اجرا شدند و کار کردند. در سیستم Mali، عبور از ساخت دستگاه یک مشکل ظرفیت virtual-swapchain جداگانه را نشان داد که توسط تغییر دیگری حل شد؛ حفظ این تمایز مهم است زیرا حل یک دروازه راه‌اندازی نباید باعث شود Hub ادعا کند هر نقص Vulkan بعدی همان علت را دارد."
+    },
+    {
+      "type": "heading",
+      "text": "تست‌های زنجیره ویژگی باید مالکیت ساختار را بررسی کنند."
+    },
+    {
+      "type": "paragraph",
+      "text": "VkDeviceCreateInfo را با لایه‌های اعتبارسنجی برای یک هسته قدیمی، یک هسته Features2، زنجیره‌هایی با ساختارهای ویژگی اضافی و ویژگی‌های اختیاری غایب ضبط کنید. این کار را روی Mali، Adreno، دسکتاپ Vulkan و چند نسخه RetroArch تکرار کنید. اطمینان حاصل کنید که بیت‌های لازم حفظ شده‌اند و بازنویسی نمی‌شوند، اشاره‌گرهای pNext از طریق vkCreateDevice معتبر باقی می‌مانند، و مقدار pEnabledFeatures تنها در حالت Features2 تهی است. همچنین مسیرهای نرم‌افزاری و OpenGL را آزمایش کنید تا اطمینان حاصل شود که مقداردهی اولیه wrapper فرض نمی‌کند Vulkan موجود است."
+    },
+    {
+      "type": "callout",
+      "text": "مذاکره ویژگی Vulkan دو مسیر قانونی دارد؛ ترکیب آن‌ها ممکن است روی درایورهای آزادکار کار کند، اما هنوز نامعتبر است و روی سخت‌افزار سختگیرتر شکست می‌خورد."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "بحث مهندسی و تغییرات منبع PPSSPP را بخوانید"
+    }
+  ]
+}

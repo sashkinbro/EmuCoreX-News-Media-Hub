@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 阻止 PINE 客户端访问线程绑定的 MMIO 处理程序",
+  "summary": "外部内存接口现在拒绝由自定义设备回调提供的 VTLB 页面，将其直接读取限制在模拟线程之外安全的内存。",
+  "heroAlt": "来自 PCSX2 Pull Request #14588 的来源证据：PINE：禁止访问具有自定义 VTLB 处理程序的页面",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "线程安全"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "安全性",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE：禁止访问具有自定义 VTLB 处理程序的页面"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "客户地址可以表示 RAM 或一个活动的硬件寄存器"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE 向外部工具暴露内存操作。通过 PCSX2 的虚拟转换层，一些地址指向普通的主机支持 RAM，而其他地址则通过自定义处理器路由到 MMIO 寄存器和模拟外设。调用自定义处理器并非被动读取：它可能会改变设备状态，需要模拟器线程的顺序，或者操作没有为任意服务器线程同步的组件。"
+    },
+    {
+      "type": "heading",
+      "text": "自定义处理器页面在访问前会被拒绝"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14588 更改了 PINE 的 VTLB 路径，以识别访问由自定义处理器实现的页面并拒绝它们。直接映射的内存仍然可供客户端使用。边界基于页面的服务方式，而不是脆弱的硬编码寄存器范围列表，因此新注册的 MMIO 处理器无需另一次 PINE 特定的地址更新即可继承保护。"
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead 围绕相同的更安全区分进行了重写"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁还对 vtlb_ramRead 模板的声明和定义进行了对齐，并简化了其实现。在作者的机器上进行的微基准测试显示有小幅的速度提升，但这只是次要的。主要保证是线程所有权：PINE 不得让 GS、SPU、CDVD 或其他外设在绕过 VM 调度器的线程上执行回调。"
+    },
+    {
+      "type": "heading",
+      "text": "客户端需要明确的失败语义和 RAM 回归覆盖"
+    },
+    {
+      "type": "paragraph",
+      "text": "测试现有的 PINE 调试器针对正常 RAM、暂存区或其他明确支持的直接映射、页面边界和未映射地址。尝试对具有代表性的 MMIO 页面进行读写，并确认出现干净的协议错误且不会对外设造成副作用或崩溃。在 VM 运行、暂停、重置和关闭时重复此操作。此被描述为待更广泛设计工作的一项初始修复，因此在存在已编排的模拟器线程机制之前，不应向客户端承诺安全的设备寄存器访问。"
+    },
+    {
+      "type": "callout",
+      "text": "PINE 仍然是一个内存接口，而不是第二个硬件执行线程；在能够安全地调度之前，自定义 VTLB 处理程序是不允许的。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "阅读 PCSX2 工程讨论和源代码变更"
+    }
+  ]
+}

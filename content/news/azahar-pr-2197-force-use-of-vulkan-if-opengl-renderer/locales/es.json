@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar dirige Android fuera de ANGLE sin reescribir la elección del renderizador del usuario",
+  "summary": "Un resolutor de gráficos en tiempo de ejecución API detecta la capa de compatibilidad OpenGL-sobre-Vulkan de Android, selecciona Vulkan para una ejecución segura y explica por qué la opción UI está deshabilitada.",
+  "heroAlt": "Evidencia de origen del pull request #2197 de Azahar: android: Forzar el uso de Vulkan si el renderizador OpenGL es ANGLE",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "API gráfica"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android: Forzar el uso de Vulkan si el renderizador OpenGL es ANGLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android puede etiquetar una capa de compatibilidad como OpenGL"
+    },
+    {
+      "type": "paragraph",
+      "text": "ANGLE traduce las llamadas OpenGL a Vulkan y se está convirtiendo en una ruta predeterminada en los dispositivos Android más recientes. El renderizador OpenGL de Azahar espera el comportamiento del controlador nativo y tuvo problemas cuando se colocó sobre esa traducción. Por lo tanto, leer graphics_api directamente podría devolver OpenGL aunque el sistema ejecutara una pila de compatibilidad respaldada por Vulkan que no satisfacía la ruta OpenGL probada de Azahar."
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI separa la intención almacenada del backend ejecutable"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #2197 introduce Settings::GetWorkingGraphicsAPI(). Los llamadores lo usan en lugar de leer la configuración en bruto. Cuando el entorno Android reporta la configuración problemática de ANGLE, la función devuelve Vulkan. La preferencia almacenada queda intacta, por lo que Azahar no cambia permanentemente la configuración del usuario únicamente porque un dispositivo o sesión de OS no pueda cumplirla de manera segura."
+    },
+    {
+      "type": "heading",
+      "text": "Los ajustes UI pueden explicar una opción deshabilitada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los elementos de configuración de Android obtienen disabledMessage, usado aquí para mostrar por qué la selección del renderizador no está disponible. Esto es mejor que un selector que parece interactivo mientras que en tiempo de ejecución se ignora silenciosamente, y mejor que eliminar la opción por completo. La propiedad es lo suficientemente general para otros ajustes deshabilitados, pero el comportamiento de este artículo es el mensaje específico de ANGLE y la corrección en tiempo de ejecución."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas deben distinguir entre OpenGL nativo, ANGLE y Vulkan explícito."
+    },
+    {
+      "type": "paragraph",
+      "text": "En dispositivos antes y después de Android 17, identifica la implementación real de GLES y compara la preferencia en crudo con GetWorkingGraphicsAPI. OpenGL nativo debe permanecer seleccionable, ANGLE debe ejecutar Vulkan y mostrar la razón, y una preferencia Vulkan explícita debe permanecer sin cambios. Reinicia, migra configuraciones, rota o recrea la superficie y confirma que cada llamador a gráficos en C++ use el resolvedor. La solución de respaldo no debe crear dos renderizadores ni alterar el valor guardado."
+    },
+    {
+      "type": "callout",
+      "text": "Azahar preserva lo que el usuario seleccionó mientras decide por separado qué puede ejecutar de manera segura esta pila de gráficos Android."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "Lee la discusión de ingeniería Azahar y los cambios en el código fuente"
+    }
+  ]
+}

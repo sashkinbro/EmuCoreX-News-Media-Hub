@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "measure-shader-cache-warm-up-across-cold-and-repeat-launches",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Medir o aquecimento do cache de shaders em lançamentos frios e repetidos do PS2",
+  "summary": "Use uma rota de efeito determinística na primeira visita, reprodução imediata, reinício do aplicativo e reinício opcional do sistema para aprender quais engasgos desaparecem após a compilação do pipeline e se o cache persiste normalmente.",
+  "heroAlt": "Representação gráfica Vulkan 1.3 mostrando o comportamento do pipeline gráfico e do cache de shaders",
+  "searchKeywords": [
+    "Aquecimento do cache de shaders PS2",
+    "Engasgo na primeira execução EmuCoreX",
+    "Engasgo de compilação Vulkan",
+    "Reinício do aplicativo com cache",
+    "Desempenho em lançamento repetido"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "performance": "Desempenho",
+    "shaders": "Shaders"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan contexto do pipeline",
+    "pcsx2-vulkan": "PCSX2 Vulkan contexto de desenvolvimento do renderizador"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mapear efeitos encontrados pela primeira vez através dos limites do ciclo de vida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um cache de shader ou pipeline deve reduzir parte do trabalho de compilação na primeira vez que materiais e efeitos forem encontrados. Para testá-lo, use uma rota com marcos de efeito nomeados e preserve o cache entre as passagens. Compare uma primeira visita, uma reprodução imediata, o reinício normal do aplicativo e somente então um reinício opcional Android. Não limpe os dados do aplicativo a menos que o comportamento de reconstrução do cache seja o experimento separado explícito."
+    },
+    {
+      "type": "callout",
+      "text": "Limpar o cache entre cada passagem torna todos os lançamentos frios e impede a medição da persistência. Faça backup da configuração antes de qualquer teste deliberado de limpeza de dados."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare uma tabela de marcos e ciclo de vida"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um salvamento normal antes de uma rota determinística contendo vários efeitos distintos.",
+        "Um renderizador e driver de sistema mantidos constantes ao longo da sequência.",
+        "Uma sobreposição de tempo de quadro ou gravação sincronizada com overhead estável.",
+        "O estado inicial do cache documentado antes da primeira visita.",
+        "Espaço de armazenamento suficiente e nenhum utilitário de limpeza agendado durante os testes."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Execute a primeira visita, reprodução, reinício do aplicativo e reinício do sistema"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Documente o estado do cache e realize um boot a frio da rota sem excluir arquivos.",
+        "2. Marque cada engasgo com timestamp e marco de efeito visível.",
+        "3. Retorne ao mesmo save e reproduza imediatamente sem alterar nenhuma configuração.",
+        "4. Feche o emulador normalmente, reabra-o e execute uma terceira passagem.",
+        "5. Compare quais engasgos desaparecem, diminuem ou reaparecem em marcos idênticos.",
+        "6. Reinicie o Android e repita somente se a persistência do ciclo de vida do sistema for importante.",
+        "7. Inspecione logs e timestamps do cache sem modificar seus conteúdos.",
+        "8. Armazene a tabela de quatro passagens antes de testar qualquer exclusão deliberada do cache."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Testes de reprodução imediata reutilizam a sessão; reiniciar o aplicativo testa se os dados compilados sobrevivem ao ciclo de vida normal do processo; reiniciar o sistema testa a persistência em um limite mais amplo. Um travamento que se repete em cada ponto de entrada idêntico pode ser, em vez disso, trabalho de armazenamento ou de sincronização, enquanto travamentos irregulares no final da sessão podem ser térmicos ou de atividade em segundo plano."
+    },
+    {
+      "type": "heading",
+      "text": "Padrão de aceitação de pré-aquecimento de cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "A classificação deve seguir o comportamento de referência repetível ao longo das etapas definidas do ciclo de vida."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Travamentos na primeira visita são mapeados para efeitos ou locais nomeados.",
+        "A reprodução imediata usa a mesma rota e perfil inalterado.",
+        "A reinicialização do aplicativo ocorre sem exclusão de cache.",
+        "A reinicialização do sistema é testada separadamente e apenas quando necessário.",
+        "Logs ou carimbos de data/hora suportam a conclusão sobre a persistência."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Sequências para reiniciar desde o início"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Android ou um limpador remove o cache durante a sequência: desative a limpeza e repita.",
+        "Um driver ou renderizador muda entre as passagens: comece uma nova tabela.",
+        "Encontros aleatórios alteram efeitos: escolha um save determinístico.",
+        "A segunda passagem começa mais quente: normalize o estado térmico."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Preserve o cache comprovado e o ciclo de vida normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desative sobreposições de diagnóstico, mantenha o cache válido, restaure a política normal de limpeza em segundo plano e inicialize o título a frio uma vez. Se uma exclusão deliberada for testada posteriormente, permita uma rota completa de aquecimento antes de avaliar novamente o desempenho diário."
+    },
+    {
+      "type": "heading",
+      "text": "O trabalho feito uma vez não é automaticamente compilação de shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uploads de texturas, descompressão, leituras de disco e inicialização do jogo também podem desaparecer na repetição. Use registros do renderizador e correlação de efeitos para apoiar um rótulo de shader, e mantenha os travamentos incertos classificados como eventos de primeira visita em vez de exagerar a causa."
+    },
+    {
+      "type": "link",
+      "text": "Revisar a orientação Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

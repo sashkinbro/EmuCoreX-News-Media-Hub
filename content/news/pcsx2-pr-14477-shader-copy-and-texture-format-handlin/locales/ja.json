@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 は GSDevice の後ろにテクスチャ変換ポリシーを移動します",
+  "summary": "StretchRectAuto、CreateCompatible、および ShaderConvertSelector はシェーダーコピーと深度フォーマットの処理を再編成し、ハードウェアレンダラーが各バックエンドのパイプラインの詳細を知らなくても変換を要求できるようにします。",
+  "heroAlt": "PCSX2 プルリクエスト #14477 からの視覚的証拠: GS/HW: シェーダーコピーとテクスチャフォーマット処理のリファクタリング。",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "テクスチャ変換"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: シェーダーコピーとテクスチャフォーマット処理のリファクタリング。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache はバックエンドの境界に属する決定を保持していました"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2のシェーダコピーは、ソースフォーマット、デスティネーションフォーマット、エミュレートされたビット毎ピクセル、およびフィルタリングに基づいて変換を選択する必要があります。プルリクエスト#14477以前は、GSTextureCacheおよびGSRendererHWがその仕組みを過剰に扱っていました。リファクタリングにより選択はGSDeviceの背後に移動され、上位のレンダリングコードはバックエンド固有のシェーダ詳細を自分で選ぶのではなく、必要なコピーを記述します。"
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAutoとCreateCompatibleは操作を表現し、APIそのものを表現するわけではありません。"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAutoは2つのテクスチャとエミュレートされたフォーマット情報を受け取り、GSDevice内で変換シェーダを選択します。CreateCompatibleは既存のテクスチャのフォーマットに一致するテクスチャを作成します。ShaderConvertSelectorは、関連する変換を表す修飾ビットを追加し、無関係なシェーダエントリーポイントを増やすことなく処理します。これにより、R32カラーとして格納された深度や将来の整数深度パスを準備しつつ、非アクティブなROV深度-カラーサポートを同じインターフェースの背後に保持します。"
+    },
+    {
+      "type": "heading",
+      "text": "名前の変更により、深度およびプリミティブIDの意図が明示されます"
+    },
+    {
+      "type": "paragraph",
+      "text": "このパッチは、OpenGLのコンバージョンシェーダーをVulkanにより密接に合わせ、ステンシル画像の初期化をプリミティブIDの初期化に名前変更し、rgba8_16bitsのラベルをrgb5a1_16bitsに変更します。Float32はDepthColorになり、FLOAT32、FLOAT24、FLOAT16のセレクター名はそれぞれDEPTH32、DEPTH24、DEPTH16になります。バイリニアフィルタリングもブール値から列挙型に変更され、別のオーバーロードされたフラグではなく明示的なモードの余地が残ります。"
+    },
+    {
+      "type": "heading",
+      "text": "ピュアリファクタには、すべてのレンダラーでの出力同一性テストが必要です"
+    },
+    {
+      "type": "paragraph",
+      "text": "明示された契約は、以前のコードと同一の出力です。したがって、ダンプ実行は、異なるテクスチャフォーマット、深度コピー、ネイティブ解像度、アップスケーリングで、Direct3D、OpenGL、Vulkan、Metalのフレーム結果を比較する必要があります。Metalはすでに報告されたダンプ実行チェックを受けていますが、広範なファイルセットにより、シェーダーのコンパイルやコピー選択も他のハードウェアバックエンドでテストする必要があります。ピクセルの差異は、後のROV作業で新しいパスを使用する前に説明が必要です。"
+    },
+    {
+      "type": "callout",
+      "text": "ユーザーに見える約束は意図的に保守的です：まだ新しい効果はありませんが、後で深度フォーマットが重複した変換ポリシーなしに拡張できる、より狭いレンダラー/バックエンドの境界があります。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "PCSX2のエンジニアリングディスカッションとソースの変更を読んでください"
+    }
+  ]
+}

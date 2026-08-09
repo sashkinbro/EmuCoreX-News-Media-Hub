@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP chiude una race condition cross-thread nella consegna audio libretro",
+  "summary": "Ogni operazione sul buffer condiviso dei campioni convertiti ora utilizza un mutex, impedendo che realloc o shutdown invalidino la memoria mentre un altro thread scrive audio.",
+  "heroAlt": "Prova dalla fonte della pull request #21883 di PPSSPP: libretro: correggi race condition nel buffer audio e push di campioni >1024 frame",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "race audio",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Audio",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: correggi race condition nel buffer audio e push di campioni >1024 frame"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Due thread potrebbero possedere lo stesso puntatore raw contemporaneamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nel percorso frontend libretro, System_AudioPushSamples converte l'audio PSP e lo aggiunge a output_audio_buffer. Con i backend OpenGL, i sample possono arrivare attraverso la coda di comandi GL sul lato emulazione, mentre retro_run svuota il buffer sul thread libretro. L'inizializzazione, la chiusura e la crescita della capacità sostituiscono o liberano anche l'allocazione. Senza una regola di proprietà, un realloc potrebbe invalidare il puntatore mentre l'altro thread lo stava leggendo o scrivendo."
+    },
+    {
+      "type": "heading",
+      "text": "Un singolo mutex ora definisce la durata del buffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21883 aggiunge output_audio_buffer_mutex e lo acquisisce durante l'inizializzazione, la distruzione, l'upload e System_AudioPushSamples. L'helper di capacità è esplicitamente documentato come richiedente che chi chiama detenga quel lock, quindi la crescita avviene nella stessa sezione critica dell'append che ne ha bisogno. L'upload mantiene il lock attraverso la callback batch e il reset della dimensione, prevenendo a un produttore di modificare il payload a metà consegna."
+    },
+    {
+      "type": "heading",
+      "text": "La correzione protegge la struttura e i sample insieme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloccare solo la dimensione o la capacità non sarebbe sufficiente: dati, dimensione e capacità formano un unico invariabile. Il puntatore deve fare riferimento a un'allocazione di almeno un numero di elementi pari alla capacità, e la dimensione deve identificare i campioni inizializzati al suo interno. Il mutex rende visibili tutti e tre gli aggiornamenti come un'unica operazione. Questo è particolarmente rilevante per il timing di GL multi-thread, ma init e free usano la stessa regola, quindi riavvii rapidi del core non possono creare una race condition con un produttore tardivo."
+    },
+    {
+      "type": "heading",
+      "text": "I test di stress devono variare il timing delle callback e del renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esegui libretro con OpenGL, Vulkan e il rendering software mentre metti in pausa ripetutamente, fai avanzamenti rapidi, resetti, cambi contenuto e chiudi il core. Usa callback audio che consumano rapidamente, lentamente e in batch irregolari, oltre a push di campioni superiori alle dimensioni ordinarie dei frame. ThreadSanitizer non dovrebbe rilevare accessi non sincronizzati alla tupla del buffer. Ascolta e controlla l'hash dei PCM catturati per eventuali gap o riordini, e conferma che nessuna callback rientri in un percorso che attende lo stesso mutex non ricorsivo."
+    },
+    {
+      "type": "callout",
+      "text": "Un buffer audio espandibile è un oggetto condiviso, non tre campi indipendenti; il suo puntatore, dimensione e capacità devono attraversare i thread sotto lo stesso lock."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Leggi la discussione ingegneristica PPSSPP e le modifiche del codice sorgente"
+    }
+  ]
+}

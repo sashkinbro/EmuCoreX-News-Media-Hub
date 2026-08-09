@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "ar",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "توجّه Azahar Android بعيدًا عن ANGLE دون إعادة كتابة اختيار المستخدم للمُقوم",
+  "summary": "يكتشف محلل الرسومات أثناء التشغيل API طبقة التوافق من Android-OpenGL على Vulkan، ويختار Vulkan للتنفيذ الآمن، ويشرح سبب تعطيل اختيار UI.",
+  "heroAlt": "دليل المصدر من طلب السحب #2197 لـ Azahar: android: إجبار استخدام Vulkan إذا كان المكوِّن OpenGL هو ANGLE",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "رسومات API"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "الرسوميات",
+    "emulation": "المحاكاة"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android: إجبار استخدام Vulkan إذا كان المكوِّن OpenGL هو ANGLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "يمكن لـ Android تصنيف طبقة التوافق كـ OpenGL"
+    },
+    {
+      "type": "paragraph",
+      "text": "يترجم ANGLE مكالمات OpenGL إلى Vulkan ويصبح مسارًا افتراضيًا على أجهزة Android الأحدث. يتوقع محرك OpenGL الخاص بـ Azahar سلوك السائق الأصلي وكان يواجه مشاكل عند وضعه فوق هذا الترجمة. لذلك، قد يؤدي قراءة graphics_api مباشرة إلى إرجاع OpenGL رغم أن النظام سينفذ في الواقع مكدس توافق مدعوم بـ Vulkan لا يلبي مسار OpenGL المختبر من قبل Azahar."
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI يفصل النية المخزنة عن الواجهة الخلفية القابلة للتشغيل"
+    },
+    {
+      "type": "paragraph",
+      "text": "طلب السحب #2197 يقدم Settings::GetWorkingGraphicsAPI(). يستخدم المتصلون بها بدلاً من قراءة الإعداد الخام. عندما تقوم بيئة Android بالإبلاغ عن تكوين ANGLE الإشكالي، تعيد الدالة Vulkan. يتم ترك التفضيل المخزن دون تغيير، لذلك لا يقوم Azahar بتغيير إعداد المستخدم بشكل دائم لمجرد أن جهازًا واحدًا أو جلسة OS لا يمكنها تنفيذه بأمان."
+    },
+    {
+      "type": "heading",
+      "text": "الإعدادات UI يمكن أن تشرح خيارًا معطلًا"
+    },
+    {
+      "type": "paragraph",
+      "text": "عناصر إعداد Android تحصل على disabledMessage، تُستخدم هنا لعرض سبب عدم توفر اختيار العرض. هذا أفضل من محدد يبدو تفاعليًا بينما يتجاهله وقت التشغيل بصمت، وأفضل من حذف الخيار بالكامل. الخاصية عامة بما يكفي لإعدادات معطلة أخرى، لكن سلوك هذا المقال هو رسالة ANGLE الخاصة والتصحيح عند وقت التشغيل."
+    },
+    {
+      "type": "heading",
+      "text": "يجب أن يميز الاختبار بين OpenGL الأصلي، وANGLE، و Vulkan الصريح"
+    },
+    {
+      "type": "paragraph",
+      "text": "على الأجهزة قبل وبعد Android 17، حدد تنفيذ GLES الفعلي وقارن التفضيل الخام مع GetWorkingGraphicsAPI. يجب أن يظل OpenGL الأصلي قابلًا للاختيار، ويجب أن ينفذ ANGLE Vulkan ويعرض السبب، ويجب أن يظل تفضيل Vulkan الصريح دون تغيير. أعد التشغيل، وانقل الإعدادات، وقم بتدوير أو إعادة إنشاء السطح، وتأكد من أن كل مستدعي رسومات C++ يستخدم المحلل. يجب ألا يُنشئ النسخ الاحتياطي عارضين أو يغير القيمة المحفوظة."
+    },
+    {
+      "type": "callout",
+      "text": "يحافظ Azahar على ما اختاره المستخدم بينما يقرر بشكل منفصل ما يمكن لهذا الكومة الرسومية Android تشغيله بأمان."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "اقرأ مناقشة الهندسة Azahar وتغييرات المصدر"
+    }
+  ]
+}

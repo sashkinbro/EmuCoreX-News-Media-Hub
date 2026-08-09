@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-11461-rt-in-rt-support",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 learns when a game draws inside an existing render target",
+  "summary": "Render-target-in-render-target tracking replaces exact-address assumptions for offset page updates and half-frame shuffles, recovering effects that previously appeared only in a corner or across half the screen.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #11461: GS/HW: Implement RT in RT support",
+  "searchKeywords": [
+    "PCSX2",
+    "render target",
+    "texture cache",
+    "Tex in RT",
+    "post-processing"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-11461": "GS/HW: Implement RT in RT support"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Exact start-address matching missed subregions of a larger target"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some PlayStation 2 games point the GS at an address partway through a render target that was created earlier. They may update one page, shuffle the lower half of an image, or sample an offset region for post-processing. The old hardware path largely recognized targets only when their start addresses matched exactly. As a result, valid guest operations could become top-left-corner artifacts, half-screen effects, missing overlays, or flicker."
+    },
+    {
+      "type": "heading",
+      "text": "RT-in-RT recognition maps the offset back to the parent target"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #11461 adds support for draws and shuffles whose address lies inside an existing render target. The texture cache and hardware renderer can treat that subrange as part of the parent image, while source invalidation is adjusted so later reads do not reuse stale pages. The work spans common GS state, shaders, hardware-hack routing, and GameDB settings because recognition alone is insufficient if cached ranges keep the old ownership."
+    },
+    {
+      "type": "heading",
+      "text": "The compatibility evidence spans post effects and split-screen rendering"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reported improvements include Battlefield 2, Death by Degrees, Drakengard, Hitman, Jak X, King Kong, Manhunt 2, Ridge Racer V, Tekken 5, Time Crisis 3, Tomb Raider: Legend, Urban Reign, and many others. The affected visuals are not one generic symptom: fog, bloom, channel shuffles, shadows, night vision, player-two lighting, fire, sepia scenes, and half-screen book effects all exercise offset targets differently."
+    },
+    {
+      "type": "heading",
+      "text": "Tex in RT gating and remaining shuffle cases define the boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "The path is gated behind Tex in RT because leaving it active for incompatible games can break rendering. Pachipara, Raw Danger, and Steambot Chronicles were improved but still had manual depth deswizzling or unusual shuffles requiring further work. Regression testing should therefore compare native and upscaled captures, remove only the CRC hacks the source identifies as obsolete, and retest invalidation-heavy scenes rather than turning the broad game list into a blanket compatibility promise."
+    },
+    {
+      "type": "callout",
+      "text": "The architectural gain is address-range awareness: a target can remain the same image even when a game starts its next operation from a page inside it."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/11461",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

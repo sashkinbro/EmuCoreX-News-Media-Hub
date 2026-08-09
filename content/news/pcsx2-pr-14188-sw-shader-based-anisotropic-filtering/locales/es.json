@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 agrega anisotropía de shader para texturas que deben permanecer filtradas por puntos",
+  "summary": "Un respaldo Direct3D realiza muestreo anisotrópico en shaders, evitando rutas de hardware que fuerzan filtrado lineal o rechazan texturas sin mipmap en algunos controladores de AMD.",
+  "heroAlt": "Evidencia de fuente del pull request #14188 de PCSX2: GS/HW: Agregar filtrado anisotrópico basado en shader",
+  "searchKeywords": [
+    "PCSX2",
+    "filtrado anisotrópico",
+    "filtrado por puntos",
+    "Direct3D 12",
+    "prueba de alfa"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Agregar filtrado anisotrópico basado en shader"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La anisotropía de hardware puede violar el modo de filtro requerido por la textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D no proporciona la combinación necesaria de filtrado anisotrópico con filtrado puntual en la ruta de PCSX2, por lo que habilitar AF anteriormente empujaba las texturas afectadas hacia el muestreo lineal. La interpolación lineal mezcla los colores vecinos antes de la prueba de alfa; por lo tanto, un texel transparente puede arrastrar un color que el juego nunca tuvo la intención de mostrar. El resultado es más visible en superficies inclinadas con prueba de alfa y en los bordes de las texturas."
+    },
+    {
+      "type": "heading",
+      "text": "La ruta del shader controla las muestras direccionales de manera explícita"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14188 añade un filtro anisotrópico basado en software y shader a los renderizadores Direct3D. Debido a que PCSX2 selecciona y combina las muestras por sí mismo, puede preservar decisiones de color puntuales mientras cubre la huella alargada creada por una superficie oblicua. La configuración es independiente del nivel normal de anisotropía, permitiendo a los usuarios habilitar la nueva ruta deliberadamente en lugar de reemplazar silenciosamente el comportamiento del hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Las texturas AMD DX12 sin mipmaps obtienen una alternativa consistente"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente también informa que el controlador Direct3D 12 de AMD no aplica AF de hardware a texturas sin mipmaps, aunque el renderizado comparable Vulkan funciona. El muestreo de shaders evita esa limitación del host y apunta a la paridad con el comportamiento de Vulkan en AMD y NVIDIA. Se describe como más agresivo que el AF de hardware de NVIDIA, especialmente en resolución nativa, por lo que no se asume que la salida sea visualmente idéntica."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas necesitan bordes alfa, texturas sin mipmaps y varios proveedores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilite el filtrado anisotrópico y la opción de shader, luego compare la geometría con prueba alfa con el AF de hardware, el filtrado lineal y Vulkan en la misma escena. Incluya texturas sin mipmaps, resoluciones nativas y escaladas, ángulos de visión pronunciados y bordes transparentes del problema #14077. Registre las muestras de texturas y el tiempo de GPU en AMD y NVIDIA Direct3D 11 y 12. Verifique que los colores ocultos no se filtren y que el afilado agresivo no cree parpadeo ni aliasing en movimiento."
+    },
+    {
+      "type": "callout",
+      "text": "La anisotropía de shader existe para preservar la intención de filtrado del invitado cuando las opciones de hardware Direct3D ya sea mezclan vecinos prohibidos o saltan la textura por completo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Lea la discusión de ingeniería y los cambios de fuente de PCSX2"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menambahkan anisosotropi shader untuk tekstur yang harus tetap menggunakan point-filtered",
+  "summary": "Fallback Direct3D melakukan sampling anisotropik di shader, menghindari jalur perangkat keras yang memaksa filter linear atau menolak tekstur tanpa mipmap pada beberapa driver AMD.",
+  "heroAlt": "Bukti sumber dari pull request PCSX2 #14188: GS/HW: Tambahkan filter anisotropik berbasis shader",
+  "searchKeywords": [
+    "PCSX2",
+    "filter anisotropik",
+    "point filter",
+    "Direct3D 12",
+    "tes alpha"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Tambahkan filter anisotropik berbasis shader"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Anisosotropi perangkat keras dapat melanggar mode filter yang dibutuhkan oleh tekstur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D tidak menyediakan kombinasi penyaringan anisotropik dengan penyaringan titik yang dibutuhkan dalam jalur PCSX2, sehingga mengaktifkan AF sebelumnya mendorong tekstur yang terpengaruh ke arah sampling linier. Interpolasi linier mencampur warna tetangga sebelum pengujian alpha; seorang texel transparan dapat menarik warna yang sebenarnya tidak dimaksudkan untuk ditampilkan oleh permainan. Hasilnya paling terlihat pada permukaan yang miring dan diuji alpha serta tepi tekstur."
+    },
+    {
+      "type": "heading",
+      "text": "Jalur shader mengontrol sampel arah secara eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan tarik #14188 menambahkan filter anisotropik berbasis shader perangkat lunak ke renderer Direct3D. Karena PCSX2 memilih dan menggabungkan sampel sendiri, ia dapat mempertahankan keputusan warna seperti titik sambil menutupi jejak memanjang yang dibuat oleh permukaan miring. Pengaturan ini terpisah dari level anisotropik normal, memungkinkan pengguna mengaktifkan jalur baru secara sengaja alih-alih secara diam-diam menggantikan perilaku perangkat keras."
+    },
+    {
+      "type": "heading",
+      "text": "Tekstur DX12 AMD tanpa mipmapped memperoleh alternatif yang konsisten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sumber juga melaporkan bahwa driver Direct3D 12 dari AMD tidak menerapkan AF perangkat keras pada tekstur tanpa mipmaps, meskipun rendering Vulkan yang sebanding berfungsi. Sampling shader melewati batasan host tersebut dan bertujuan untuk kesetaraan dengan perilaku Vulkan di AMD dan NVIDIA. Hal ini dijelaskan lebih agresif daripada AF perangkat keras NVIDIA, terutama pada resolusi asli, sehingga keluaran tidak diasumsikan identik secara visual."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian memerlukan tepi alfa, tekstur tanpa mipmap, dan beberapa vendor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktifkan anisotropic filtering dan opsi shader, lalu bandingkan geometri yang diuji alfa terhadap AF perangkat keras, filtering linier, dan Vulkan pada adegan yang sama. Sertakan tekstur tanpa mipmaps, resolusi asli dan yang ditingkatkan, sudut pandang yang curam, dan tepi transparan dari masalah #14077. Catat sampel tekstur dan waktu GPU pada AMD dan NVIDIA Direct3D 11 dan 12. Verifikasi bahwa warna tersembunyi tidak bocor dan bahwa penajaman agresif tidak menghasilkan kilau atau aliasing saat bergerak."
+    },
+    {
+      "type": "callout",
+      "text": "Anisotropi shader ada untuk mempertahankan maksud penyaringan tamu ketika pilihan perangkat keras Direct3D baik menggabungkan tetangga yang dilarang atau melewatkan tekstur sepenuhnya."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

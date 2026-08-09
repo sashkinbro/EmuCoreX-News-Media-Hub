@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostiquer les coutures verticales qui apparaissent uniquement après la mise à l'échelle PS2",
+  "summary": "Cartographier le premier multiplicateur de résolution qui expose les coutures, distinguer l'alignement des sprites du saignement de l'atlas de textures, et ne conserver qu'une correction par jeu documentée qui laisse le HUD et la géométrie intacts.",
+  "heroAlt": "Capture Tekken 5 PCSX2 avec des coutures verticales étroites causées par un mauvais alignement des sprites lors de la mise à l'échelle",
+  "searchKeywords": [
+    "Lignes verticales PS2 en mise à l'échelle",
+    "Coutures noires EmuCoreX",
+    "Aligner le sprite",
+    "Saignement de l'atlas de textures",
+    "Artifact de résolution interne"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphiques",
+    "accuracy": "Précision"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 explication des échantillons invalides et des lignes verticales noires au-dessus de la résolution native",
+    "pcsx2-gsdx-progress": "PCSX2 exemples et portée de la correction Align Sprite"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifier si chaque ligne suit une limite de sprite"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'agrandissement peut révéler des lacunes qui n'existent pas dans la grille de pixels native du PS2. Dans certains jeux, les sprites adjacents sont placés de telle sorte que leurs bords se rejoignent exactement à la résolution native ; après mise à l'échelle, l'arrondi peut laisser une colonne d'un pixel non couverte. Un autre type de défaut se produit lorsqu'un échantillon passe d'une cellule d'un atlas de textures à la suivante. Commencez par une scène contenant à la fois les lignes et des objets de référence stables : un HUD 2D, un arrière-plan plat et une géométrie 3D ordinaire. Enregistrez le numéro de série du jeu, le moteur de rendu, le pilote, le rapport d'aspect, le multiplicateur de résolution interne, le filtrage des textures et chaque correction matérielle manuelle. La position du défaut importe plus que sa couleur : une ligne qui suit des panneaux en mosaïque est différente d'une ligne fixée à l'affichage physique."
+    },
+    {
+      "type": "callout",
+      "text": "Ne masquez pas les coutures avec l’étirement, le recadrage, le surbalayage ou un zoom d’affichage. Ces modifications peuvent cacher les colonnes les plus extérieures tout en laissant l’échantillonnage incorrect actif dans toute l’image."
+    },
+    {
+      "type": "heading",
+      "text": "Construisez une échelle de résolution à partir d’une composition figée"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde en jeu avant un menu statique, une arène, le ciel ou un arrière-plan où au moins trois coutures sont faciles à identifier.",
+        "Capturez directement des captures d’écran à la résolution native et avec le multiplicateur de mise à l’échelle actuellement préféré ; les photographies d’écran avec un appareil photo ne conviennent pas pour des preuves au niveau du pixel.",
+        "Remplacement de texture, amélioration de la netteté, post-traitement, correctifs pour écran large et mise à l'échelle de l'affichage externe désactivés pour le premier passage.",
+        "Le pilote système GPU et une API matérielle supportée sélectionnés, avec le profil graphique par jeu sauvegardé.",
+        "Une carte de défaut simple indiquant si chaque ligne traverse l'interface HUD, suit le contour d'un sprite répété ou se déplace avec la caméra."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Localisez le seuil de mise à l'échelle avant de tester l'alignement."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Démarrez le titre à froid à la résolution interne native et capturez la composition choisie sans charger un état de sauvegarde de l'émulateur.",
+        "2. Augmentez la résolution interne d'un multiplicateur, rejouez la scène identique et marquez la première étape à laquelle chaque joint cartographié devient visible.",
+        "3. Revenez à ce premier multiplicateur défaillant et changez uniquement l'API matérielle ; si les positions des lignes restent identiques, considérez les calculs de résolution comme une preuve plus solide qu'une défaillance du pilote spécifique à l'API.",
+        "4. Inspectez si les joints se trouvent entre des sprites rectangulaires ou des arrière-plans en tuiles. Pour ce motif, testez uniquement la correction d'alignement de sprite documentée exposée par l'émulateur pour le titre.",
+        "5. Si les lignes contiennent plutôt des couleurs provenant d'une cellule d'atlas voisine, restaurez l'alignement et testez la correction de l'arrondi ou du décalage de texture documentée indépendamment.",
+        "6. Après toute correction apparente, inspectez le texte petit, les barres de vie, les tuiles de la carte, les panneaux de particules et les fondus en plein écran pour détecter des éléments décalés ou coupés.",
+        "7. Augmentez la résolution d’un cran supplémentaire et revisitez une deuxième scène ; une correction qui fonctionne uniquement à un multiplicateur n'est pas un profil général stable.",
+        "8. Stockez le plus petit changement réussi par jeu, avec le numéro de série et le multiplicateur testé, plutôt que de l'appliquer à toute la bibliothèque."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Le synthétiseur graphique PS2 fonctionne avec un modèle d'adressage et d'échantillonnage conçu autour de la grille de sortie de la console. La mise à l'échelle côté hôte augmente le nombre de pixels rasterisés sans modifier chaque coordonnée fournie par le jeu. Cela peut exposer des trous entre les primitives adjacentes ou demander un échantillon juste à l'extérieur de la zone de texel prévue. L'alignement des sprites et les corrections d'arrondi traitent des arithmétiques différentes, donc activer les deux en même temps détruit la valeur diagnostique du test. Une image native propre, plus un seuil d'échec reproductible, démontre que le dump et la scène peuvent être rendus correctement et que le défaut est introduit par le chemin de mise à l'échelle."
+    },
+    {
+      "type": "heading",
+      "text": "Preuves d'acceptation de la suppression des coutures"
+    },
+    {
+      "type": "paragraph",
+      "text": "Conservez la correction uniquement si elle ferme les lacunes cartographiées sans déplacer les autres couches de l'écran."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Chaque colonne verticale précédemment marquée reste continue à la fois lors de l'immobilité et durant le mouvement horizontal de la caméra.",
+        "Les glyphes HUD, les cadres de portrait et les séparateurs de menu restent nets et ne sont pas déplacés d'un pixel sur le côté.",
+        "Les tuiles d'arrière-plan se rejoignent correctement au premier multiplicateur défaillant et au multiplicateur suivant au-dessus.",
+        "La même scène reste correcte après un redémarrage complet de l'application et non uniquement après une bascule en cours de session.",
+        "Un deuxième niveau avec des dimensions de sprite différentes passe, et le rythme des images reste dans la mesure préfixée."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modèles qui rejettent un diagnostic d'alignement"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La colonne reste dans la même position physique à l'écran sur les menus et Android UI : inspectez le panneau d'affichage, le câble ou le chemin de capture.",
+        "Des lignes existent à la résolution native et dans le rendu logiciel : vérifiez l'image et comparez avec une référence fiable de sortie originale.",
+        "Seules les textures remplacées montrent des bordures colorées : désactivez le pack et auditez son espacement d'atlas au lieu de modifier l'alignement GS.",
+        "La correction supprime les espaces mais casse les polices ou les particules : revenez en arrière et testez l'autre branche d'échantillonnage avec une nouvelle base."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Revenez au dernier échelon de mise à l'échelle propre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Désactivez l'alignement ou la valeur d'arrondi testée, restaurez les décalages de texture et le filtrage par défaut, fermez le jeu et capturez à nouveau le multiplicateur défaillant. Si aucune correction étroite ne réussit toutes les scènes, baissez la résolution interne jusqu'à l'échelon le plus élevé qui est resté propre et conservez la carte des défauts pour un rapport de compatibilité."
+    },
+    {
+      "type": "heading",
+      "text": "Une correction de joint spécifique à un titre n'est pas un préréglage de qualité d'image"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les exemples historiques d'Align Sprite s'appliquent au comportement moteur reconnaissable, et non à chaque ligne verticale dans chaque jeu. Les versions de l'émulateur peuvent déjà appliquer des corrections de base de données pour les numéros de série connus. Confirmez le défaut avec les paramètres par défaut avant d'ajouter une modification manuelle, et retirez cette modification lorsqu'une version ultérieure corrige automatiquement le chemin."
+    },
+    {
+      "type": "link",
+      "text": "Lisez l'explication technique PCSX2 de l'échantillonnage à l'augmentation de résolution",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

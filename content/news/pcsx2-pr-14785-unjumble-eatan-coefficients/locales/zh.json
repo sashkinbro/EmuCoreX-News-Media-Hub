@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14785-unjumble-eatan-coefficients",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 使用位级测试恢复 microVU 的 EATAN 系数顺序",
+  "summary": "向量单元重编译器中的系数命名回归产生了看似合理但不正确的反正切结果；手动表格和 ps2autotests 精确显示了哪些常量被打乱。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14785 的视觉证据：MicroVU：重新排列 EATAN 系数",
+  "searchKeywords": [
+    "PCSX2",
+    "microVU",
+    "EATAN",
+    "ps2autotests",
+    "向量单元"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "cpu": "CPU",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14785": "MicroVU：重新排列 EATAN 系数"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "正确的常量被附加到了错误的 EATAN 名称上"
+    },
+    {
+      "type": "paragraph",
+      "text": "microVU 路径并不缺少反正切系数；它只是使用了错误的顺序。之前的一次清理更改了常量的表示方式，并依赖于没有正确描述表格的注释。生成的名称看起来合理，但指向的是混乱的值。这使得这是一个特别微妙的重编译器缺陷：普通场景可能仍然会产生数字，但这些数字与 PlayStation 2 向量单元偏离。"
+    },
+    {
+      "type": "heading",
+      "text": "修复遵循 VU 手册，而不是调整可见输出"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14785 重新排列了 microVU_Misc.h 中的 EATAN 常量，以匹配 VU 基本函数单元文档所列的系数表。它还遵循了另一个发现，即解释器有一个错误的系数，通过检查重编译器而不是假设两个执行路径共享同一错误。未引入任何特定于游戏的阈值或视觉变通方法；现有重编译序列的数学输入已被纠正。"
+    },
+    {
+      "type": "heading",
+      "text": "EATANxy 和 EATANxz 暴露了 EATAN 单独可能隐藏的错误"
+    },
+    {
+      "type": "paragraph",
+      "text": "提供的 efu.elf 测试演练了 EATAN 以及它的 xy 和 xz 变体，包括正零和负零、最大值、NaN、1、尾数和指数边界，以及递增或递减的分量对。前后日志显示几个十六进制结果发生了变化，包括最大尾数和代表角度的情况。这些位模式比凭肉眼判断一个动画更有力的证据。"
+    },
+    {
+      "type": "heading",
+      "text": "解释器和重新编译器的比较应保留在回归集合中"
+    },
+    {
+      "type": "paragraph",
+      "text": "未来的验证应通过解释器和 microVU 运行相同的 ps2autotests ELF，保留原始十六进制输出，并与 VU 手册的预期表进行比较。那些严重依赖向量单元基本函数的游戏是有用的二次检查，但它们不能替代诸如 NaN 传播或有符号零的边界情况。后续的系数重构在进行视觉兼容性测试之前应该在此测试中失败。"
+    },
+    {
+      "type": "callout",
+      "text": "这是数值仿真工作，而不是性能优化：成功标准是向量单元在整个 EATAN 测试矩阵中的预期位模式。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14785",
+      "label": "阅读 PCSX2 工程讨论和源代码变更"
+    }
+  ]
+}

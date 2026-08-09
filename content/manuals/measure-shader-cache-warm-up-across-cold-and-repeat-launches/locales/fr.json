@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "measure-shader-cache-warm-up-across-cold-and-repeat-launches",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mesurer le préchauffage du cache de shaders lors de lancements PS2 à froid et répétés",
+  "summary": "Utiliser un parcours d'effet déterministe lors de la première visite, de la relecture immédiate, du redémarrage de l'application et éventuellement du redémarrage du système pour déterminer quels ralentissements disparaissent après la compilation du pipeline et si le cache persiste normalement.",
+  "heroAlt": "Vulkan 1.3 graphique représentant le pipeline graphique et le comportement du cache de shaders",
+  "searchKeywords": [
+    "Préchauffage du cache de shaders PS2",
+    "Ralentissement lors du premier lancement EmuCoreX",
+    "Accroc lors de la compilation Vulkan",
+    "Redémarrage de l'application du cache",
+    "Performance lors des lancements répétés"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "performance": "Performance",
+    "shaders": "Shaders"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan contexte du pipeline",
+    "pcsx2-vulkan": "PCSX2 Vulkan contexte de développement du rendu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cartographier les effets rencontrés pour la première fois à travers les frontières du cycle de vie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un cache de shader ou de pipeline devrait réduire une partie du travail de compilation lors de la première rencontre après que les matériaux et effets ont été vus. Pour le tester, utilisez un itinéraire avec des repères d'effets nommés et conservez le cache entre les passages. Comparez une première visite, une lecture immédiate, un redémarrage classique de l'application, et seulement alors un redémarrage optionnel Android. Ne supprimez pas les données de l'application à moins que le comportement de reconstruction du cache soit l'expérience distincte explicite."
+    },
+    {
+      "type": "callout",
+      "text": "Vider le cache entre chaque passage rend tous les lancements à froid et empêche la mesure de la persistance. Sauvegardez la configuration avant tout test délibéré de suppression des données."
+    },
+    {
+      "type": "heading",
+      "text": "Préparez un tableau des repères et des cycles de vie"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde normale avant un itinéraire déterministe contenant plusieurs effets distincts.",
+        "Un moteur de rendu et un pilote système maintenus constants tout au long de la séquence.",
+        "Une superposition du temps de cadre ou un enregistrement synchronisé avec une surcharge stable.",
+        "L'état initial du cache documenté avant la première visite.",
+        "Assez d'espace de stockage et aucune utilité de nettoyage planifiée pendant le test."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Exécuter la première visite, la relecture, le redémarrage de l'application et le redémarrage du système."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Documenter l'état du cache et effectuer un démarrage à froid de l'itinéraire sans supprimer de fichiers.",
+        "2. Marquez chaque accroc par horodatage et point de repère d'effet visible.",
+        "3. Revenez à la même sauvegarde et relancez immédiatement sans changer les paramètres.",
+        "4. Fermez l'émulateur normalement, rouvrez-le et effectuez un troisième passage.",
+        "5. Comparez les accros qui disparaissent, diminuent ou réapparaissent aux mêmes points de repère.",
+        "6. Redémarrez Android et répétez uniquement si la persistance du cycle de vie du système est importante.",
+        "7. Inspectez les journaux et les horodatages du cache sans en modifier le contenu.",
+        "8. Stockez la table à quatre passages avant de tester toute suppression délibérée du cache."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Les tests de relecture immédiate réutilisent en session ; le redémarrage de l'application teste si les données compilées survivent à un cycle de vie normal du processus ; le redémarrage du système teste la persistance à travers une frontière plus large. Un accroc qui se répète à chaque point d'accès identique peut plutôt être dû au stockage ou au travail de synchronisation, tandis que les accrocs irréguliers en fin de session peuvent être liés à la chaleur ou à l'activité en arrière-plan."
+    },
+    {
+      "type": "heading",
+      "text": "Modèle d'acceptation du préchauffage du cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "La classification doit suivre un comportement de repère répétable à travers les étapes définies du cycle de vie."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les accrocs lors de la première visite sont attribués à des effets ou emplacements nommés.",
+        "La relecture immédiate utilise le même itinéraire et le même profil inchangé.",
+        "Le redémarrage de l'application se produit sans suppression du cache.",
+        "Le redémarrage du système est testé séparément et uniquement lorsque nécessaire.",
+        "Les journaux ou les horodatages soutiennent la conclusion sur la persistance."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Séquences pour redémarrer depuis le début"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Android ou un nettoyeur supprime le cache au milieu de la séquence : désactivez le nettoyage et répétez.",
+        "Un pilote ou un moteur change entre les passes : commencez un nouveau tableau.",
+        "Les rencontres aléatoires modifient les effets : choisissez une sauvegarde déterministe.",
+        "La deuxième passe commence plus chaude : normalisez l'état thermique."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Préserver le cache éprouvé et le cycle de vie normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Désactiver les superpositions de diagnostic, conserver le cache valide, rétablir la politique normale de nettoyage en arrière-plan et démarrer le titre une fois à froid. Si une suppression délibérée a été testée plus tard, autoriser un cycle complet de préchauffage avant de juger à nouveau les performances quotidiennes."
+    },
+    {
+      "type": "heading",
+      "text": "Le travail ponctuel n'est pas automatiquement une compilation de shaders"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les chargements de textures, la décompression, les lectures sur disque et l'initialisation du jeu peuvent également disparaître lors d'une relecture. Utilisez les journaux du rendu et la corrélation des effets pour soutenir une étiquette de shader, et gardez les hésitations incertaines classées comme des événements de première visite plutôt que de surestimer la cause."
+    },
+    {
+      "type": "link",
+      "text": "Passer en revue les directives Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

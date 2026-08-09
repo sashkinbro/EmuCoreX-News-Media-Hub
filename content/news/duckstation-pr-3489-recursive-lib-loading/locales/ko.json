@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation는 중첩된 PSF 라이브러리를 프로그램의 실제 진입점까지 따라갑니다",
+  "summary": "두 줄의 재귀 변경으로 가장 깊은 상위 부모 _lib가 PC와 SP를 제공하여 진입점 검색이 한 단계 일찍 중단되는 로더를 수정합니다.",
+  "heroAlt": "DuckStation 풀 리퀘스트 #3489의 소스 증거: PSFLoader: 재귀 _lib 로딩 수정",
+  "searchKeywords": [
+    "DuckStation",
+    "PSF 로더",
+    "_lib",
+    "프로그램 카운터",
+    "스택 포인터"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "저장소",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: 재귀 _lib 로딩 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PSF는 하나 이상의 라이브러리를 통해 실행 상태를 상속할 수 있습니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "포터블 사운드 포맷(PSF) 파일은 _lib를 통해 부모를 참조할 수 있으며, 그 부모는 또 다른 첫 번째 라이브러리를 참조할 수 있습니다. 로더가 잘못된 레벨에서 PC와 SP를 선택하면 데이터를 재귀적으로 로드하는 것만으로는 충분하지 않습니다. 변경 사항에서 인용된 포맷 지침은 첫 번째 _lib 체인을 가장 깊은 멤버까지 따라야 한다고 명시하며, 그 실행 컨텍스트는 모든 상속된 섹션이 조립된 후 재생을 초기화합니다."
+    },
+    {
+      "type": "heading",
+      "text": "이전의 깊이 검사(depth check)는 진입점 플래그(entry-point flag)를 너무 일찍 소모했습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader는 이전에 깊이 == 0에서 lib_use_pc_sp를 생성했습니다. 이는 첫 번째 부모 라이브러리가 프로그램 카운터와 스택 포인터를 가져가도록 허용한 다음, 더 깊은 재귀가 이를 수행하지 못하게 했습니다. 대신 Pull request #3489는 호출자의 use_pc_sp 플래그를 LoadLibraryPSF에 재귀적으로 전달하고, 그 첫 번째 라이브러리 호출이 반환된 후에만 false로 설정합니다. 가장 깊은 첫 번째 부모는 더 얕은 수준이 플래그를 사용하기 전에 플래그를 받습니다."
+    },
+    {
+      "type": "heading",
+      "text": "PC와 SP 선택은 첫 번째 라이브러리 체인만 소유합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "언와인드 동안 use_pc_sp를 지우는 것은 또 다른 PSF 규칙을 유지합니다: 이후 라이브러리는 초기 레지스터를 반복적으로 대체하지 않고도 데이터를 기여할 수 있습니다. 이 패치는 모든 _lib을 하나의 무작위 리스트로 평탄화하지 않습니다. 이는 실행을 설정하는 재귀적 첫 번째 부모 경로를 이후에 로드된 형제들과 구분하여 psf_loader.cpp에서 가능한 최소한의 변경만 유지하며 컨테이너 형식을 다시 작성하지 않습니다."
+    },
+    {
+      "type": "heading",
+      "text": "회귀 테스트용 고정 장치는 최소 세 개의 중첩 레벨이 필요합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "루트, 첫 번째 부모, 가장 깊은 첫 번째 부모가 각각 다른 PC와 SP 값을 선언하고, 추가로 다른 쌍을 가진 보조 라이브러리를 포함하는 PSF를 구성하십시오. DuckStation는 필요한 모든 데이터를 로드해야 하지만, 가장 깊은 첫 번째 부모 레지스터부터 시작해야 합니다; 첫 번째가 아닌 라이브러리를 변경해도 진입점은 이동하지 않아야 합니다. Mednafen이나 다른 형식 준수 로더로 재생과 기록된 레지스터를 비교한 후, 누락되거나 순환적 또는 읽을 수 없는 라이브러리 참조를 테스트하여 무한 재귀가 아닌 깔끔한 오류가 발생하는지 확인하세요."
+    },
+    {
+      "type": "callout",
+      "text": "수정은 재귀 순서에 관한 것입니다: 데이터는 여러 라이브러리에서 올 수 있지만, 초기 PC와 SP는 첫 번째 _lib 체인의 가장 깊은 멤버에 속합니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "DuckStation 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

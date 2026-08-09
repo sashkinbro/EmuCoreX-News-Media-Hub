@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 zachowuje nienaruszone dane docelowe renderowania podczas częściowych czyszczeń",
+  "summary": "Śledzenie czyszczenia i wstępnego ładowania teraz rozróżnia pełne pokrycie od operacji na połowie celu, zapobiegając odrzucaniu prawidłowych rzędów i kopiowaniu ich z powrotem jako uszkodzone dane.",
+  "heroAlt": "Dowody wizualne z pull request #14681 PCSX2: GS/TC: Poprawa zachowania czyszczenia i wstępnego ładowania",
+  "searchKeywords": [
+    "PCSX2",
+    "pamięć podręczna tekstur",
+    "częściowe czyszczenie",
+    "wstępne ładowanie",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Poprawa zachowania czyszczenia i wstępnego ładowania"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Czyszczenie połowy celu unieważniało poprzednią ramkę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 może wyczyścić tylko drugą połowę docelowego bufora renderowania, podczas gdy pierwsze 256 linii już zawiera dane potrzebne do następnej klatki. PCSX2 wcześniej oznaczył szerszy bufor jako nieważny, a następnie załadował z zakresu, który wcześniej uznał za bezużyteczny. Kopia była wewnętrznie spójna ze złą mapą ważności, powodując migotanie, mimo że gra nigdy nie czyściła zachowanej połowy."
+    },
+    {
+      "type": "heading",
+      "text": "Wyczyszczenie ważności teraz wymaga dopasowania docelowego bufora lub pełnego pokrycia."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14681 zmienia moment, w którym kanały RGB i alfa tracą swój status ważności. Czyszczenie może odrzucić śledzone zawartości tylko wtedy, gdy cel jest dopasowany lub całkowicie pokrywa odpowiedni zakres. Częściowe pokrycie pozostawia nietkniętą część aktywną. Renderer również obsługuje parowane połowiczne czyszczenia bardziej świadomie i pomija normalne rysowanie czyszczenia, gdy jeden cel rozwiązuje się do zera, unikając pracy, która nie może przyczynić się do pikseli."
+    },
+    {
+      "type": "heading",
+      "text": "Preload podąża za zachowanym pokryciem zamiast za starą etykietą celu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiany w wstępnym ładowaniu towarzyszącym mają znaczenie, ponieważ ważność i przywracanie to dwie strony tej samej decyzji dotyczącej pamięci podręcznej. Gdy wykorzystywany jest nakładający się cel, PCSX2 musi kopiować tylko dane, o których wiadomo, że przetrwają; w przeciwnym razie poprawne czyszczenie może być nadal poprzedzone przez przestarzałe lub niezdefiniowane wstępne ładowanie. Prace w GSRendererHW i GSTextureCache synchronizują te kroki, przy czym pomocnicy rejestru GS dostarczają informacje o pokryciu używane przy podejmowaniu decyzji."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 i X-Men Origins obejmują różne wzory czyszczenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Źródło identyfikuje migotanie w Gran Turismo 4 jako główny przypadek reprodukcji i zawiera zrzuty przed i po dla Time Crisis 3 i X-Men Origins. Testowanie powinno ponownie odwiedzić te same klatki przy przełączaniu między natywnym a powiększonym renderowaniem, a następnie obserwować kilka kolejnych klatek pod kątem opóźnionej korupcji. Oświetlenie w Need for Speed to kolejna zalecana kontrola. Przydatne jest śledzenie, które rejestruje granice celów, ważność kanałów oraz granice wstępnego ładowania dla każdego nakładającego się czyszczenia."
+    },
+    {
+      "type": "callout",
+      "text": "Kluczowa korekta ma charakter czasowy: częściowe czyszczenie nie może usuwać wiedzy w pamięci podręcznej o pikselach, które gość celowo pozostawił na późniejszą klatkę."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany źródłowe"
+    }
+  ]
+}

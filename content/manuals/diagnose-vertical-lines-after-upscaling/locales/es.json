@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticar las costuras verticales que aparecen solo después de la ampliación PS2",
+  "summary": "Mapear el primer multiplicador de resolución que expone las costuras, distinguir la alineación de sprites del sangrado del atlas de texturas, y mantener solo una corrección documentada por juego que deje intacto el HUD y la geometría.",
+  "heroAlt": "Captura de Tekken 5 PCSX2 con costuras verticales estrechas causadas por la desalineación de sprites durante la ampliación",
+  "searchKeywords": [
+    "Líneas verticales PS2 al escalar",
+    "Costuras negras EmuCoreX",
+    "Alinear sprite",
+    "Sangrado del atlas de texturas",
+    "Artefacto de resolución interna"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisión"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 explicación de muestras inválidas y líneas verticales negras por encima de la resolución nativa",
+    "pcsx2-gsdx-progress": "PCSX2 ejemplos y alcance de la corrección de Alinear Sprite"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identificar si cada línea sigue un límite de sprite"
+    },
+    {
+      "type": "paragraph",
+      "text": "La ampliación puede revelar huecos que no existen en la cuadrícula de píxeles nativa del PS2. En algunos juegos, los sprites adyacentes se colocan de manera que sus bordes se encuentren exactamente en la resolución nativa; después de escalar, el redondeo puede dejar una columna de un solo píxel sin cubrir. Ocurre un fallo diferente cuando una muestra cruza de una celda de un atlas de texturas a la siguiente. Comienza con una escena que contenga tanto las líneas como los objetos de referencia estables: un HUD 2D, un fondo plano y geometría 3D ordinaria. Registra el número de serie del juego, el renderizador, el controlador, la relación de aspecto, el multiplicador de resolución interna, el filtrado de texturas y cada corrección manual de hardware. La posición del defecto es más importante que su color: una línea que sigue paneles en mosaico es diferente de una línea fija a la pantalla física."
+    },
+    {
+      "type": "callout",
+      "text": "No enmascare las costuras con estiramiento, recorte, sobremuestreo o un zoom de pantalla. Esos cambios pueden ocultar las columnas más externas mientras dejan el muestreo incorrecto activo en toda la imagen."
+    },
+    {
+      "type": "heading",
+      "text": "Construya una escalera de resolución a partir de una composición congelada"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida guardada en el juego antes de un menú estático, arena, cielo o fondo donde al menos tres costuras sean fáciles de señalar.",
+        "Capturas de pantalla directas a resolución nativa y al multiplicador de escalado actualmente preferido; las fotografías de cámara no son adecuadas para evidencia de un solo píxel.",
+        "Reemplazo de texturas, enfoque, posprocesamiento, parches para pantalla ancha y escalado de pantalla externa desactivados para la primera pasada.",
+        "El controlador del sistema GPU y una API de hardware compatible seleccionados, con el perfil gráfico por juego respaldado.",
+        "Un mapa de defectos simple que indica si cada línea cruza el HUD, sigue un borde de sprite repetido o se mueve con la cámara."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Localice el umbral de escalado antes de probar la alineación"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Inicie el título desde arranque en frío a la resolución interna nativa y capture la composición elegida sin cargar un estado guardado del emulador.",
+        "2. Aumenta la resolución interna en un multiplicador, reproduce la misma escena y marca el primer paso en el que cada junta mapeada se vuelva visible.",
+        "3. Vuelve a ese primer multiplicador que falla y cambia solo la API de hardware; si las posiciones de las líneas permanecen idénticas, considera que las matemáticas de resolución son evidencia más fuerte que un fallo del controlador específico de la API.",
+        "4. Inspecciona si las juntas se encuentran entre sprites rectangulares o fondos en mosaico. Para ese patrón, prueba solo la corrección de alineación de sprites documentada que el emulador expone para el juego.",
+        "5. Si las líneas en cambio contienen colores de una celda contigua del atlas, restaure la alineación y pruebe de manera independiente la corrección documentada de redondeo o desplazamiento de textura.",
+        "6. Después de cualquier reparación aparente, inspeccione el texto pequeño, las barras de vida, los mosaicos del mapa, los letreros de partículas y los desvanecimientos a pantalla completa en busca de elementos desplazados o recortados.",
+        "7. Aumente la resolución un paso más y revise una segunda escena; una corrección que funcione solo en un multiplicador no es un perfil general estable.",
+        "8. Almacene el cambio exitoso más pequeño por juego, con el número de serie y el multiplicador probado, en lugar de aplicarlo a toda la biblioteca."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "El sintetizador gráfico PS2 funciona con un modelo de direcciones y muestreo diseñado en torno a la cuadrícula de salida de la consola. El escalado en el lado del host aumenta el número de píxeles rasterizados sin cambiar cada coordenada suministrada por el juego. Eso puede exponer huecos entre primitivos adyacentes o solicitar una muestra justo fuera de la región de texel prevista. La alineación de sprites y las correcciones de redondeo abordan diferentes aritméticas, por lo que habilitar ambos a la vez destruye el valor diagnóstico de la prueba. Un fotograma nativo limpio más un umbral de fallo repetible demuestra que el volcado y la escena pueden renderizarse correctamente y que el defecto es introducido por la ruta de escalado."
+    },
+    {
+      "type": "heading",
+      "text": "Evidencia de aceptación de eliminación de costuras"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mantén la corrección solo si cierra los huecos mapeados sin desplazar otras capas de pantalla."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Cada columna vertical previamente marcada es continua tanto durante la inmovilidad como durante el movimiento horizontal de la cámara.",
+        "Los glifos del HUD, los marcos de los retratos y los separadores de menú permanecen nítidos y no se desplazan un píxel lateralmente.",
+        "Los mosaicos de fondo se encuentran de manera limpia en el primer multiplicador que falla y en el siguiente multiplicador superior.",
+        "La misma escena permanece correcta después de un reinicio completo de la aplicación, y no solo después de alternar en la sesión.",
+        "Un segundo nivel con dimensiones de sprite diferentes pasa, y la sincronización de fotogramas permanece dentro de la medición previa al prefijo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Patrones que rechazan un diagnóstico de alineación"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La columna permanece en la misma posición física de la pantalla sobre menús y Android UI: inspeccione el panel de visualización, el cable o la ruta de captura.",
+        "Existen líneas en resolución nativa y en renderizado por software: verifique la imagen y compare con una referencia confiable de salida original.",
+        "Solo las texturas reemplazadas muestran bordes de color: desactive el paquete y audite su relleno del atlas en lugar de cambiar la alineación GS.",
+        "La corrección elimina los huecos pero rompe las fuentes o partículas: reviértela y prueba la otra rama de muestreo con una nueva línea base."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vuelve al último escalón de escalado limpio."
+    },
+    {
+      "type": "paragraph",
+      "text": "Desactiva la alineación o el valor de redondeo probado, restaura los desplazamientos de textura y el filtrado por defecto, cierra el juego y captura el multiplicador que falla una vez más. Si ninguna corrección estrecha pasa todas las escenas, reduce la resolución interna al escalón más alto que permaneció limpio y conserva el mapa de defectos para un informe de compatibilidad."
+    },
+    {
+      "type": "heading",
+      "text": "Una corrección de costura específica del título no es un ajuste predefinido de calidad de imagen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los ejemplos históricos de Align Sprite se aplican al comportamiento reconocible del motor, no a cada línea vertical en cada juego. Las versiones del emulador pueden ya aplicar correcciones de la base de datos para números de serie conocidos. Confirma el defecto con los valores predeterminados antes de agregar una anulación manual, y elimina esa anulación cuando una versión posterior corrija la ruta automáticamente."
+    },
+    {
+      "type": "link",
+      "text": "Lee la explicación técnica PCSX2 sobre el muestreo de escalado",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

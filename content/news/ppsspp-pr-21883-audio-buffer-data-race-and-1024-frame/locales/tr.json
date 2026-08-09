@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP, libretro ses iletiminde çapraz iş parçacığı yarışını kapatıyor",
+  "summary": "Paylaşılan dönüştürülmüş örnek arabellezi üzerindeki her işlem artık bir mutex kullanıyor, böylece başka bir iş parçacığı ses yazarken yeniden tahsis veya kapatma belleği geçersiz kılmıyor.",
+  "heroAlt": "PPSSPP çekme isteği #21883'ten kaynak kanıtı: libretro: ses arabellek veri yarışını ve >1024 çerçeve örnek eklemelerini düzelt",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "ses yarışı",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Ses",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: ses arabellek veri yarışını ve >1024 çerçeve örnek eklemelerini düzelt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "İki iş parçacığı aynı ham göstergesine aynı anda sahip olabilirdi"
+    },
+    {
+      "type": "paragraph",
+      "text": "libretro ön yüz yolunda, System_AudioPushSamples PSP sesini dönüştürür ve bunu output_audio_buffer'a ekler. OpenGL arka uçlarıyla, örnek aktarmaları emülasyon tarafındaki GL komut kuyruğu üzerinden gelebilirken, retro_run buffer'ı libretro iş parçacığında boşaltır. Başlatma, kapatma ve kapasite artışı ayrıca tahsisi değiştirir veya serbest bırakır. Tek bir sahiplik kuralı olmadan, bir realloc diğer iş parçacığı bunu okurken veya yazarken işaretçiyi geçersiz kılabilir."
+    },
+    {
+      "type": "heading",
+      "text": "Artık tek bir mutex buffer'ın ömrünü tanımlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883 output_audio_buffer_mutex ekler ve bunu başlatma, yok etme, yükleme ve System_AudioPushSamples'ta alır. Kapasite yardımcı işlevi, çağıranın bu kilidi tutması gerektiği açıkça belgelenmiştir, bu nedenle büyüme, buna ihtiyaç duyan ekleme ile aynı kritik bölüm içinde gerçekleşir. Yükleme, toplu geri arama ve boyut sıfırlama boyunca kilidi tutar ve böylece bir üretici teslimatın ortasında yükü değiştiremez."
+    },
+    {
+      "type": "heading",
+      "text": "Düzeltme, yapıyı ve örnekleri birlikte korur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sadece boyutu veya kapasiteyi kilitlemek yeterli olmayacaktır: veri, boyut ve kapasite tek bir değişmez oluşturur. İşaretçi, en az kapasite elemanı uzunluğunda bir tahsise başvurmalıdır ve boyut içinde başlatılmış örnekleri tanımlamalıdır. Mutex, üçünün güncellemelerini tek bir işlem olarak görünür kılar. Bu özellikle çoklu iş parçacıklı GL zamanlamasıyla ilgilidir, ancak init ve free aynı kuralı kullandığı için hızlı çekirdek yeniden başlatmaları geç bir üretici ile yarışamaz."
+    },
+    {
+      "type": "heading",
+      "text": "Stres testi, geri çağırma ve render zamanlamasını değiştirmelidir"
+    },
+    {
+      "type": "paragraph",
+      "text": "libretro'i OpenGL, Vulkan ve yazılım render ile birlikte çalıştırın ve tekrarlayarak duraklatın, hızlı ileri alın, sıfırlayın, içeriği değiştirin ve çekirdeği kapatın. Hızlı, yavaş ve düzensiz gruplar halinde tüketen ses geri çağırmalarını ve olağan çerçeve boyutlarının üzerindeki örnek itmelerini kullanın. ThreadSanitizer, buffer tuple'a eşzamanlı olmayan erişim görmemelidir. Yakalanan PCM'i dinleyin ve hashleyin, boşluk veya yeniden sıralama olup olmadığını kontrol edin ve geri çağırmanın aynı rekrüssif olmayan mutex üzerinde bekleyen bir yola yeniden girmediğini doğrulayın."
+    },
+    {
+      "type": "callout",
+      "text": "Büyütülebilir bir ses tamponu, üç bağımsız alan değil, paylaşılan bir nesnedir; işaretçisi, boyutu ve kapasitesi aynı kilit altında iş parçacıklarını geçmelidir."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "PPSSPP mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

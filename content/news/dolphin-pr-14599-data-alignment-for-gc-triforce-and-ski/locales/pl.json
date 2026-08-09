@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin uczy wyodrębnionych dysków Triforce o oknie adresowym DIMM",
+  "summary": "DirectoryBlob teraz unika zacienionego zakresu pamięci arcade i używa mniejszego wyrównania plików Triforce zamiast stosowania założeń dotyczących układu GameCube i Wii.",
+  "heroAlt": "Dowody źródłowe z pull requesta Dolphin #14599: DirectoryBlob: popraw wyrównanie danych dla GC/Triforce i pomiń zakres pamięci DIMM Triforce",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "wyrównanie dysku"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Pamięć",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: popraw wyrównanie danych dla GC/Triforce i pomiń zakres pamięci DIMM Triforce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dysk wspierany przez katalog wciąż wymaga umieszczenia specyficznego dla platformy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin może montować wydobyte pliki za pomocą DirectoryBlob tak, jakby były obrazem dysku. Ten wirtualny układ przypisuje przesunięcia i wyrównanie każdemu plikowi. Ponowne użycie zasad GameCube i Wii dla platformy arcade Sega Triforce pominęło sprzęt podłączony do AMMediaboard. Adresy w określonym regionie dysku są cieniowane przez SRAM i zwracają zawartość DIMM, więc całkowicie poprawny plik hosta może stać się nieczytelny po umieszczeniu go tam."
+    },
+    {
+      "type": "heading",
+      "text": "Flaga Triforce zmienia dwie decyzje dotyczące układu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14599 rejestruje, czy wolumen źródłowy to Triforce. Przed umieszczeniem pliku, DirectoryBlob sprawdza, czy proponowany zakres nakłada się na 0x1F000000 do 0x1F800000. Jeśli tak, przesunięcie skacze do 0x1F800000, utrzymując cały plik poza zacienionym obszarem. Kolejne pliki Triforce wyrównują się do 0x20 bajtów, zamiast konserwatywnej granicy 0x8000 bajtów używanej dla dysków katalogów GameCube i Wii."
+    },
+    {
+      "type": "heading",
+      "text": "Unikanie nakładania się musi uwzględniać cały przedział pliku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sprawdzenie tylko adresu początkowego mogłoby pominąć plik, który zaczyna się poniżej okna i rozciąga się w jego obszar. Kod porównuje zarówno data_offset, jak i data_offset powiększony o rozmiar wpisu, a następnie przenosi cały wpis. Mniejsze wyrównanie co 32 bajty również zapobiega niepotrzebnym lukom w obrazach arcade, przy zachowaniu oczekiwanej przez platformę szczegółowości. Wolumeny inne niż Triforce nigdy nie wchodzą do żadnej z gałęzi, więc ich ustalone rozmieszczenie pozostaje dokładnie zgodne z wcześniejszą polityką."
+    },
+    {
+      "type": "heading",
+      "text": "Elementy graniczne powinny badać każdą stronę otworu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buduj drzewa katalogów, które umieszczają pliki o zerowej długości, bardzo małe i duże natychmiast przed, przez, wewnątrz i po obu granicach DIMM. Sprawdź wygenerowane offsety FST, wyrównanie do 0x20, zawartość plików odczytywaną przez emulowaną kartę AMMediaboard oraz całkowity rozmiar obrazu. Powtórz to samo drzewo dla GameCube i Wii, aby udowodnić, że wyrównanie 0x8000 nie uległo zmianie. Uwzględnij arytmetykę dokładnie na końcu i bardzo duże offsety, aby wychwycić przepełnienie, a następnie uruchom reprezentatywne tytuły Triforce z wyodrębnionych katalogów, zamiast tylko sprawdzać metadane."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob to wirtualny kreator dysków; same poprawne nazwy plików nie wystarczą, gdy sprzęt arcade zmienia, które zakresy adresów fizycznych mogą zwracać dane z dysku."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Przeczytaj dyskusję inżynieryjną Dolphin i zmiany w źródle"
+    }
+  ]
+}

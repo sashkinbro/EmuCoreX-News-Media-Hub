@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar kalibruje starší středové pozice spouště místo toho, aby předpokládal nulu",
+  "summary": "Osy spouště Steam Decku mohou pod SDL Joystick API ležet blízko -32767; zaznamenání počátečního středu obnoví staré mapování, které jinak hlásí L a R jako stisknuté.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Azahar #2328: BUGFIX: Starší joystick spouště na Linuxu",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "kalibrace spouště",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Vstup",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Starší joystick spouště na Linuxu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nultá hodnota spouště závisí na SDL API a mapování zařízení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uživatelé Steam Decku přes EmuDeck hlásili, že tlačítka L a R jsou trvale stisknutá. Jejich starší profily používaly osy spouště přes Joystick API od SDL, kde počáteční hodnota mohla být -32767 místo nuly. Novější implementace přímo stavu přestala uchovávat historické vzorky, a proto znovu použila předpoklad nulového středu, který byl platný pro některá zařízení, ale tuto neutrální pozici považovala za plný stisk."
+    },
+    {
+      "type": "heading",
+      "text": "Inicializace zaznamenává skutečný odpočinkový střed zařízení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2328 přidává kalibraci pro každou osu do staré vrstvy joysticku. Při inicializaci zařízení Azahar zaznamenává aktuální střed a porovnává s ním pozdější hodnoty. Mapování pak měří pohyb od pozorovaného neutrálního bodu místo pevně stanovené interpretace rozsahu SDL. To je obzvláště vhodné pro zpětnou kompatibilitu, protože stará uložená přiřazení se mohou odkazovat na surové osy joysticku."
+    },
+    {
+      "type": "heading",
+      "text": "Nová mapování obvykle používají SDL Controller a vyhýbají se staré nejednoznačnosti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Moderní standard Controller API Azahar normalizuje sémantiku spouštěče a není cílem této opravy. Uživatelé, kteří nyní mapují ovladač, by proto neměli zaznamenat žádnou změnu. Tento záplata zachovává starší profily Joysticku a neobvyklé ovládací prvky, které zůstávají mimo standardizované API. Zachování chování v ohraničeném rozsahu zabraňuje tomu, aby kalibrační heuristiky měnily backend, který již správně vykazuje normalizované spouštěče ovladače."
+    },
+    {
+      "type": "heading",
+      "text": "Testy vyžadují jak osy s nulovým středem, tak s negativním středem."
+    },
+    {
+      "type": "paragraph",
+      "text": "Začněte každé zařízení se uvolněnými spouštěči, potvrďte kalibrovaný střed, poté stiskněte a pomalu a úplně uvolněte. Testujte Steam Deck, stolní ovladač používající starší API, hot-plug, suspend/resume a zařízení připojené při stisknuté spoušti. Existující profily se musí obnovit bez nového mapování, zatímco nové profily Controller API zůstanou identické. V případě stisknutí při inicializaci je potřeba zdokumentovaná cesta obnovy, aby jedna špatná vzorka neměnila trvalý střed session."
+    },
+    {
+      "type": "callout",
+      "text": "Kalibrace obnovuje chybějící referenční bod: surová hodnota spouště znamená stisknutá pouze relativně k pozorované neutrální pozici toho zařízení."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu Azahar"
+    }
+  ]
+}

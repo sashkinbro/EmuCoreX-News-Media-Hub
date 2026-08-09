@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin enseña a su JIT si se leerá o sobrescribirá un registro en vivo",
+  "summary": "Máscaras separadas de lectura futura y escritura futura permiten que las cachés x64 y ARM64 tomen decisiones de precarga y vaciado más seguras y precisas que un solo indicador de uso.",
+  "heroAlt": "Evidencia de fuente de la solicitud de extracción #14278 de Dolphin: PPCAnalyst: Dividir el análisis \"en uso\" en lecturas y escrituras",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "caché de registros",
+    "análisis de liveness",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "CPU",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Dividir el análisis \"en uso\" en lecturas y escrituras"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Estar vivo no indica qué hará la siguiente instrucción"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un registro de invitado puede ser relevante para el bloque restante porque una instrucción futura lee su valor actual, porque una instrucción futura lo sobrescribe, o ambos. La máscara de uso antiguo de Dolphin combinaba esos casos. Entonces, una caché de registros JIT tenía información limitada al decidir si precargar un valor de invitado, escribir un valor sucio del host de vuelta, descartar un mapeo o mantenerlo a través de un límite de respaldo."
+    },
+    {
+      "type": "heading",
+      "text": "Dos conjuntos de uso futuro hacen que el flujo de datos sea explícito"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14278 propaga gprWillBeRead y gprWillBeWritten, con máscaras equivalentes para registros de punto flotante y de condición. La precarga considera registros que participarán en cualquier dirección mientras aún se excluyen entradas descartables. Los flushes completos se dirigen a valores que ya no serán usados por operaciones subsiguientes. Las salidas que no se escribirán más tarde reciben un tratamiento separado para que su valor sucio actual llegue al estado de invitado antes de que la caché las marque como limpias."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty mantiene un mapeo útil después de comprometer su valor"
+    },
+    {
+      "type": "paragraph",
+      "text": "El refactor nombra el comportamiento de volcado con precisión. Las escrituras completas ensucian los datos y eliminan el mapeo. MaintainState preserva el estado existente cuando se requiere. El nuevo modo Undirty escribe un valor sucio pero conserva la asociación del registro anfitrión como limpio. Eso es útil cuando una salida debe ser coherente externamente en un límite, pero todavía puede ser leída más tarde. Ambos caminos x64 y ARM64 adoptan el vocabulario, incluyendo el acceso a memoria lenta y los puntos de retroceso del intérprete."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de bloques diferenciales deben centrarse en el flujo de control incómodo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Compare el intérprete, JIT64 y JITARM64 a través de bloques generados con patrones de solo lectura, solo escritura, leer-para-escribir, escribir-para-leer, descartado, inmediato, de punto flotante y de registro de condición. Añada excepciones, fallos de memoria, comprobaciones de tuberías de recolección, ramas, instrucciones de respaldo y salidas de bloque en cada posición. Instrumente los derrames del host y las reescrituras del huésped para verificar que la optimización realmente reduce el trabajo sin cambiar el estado. La ejecución diferencial aleatoria debe comparar todos los registros arquitectónicos después de cada límite forzado."
+    },
+    {
+      "type": "callout",
+      "text": "La vivacidad del registro se vuelve accionable solo cuando el JIT sabe si el futuro necesita el valor de hoy o simplemente necesita el nombre del registro para una sobrescritura posterior."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Lea la discusión de ingeniería del Dolphin y los cambios de origen"
+    }
+  ]
+}

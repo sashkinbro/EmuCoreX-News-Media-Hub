@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3703-loongarch64-support",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation 获取了本地 LoongArch64 重编译器和主机运行时",
+  "summary": "该移植不仅涵盖指令发射，还涉及故障恢复、快速跳转、架构检测、依赖关系、测试以及可重用的 LoongArch 汇编器/反汇编器。",
+  "heroAlt": "来自 DuckStation 拉取请求 #3703 的源码证据：添加 LoongArch64 支持",
+  "searchKeywords": [
+    "DuckStation",
+    "LoongArch64",
+    "重编译器",
+    "泻湖",
+    "页面错误"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3703": "添加 LoongArch64 支持"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU 后端也需要围绕生成代码的运行时"
+    },
+    {
+      "type": "paragraph",
+      "text": "向模拟器添加新的主机架构不仅仅是一个来宾指令表。重新编译的代码块必须安全地跳回到C++，从受保护的内存错误中恢复，遵循平台调用约定，并被构建选择。拉取请求 #3703 将 LoongArch64 视为完整的主机移植，将其重新编译器与架构检测、fastjmp 支持、页面错误处理和依赖配置相结合。"
+    },
+    {
+      "type": "heading",
+      "text": "Lagoon 提供 LoongArch 汇编和反汇编作为独立层"
+    },
+    {
+      "type": "paragraph",
+      "text": "该移植引入了 lagoon，这是为此工作创建的通用 LoongArch64 汇编器和反汇编器，但作为独立库维护。DuckStation 使用它来编码本地指令，而不是在重新编译器中散布原始操作码。CMake 模块和依赖目标集成了该库，同时源文件和许可文件保持显式。这个边界使生成的代码可以审核，并为其他 LoongArch 项目提供可重用组件。"
+    },
+    {
+      "type": "heading",
+      "text": "支持代码在重新编译器之外有架构假设"
+    },
+    {
+      "type": "paragraph",
+      "text": "该更改还调整了 ImGui 和 rapidyaml 代码，以便识别 LoongArch 构建，更新了非 SIMD 的 blend32()，并扩展了向量测试。这些细节可以防止一个在技术上完整的 CPU 后端在前端或通用工具层失败。故障上下文、寄存器保存、缓存刷新以及指针宽度都必须与 ABI 一致；仅依赖 x86 或 ARM 的假设可能使本来正确的客户机翻译失效。"
+    },
+    {
+      "type": "heading",
+      "text": "验证必须结合客户机测试与主机异常路径。"
+    },
+    {
+      "type": "paragraph",
+      "text": "LoongArch64 构建应运行解释器对比重编译器的 CPU 测试、GTE 工作负载、fastjmp 过渡，以及故意留下生成代码的保护内存故障。常规向量测试必须覆盖修正后的非 SIMD blend。构建调试和优化配置，并执行着色器编译、保存状态以及前端启动，以确保依赖修复不只是编译时有效。性能测量在确保正确性之后很有用，但如果一个更快的后端处理故障或保存寄存器出现错误，则它尚未准备就绪。"
+    },
+    {
+      "type": "callout",
+      "text": "重要的工作是平台边界：指令生成、ABI、故障、跳转、依赖和测试都必须共同识别LoongArch64。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3703",
+      "label": "阅读DuckStation的工程讨论和源代码更改"
+    }
+  ]
+}

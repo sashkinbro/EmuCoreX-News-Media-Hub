@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation hält die Kettenlänge der Nachbearbeitung nach Entfernung und Löschung konsistent",
+  "summary": "Korrigierte StageCount-Persistenz unterscheidet eine verkürzte Kette, eine ausdrücklich leere Basiskette und eine leere pro-Spiel-Überschreibung, die entfernt werden sollte.",
+  "heroAlt": "Quellbelege aus dem DuckStation-Pull-Request #3698: PostProcessing: `StageCount` beim Entfernen/Löschen von Stages korrekt aktualisieren",
+  "searchKeywords": [
+    "DuckStation",
+    "Nachbearbeitung",
+    "StageCount",
+    "Pro-Spiel-Einstellungen",
+    "Shader-Entfernung"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: `StageCount` beim Entfernen/Löschen von Stages korrekt aktualisieren"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount ist sowohl ein Längen- als auch ein Überschreibungsmarker"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation speichert Nachbearbeitungsstufen in den Einstellungen zusammen mit StageCount. In den Basiseinstellungen bedeutet null ausdrücklich keine Stufen. In einer spielbezogenen Ebene kann das Löschen des Feldes bedeuten, dass das Spiel die globale Kette nicht mehr überschreibt. Diese Fälle gleich zu behandeln, verursacht veraltete Stufen oder verhindert die Vererbung. Eine Entfernung, die zwei Stufen übrig lässt, muss zwei schreiben; eine Entfernung, die keine übrig lässt, muss möglicherweise das spielbezogene Feld löschen."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage löscht nun nur die wirklich leere spielbezogene Überschreibung."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #3698 berechnet new_stage_count und behält diesen Wert, wenn Stufen verbleiben. Das Feld wird nur entfernt, wenn die Einstellungsoberfläche nicht die Basisebene ist und die Anzahl null erreicht, wodurch eine leere spielbezogene Überschreibung verschwinden kann. Zuvor konnte der Branch StageCount nach jeder spielbezogenen Entfernung löschen und die deklarierte Länge der verbleibenden Kette verlieren."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages korrigiert den entgegengesetzten Branch der Basisebene."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der klare Pfad hatte seine Basis-gegen-Spiel-Bedingung umgekehrt. Der korrigierte Code schreibt StageCount = 0 für Basis-Einstellungen, wo eine explizite leere globale Kette sinnvoll ist, und entfernt den wert pro Spiel, sodass die globale Konfiguration durchfließen kann. Diese Symmetrie ist der Kern der Korrektur: Verkürzen, global löschen und ein Override löschen sind drei verschiedene Persistenzoperationen."
+    },
+    {
+      "type": "heading",
+      "text": "Round-Trip-Tests sollten jede Ebene und die verbleibende Anzahl abdecken"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen Sie eine globale Kette mit drei Stufen und eine andere pro-Spiel-Kette mit drei Stufen. Entfernen Sie die mittlere pro-Spiel-Stufe, starten Sie neu und überprüfen Sie, dass die beiden Überlebenden Reihenfolge und Parameter beibehalten. Entfernen Sie die letzten beiden und bestätigen Sie, dass die globale Kette zurückkehrt. Löschen Sie dann die Basiskette und bestätigen Sie, dass sie nach dem Neustart leer bleibt. Wiederholen Sie dies durch Qt und FullscreenUI, überprüfen Sie StageCount nach jeder Operation und testen Sie das Hinzufügen einer Stufe unmittelbar nach dem Löschen, um veraltete indizierte Felder zu erfassen."
+    },
+    {
+      "type": "callout",
+      "text": "Eine Kettenlänge von null wird nicht immer auf die gleiche Weise gespeichert: Grundeinstellungen erfassen Leere, während eine leere pro-Spiel-Ebene die Überschreibung der Basis stoppen sollte."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Lesen Sie die DuckStation-Engineering-Diskussion und Quellcode-Änderungen"
+    }
+  ]
+}

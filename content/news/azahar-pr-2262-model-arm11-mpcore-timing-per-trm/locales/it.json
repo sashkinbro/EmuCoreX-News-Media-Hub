@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2262-model-arm11-mpcore-timing-per-trm",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "I modelli Azahar calcolano il tempo delle istruzioni ARM11 mantenendo una via di fuga legacy",
+  "summary": "Una tabella del ciclo basata su TRM distingue le flush della pipeline, i ritorni predetti, le modalità di indirizzamento, i trasferimenti e le operazioni VFP invece di attribuire a ogni istruzione un singolo tick.",
+  "heroAlt": "Prova sorgente dal pull request Azahar #2262: core/arm: modellare ARM11 il timing MPCore per TRM",
+  "searchKeywords": [
+    "Azahar",
+    "ARM11 MPCore",
+    "tempo delle istruzioni",
+    "Dynarmic",
+    "LEGO City Undercover"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "cpu": "CPU",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2262": "core/arm: modellare ARM11 il timing MPCore per TRM"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una istruzione per tick nasconde le differenze di pipeline e trasferimento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il Nintendo 3DS CPU non esegue ogni istruzione ARM con la stessa latenza. Un branch che svuota una pipeline a otto stadi, un ritorno previsto, un indirizzo di registro scivolato e un trasferimento multi-registro o VFP hanno costi diversi. Il timing semplice precedente di Azahar poteva spostare gli interrupt o la logica di gioco rispetto al lavoro di CPU, in particolare nelle sequenze il cui comportamento dipende da quando un evento diventa visibile."
+    },
+    {
+      "type": "heading",
+      "text": "La tabella segue i meccanismi MPCore di ARM11, non ritardi arbitrari del gioco"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2262 espande arm_tick_counts con un modello di svuotamento pipeline di sette cicli, una media più bassa per i branch indiretti, gestione speciale per MOV o caricamento in PC, costo dell'indirizzo del registro scivolato, trasferimenti multipli di due registri per ciclo e conteggi di trasferimento VFP. Gli helper per l'estrazione dei campi a bit sono corretti come parte della corrispondenza tra le codifiche delle istruzioni e la funzione temporale appropriata."
+    },
+    {
+      "type": "heading",
+      "text": "I ritorni previsti differiscono dal flusso di controllo non strutturato"
+    },
+    {
+      "type": "paragraph",
+      "text": "MOV pc, lr e i caricamenti basati sullo stack nel PC possono utilizzare la previsione del ritorno e ottenere un risultato più economico, mentre altre scritture nel PC o caricamenti da jump table comportano una penalità di reintegro. Questa distinzione previene che una costante di branch ampia addebiti troppo per i ritorni normali delle funzioni e troppo poco per le redirezioni imprevedibili. Il modello descrive cicli ospite-emulati dal host; è indipendente dalla velocità con cui Dynarmic esegue il blocco tradotto sul telefono o sul desktop."
+    },
+    {
+      "type": "heading",
+      "text": "Un toggle legacy contiene un rischio di compatibilità durante la validazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le impostazioni di debug CPU possono ripristinare il comportamento precedente di un tick per istruzione per i giochi sensibili al tempo; la sequenza di inseguimento di LEGO City Undercover è l'esempio citato. I test dovrebbero confrontare entrambi i modi attraverso benchmark CPU, interruzioni, audio, polling degli input e quella sequenza di inseguimento. Validare il conteggio dei cicli rispetto ai casi TRM e ai loop di istruzioni mirati. Il toggle deve cambiare in modo deterministico e persistente, ma nuove regressioni dovrebbero essere investigate piuttosto che nascondere permanentemente ogni titolo dietro il timing legacy."
+    },
+    {
+      "type": "callout",
+      "text": "I nuovi modelli di tabella spiegano perché le istruzioni impiegano cicli guest diversi; l'interruttore legacy mantiene testabile il software sensibile al tempo mentre quel modello matura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2262",
+      "label": "Leggi la discussione sull'ingegneria Azahar e le modifiche del codice sorgente"
+    }
+  ]
+}

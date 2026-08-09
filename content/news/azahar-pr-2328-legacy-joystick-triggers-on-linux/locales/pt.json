@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar calibra os centros de gatilho legados em vez de assumir zero",
+  "summary": "Os eixos de gatilho do Steam Deck podem repousar perto de -32767 sob a API de Joystick do SDL; registrar o centro inicial restaura os mapeamentos antigos que de outra forma reportariam L e R como pressionados.",
+  "heroAlt": "Evidência de origem do pull request #2328 do Azahar: BUGFIX: Gatilhos de joystick legados no Linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "calibração de gatilho",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Entrada",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Gatilhos de joystick legados no Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O valor neutro de um gatilho depende da API SDL e do mapeamento do dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Usuários do Steam Deck através do EmuDeck relataram que os botões L e R permanecem pressionados permanentemente. Seus perfis legados usavam eixos de gatilho através da API de Joystick de SDL, onde o valor em repouso podia ser -32767 em vez de zero. Uma implementação mais recente de estado direto parou de reter amostras históricas e, portanto, reutilizou uma suposição de centro zero que era válida para alguns dispositivos, mas tratava essa posição neutra como um pressionamento completo."
+    },
+    {
+      "type": "heading",
+      "text": "A inicialização captura o verdadeiro centro em repouso do dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #2328 adiciona calibração por eixo à camada legada de joystick. Quando o dispositivo é inicializado, Azahar registra o centro atual e compara valores posteriores com ele. O mapeamento então mede o movimento a partir do ponto neutro observado em vez de codificar uma interpretação de alcance SDL. Isso é especialmente apropriado para compatibilidade retroativa, porque antigas configurações salvas podem se referir aos eixos brutos do joystick."
+    },
+    {
+      "type": "heading",
+      "text": "Novos mapeamentos normalmente usam SDL Controller e evitam a ambiguidade legada"
+    },
+    {
+      "type": "paragraph",
+      "text": "O padrão moderno de API de Controlador da Azahar padroniza a semântica dos gatilhos e não é o alvo desta correção. Portanto, os usuários que estiverem mapeando um controlador agora não devem notar nenhuma mudança. O patch preserva perfis legados de Joystick e controles incomuns que permanecem fora da API padronizada. Manter o comportamento limitado previne que heurísticas de calibração alterem um backend que já reporta corretamente os gatilhos do controlador normalizados."
+    },
+    {
+      "type": "heading",
+      "text": "Os testes precisam de eixos centrados em zero e centrados negativamente."
+    },
+    {
+      "type": "paragraph",
+      "text": "Inicie cada dispositivo com os gatilhos liberados, confirme o centro calibrado, depois pressione e solte lentamente e totalmente. Teste o Steam Deck, um controlador de desktop usando a API legada, hot-plug, suspensão/retomada e um dispositivo conectado enquanto um gatilho está pressionado. Perfis existentes devem se recuperar sem novo mapeamento, enquanto novos perfis da API de Controlador permanecem idênticos. Um caso em que o gatilho está pressionado na inicialização precisa de um caminho de recuperação documentado para que uma amostra ruim não se torne o centro permanente da sessão."
+    },
+    {
+      "type": "callout",
+      "text": "A calibração restaura o ponto de referência ausente: um valor de gatilho bruto significa pressionado apenas em relação à posição neutra observada desse dispositivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Leia a discussão de engenharia Azahar e as alterações de código-fonte"
+    }
+  ]
+}

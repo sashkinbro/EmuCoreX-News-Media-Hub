@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ordina il reset del cambio disco prima che Qt possa riprendere la VM",
+  "summary": "Uno stato di reset differito veniva calpestato dall'evento di ripresa di VMLock; spostare la transizione della vista di emulazione dopo l'invio del reset preserva il ciclo di vita previsto della VM.",
+  "heroAlt": "Prova sorgente dalla pull request #14720 di PCSX2: Qt: Correggere la logica per resettare la VM quando si cambiano i dischi",
+  "searchKeywords": [
+    "PCSX2",
+    "cambio disco",
+    "Reset della VM",
+    "VMLock",
+    "finestra separata"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Core",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Correggere la logica per resettare la VM quando si cambiano i dischi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cambiare un disco dalla lista dei giochi incrocia i cicli di vita di UI e VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con l'opzione Render To Separate Window abilitata, Qt può cambiare le visualizzazioni, bloccare la VM, inviare eventi e richiedere un reset in un'unica azione dell'utente. Il reset stesso è stato rinviato. MainWindow si è spostata verso la visualizzazione di emulazione mentre l'ambito del blocco terminava, e il distruttore di VMLock ha inviato un unpause. L'evento successivo potrebbe sostituire VMState::Resetting prima che l'handler del reset venisse effettivamente eseguito."
+    },
+    {
+      "type": "heading",
+      "text": "La competizione è nel ordinamento degli eventi, non nella sincronizzazione mancante"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lo VM aveva uno stato di reset valido e un blocco destinato a proteggere la transizione. Il problema era che due cambiamenti di stato differiti erano in coda nell'ordine sbagliato. Un ripristino della pausa inviato dalla pulizia dello UI era consentito di eseguirsi come se il reset fosse terminato. Questo spiega perché il cambio dei dischi da un percorso frontend particolare falliva anche se il reset diretto e la normale pausa/ripresa funzionavano."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView ora segue il reset inviato"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14720 sposta MainWindow::switchToEmulationView dopo che l'evento di reset è stato pubblicato. La VM non è in esecuzione mentre la richiesta di reset viene stabilita, e la transizione della vista non può più far sì che VMLock calpesti Resetting con un unpause anticipato. La fonte nota che è possibile un ridisegno più ampio dello stato della VM, ma questa modifica risolve il difetto di ordinamento noto senza ampliare l'ambito."
+    },
+    {
+      "type": "heading",
+      "text": "Le modifiche al disco in finestra separata devono essere ripetute in ogni stato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Abilita il rendering in una finestra separata, avvia un titolo multi-disco e seleziona un altro disco dalla lista dei giochi mentre è in esecuzione, in pausa e con una finestra modale UI aperta. Il registro ha riportato gli eventi di reset e ripresa della pausa e ha verificato che il reset persista fino al completamento del reset. Ripeti dopo sospensione, caricamento dello stato e selezioni rapide consecutive di dischi. Le modifiche standard nella stessa finestra e i reset manuali sono controlli negativi; la correzione dell'ordine non deve lasciare VM permanentemente in pausa o cambiare vista troppo tardi."
+    },
+    {
+      "type": "callout",
+      "text": "Il reset VM era già stato richiesto; la correzione garantisce che nessun evento di pulizia UI sia autorizzato a riprendere l'esecuzione prima che tale richiesta entri in vigore."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

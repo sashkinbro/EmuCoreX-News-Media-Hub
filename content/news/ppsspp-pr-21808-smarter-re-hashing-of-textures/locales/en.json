@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP ties texture rehashing to guest GPU synchronization",
+  "summary": "Texture validity now follows points where PSP software can observe or rewrite GPU memory, replacing a frame-count heuristic with explicit synchronization domains.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21808: Texture cache: Smarter re-hashing of textures",
+  "searchKeywords": [
+    "PPSSPP",
+    "texture cache",
+    "rehashing",
+    "GE sync",
+    "GPU memory"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Texture cache: Smarter re-hashing of textures"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Frame age was only a proxy for memory visibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "A cached PSP texture may remain unchanged for hundreds of frames or be rewritten several times inside one frame. The previous texture backoff strategy used mini-hashes, frame counters, invalidation hints, and an exponential schedule to decide when to perform a full hash. That reduced work, but elapsed frames do not directly describe when the guest CPU and GPU have synchronized around memory, so the heuristic could do unnecessary checks or retain stale content."
+    },
+    {
+      "type": "heading",
+      "text": "Sync domains mark moments when assumptions may change"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21808 increments textureSyncTimeDomain at GE waits, stall-address changes, draw synchronization, framebuffer copies, and relevant block transfers. Each non-reliable texture entry records the last domain in which it was checked. Explicit HASH_RECHECK and CLUT_RECHECK flags still force work for known invalidation cases, while reliable font-like textures can skip the domain test. The decision is now linked to emulated visibility events rather than a timer."
+    },
+    {
+      "type": "heading",
+      "text": "The redesign also removes bookkeeping that could drift"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch removes the user-facing backoff toggle, per-entry mini-hash schedule, change-frequency flags, and mutable cache-size counters. Cache pressure is derived by summing current entries when decimation runs, trading occasional calculation for state that cannot become inconsistent after an unusual deletion path. Video textures and palette variants keep dedicated behavior because their mutation patterns differ from ordinary static images."
+    },
+    {
+      "type": "heading",
+      "text": "Correctness needs games that rewrite textures in unusual orders"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test video playback, render-to-texture effects, games that modify texture memory from the CPU, many CLUT variants, framebuffer copies, and long-lived static UI fonts. Compare hashes and screenshots before and after every sync-domain transition. Measure full-hash count, CPU time, cache size, and eviction behavior over long sessions. Savestate loads, memory invalidation, and backend switches must reset or advance domain state so an entry cannot inherit a false claim of freshness."
+    },
+    {
+      "type": "callout",
+      "text": "The useful question is not how many frames a texture survived, but whether guest-visible synchronization created a new chance for its memory to change."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

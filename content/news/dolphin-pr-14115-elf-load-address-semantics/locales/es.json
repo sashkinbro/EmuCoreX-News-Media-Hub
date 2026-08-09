@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin separa la dirección de carga de un segmento ELF de su dirección virtual",
+  "summary": "El cargador ahora prefiere p_paddr como la dirección de memoria de carga del segmento y recurre a p_vaddr solo cuando no se proporciona una dirección física.",
+  "heroAlt": "Evidencia de la fuente del pull request #14115 de Dolphin: Core/Boot: Arreglar la semántica de la dirección de carga de ELF",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: Arreglar la semántica de la dirección de carga de ELF"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF los encabezados de programa pueden describir dos direcciones diferentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un segmento cargable ELF incluye p_vaddr, la dirección utilizada por el programa durante la ejecución, y p_paddr, que comúnmente se trata en entornos embebidos como la dirección de memoria de carga. Muchos binarios los establecen iguales, lo que oculta a los cargadores que confunden los campos. Homebrew, componentes de arranque o imágenes de desarrollo pueden separarlos intencionadamente. Dolphin anteriormente copiaba los bytes del segmento a p_vaddr incondicionalmente, ignorando la ubicación física codificada por el archivo."
+    },
+    {
+      "type": "heading",
+      "text": "El cargador ahora da prioridad primero al campo físico distinto de cero"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14115 registra ambos valores e inicializa writeAddr a partir de p_paddr. Una dirección física distinta de cero se mapea en la región virtual PowerPC estableciendo el bit 0x80000000. Si p_paddr es cero, Dolphin usa p_vaddr como compatibilidad de reserva. La verificación exclusiva de MEM1 también cambia a la dirección de escritura realmente elegida, de modo que el filtrado evalúa dónde se escribirán los bytes en lugar de otro campo del encabezado."
+    },
+    {
+      "type": "heading",
+      "text": "Esta es una corrección semántica del cargador, no una reubicación arbitraria"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin no calcula una nueva ubicación ni reescribe referencias dentro del binario. Sigue la dirección de carga proporcionada por el encabezado del programa y mantiene la convención de mapeo virtual establecida. Esa distinción es importante para segmentos copiados a una ubicación antes de que el flujo de control o el código de inicio los utilicen en otra. También evita que un p_paddr cero, común en archivos que no distinguen direcciones, se mapee accidentalmente al inicio de la memoria."
+    },
+    {
+      "type": "heading",
+      "text": "Los accesorios deben cubrir rangos iguales, separados, cero e inválidos."
+    },
+    {
+      "type": "paragraph",
+      "text": "Cree un pequeño ELFs cuyo p_paddr sea igual a p_vaddr, sea cero, difiera pero permanezca en MEM1, aterrice cerca de un límite, o apunte fuera del RAM emulado y escribible. Llene cada segmento con un patrón único y verifique el destino exacto, el borrado de BSS, la ejecución de la entrada y el manejo de solapamientos. Ejercite el filtrado de only_in_mem1 contra writeAddr e inspeccione los registros para ambos campos. El software casero real debe probarse junto con archivos malformados para que la semántica mejorada no se convierta en escrituras de memoria invitado no controladas."
+    },
+    {
+      "type": "callout",
+      "text": "Cuando un ELF embebido suministra una dirección de memoria de carga, el cargador debe respetarla; la dirección virtual describe la ejecución, no siempre dónde pertenecen primero los bytes."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Lea la discusión de ingeniería Dolphin y los cambios en el código fuente"
+    }
+  ]
+}

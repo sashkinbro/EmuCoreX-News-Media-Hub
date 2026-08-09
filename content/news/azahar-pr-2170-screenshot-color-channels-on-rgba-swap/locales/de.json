@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar sorgt dafür, dass Vulkan Screenshots der echten Kanalreihenfolge der Swapchain folgen",
+  "summary": "QImage erwartet BGRA-Bytes, aber einige Vulkan Treiber liefern RGBA; das Übergeben des gewählten Oberflächenformats an beide Screenshot-Pfade ermöglicht ein kostengünstiges Rot-Blau-Swizzle nur dort, wo es erforderlich ist.",
+  "heroAlt": "Quellenbeweis aus dem Azahar Pull Request #2170: renderer_vulkan: Fix screenshot Farbkanäle bei RGBA Swapchain-Formaten",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan Screenshot",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Fix screenshot Farbkanäle bei RGBA Swapchain-Formaten"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der angezeigte Frame kann korrekt sein, während das gespeicherte Bild es nicht ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan wählt ein Swapchain-Format aus den vom Treiber unterstützten Optionen aus. Einige Plattformen bevorzugen BGRA, andere RGBA. Die Präsentations-Shader von Azahar behandelten das gewählte Format, aber der Screenshot-Speicher wurde an QImage::Format_RGB32 übergeben, das die BGRA-Byte-Reihenfolge erwartet. Bei einer RGBA-Swapchain wurden Rot und Blau daher nur in der erfassten Datei vertauscht, wodurch der Renderer außerhalb des Live-Fensters falsch erschien."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow macht das ausgehandelte Format für den Capture-Code sichtbar."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #2170 fügt GetSurfaceFormat zu den Vulkan Present-Window-Implementierungen hinzu und überprüft es in beiden Screenshot-Routen: Staging-Copy-Capture und Host-Speicher-Capture. Wenn das Format eR8G8B8A8Unorm ist, läuft Azahar pixelweise über die Breite mal Höhe und tauscht die Bytes null und zwei. Eine BGRA-Swapchain verwendet die vorhandenen Bytes unverändert und vermeidet so eine Konvertierung auf Plattformen, die bereits QImage entsprechen."
+    },
+    {
+      "type": "heading",
+      "text": "Byte-Swizzling ist günstiger als die Änderung des Frontend-Bildvertrags"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderung des QImage-Formats würde erfordern, dass Informationen über die Kanalreihenfolge weiter ins Frontend übergeben werden und dass jeder Verbraucher sie versteht. Das lokale Swizzling behält den etablierten RGB32-Vertrag bei und kostet einen Rot-Blau-Austausch pro Pixel zur Screenshot-Zeit, nicht pro angezeigtem Frame. Der Autor zwang RGBA auf einem BGRA-bevorzugenden Mac, um zu testen, während Linux Mesa als eine wahrscheinlich natürlich betroffene Plattform identifiziert wurde, die eine Bestätigung benötigt."
+    },
+    {
+      "type": "heading",
+      "text": "Sowohl die Erfassungswege als auch Alpha benötigen farbgenaue Fixtures."
+    },
+    {
+      "type": "paragraph",
+      "text": "Rendere ein Testmuster, das reines Rot, Blau, Grün, Schwarz, Weiß und nicht triviales Alpha enthält, und erfasse es dann über Staging- und Host-Speicherpfade auf nativen RGBA- und BGRA-Swapchains. Vergleiche die gespeicherten Bytes und die angezeigte Ausgabe. Wiederhole dies bei ungeraden Dimensionen, skalierten Layouts und nach der Neukreation der Swapchain. Ein betroffener Linux-Benutzer sollte die natürliche Formatroute bestätigen. Das Swizzling muss genau einmal erfolgen; eine doppelte Konvertierung kann dazu führen, dass ein Backend als behoben erscheint, während ein anderes zurückfällt."
+    },
+    {
+      "type": "callout",
+      "text": "Der Screenshot-Code konvertiert nun tatsächlich aus dem Format Vulkan, das ausgehandelt wurde, anstatt davon auszugehen, dass jeder Treiber die Pixel in der bevorzugten Reihenfolge von QImage darstellt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Lesen Sie die Azahar Ingenieurdiskussion und die Quellcodeänderungen"
+    }
+  ]
+}

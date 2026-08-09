@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2197-force-use-of-vulkan-if-opengl-renderer",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar dirige Android loin de ANGLE sans réécrire le choix du rendu de l'utilisateur",
+  "summary": "Un résolveur graphique en temps d'exécution API détecte la couche de compatibilité OpenGL-sur-Vulkan de Android, sélectionne Vulkan pour une exécution sécurisée et explique pourquoi le choix UI est désactivé.",
+  "heroAlt": "Preuve source de la demande de tirage #2197 de Azahar : android : Forcer l'utilisation de Vulkan si le rendu OpenGL est ANGLE",
+  "searchKeywords": [
+    "Azahar",
+    "Android 17",
+    "ANGLE",
+    "Vulkan",
+    "API graphique"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2197": "android : Forcer l'utilisation de Vulkan si le rendu OpenGL est ANGLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Android peut étiqueter un niveau de compatibilité comme OpenGL"
+    },
+    {
+      "type": "paragraph",
+      "text": "ANGLE traduit les appels OpenGL en Vulkan et devient un chemin par défaut sur les appareils Android plus récents. Le moteur OpenGL de Azahar attend un comportement du pilote natif et rencontrait des problèmes lorsqu'il était placé au-dessus de cette traduction. Lire directement graphics_api pourrait donc renvoyer OpenGL bien que le système exécuterait une pile de compatibilité basée sur Vulkan qui ne satisfaisait pas le chemin OpenGL testé de Azahar."
+    },
+    {
+      "type": "heading",
+      "text": "GetWorkingGraphicsAPI sépare l'intention stockée de l'exécution réelle du backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "La requête de tirage #2197 introduit Settings::GetWorkingGraphicsAPI(). Les appelants l'utilisent au lieu de lire le paramètre brut. Lorsque l'environnement Android rapporte la configuration problématique d'ANGLE, la fonction renvoie Vulkan. La préférence stockée n'est pas modifiée, donc Azahar ne change pas définitivement la configuration de l'utilisateur simplement parce qu'un appareil ou une session OS ne peut pas l'honorer en toute sécurité."
+    },
+    {
+      "type": "heading",
+      "text": "Les paramètres UI peuvent expliquer un choix désactivé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les éléments de configuration Android activent disabledMessage, utilisés ici pour montrer pourquoi la sélection du rendu n'est pas disponible. C'est mieux qu'un sélecteur qui semble interactif tandis que le runtime l'ignore silencieusement, et mieux que de supprimer complètement l'option. La propriété est suffisamment générale pour d'autres paramètres désactivés, mais le comportement de cet article est le message spécifique à ANGLE et la correction à l'exécution."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests doivent distinguer OpenGL natif, ANGLE et Vulkan explicite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sur les appareils avant et après Android 17, identifier l'implémentation GLES réelle et comparer les préférences brutes avec GetWorkingGraphicsAPI. OpenGL natif doit rester sélectionnable, ANGLE doit exécuter Vulkan et afficher la raison, et une préférence Vulkan explicite doit rester inchangée. Redémarrer, migrer les paramètres, faire pivoter ou recréer la surface, et confirmer que chaque appelant graphique C++ utilise le résolveur. La solution de repli ne doit pas créer deux rendus ou modifier la valeur enregistrée."
+    },
+    {
+      "type": "callout",
+      "text": "Azahar préserve ce que l'utilisateur a sélectionné tout en décidant séparément ce que cette pile graphique Android peut exécuter en toute sécurité."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2197",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications de source"
+    }
+  ]
+}

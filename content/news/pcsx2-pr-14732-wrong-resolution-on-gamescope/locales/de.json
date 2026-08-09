@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14732-wrong-resolution-on-gamescope",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 behebt das zweistufige Start-Resize von Gamescope, ohne auf 640x480 zurückzufallen",
+  "summary": "Ein verzögertes Resize-Ereignis könnte eine neuere 1280x800-Fensterabfrage überdauern; korrigierte Statusreihenfolge hält den endgültigen Steam-Deck-Viewport bei den von Gamescope tatsächlich gewählten Abmessungen.",
+  "heroAlt": "Quellenbeweis aus dem PCSX2 Pull Request #14732: Qt: Falsche Auflösung in Gamescope beheben",
+  "searchKeywords": [
+    "PCSX2",
+    "Gamescope",
+    "Steam Deck",
+    "Resize-Debounce",
+    "Big Picture"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14732": "Qt: Falsche Auflösung in Gamescope beheben"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gamescope meldet ein temporäres Fenster vor der tatsächlichen Bildschirmgröße"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der SteamOS-Spielemodus kann Qt dazu bringen, PCSX2 mit 640x480 zu öffnen und es sofort auf den 1280x800-Bildschirm des Steam Decks zu skalieren. Beide Ereignisse sind zu unterschiedlichen Zeitpunkten legitim. Der Fehler trat auf, weil die erste Größenänderung einen Entprell-Timer startete, während eine spätere DisplaySurface-Abfrage die gespeicherten Abmessungen auf die endgültige Größe aktualisierte. Der verzögerte Rückruf wurde dann mit der veralteten Absicht 640x480 ausgelöst."
+    },
+    {
+      "type": "heading",
+      "text": "Der alte Timer konnte neuere Fensterinformationen überschreiben"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Entprellen verhindert normalerweise teure Viewport-Arbeiten während eines Größenänderungssturms. Hier wurde es zu einer Reihenfolge-Gefahr: m_last_window-Abmessungen beschrieben bereits 1280x800, aber der ausstehende Rückruf wandte immer noch das frühere Ziel an. Big Picture blieb auf Betriebssystemebene im Vollbildmodus, während der Renderer einen kleinen Viewport verwendete, was das charakteristische 640x480-Bild in der unteren linken Ecke erzeugte."
+    },
+    {
+      "type": "heading",
+      "text": "Die Lösung sorgt dafür, dass der Größenänderungszustand während der Startsequenz monoton bleibt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14732 passt die Qt-Anzeigengrößenänderungslogik an, sodass ein älteres verzögertes Ereignis nicht gewinnt, nachdem getWindowInfo die tatsächliche Oberfläche beobachtet hat. Es zielt auf das Rennen zwischen zwei Größenquellen ab, anstatt eine feste Steam Deck-Auflösung speziell zu behandeln. Das ist wichtig für andere Gamescope-Geräte, externe Displays und zukünftige Panels, deren endgültige Abmessungen von 1280x800 abweichen."
+    },
+    {
+      "type": "heading",
+      "text": "Wiederholte Kaltstarts sind der aussagekräftige Regressionstest"
+    },
+    {
+      "type": "paragraph",
+      "text": "Auf Steam Deck oder in einer anderen Gamescope-Sitzung wiederholt PCSX2 mit -bigpicture -fullscreen und OpenGL starten und nach jedem Start den Viewport prüfen. Füge Übergänge von Fenster- zu Vollbildmodus, Änderungen externer Monitore, Suspend/Resume und mehrere Renderer-Backends hinzu. Protokolliere jedes Größenänderungsereignis, das Debounce-Ziel, das Ergebnis von getWindowInfo und den angewendeten Viewport. Der endgültige Callback muss die neuesten Dimensionen verwenden, während eine normale einzelne Größenänderung weiterhin auf das Debounce wartet und korrekt angewendet wird."
+    },
+    {
+      "type": "callout",
+      "text": "Der Fehler war keine falsche Auflösungskonstante; es war ein alter Timer, der nach einer bereits als maßgeblich bestätigten neuen Oberflächengröße gewonnen hat."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14732",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und Quelländerungen"
+    }
+  ]
+}

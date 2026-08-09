@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 refuse le mélange par accumulation sur des cibles 16 bits avec une précision maximale",
+  "summary": "Un garde de précision désactive une optimisation dont l'ordre d'arrondi peut dépasser l'échelle de couleurs 16 bits représentable, alignant la sortie matérielle haute précision avec la référence logicielle.",
+  "heroAlt": "Preuve source du pull request PCSX2 #13918 : GS/HW : Exiger un RT 32 bits pour le mélange par accumulation sur un mélange maximal.",
+  "searchKeywords": [
+    "PCSX2",
+    "mélange par accumulation",
+    "cible de rendu 16 bits",
+    "mélange maximal",
+    "dithering"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW : Exiger un RT 32 bits pour le mélange par accumulation sur un mélange maximal."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'accumulation modifie la valeur qui reçoit l'arrondi 16 bits"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 peut optimiser certains mélanges en accumulant via une cible de rendu hôte. Sur une cible 32 bits, la précision supplémentaire est généralement compatible avec le résultat attendu. Une cible GS 16 bits quantifie la couleur différemment : appliquer l'arrondi après un intermédiaire incorrect peut produire du RGB 255 alors que l'échelle prévue par le format plafonne autour de 240. L'image peut sembler proche tout en ayant un motif de tramage et des nuances exactes divergentes."
+    },
+    {
+      "type": "heading",
+      "text": "La précision maximale nécessite maintenant une cible 32 bits pour le chemin rapide"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #13918 ajoute une condition dans GSRendererHW. Lorsque la précision du mélange est réglée au maximum, le mélange par accumulation reste disponible uniquement si la cible de rendu est 32 bits. Une cible 16 bits revient à la voie non-accumulée qui respecte sa quantification. Les modes de précision inférieure peuvent continuer à faire leurs compromis de performance documentés ; le changement aligne le réglage le plus strict sur sa promesse de précision."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity met en évidence la différence dans le détail du tramage"
+    },
+    {
+      "type": "paragraph",
+      "text": "La comparaison Vulkan fournie utilise une trame 16 bits de Sonic Riders: Zero Gravity et inclut le rendu logiciel comme référence. À taille normale, le changement peut être difficile à voir, mais en zoomant sur le motif de tramage, on remarque l’échelle de couleurs différente. C’est pourquoi les images de référence au niveau des pixels sont importantes : une capture d’écran compatible de manière générale pourrait manquer l’erreur numérique que le réglage maximum est spécifiquement conçu pour éviter."
+    },
+    {
+      "type": "heading",
+      "text": "Les vérifications de régression doivent couvrir à la fois les profondeurs cibles et les modes de fusion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rejouer la sauvegarde source sur Vulkan et d’autres backends matériels, comparer les pixels sans perte avec la sortie logicielle, et vérifier que le chemin d’accumulation est rejeté uniquement pour les cibles 16 bits sous fusion maximale. Une cible 32 bits devrait conserver l’optimisation. Enregistrer le routage de dessin et le temps GPU, car désactiver une optimisation peut nuire aux performances même lorsque la correction de sortie est transparente. Tester plusieurs motifs de tramage et équations d’accumulation plutôt qu’une seule texture de référence."
+    },
+    {
+      "type": "callout",
+      "text": "La précision maximale du mélange considère désormais la précision cible comme faisant partie de l'algorithme : une surface en 16 bits ne peut pas utiliser en toute sécurité le raccourci d'accumulation en 32 bits."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

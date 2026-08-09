@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K verbindet reale Vita-Kernelmodule mit seinem emulierten Modulgraphen",
+  "summary": "Das Booten und Laden von Sysmodule-SKPRX wird nun Teil des breiteren SELF, Treiber-Exports, TLS, Lebenszyklus- und Patch-Managements, das für einen Low-Level-Systemmodulpfad erforderlich ist.",
+  "heroAlt": "Quellenbeleg aus dem Vita3K Pull Request #3913: Module: lle-Kernelmodul \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "LLE Kernel",
+    "SKPRX",
+    "sysmodule",
+    "Modullader"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "Module: lle-Kernelmodul \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Low-Level-Systemmodule benötigen mehr als einen SELF Parser"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Laden einer echten Vita-Kernel-Binärdatei bedeutet, deren Importe und Exporte aufzulösen, Segment-Speicher zuzuweisen, Modulinformationen zu erstellen, Start- und Stoppverhalten zu berücksichtigen, Treiberdienste verfügbar zu machen und jedes Symbol beim Entladen zu bereinigen. Die Binärdatei erwartet außerdem Kernel-TLS-Felder und andere Systemmodule. Ein Loader, der Bytes erfolgreich kopiert, aber diese Beziehungen unvollständig lässt, wird später mit einem ungelösten NID oder veralteten Export fehlschlagen."
+    },
+    {
+      "type": "heading",
+      "text": "Das Startdiagramm umfasst jetzt bootimage und sysmodule."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull-Request #3913 fügt os0:kd/bootimage.skprx und os0:kd/sysmodule.skprx zur Preload-Liste hinzu. Es erweitert Modul-Manager, Thread-Manager, Prozess-Manager, Sysmem, Debug, Prozess-Ereignis, QAF und sysmodule-orientierte Funktionen, die darum herum benötigt werden. Kernel-TLS-Namen erhalten Stack-Check- und Fiber-Context-Rollen. Import- und Export-Entladepfade werden vereinfacht, um Einträge nach NID und Modulbesitz zu entfernen, ohne Relokationsdaten mitzutragen, die sie nicht mehr verwenden."
+    },
+    {
+      "type": "heading",
+      "text": "Patching wird in die Schicht verschoben, die die finalen Segmente kennt."
+    },
+    {
+      "type": "paragraph",
+      "text": "Spiel-Patches werden aus dem generischen Kernel-SELF-Loader entnommen. Nachdem die Hauptausführungsdatei ein geladenes Modul geworden ist, ruft der Schnittstellen-Code deren SceKernelModuleInfo ab und kopiert nur Patches, deren Segment existiert und deren Offset plus Byte-Anzahl in memsz passt. Dies hält einen benutzerseitigen Titel-Patch getrennt vom Laden der System-Binaries und sorgt dafür, dass die Grenzprüfung die endgültig gemappten Segmente statt der Parser-Annahmen verwendet."
+    },
+    {
+      "type": "heading",
+      "text": "Ein gemischtes LLE- und HLE-Graph erfordert nachverfolgbare Fehlertests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Booten mit vollständigen Firmware-Dateien, fehlendem Bootimage, fehlendem Sysmodul, inkompatiblen Binaries und gewöhnlichen HLE-Only-Konfigurationen. Verfolge jeden aufgelösten Import, Module-Start-Ergebnis, TLS-Wert, Export-Entfernung und Shutdown in umgekehrter Reihenfolge. Lade Titel wiederholt neu, um veraltete NIDs und Modul-IDs offenzulegen. Führe Patches am Segmentanfang, am genauen Ende und ein Byte darüber hinaus ein. Kernel-Binaries dürfen niemals Host-Zugriff gewähren; alle Zeiger bleiben im Gastbereich, und nicht unterstützte Treiberfunktionen sollten eine präzise Grenze melden, anstatt erfundenen Erfolg zurückzugeben."
+    },
+    {
+      "type": "callout",
+      "text": "LLE führt nicht einfach mehr Firmware-Code aus; es baut einen reversiblen Modulgraphen auf, in dem echte Gastsystem-Binärdateien und Emulator-Dienste an expliziten Importen zusammentreffen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Lesen Sie die Vita3K-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

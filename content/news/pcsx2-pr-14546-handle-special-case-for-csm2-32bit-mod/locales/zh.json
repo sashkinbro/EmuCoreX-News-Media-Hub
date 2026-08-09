@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 将 CSM2 调色板加载与 CSM1 的交错顺序隔离",
+  "summary": "《火焰之息》中的存储模式切换揭示了为什么顺序的 CSM2 数据不能安全地重用在 CSM1 交错规则下填充的临时 CLUT 缓冲区。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14546 的视觉证据：GS/CLUT：处理 CSM2 32 位模式切换的特例",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "调色板",
+    "《火焰之息》"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT：处理 CSM2 32 位模式切换的特例"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一个调色板在模式切换中保留，但其排序已不同"
+    },
+    {
+      "type": "paragraph",
+      "text": "《火焰之纹章：龙之季》在 CLUT 存储模式 1 中重新加载其颜色查找表，然后切换到存储模式 2。CSM1 采用交错排列，而 CSM2 按顺序寻址调色板条目。因此，重用为第一模式准备的临时数据会使第二模式获得位置错误的有效颜色。菜单文本随后会在预期的主要颜色出现的地方显示黑洞。"
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 现在从 GS 本地内存读取权威调色板"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14546 更改了 GSClut，使存储模式 2 总是从本地内存加载 CLUT，而不是从临时的 CSM1 定向缓冲区。该方法也解释了 CSM2 的较慢行为：它在纹理缓存加载时将 GS 内存视为源。通过根据活动存储模式选择源，PCSX2 避免了在游戏本身从未请求的两种布局之间发明转换。"
+    },
+    {
+      "type": "heading",
+      "text": "该来源提出了一种硬件理论，而不是捏造的确定结果"
+    },
+    {
+      "type": "paragraph",
+      "text": "该实现基于游戏的行为、一次干净的 GS 转储运行，以及没有其他重用规则能生成连贯的 CSM2 调色板这一事实。作者明确指出计划进行硬件测试以确认模型。对于工程类文章来说，这一边界很重要：软件修复有一个强有力的重现方法，但原 GS 精确内部行为为何如此仍然是假设，直到控制台跟踪证实为止。"
+    },
+    {
+      "type": "heading",
+      "text": "测试应将菜单重现方法与控制台证据结合起来"
+    },
+    {
+      "type": "paragraph",
+      "text": "即时回归检查为《烈火之纹章：龙之季度》受影响菜单，比对 CSM1 转至 CSM2 前后的调色板条目。一条有用的跟踪记录应包括存储模式、CLUT 源地址、条目顺序以及受损文本使用的颜色。其他在两种存储模式之间切换的游戏应确认强制本地内存加载不会干扰以前正常工作的调色板。硬件结果应与模拟器推论分开记录。"
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 修复了观察到的调色板损坏，同时保持了硬件解释的真实性：CSM2 的直接本地内存行为有证据支持，但仍在等待更强有力的主机确认。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

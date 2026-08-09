@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "validate-cue-track-references-after-renaming-a-ps2-cd-dump",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "在重命名 PS2 CD 工作副本后修复 CUE 轨道引用",
+  "summary": "保留主 cue/bin 集，审核每个 FILE 条目和轨道顺序，仅更新一次性工作 cue，验证 BIN 哈希未变化，并在重新扫描 EmuCoreX 之前测试数据和音频。",
+  "heroAlt": "Brasero 光盘项目显示用于 CD 风格多轨媒体的映像写入控制",
+  "searchKeywords": [
+    "PS2 cue bin 重命名",
+    "缺少 CD 音频 EmuCoreX",
+    "CUE 文件引用",
+    "PS2 CD 转储轨道",
+    "修复 cue 表"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "preservation": "保存",
+    "cue-bin": "CUE/二进制文件"
+  },
+  "sourceLabels": {
+    "pcsx2-discs": "官方 CD 转储路径",
+    "redumper": "多轨转储参考"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CUE 表是地图，而不是音频数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 CD 转储可以包含一个文本 CUE 表以及一个或多个二进制轨道。CUE 记录文件名、轨道类型和索引位置。重命名 BIN 文件而不更改相应的 FILE 条目会破坏地图；尝试通过修改轨道索引来猜测修复可能会损坏时间。只在复制的集合上操作，并保存每一个主文件哈希。"
+    },
+    {
+      "type": "callout",
+      "text": "仅更改文件名和匹配的 FILE 引用。除非经过验证的转储日志证明原版本身有误，否则不要更改 TRACK 模式、INDEX 值、前间隙或曲目顺序。"
+    },
+    {
+      "type": "heading",
+      "text": "冻结保存母盘"
+    },
+    {
+      "type": "list",
+      "items": [
+        "保持未修改的 cue/bin 母盘，每个组件都有记录的 SHA-256。",
+        "在空文件夹中的完整复制工作集。",
+        "保留编码和行结尾的纯文本编辑器。",
+        "编辑前写入的预期可移植文件名。",
+        "一个可重复的游戏点和一个带 CD 音频的场景用于验证。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "一次对一个 FILE 行对文件名进行对账"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. 以纯文本方式打开工作 cue，并按顺序列出每个 FILE 值。",
+        "2. 将每个值与工作文件夹中的文件逐字符比较，包括扩展名和大小写。",
+        "3. 重命名一个 BIN 曲目，然后仅更新其对应的带引号 FILE 值。",
+        "4. 对剩余曲目重复此操作，同时完全保留 TRACK 和 INDEX 行。",
+        "5. 保存工作 cue 并重新打开，以确保编辑器未添加 .txt 扩展名。",
+        "6. 计算所有 BIN 文件的 SHA-256，并确认它们仍然与保存的母带匹配。",
+        "7. 通过工作 cue 进行冷启动，进入游戏玩法，并播放已知的音乐片段。",
+        "8. 仅在数据加载和音频均通过后刷新 EmuCoreX。"
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "如果 cue 使用一个包含多个 TRACK 部分的 BIN，则只能存在一个 FILE 值。如果使用多个 BIN 文件，则必须存在每个引用的文件名。绝对计算机路径会使该集合不可移植；请保持相对文件名，并将 cue 存放在曲目旁边。"
+    },
+    {
+      "type": "heading",
+      "text": "验证结构、字节及可听结果"
+    },
+    {
+      "type": "paragraph",
+      "text": "成功的编辑会更改工作文件名和 cue 文本，同时保持所有二进制轨道数据不变。"
+    },
+    {
+      "type": "list",
+      "items": [
+        "每个 FILE 值都在相同的工作文件夹内解析。",
+        "没有未引用的 BIN 轨道被意外遗留。",
+        "所有二进制 SHA-256 值都等于主值。",
+        "游戏通过 cue 冷启动。",
+        "已知的 CD 音频片段按照预期播放音乐和时间。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Cue 损坏模式"
+    },
+    {
+      "type": "list",
+      "items": [
+        "模拟器无法找到轨道：文件名、扩展名、引号或大小写不同。",
+        "游戏可以启动，但没有音乐：音轨或索引未按母版表示。",
+        "BIN 哈希已更改：编辑器或转换修改了二进制数据；丢弃工作集。",
+        "Cue 文件以 cue.txt 打开：操作系统隐藏了添加的扩展名。"
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "从冻结母版中替换工作集"
+    },
+    {
+      "type": "paragraph",
+      "text": "仅在确认母版文件夹后删除一次性工作副本，将完整的 cue/bin 集恢复到新的工作区，并使用分类账重复重命名。不要尝试逐行反转猜测的 INDEX 编辑。"
+    },
+    {
+      "type": "heading",
+      "text": "存储系统之间的大小写行为会有所变化"
+    },
+    {
+      "type": "paragraph",
+      "text": "Windows 通常会解决 Linux、Android 提供商或网络存储可能拒绝的大小写差异。精确匹配提示引用，并在集合到达其实际 Android 目的地后进行测试，而不仅仅是在准备计算机上测试。"
+    },
+    {
+      "type": "link",
+      "text": "使用官方 PS2 光盘转储指南",
+      "url": "https://pcsx2.net/docs/setup/discs/"
+    }
+  ]
+}

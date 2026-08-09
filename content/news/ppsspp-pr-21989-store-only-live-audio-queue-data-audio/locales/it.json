@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP riduce savestate memorizzando solo i campioni audio attivi",
+  "summary": "Un formato compatto della coda serializza i campioni che possono ancora essere riprodotti, invece di copiare tutti e nove i buffer audio a capacità fissa in ogni stato.",
+  "heroAlt": "Prova sorgente dal pull request PPSSPP #21989: Savestate: memorizza solo i dati della coda audio attiva (sezione AudioChannel v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "coda audio",
+    "dimensione savestate",
+    "riavvolgere",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: memorizza solo i dati della coda audio attiva (sezione AudioChannel v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La capacità fissa era stata confusa per uno stato significativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ogni canale sceAudio utilizza uno FixedSizeQueue con spazio per 32768 volte otto valori a 16 bit, un archivio di supporto da 512 KB. Ci sono nove code di canali. Il serializer precedente copiava ogni byte di quegli array anche se solo una piccola porzione logica tra head e count poteva mai essere rimossa. Di conseguenza, circa 4,6 MB di dati per lo più inattivi entravano nei salvataggi manuali, negli slot di salvataggio, nell'input di compressione e in ogni snapshot periodico di rewind in memoria."
+    },
+    {
+      "type": "heading",
+      "text": "La forma compatta preserva l'ordine della coda attraverso il wraparound"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21989 introduce DoStateCompact come formato opzionale. Quando la regione attiva è contigua, scrive un array grezzo. Quando head più count supera la fine dello storage, scrive la coda e l'inizio come due pezzi in ordine di rimozione. POD DoArray scrive byte grezzi senza header per chiamata, quindi quei pezzi formano lo stesso flusso che una lettura lineare singola consuma. Il caricamento posiziona la sequenza all'indice zero e deriva la nuova coda da count."
+    },
+    {
+      "type": "heading",
+      "text": "Il versioning protegge stati più vecchi e altri chiamanti"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sezione AudioChannel avanza a un nuovo livello di formato e seleziona la sola serializzazione compatta lì. I livelli di sezione più vecchi continuano a utilizzare il metodo originale di archiviazione completa, quindi i salvataggi esistenti rimangono leggibili. La vecchia funzione di FixedSizeQueue non viene modificata perché il suo layout di byte non è intercambiabile e un altro chiamante potrebbe farvi affidamento. Il loader rifiuta anche un conteggio al di fuori dello zero fino alla capacità con SetError, impedendo a un file danneggiato di desincronizzare ogni campo successivo."
+    },
+    {
+      "type": "heading",
+      "text": "Code, vuote e piene, sono i test essenziali"
+    },
+    {
+      "type": "paragraph",
+      "text": "Crea code deterministiche che siano vuote, parzialmente piene, esattamente piene e avvolte a diversi offset della testa. Salvale e caricale, quindi confronta ogni campione estratto con l'ordine originale. Esegui tutti e nove i canali durante il gameplay, confini di underflow e overflow audio, rimescolamento con riavvolgimento, rapporti di compressione e compatibilità con lo stato precedente. Corrompi il conteggio memorizzato per confermare un fallimento di caricamento pulito. Misura separatamente il tempo di salvataggio e la pressione sulla memoria; ci si aspetta un payload più piccolo, ma la correttezza rimane la priorità principale."
+    },
+    {
+      "type": "callout",
+      "text": "La capacità è un dettaglio di implementazione; un savestate ha bisogno della sequenza audio dal vivo e di abbastanza metadata per ricostruire una coda equivalente."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Leggi la discussione ingegneristica PPSSPP e le modifiche al codice sorgente"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-vertical-lines-after-upscaling",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnose vertical seams that appear only after PS2 upscaling",
+  "summary": "Map the first resolution multiplier that exposes the seams, distinguish sprite alignment from texture-atlas bleeding, and keep only a documented per-game correction that leaves HUD and geometry intact.",
+  "heroAlt": "Tekken 5 PCSX2 capture with narrow vertical seams caused by sprite misalignment while upscaling",
+  "searchKeywords": [
+    "PS2 vertical lines upscaling",
+    "EmuCoreX black seams",
+    "align sprite",
+    "texture atlas bleeding",
+    "internal resolution artifact"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "accuracy": "Accuracy"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 explanation of invalid samples and black vertical lines above native resolution",
+    "pcsx2-gsdx-progress": "PCSX2 examples and scope of the Align Sprite correction"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identify whether each line follows a sprite boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "Upscaling can reveal gaps that do not exist in the PS2's native pixel grid. In some games, adjacent sprites are placed so their edges meet exactly at native resolution; after scaling, rounding can leave a one-pixel column uncovered. A different failure occurs when a sample crosses from one cell of a texture atlas into the next. Begin with a scene containing both the lines and stable reference objects: a 2D HUD, a flat background, and ordinary 3D geometry. Record the game serial, renderer, driver, aspect ratio, internal-resolution multiplier, texture filtering, and every manual hardware fix. The position of the defect matters more than its color: a line that tracks tiled panels is different from a line fixed to the physical display."
+    },
+    {
+      "type": "callout",
+      "text": "Do not mask seams with stretch, crop, overscan, or a display zoom. Those changes can hide the outermost columns while leaving the incorrect sampling active throughout the image."
+    },
+    {
+      "type": "heading",
+      "text": "Build a resolution ladder from one frozen composition"
+    },
+    {
+      "type": "list",
+      "items": [
+        "An in-game save before a static menu, arena, sky, or background where at least three seams are easy to point out.",
+        "Direct screenshots at native resolution and the currently preferred upscale multiplier; camera photographs are not suitable for single-pixel evidence.",
+        "Texture replacement, sharpening, post-processing, widescreen patches, and external display scaling disabled for the first pass.",
+        "The system GPU driver and one supported hardware API selected, with the per-game graphics profile backed up.",
+        "A simple defect map noting whether each line crosses the HUD, follows a repeated sprite edge, or moves with the camera."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Locate the scaling threshold before testing alignment"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot the title at native internal resolution and capture the chosen composition without loading an emulator save state.",
+        "2. Increase internal resolution by one multiplier, replay the identical scene, and mark the first step at which every mapped seam becomes visible.",
+        "3. Return to that first failing multiplier and switch only the hardware API; if the line positions stay identical, treat resolution math as stronger evidence than an API-specific driver fault.",
+        "4. Inspect whether seams sit between rectangular sprites or tiled backgrounds. For that pattern, test only the documented sprite-alignment correction exposed by the emulator for the title.",
+        "5. If the lines instead contain colors from a neighboring atlas cell, restore alignment and test the documented rounding or texture-offset correction independently.",
+        "6. After any apparent fix, inspect small text, health bars, map tiles, particle billboards, and full-screen fades for shifted or clipped elements.",
+        "7. Raise resolution one further step and revisit a second scene; a correction that works only at one multiplier is not a stable general profile.",
+        "8. Store the smallest successful change per game, with the serial and tested multiplier, rather than applying it to the entire library."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "The PS2 Graphics Synthesizer works with an address and sampling model designed around the console's output grid. Host-side upscaling increases the rasterized pixel count without changing every coordinate supplied by the game. That can expose holes between adjacent primitives or request a sample just outside the intended texel region. Sprite alignment and rounding corrections address different arithmetic, so enabling both at once destroys the diagnostic value of the test. A clean native frame plus a repeatable failure threshold demonstrates that the dump and scene can render correctly and that the defect is introduced by the upscale path."
+    },
+    {
+      "type": "heading",
+      "text": "Seam-removal acceptance evidence"
+    },
+    {
+      "type": "paragraph",
+      "text": "Keep the correction only if it closes the mapped gaps without displacing other screen layers."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Every previously marked vertical column is continuous during both stillness and horizontal camera movement.",
+        "HUD glyphs, portrait frames, and menu separators remain crisp and are not pulled one pixel sideways.",
+        "Background tiles meet cleanly at the first failing multiplier and at the next multiplier above it.",
+        "The same scene remains correct after a full application restart rather than only after an in-session toggle.",
+        "A second level with different sprite dimensions passes, and frame pacing remains within the pre-fix measurement."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Patterns that reject an alignment diagnosis"
+    },
+    {
+      "type": "list",
+      "items": [
+        "The column remains in the same physical screen position over menus and Android UI: inspect the display panel, cable, or capture path.",
+        "Lines exist at native resolution and in software rendering: verify the image and compare a reliable original-output reference.",
+        "Only replaced textures show colored borders: disable the pack and audit its atlas padding instead of changing GS alignment.",
+        "The correction removes gaps but breaks fonts or particles: revert it and test the other sampling branch with a new baseline."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Return to the last clean scaling rung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disable the tested alignment or rounding value, restore default texture offsets and filtering, close the game, and capture the failing multiplier once more. If no narrow correction passes all scenes, lower internal resolution to the highest rung that remained clean and preserve the defect map for a compatibility report."
+    },
+    {
+      "type": "heading",
+      "text": "A title-specific seam fix is not an image-quality preset"
+    },
+    {
+      "type": "paragraph",
+      "text": "The historic Align Sprite examples apply to recognizable engine behavior, not to every vertical line in every game. Emulator builds may already apply database fixes for known serials. Confirm the defect with defaults before adding a manual override, and remove that override when a later build corrects the path automatically."
+    },
+    {
+      "type": "link",
+      "text": "Read the PCSX2 technical explanation of upscale sampling",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP, WebSocket hata ayıklama işini CPU iş parçacığına taşıyor",
+  "summary": "Eşzamanlı bir görev köprüsü, dağıtılmış hata ayıklayıcı kilitlemenin yerine geçer ve parçalayıcı, adım boyutunu belirsiz hale getiren birleştirilmiş makro işlemleri bırakır.",
+  "heroAlt": "PPSSPP çekme isteğinden #22051 kaynak kanıtı: Websocket hata ayıklama arayüzünü iş parçacığı güvenli olacak şekilde yeniden düzenle, disasm'deki \"makro işlemleri\" kaldır.",
+  "searchKeywords": [
+    "PPSSPP",
+    "WebSocket hata ayıklayıcı",
+    "CPU iş parçacığı",
+    "kesme noktaları",
+    "ayrıştırma"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Araçlar",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Websocket hata ayıklama arayüzünü iş parçacığı güvenli olacak şekilde yeniden düzenle, disasm'deki \"makro işlemleri\" kaldır"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uzaktan hata ayıklayıcı istekleri sahiplik sınırını geçiyordu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir WebSocket hata ayıklayıcı, bir ağ iş parçacığında çalışır, ancak kesme noktaları, adım adım ilerleme, kayıt erişimi ve emüle edilmiş belleğin çoğu CPU yürütme iş parçacığına aittir. Alakasız kilitlerle bireysel işlevleri korumak, doğruluğu kilit sırasına ve her gelecekteki işleyicinin aynı kuralları hatırlamasına bağımlı hale getirir. Çekirdek duraklatıldığında özellikle hassastır, çünkü bir istek, sıradan çerçeve ilerlemesinin durduğu anda tam olarak CPU iş parçacığı durumuna ihtiyaç duyabilir."
+    },
+    {
+      "type": "heading",
+      "text": "Bir köprü, çalıştırma döngüsünde CPU'e ait işlemleri serialize eder"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #22051 Core_RunOnCPUThread ekler. Bir çağırıcı, bir işlevi paylaşılan bir görevde paketler, bir sıra mutex'i altında iter ve bir koşul değişkeni üzerinde bekler. Core_RunLoopUntil döngüsünün başında sırayı boşaltır, CPU iş parçacığında işlevleri çalıştırır, mutex altında tamamlandığını işaretler ve bekleyenleri uyandırır. Zaten CPU iş parçacığında olan çağrılar hemen yürütülür, kendi kendine kilitlenmeyi önler. Döngü, adım adım ilerlerken veya duraklatıldığında sürekli olarak ve çalışırken her host çerçevesinde en az bir kez boşaltılır."
+    },
+    {
+      "type": "heading",
+      "text": "Parçalama artık adım boyutunu bir birim olarak tutar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aynı çalışma, lui ve ori gibi komut desenlerini tek bir sunum satırında birleştiren dağıtıcı makro işlemlerini kaldırır. Okuması uygun olsa da, birleştirilmiş işlemler, adım boyutunun bayt, misafir komutları veya görüntüleme satırları anlamına gelip gelmediğini belirsizleştirir. Yeni sözleşme, stepSize değerini dört baytlık MIPS komutlarının sayısı olarak ele alır ve kesme noktası adresi hesaplamaları buna göre çarpılır. Görünümler, temel yürütme birimini değiştirmeden daha sonra görsel ipuçları ekleyebilir."
+    },
+    {
+      "type": "heading",
+      "text": "Eşzamanlılık testleri duraklatılmış ve yeniden girilebilir durumları gerektirir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oyun çalışırken, duraklatıldığında ve durumlar arasında geçiş yaparken eşzamanlı WebSocket okuma, yazma, kesme noktası değişiklikleri, bellek taramaları ve tek adım yürütme işlemleri yapın. Görevler beklerken istemcilerin bağlantısını kesin, boş olmayan bir kuyruk ile çekirdeği durdurun ve köprüyü CPU iş parçacığından çağırın. ThreadSanitizer hiçbir hata yarış durumu bildirmemelidir. Her isteğin tamamlanmasını veya kontrollü bir kapatma hatası almasını doğrulayın ve eski makro desenlerinin etrafındaki ayrıştırma adreslerini karşılaştırın, böylece adım atma işlemi hiçbir şekilde misafir talimatı atlamaz veya tekrarlamaz."
+    },
+    {
+      "type": "callout",
+      "text": "Hata ayıklayıcı artık CPU sahipliğini taklit etmek için birçok kilit istemiyor; işlemi zaten durumu kontrol eden iş parçacığına gönderiyor."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "PPSSPP mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

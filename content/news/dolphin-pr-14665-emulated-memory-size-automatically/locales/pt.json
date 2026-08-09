@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin deriva o tamanho da memória do GameCube do disco que a solicita",
+  "summary": "O campo simulated-memory do bi2.bin agora seleciona MEM1 dentro dos limites de hardware, enquanto sobrescritas manuais permanecem disponíveis para experimentos deliberados.",
+  "heroAlt": "Evidência de origem do pull request #14665 do Dolphin: Core: Ajustar automaticamente o tamanho da memória emulada.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "Kit de desenvolvimento do GameCube",
+    "tamanho da memória"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Core: Ajustar automaticamente o tamanho da memória emulada."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O cabeçalho do disco já continha um contrato de desenvolvimento de memória"
+    },
+    {
+      "type": "paragraph",
+      "text": "O arquivo bi2.bin do GameCube inclui um tamanho de memória simulado no deslocamento 0x04. Em hardware de desenvolvimento com mais RAM, o Apploader usava esse valor para simular uma máquina de destino menor durante os testes. Dolphin anteriormente expunha a definição de memória principalmente como uma substituição manual com um aviso forte, porque valores arbitrários quebram muitos jogos. Isso deixava imagens de disco projetadas em torno de seu próprio cabeçalho impossibilitadas de solicitar automaticamente a capacidade apropriada."
+    },
+    {
+      "type": "heading",
+      "text": "Os metadados agora viajam do VolumeDisc para o MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14665 lê o campo como um inteiro de 32 bits invertido da partição do jogo, armazena-o com os metadados do jogo em execução, copia-o para o Core::System durante a inicialização e o expõe para o mapeamento de memória. O resultado automático é limitado a pelo menos o tamanho retail de 24 MiB MEM1 e no máximo 64 MiB, o máximo suportado pelo controlador de memória do Flipper. Fontes WAD e não-discos relatam zero."
+    },
+    {
+      "type": "heading",
+      "text": "Substituições explícitas ainda prevalecem, mas usuários comuns não precisam adivinhar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando a substituição manual de RAM está ativada, seus valores configurados continuam a controlar o mapa. Caso contrário, um cabeçalho acima da capacidade de varejo pode expandir MEM1 e registros de comportamento relacionados à gravação em FIFO que registram esse fato. Um valor abaixo do varejo não reduz o console além do que o software lançado espera. A descrição das configurações agora explica que Dolphin normalmente determina o valor a partir das informações do jogo, separando o comportamento legítimo guiado por metadados da experimentação manual arriscada."
+    },
+    {
+      "type": "heading",
+      "text": "Os testes precisam de cabeçalhos reais, valores malformados e consumidores do subsistema."
+    },
+    {
+      "type": "paragraph",
+      "text": "Construa dispositivos de disco com zero, 24 MiB, intermediário, 48 MiB, 64 MiB e valores acima do limite do controlador. Verifique a decodificação endian, o comportamento de limite, os intervalos de endereço MEM1, o comportamento de lançamento do IOS, análises e gravações em FIFO. Troque de jogos sem reiniciar para garantir que os metadados não vazem entre sistemas. Confirme que as substituições manuais têm precedência e que o boot WAD permanece no tamanho de varejo. Finalmente, execute imagens de desenvolvimento que usem genuinamente memória extra e jogos de varejo cujos cabeçalhos contêm valores incomuns."
+    },
+    {
+      "type": "callout",
+      "text": "O padrão seguro não é mais um número universal; é o piso de varejo mais um pedido limitado retirado do próprio metadata de desenvolvimento do disco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Leia a discussão de engenharia Dolphin e as alterações de código-fonte"
+    }
+  ]
+}

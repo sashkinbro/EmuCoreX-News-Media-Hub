@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "check-fat32-file-size-limits-before-moving-a-ps2-library",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Check FAT32 limits before copying large PS2 DVD images",
+  "summary": "Identify the destination filesystem, find every image near or above 4 GiB, run one large-file copy and hash test, and choose a supported storage format before committing an EmuCoreX library migration.",
+  "heroAlt": "KDE Partition Manager displaying a removable drive and its filesystem layout before media preparation",
+  "searchKeywords": [
+    "FAT32 PS2 ISO 4GB",
+    "large PS2 DVD image",
+    "Android SD card filesystem",
+    "file too large",
+    "EmuCoreX storage"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "storage": "Storage",
+    "integrity": "Integrity"
+  },
+  "sourceLabels": {
+    "microsoft-filesystems": "Filesystem limit comparison",
+    "android-storage": "Android storage model"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A card can have free space and still reject one game"
+    },
+    {
+      "type": "paragraph",
+      "text": "FAT32 cannot represent a regular file of 4 GiB or larger. Many PS2 CD and single-layer DVD dumps fit below that boundary, while some DVD images do not. Total free space therefore answers a different question from maximum single-file size. Splitting or compressing an image without emulator support is not a safe workaround; the library needs a playable, byte-verified file on a filesystem that both Android and the storage device support."
+    },
+    {
+      "type": "callout",
+      "text": "Formatting erases the selected volume. This guide does not authorize formatting from Android or a computer; first back up every file and confirm the exact physical target. If filesystem choice is uncertain, use internal storage instead."
+    },
+    {
+      "type": "heading",
+      "text": "Collect sizes before touching the destination"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A source folder whose personal dumps have already been verified.",
+        "The exact byte size of the largest image, not a rounded file-manager label.",
+        "The destination card's filesystem reported by a trusted operating-system storage tool.",
+        "Two complete backups of anything currently stored on the card.",
+        "A device specification or direct test confirming Android can mount the proposed filesystem read-write."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Prove one large image fits and survives remount"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Sort the source inventory by byte size and mark each file at or above 4,294,967,296 bytes.",
+        "2. Inspect the card filesystem. If it is FAT32, stop before attempting any marked image.",
+        "3. Calculate how much destination capacity remains after the complete library plus a safety margin; do not rely on the capacity printed on the card label.",
+        "4. On a supported non-FAT32 destination, copy the largest image while keeping the source unchanged.",
+        "5. Compare source and destination byte counts, then calculate SHA-256 for both copies.",
+        "6. Unmount and remount the card through the operating system, hash the destination again, and compare it with the first destination digest.",
+        "7. Authorize a test folder through Android's picker and cold-boot that exact image in EmuCoreX.",
+        "8. Only after the remount and launch tests pass should the rest of the library be copied."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "An archive can store large data as multiple parts, but EmuCoreX cannot treat arbitrary archive segments as a normal disc image. Likewise, changing an extension does not change the file or the filesystem limit. Preserve the original dump and use a storage layout that supports the actual working format."
+    },
+    {
+      "type": "heading",
+      "text": "Record the boundary test"
+    },
+    {
+      "type": "paragraph",
+      "text": "A useful storage record contains the filesystem, largest-file bytes, free-space bytes, and two hashes taken on different mounts."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Every image above the FAT32 boundary has been identified.",
+        "The chosen destination filesystem is supported by both the preparation computer and the Android device.",
+        "The largest destination file retains its full byte count.",
+        "Pre-remount and post-remount SHA-256 values are identical.",
+        "EmuCoreX launches the destination file after Android grants the folder tree."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "What a large-file failure looks like"
+    },
+    {
+      "type": "list",
+      "items": [
+        "File too large appears despite ample free space: the filesystem limit is the cause.",
+        "Copy stops at a repeatable offset with I/O error: inspect card and reader health.",
+        "Android offers read-only access: the filesystem or adapter is not writable in this device configuration.",
+        "Hash changes after remount: retire the destination from the migration until storage integrity is resolved."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Undo only the incomplete test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Delete the incomplete destination copy after confirming its absolute location, leave the verified source untouched, and remove the test folder grant from EmuCoreX. If the card already contained user data, do not format or repair it until those backups are opened and independently verified."
+    },
+    {
+      "type": "heading",
+      "text": "exFAT and NTFS support is device-specific"
+    },
+    {
+      "type": "paragraph",
+      "text": "Android builds vary in removable-filesystem support, and a USB adapter can behave differently from an internal SD slot. A format readable on Windows is not automatically writable on the phone. The direct copy, remount, hash, and cold-boot sequence is the compatibility test that matters."
+    },
+    {
+      "type": "link",
+      "text": "Compare official filesystem limits",
+      "url": "https://learn.microsoft.com/windows/win32/fileio/filesystem-functionality-comparison"
+    }
+  ]
+}

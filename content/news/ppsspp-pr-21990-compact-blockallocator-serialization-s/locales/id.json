@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP memberikan peta memori kernel format savestate yang lebih ramping",
+  "summary": "BlockAllocator kini menulis catatan yang ringkas per blok dan menjamin tag yang diisi nol saat dibuat, mengurangi pekerjaan struktural dari peta memori besar.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21990: Savestate: serialisasi BlockAllocator yang ringkas (bagian v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "memori kernel",
+    "serialisasi",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: serialisasi BlockAllocator yang ringkas (bagian v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Seribu blok dikalikan dengan biaya serialisasi kecil"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP melakukan serialisasi daftar blok yang terhubung untuk memori pengguna, kernel, dan memori volatile. Sebuah permainan yang sedang berjalan dapat menjaga sekitar seribu blok tetap aktif. Tata letak sebelumnya membuka Section serialisasi bernama untuk setiap blok, menambahkan pekerjaan header dan payload berulang kali. Itu juga memanggil strlen dan memset selama setiap penyimpanan untuk membersihkan byte yang tidak digunakan dalam buffer tag tetap, karena helper yang menyalin tag tidak menginisialisasi padding yang tersisa."
+    },
+    {
+      "type": "heading",
+      "text": "Rekam baru hanya berisi bidang yang mendefinisikan sebuah blok"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21990 menambahkan section BlockAllocator v2. Cabang kompaknya menulis start, size, taken, dan semua array tag berukuran tetap secara langsung, tanpa section blok bertingkat. Pembacaan melakukan urutan bidang yang sama. Ini secara sengaja merupakan pilihan level BlockAllocator daripada perubahan diam-diam pada metode blok lama, karena format serialisasi memerlukan batas eksplisit kapan pun tata letak byte berbeda."
+    },
+    {
+      "type": "heading",
+      "text": "Kebersihan tag dipindahkan ke titik mutasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konstruksi blok dan SetAllocated sekarang membersihkan seluruh buffer tag sebelum menyalin teks ke dalamnya. Hal ini membuat padding menjadi deterministik sepanjang umur objek dan menghilangkan pekerjaan strlen ditambah memset yang berulang dari jalur penyimpanan panas. Ini juga mencegah memori proses yang tidak diinisialisasi mencapai file status. Versi satu tetap tersedia untuk memuat status lama, sementara status kompak baru yang ditulis mengikuti aturan inkompatibilitas ke depan normal untuk peningkatan bagian."
+    },
+    {
+      "type": "heading",
+      "text": "Topologi pengalokasi lebih penting daripada ukuran file saja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat status dengan daftar kosong, satu blok, ribuan blok bebas dan terpakai yang bergantian, tag dengan panjang maksimum, blok yang digunakan kembali, memori volatil, dan alokasi dari atas ke bawah maupun dari bawah ke atas. Muat fixture v1 lama dan fixture v2 baru, bandingkan urutan daftar dan setiap batas, lalu alokasikan dan bebaskan setelah pemulihan untuk mengekspos tautan yang rusak. Periksa output untuk padding tag yang deterministik dan tidak ada byte yang tidak diinisialisasi. Ukur ukuran dan waktu serialisasi hanya setelah lolos uji kesetaraan struktural dan penanganan korupsi."
+    },
+    {
+      "type": "callout",
+      "text": "Serialisasi kompak paling aman ketika status objek yang deterministik ditetapkan pada saat mutasi, bukan diperbaiki setiap kali penyimpanan ditulis."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Baca diskusi teknik PPSSPP dan perubahan sumber"
+    }
+  ]
+}

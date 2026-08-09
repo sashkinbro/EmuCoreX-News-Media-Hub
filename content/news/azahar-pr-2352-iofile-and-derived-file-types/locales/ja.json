@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar は、特殊ファイルを構成可能なストレージ層のスタックに変換します",
+  "summary": "新しい IOFileBase チェーンにより、制限付きビュー、圧縮、および暗号化が相互にラップし、複数の特殊ファイルタイプが協力する必要がある場合に脆弱になっていた継承を置き換えます。",
+  "heroAlt": "Azahar プルリクエスト #2352 からのソース証拠: core: IOFile および派生ファイルタイプのリファクタリング",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "ストレージ",
+    "emulation": "エミュレーション"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: IOFile および派生ファイルタイプのリファクタリング"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "あるファイルが複数の振る舞いを必要としたとき、継承は拡張性を失いました"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar はもともと、圧縮および暗号化されたファイルを直接 IOFile から派生させました。各特殊クラスは基本操作をオーバーライドすることができましたが、それらを組み合わせるには工夫が必要でした。なぜなら、C++ の継承はオブジェクトが何であるかを説明するものであり、変換の順序付きパイプラインを示すものではないからです。今後の作業のために別のファイルタイプを追加すると、その組み合わせが倍増し、オフセット、シリアライズ、エラーがどのサブクラスがトップにあるかに依存するようになってしまいます。"
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase は、所有する子レイヤーを通して委譲します。"
+    },
+    {
+      "type": "paragraph",
+      "text": "プルリクエスト #2352 では、完全なアクセス契約を持つ抽象 IOFileBase と unique_ptr child_file を導入しています。あるレイヤーは変換する操作のみをオーバーライドし、それ以外は子に委譲します。最下層は IOFile または NullIOFile です。したがって、圧縮された CCI RomFS は RomFS の SubIOFile、NCSD 内の NCCH 用の別の SubIOFile、解凍用の Z3DSReadIOFile、ホストアクセス用の IOFile というように重ねることができます。"
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile と NullIOFile により、境界と失敗が明示的なオブジェクトとなります。"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFileは固定されたウィンドウを公開し、すべての呼び出し側にオフセットや境界チェックを繰り返させることなく、シーク、サイズ、読み取り、および書き込み操作を変換します。NCSDおよびNCCHの解析ですでに使用されています。NullIOFileは同じインターフェースを実装しますが、エラー値を返すため、構築やシリアライゼーションの失敗がすべてのレイヤーにnullptrチェックを分散させる代わりに、有効なオブジェクトグラフを保持できます。"
+    },
+    {
+      "type": "heading",
+      "text": "暗号化ファイルはアイデンティティを取得し、従来のデータは引き続きサポートされます。"
+    },
+    {
+      "type": "paragraph",
+      "text": "新しいCryptoIOFileの出力は、バージョン、ヘッダサイズ、およびキーとナンスから導出されたハッシュを含むAZCRヘッダで始まります。Azaharはフォーマットを識別でき、復号されたバイトが妥当かどうかを推測することなく誤ったキーを拒否できます。従来のヘッダなしファイルは引き続き互換ロジックを通じて開くことができます。テストでは、すべてのレイヤーの順序を構成し、サブファイルの制限を越えてシークし、失敗したオブジェクトをシリアライズし、誤ったキーを検証し、古い暗号化されたアセットを再書き込みせずに再度開く必要があります。"
+    },
+    {
+      "type": "callout",
+      "text": "アーキテクチャの変更は構成です：各ファイル層は一つの責任を持ち、残りを同じインターフェースを通じて下位に渡します。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Azaharのエンジニアリングの議論とソース変更を読んでください"
+    }
+  ]
+}

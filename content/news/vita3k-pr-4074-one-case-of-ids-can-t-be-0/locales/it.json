@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K distingue l'oggetto SPIR-V IDs dai numeri di corsia del vettore",
+  "summary": "La costruzione del mescolamento dei vettori ora etichetta i vettori sorgente come IDs e i selettori di componenti come letterali, impedendo alla corsia zero di diventare un SPIR-V ID non valido.",
+  "heroAlt": "Prova sorgente dal pull request #4074 di Vita3K: shader: Correzione di un caso di 'gli ID non possono essere 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "ricompilatore di shader",
+    "blocco uniforme"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Correzione di un caso di 'gli ID non possono essere 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Lo stesso tipo intero può rappresentare due concetti SPIR-V differenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le istruzioni SPIR fanno riferimento a oggetti definiti in precedenza tramite ID numerici, e alcune contengono anche numeri letterali. OpVectorShuffle prende due vettori IDs seguiti dai selettori di componenti. Un selettore pari a zero significa la prima corsia del primo vettore; un oggetto ID pari a zero è vietato. Passare ogni operando attraverso un vettore tipizzato solo come spv::Id porta quindi a perdere la distinzione esattamente dove un numero di corsia valido condivide il valore sentinella di uno ID non valido."
+    },
+    {
+      "type": "heading",
+      "text": "Il builder ora riceve un tipo esplicito per ogni operando"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #4074 cambia le due liste di operandi shuffle in spv::IdImmediate. I caricamenti di dest e dest_friend e del vettore copiato sono contrassegnati come IDs. Gli indici di lane generati dal loop sono contrassegnati come valori immediati, che siano zero, quattro più i, o un offset derivato da start modulo quattro. createOp può quindi codificare ogni parola secondo la grammatica delle istruzioni invece di dedurne il significato da un alias C++."
+    },
+    {
+      "type": "heading",
+      "text": "Il percorso interessato unisce dati uniformi attraverso i confini di vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register gestisce un intervallo che copre il vettore di destinazione corrente e il suo vicino. Costruisce miscelazioni complementari in modo che le lane di destinazione preservate e le lane di origine in arrivo finiscano nelle posizioni corrette. Inizia allineato a un vec4 seguendo una via più semplice; gli inizi non allineati esercitano la logica delle due liste. La correzione non cambia quale formula della lane viene scelta. Rende i selettori già calcolati letterali legali."
+    },
+    {
+      "type": "heading",
+      "text": "I fixture guidati dal validatore dovrebbero enumerare ogni lane di partenza"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generare copie uniformi a partire dagli offset da zero a tre con lunghezze che rimangono all'interno di un vec4 e si estendono nel successivo. Ispezionare le parole OpVectorShuffle emesse, eseguire spirv-val ed eseguire shader con lane di origine colorate o numerate in modo univoco. Includere i selettori zero, tre, quattro, sette e qualsiasi sentinella undef supportata dal builder. Testare i driver Vulkan con validazione rigorosa e confrontare il rendering tra fornitori. Un test di regressione dovrebbe verificare i tipi di operandi oltre ai pixel finali."
+    },
+    {
+      "type": "callout",
+      "text": "In un linguaggio shader binario, zero può essere una lane perfettamente valida e un ID oggetto impossibile; il compilatore deve sapere quale delle due si aspetta l'istruzione."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Leggi la discussione ingegneristica Vita3K e le modifiche al codice sorgente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin rejeita índices de controladores do NetPlay antes que eles alcancem os mapas do servidor",
+  "summary": "Verificações de intervalo assinadas agora precedem o acesso aos mapas do controle e do Wiimote, fechando um caminho de falha remota enquanto preserva a validação de propriedade do remetente.",
+  "heroAlt": "Evidências da fonte do pull request #14677 do Dolphin: NetPlayServer: Corrigir falha remota via índice de controle inválido",
+  "searchKeywords": [
+    "Dolphin",
+    "Segurança do NetPlay",
+    "índice do controle",
+    "pacote remoto",
+    "mapa do Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Segurança",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Corrigir falha remota via índice de controle inválido"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um número de controlador da rede ainda é uma entrada não confiável"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pacotes NetPlay identificam o controle ou Wii Remote cujo estado eles carregam. O servidor anteriormente usava map_array.at após verificar a propriedade em alguns caminhos, mas um índice assinado inválido poderia alcançar o acesso com verificação de limites primeiro. std::array::at então lança uma exceção, transformando um pacote de peer malformado ou hostil em uma falha no processo do servidor em vez de uma mensagem rejeitada. Valores negativos exigem cuidado especial antes da conversão para size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Um ajudante estabelece o intervalo antes da propriedade"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14677 introduz IsValidPadIndex. Primeiro, ele exige que o índice seja não negativo, depois o converte e compara com o tamanho concreto do array do mapa. Dados do controle, pesquisas do host do controle e dados do Wiimote chamam o ajudante antes do at. Apenas um slot válido mapeado para o jogador que enviou continua. O servidor retorna uma falha de protocolo para entrada inválida em vez de indexar ou permitir que um cliente envie controles para outro participante."
+    },
+    {
+      "type": "heading",
+      "text": "O comportamento de desconexão também leva em conta Wiimotes mapeados"
+    },
+    {
+      "type": "paragraph",
+      "text": "A mesma alteração verifica se um jogador não anfitrião que está saindo possui alguma configuração de Wiimote enquanto um jogo está ativo. Se assim for, o servidor interrompe a sessão e transmite DisableGame, refletindo a necessidade de evitar continuar com entradas sincronizadas faltantes. A verificação ocupa o bloqueio do jogo apenas ao alterar a flag de execução. Esse comportamento é separado da validação de limites, mas cobre outra borda do ciclo de vida de um mapa de controladores."
+    },
+    {
+      "type": "heading",
+      "text": "Furrear cada mensagem que carrega um índice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enviar inteiro mínimo, -1, zero, último slot válido, primeiro slot inválido e inteiro máximo através de cada tipo de pacote de pad e Wiimote. Repetir como anfitrião, cliente mapeado, cliente não mapeado e após desconexão ou remapeamento. O servidor deve rejeitar entradas malformadas sem exceções, registros excessivos ou alterações de estado. Adicionar fuzzing de pacotes em torno de valores truncados e limites de tipos, depois verificar que sessões válidas com múltiplos controladores e desconexões de Wiimote no meio do jogo ainda seguem a política de desligamento pretendida."
+    },
+    {
+      "type": "callout",
+      "text": "Limites e propriedade são questões separadas: o servidor deve primeiro provar que um slot existe, e depois provar que o remetente remoto tem permissão para controlá-lo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Leia a discussão de engenharia e as mudanças de código-fonte Dolphin"
+    }
+  ]
+}

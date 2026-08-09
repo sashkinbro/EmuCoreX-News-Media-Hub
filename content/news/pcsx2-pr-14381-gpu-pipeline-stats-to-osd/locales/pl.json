@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ujawnia liczbę wywołań shaderów zanim nakładka je zmieni",
+  "summary": "Opcjonalna metryka OSD raportuje wywołania shaderów wierzchołków i pikseli zgromadzone przed rysowaniem ImGui, co umożliwia bardziej stabilne porównania obciążenia backendu i łatwiejsze do odczytania.",
+  "heroAlt": "Dowody źródłowe z pull requesta PCSX2 #14381: GS: Dodaj statystyki potoku GPU do OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Statystyki potoku GPU",
+    "wywołania shaderów wierzchołków",
+    "wywołania shaderów pikseli",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Narzędzia",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Dodaj statystyki potoku GPU do OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Liczba klatek na sekundę nie może powiedzieć, czy scena zwiększyła pracę wierzchołków lub pikseli"
+    },
+    {
+      "type": "paragraph",
+      "text": "Regresja wydajności może wynikać z większej liczby przesłanych wierzchołków, większej liczby pokrytych próbek, dodatkowych przebiegów lub synchronizacji. PCSX2 już wyświetlał kilka metryk renderera, ale brakowało bezpośrednich liczników wywołań potoku. Wniosek o zmianę #14381 dodaje VSI i PSI, aby programista mógł zobaczyć, czy GPU wykonał tysiące wywołań shaderów wierzchołków czy miliony wywołań shaderów pikseli w mierzonym przedziale czasowym."
+    },
+    {
+      "type": "heading",
+      "text": "Zapytania są implementowane w każdej wersji API sprzętowego"
+    },
+    {
+      "type": "paragraph",
+      "text": "Klasy urządzeń Direct3D 11, Direct3D 12, OpenGL, Vulkan i Metal udostępniają statystyki potoku w ramach wspólnych metryk wydajności. Ustawienie pojawia się w konfiguracji OSD, a nakładka formatuje duże liczby przy użyciu dziesiętnych sufiksów K, M i B. Zbieranie danych przez zapytania backendowe jest konieczne, ponieważ zwykłe oszacowanie na podstawie liczby rysunków pomijałoby obcinanie, instancing, pokrycie próbek oraz specyficzne dla API wykonanie."
+    },
+    {
+      "type": "heading",
+      "text": "Próbkowanie przed ImGui usuwa nakładkę z jej własnego pomiaru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wczesne wyniki różniły się dramatycznie, ponieważ zapytanie mogło obejmować renderowanie OSD i ImGui. Ostateczne zachowanie polega na zbieraniu statystyk przed narysowaniem nakładki, stabilizując liczby i czyniąc porównania scen bardziej sensownymi. Renderowanie programowe nadal odbywa się poprzez Vulkan, więc wartości mogą tam się pojawiać, ale opisują prezentację, a nie obciążenie programu GS; źródło ostrzega, że tych liczb nie należy interpretować jak statystyk renderera sprzętowego."
+    },
+    {
+      "type": "heading",
+      "text": "Ważne porównanie wymaga ustalenia sceny i interwału zapytania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Włącz Wyświetl Statystyki Rurociągu GPU i utrzymaj jedną scenę nieruchomo między backendami, sprawdzając, czy VSI i PSI pojawiają się i skalują w rozsądny sposób przy zmianie rozdzielczości lub geometrii. Przełącz sam OSD i potwierdź, że mierzona wartość nie skacze wskutek liczenia jego pikseli. Przetestuj reset zapytania, utratę urządzenia, pauzę i zmianę backendu. Liczniki między różnymi API mogą nadal się różnić, ponieważ specyfikacje i sposób liczenia próbek się różnią, więc diagnozuj trendy w obrębie jednego backendu, zanim będziesz twierdzić dokładną zgodność."
+    },
+    {
+      "type": "callout",
+      "text": "OSD raportuje wyniki zapytania sprzętowego, a nie uniwersalną prawdę między API; pobranie próbki przed ImGui sprawia, że jest to użyteczne bez pozwalania miernikowi na samodzielne pomiary."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Przeczytaj dyskusję inżynieryjną PCSX2 i zmiany w źródłach"
+    }
+  ]
+}

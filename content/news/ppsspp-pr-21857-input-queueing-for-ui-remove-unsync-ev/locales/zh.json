@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 通过 UI 事件循环将平台输入汇集",
+  "summary": "触摸、按键和轴回调现在将数据排入队列，以便在 UI 线程上有序分发，从而去除了不同步的屏幕方法和广泛的递归锁。",
+  "heroAlt": "来自 PPSSPP pull request #21857 的源证据：重新设计UI的输入排队，移除 Unsync* 事件",
+  "searchKeywords": [
+    "PPSSPP",
+    "输入队列",
+    "屏幕管理器",
+    "触摸",
+    "控制器"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "输入",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "重新设计UI的输入排队，移除 Unsync* 事件"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "输入回调和屏幕变化共享了一个脆弱的边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "桌面和移动端的后端可以从不拥有PPSSPP当前屏幕栈的上下文报告触摸、键盘和控制器事件。早期设计将递归输入锁与UnsyncTouch、UnsyncKey和UnsyncAxis入口点混合，这些入口点可以直接遍历视图。因此，屏幕切换、叠加和事件分发依赖于一个大锁，并且依赖调用者知道哪个未同步的方法是安全的。"
+    },
+    {
+      "type": "heading",
+      "text": "回调现在仅执行一个短队列操作"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求#21857为触摸、按键和轴输入定义了类型化的队列事件。ScreenManager回调在持有eventQueueLock时复制事件并附加它。在更新过程中，UI线程将整个双端队列移动到本地变量中，释放互斥锁，并按顺序分发事件。关键区不运行视图代码，因此处理程序不能延长平台回调延迟或递归获取队列锁。"
+    },
+    {
+      "type": "heading",
+      "text": "特殊交付规则仍然是明确的"
+    },
+    {
+      "type": "paragraph",
+      "text": "释放的所有触摸事件仍然会到达每个屏幕层，按键抬起事件仍然会扩散，因此背景层在堆栈更改后无法保留卡住的按键。普通输入发送到前台屏幕，而叠加层会先接收触摸按下事件，以便它可以自行关闭并消耗事件。焦点导航转换变成普通的 KeyEventToFocusMoves 辅助器，许多 Unsync 方法消失，因为现在分发发生在所属线程上。"
+    },
+    {
+      "type": "heading",
+      "text": "排序和屏幕过渡是难点测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "在打开和关闭弹出窗口、切换屏幕、旋转设备、重新连接控制器以及在过渡期间按住按钮时，生成交错的触摸、按键和轴事件。确认 FIFO 顺序，并且释放事件清除所有按下状态。对来自多个线程的生产者进行压力测试，并在队列和屏幕堆栈访问周围使用 ThreadSanitizer。定义当事件排队后但未更新前屏幕发生更改时的行为；实现有意针对分发时的当前堆栈，因此测试必须锁定该契约。"
+    },
+    {
+      "type": "callout",
+      "text": "平台回调现在会报告输入；UI 线程在处理有序队列时决定它属于哪里。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "阅读 PPSSPP 工程讨论和源代码更改"
+    }
+  ]
+}

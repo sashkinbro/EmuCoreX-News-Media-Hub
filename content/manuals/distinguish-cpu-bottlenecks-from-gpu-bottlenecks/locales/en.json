@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "distinguish-cpu-bottlenecks-from-gpu-bottlenecks",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguish CPU bottlenecks from GPU bottlenecks in PS2 emulation",
+  "summary": "Use one fixed scene, native and higher internal resolution, emulation speed, frame time, and PCSX2-style GS counters to identify which workload responds to GPU changes and which remains limited by emulated CPU work.",
+  "heroAlt": "Official PCSX2 graph comparing host GPU load and Graphics Synthesizer workload",
+  "searchKeywords": [
+    "EmuCoreX CPU GPU bottleneck",
+    "PS2 emulation slow",
+    "internal resolution performance",
+    "frame time diagnosis",
+    "GS load"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Performance",
+    "diagnostics": "Diagnostics"
+  },
+  "sourceLabels": {
+    "android-optimize": "Android performance optimization framework",
+    "pcsx2-performance": "PCSX2 emulation and GS counter interpretation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Change a GPU-scaled variable and observe what moves"
+    },
+    {
+      "type": "paragraph",
+      "text": "A slow scene does not identify its limiting processor by appearance. Internal resolution, anisotropic filtering, and some blending work primarily change host GPU cost, while emulating game logic, VU work, and draw submission can remain CPU-limited. Choose a repeatable gameplay scene, record emulation speed and frame time, then compare native resolution with a clearly higher step while every other setting stays fixed."
+    },
+    {
+      "type": "callout",
+      "text": "Do not lower resolution, blending, cycle settings, and renderer together. A faster result would not reveal which limit moved and could trade correctness for an unexplained number."
+    },
+    {
+      "type": "heading",
+      "text": "Freeze a representative workload"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A normal in-game save before a repeatable heavy scene.",
+        "System GPU driver and one stable renderer.",
+        "Native and one higher internal-resolution profile differing in no other value.",
+        "Emulation speed, frame time, and available GS/GPU counters.",
+        "A second scene known to contain heavy game logic or many draws."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Run resolution sensitivity and scene sensitivity tests"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot the first scene at native resolution and record sustained speed after warm-up.",
+        "2. Raise only internal resolution and replay the same camera path.",
+        "3. When frame time worsens materially with resolution, record a GPU-sensitive result.",
+        "4. When both resolutions remain similarly slow, restore native and inspect CPU/emulation timing indicators.",
+        "5. Run the second logic-heavy scene at native and higher resolution.",
+        "6. Compare renderer counters such as draws, uploads, readbacks, and host GPU time where available.",
+        "7. Reduce one GPU-cost feature only in the GPU-sensitive branch and repeat.",
+        "8. Keep safe defaults in the CPU-sensitive branch until a documented per-title change can be tested separately."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Resolution is a useful controlled probe because it increases the number of host pixels without changing the emulated game's intended CPU work. It is not perfect: blending and readbacks can couple CPU and GPU, and thermal policy can move clocks during the test. Matched routes and warm runs reduce those confounders."
+    },
+    {
+      "type": "heading",
+      "text": "Bottleneck classification evidence"
+    },
+    {
+      "type": "paragraph",
+      "text": "Classify the scene only when the response repeats under matched conditions."
+    },
+    {
+      "type": "list",
+      "items": [
+        "GPU-sensitive scenes slow predictably as internal resolution rises.",
+        "CPU-sensitive scenes remain similar across resolution steps.",
+        "The same driver, renderer, camera, and thermal state were used.",
+        "Audio and emulation-speed indicators agree with frame-time evidence.",
+        "A second run reproduces the classification."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Results that remain ambiguous"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Device temperature changes between profiles: cool and repeat.",
+        "A renderer cache warms only on the second run: match cold or warm states.",
+        "Lower resolution changes the visual fault itself: choose another probe scene.",
+        "System power mode changes clocks: lock the comparison policy before rerunning."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restore the pre-test graphics profile"
+    },
+    {
+      "type": "paragraph",
+      "text": "Return internal resolution and optional GPU features to the recorded baseline, remove temporary scene overrides, and cold-boot the title. Preserve the timing table rather than leaving diagnostic reductions enabled globally."
+    },
+    {
+      "type": "heading",
+      "text": "Mobile SoCs share thermal and power budgets"
+    },
+    {
+      "type": "paragraph",
+      "text": "CPU and GPU on Android often compete within one package limit. A GPU reduction can indirectly free power for CPU clocks, so treat mixed responses as coupled and repeat after steady temperature."
+    },
+    {
+      "type": "link",
+      "text": "Review PCSX2 performance counters",
+      "url": "https://developer.android.com/games/optimize"
+    }
+  ]
+}

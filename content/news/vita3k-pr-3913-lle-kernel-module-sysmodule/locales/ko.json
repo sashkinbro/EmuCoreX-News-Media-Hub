@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3913-lle-kernel-module-sysmodule",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K는 실제 Vita 커널 모듈을 에뮬레이션된 모듈 그래프에 연결합니다",
+  "summary": "부팅 및 sysmodule SKPRX 로딩은 이제 낮은 수준 시스템 모듈 경로에 필요한 더 넓은 SELF, 드라이버 내보내기, TLS, 수명 주기 및 패치 처리와 합류합니다.",
+  "heroAlt": "Vita3K 풀 리퀘스트 #3913의 소스 증거: 모듈: lle 커널 모듈 \"sysmodule\"",
+  "searchKeywords": [
+    "Vita3K",
+    "LLE 커널",
+    "SKPRX",
+    "sysmodule",
+    "모듈 로더"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "코어",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3913": "모듈: lle 커널 모듈 \"sysmodule\""
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "낮은 수준의 시스템 모듈은 SELF 파서 이상이 필요합니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "실제 Vita 커널 바이너리를 로딩한다는 것은 해당 바이너리의 import와 export를 해결하고, 세그먼트 메모리를 할당하며, 모듈 정보를 생성하고, 시작 및 종료 동작을 준수하며, 드라이버 서비스를 노출하고, 언로드될 때 모든 심볼을 정리하는 것을 의미합니다. 또한 바이너리는 커널 TLS 필드와 다른 시스템 모듈이 존재할 것으로 기대합니다. 바이트를 성공적으로 복사하지만 이러한 관계를 완전히 유지하지 못하는 로더는 나중에 해결되지 않은 NID나 오래된 export로 인해 실패할 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "시작 그래프에는 이제 bootimage와 sysmodule이 포함됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 리퀘스트 #3913은 os0:kd/bootimage.skprx와 os0:kd/sysmodule.skprx를 preload 목록에 추가합니다. 이는 모듈 관리자, 스레드 관리자, 프로세스 관리자, sysmem, 디버그, 프로세스 이벤트, QAF, sysclib, 그리고 sysmodule 관련 함수를 확장합니다. 커널 TLS 이름은 스택 체크 및 fiber 컨텍스트 역할을 추가합니다. Import와 export 언로드 경로는 더 이상 사용하지 않는 재배치 데이터를 운반하지 않고 NID와 모듈 소유권에 따라 항목을 제거하도록 단순화됩니다."
+    },
+    {
+      "type": "heading",
+      "text": "패칭은 최종 세그먼트를 아는 레이어로 이동됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "게임 패치는 일반 커널 SELF 로더에서 가져옵니다. 메인 실행 파일이 로드된 모듈이 되면, 인터페이스 코드는 해당 SceKernelModuleInfo를 가져오고 세그먼트가 존재하고 오프셋과 바이트 수가 memsz에 맞는 패치만 복사합니다. 이는 사용자에게 표시되는 타이틀 패치를 시스템 바이너리 로딩과 분리하고, 경계 검사를 파서의 가정이 아닌 최종 매핑된 세그먼트를 기준으로 수행하게 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "혼합 LLE 및 HLE 그래프는 추적 가능한 실패 테스트가 필요합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "완전한 펌웨어 파일이 있는 부팅, 부트이미지 누락, 시스템 모듈 누락, 호환되지 않는 바이너리, 일반적인 HLE 전용 구성. 해결된 모든 import, 모듈 시작 결과, TLS 값, export 제거 및 역순 종료를 추적합니다. 오래된 NIDs과 모듈 IDs를 노출시키기 위해 타이틀을 반복적으로 다시 로드합니다. 패치를 세그먼트 시작, 정확한 끝, 그리고 1바이트 넘어에 적용합니다. 커널 바이너리는 절대로 호스트 접근 권한을 부여하지 않아야 하며, 모든 포인터는 게스트 범위로 유지되고, 지원되지 않는 드라이버 기능은 임의의 성공을 반환하는 대신 정확한 경계를 보고해야 합니다."
+    },
+    {
+      "type": "callout",
+      "text": "LLE는 단순히 더 많은 펌웨어 코드를 실행하는 것이 아니라 실제 게스트 바이너리와 에뮬레이터 서비스가 명시적 임포트에서 만나는 가역 모듈 그래프를 구축하고 있습니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3913",
+      "label": "Vita3K 엔지니어링 토론과 소스 변경 사항을 읽어보세요"
+    }
+  ]
+}

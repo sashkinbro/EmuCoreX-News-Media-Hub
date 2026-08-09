@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP, VFPU çarpma ve bölme için PSP kurallarını bit-hassas olarak belgelemektedir",
+  "summary": "Başvuru yardımcıları, normal dışılık, taşma, yuvarlama, işaret, sonsuzluk ve NaN davranışlarını açıkladığından, ana bilgisayar JIT yolları PSP'nin gerçek sonuçlarıyla karşılaştırılabilir.",
+  "heroAlt": "PPSSPP pull request #21815 kaynağından kanıt: (umarım) bit-hassas vmul/vdiv uygulanması",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "kayan nokta",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "İşlemci",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "(umarım) bit-hassas vmul/vdiv uygulanması"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 hâlâ donanıma özgü köşe durumları için alan bırakmaktadır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Normal float çarpma ve bölme, girdiler denormal, alt akış, sonsuzluk veya NaN değerlerine yaklaşıncaya kadar taşınabilir gibi görünür. PSP VFPU, denormal değerleri sıfır olarak işleyen ve çok küçük çıktıları sıfıra yuvarlayan float32 round-to-nearest-ties-to-even (en yakına yuvarlama) gibi davranır, ayrıca belirli bir NaN taşıyıcı ve işaret kuralı vardır. Host x86, ARM ve derleyici ayarları tam olarak bu sınır noktalarında farklılık gösterebilir ve nadir oyun mantığı veya grafik farklılıklarına yol açabilir."
+    },
+    {
+      "type": "heading",
+      "text": "Referans, aritmetik işlem öncesi ve sonrası ham bitlerden çalışır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21815, referans için açıkça vfpu_mul ve vfpu_div yardımcılarını ekler. Bunlar işlemcileri uint32 değerleri olarak okur, alt normal girdileri işaretli sıfıra indirger, aritmetiği gerçekleştirir ve sonuç bitlerini inceler. Ölçülen sıfırlama eşiğinde veya altında olan çıktılar, en küçük normal sonucu koruyup korumamaya veya işaretli sıfır döndürmeye karar vermek için çift hassasiyette yeniden hesaplanır. Herhangi bir NaN, operanddan türetilen işaret ile VFPU'e özgü 0x7F800001 taşımayı alacak şekilde kanonik hale getirilir."
+    },
+    {
+      "type": "heading",
+      "text": "Eşik, host FTZ bayraklarının paylaşamayabileceği bir sınır noktası yakalar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gözlemlenen flush kesme noktası, FLT_MIN eksi FLT_TRUE_MIN’in dörtte biri olarak belirlenmiştir. Bu, test edilen x86 flush-to-zero sınırı ile eşleşiyor gibi görünmekle birlikte her ARM host ile eşleşeceği varsayılmamaktadır. Davranışı okunabilir bir referansta kodlamak, en hızlı uygulamaları kontrol kaydı modları, vektör talimatları veya düzeltici dallanmalar kullansa bile JIT backend’lerine bir doğruluk kaynağı sağlar. Yardımcılar son sıcak yolun skaler C++ olduğu iddiası değil, referans materyal niteliğindedir."
+    },
+    {
+      "type": "heading",
+      "text": "Tükenmiş sınır vektörleri backend uyumluluğunu sağlamalıdır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pozitif ve negatif sıfırı, her alt normal sınıfı, flush eşik değerine yakın değerleri, en büyük sonlu sayıları, sonsuzlukları, sessiz ve sinyal NaN’ları ve işlemci işaret kombinasyonlarını test edin. vmul ve vdiv için yorumlayıcı, x86, ARM64 ve diğer JIT sonuçlarını bit bit karşılaştırın, epsilon ile değil. Rastgele diferansiyel testler, taşma ve alt sınır durumlarına yakın üs çiftlerine odaklanmalıdır. Derleyici hızlı matematik işlemleri, kanonik hale getirmeyi silmemelidir ve birleşik işlemler farklı yuvarlama noktalarına sahip oldukları için ayrı ayrı kontrol edilmelidir."
+    },
+    {
+      "type": "callout",
+      "text": "Bit-hassas emülasyon, yaklaşık sayısal eşitliğin durduğu yerde başlar: işaretli sıfır, bir taşma biti veya bir NaN yükü gözlemlenebilir misafir durumu olabilir."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "PPSSPP mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

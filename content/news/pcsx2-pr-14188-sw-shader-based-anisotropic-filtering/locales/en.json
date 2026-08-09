@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 adds shader anisotropy for textures that must remain point-filtered",
+  "summary": "A Direct3D fallback performs anisotropic sampling in shaders, avoiding hardware paths that force linear filtering or refuse non-mipmapped textures on some AMD drivers.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14188: GS/HW: Add sw(shader based) anisotropic filtering",
+  "searchKeywords": [
+    "PCSX2",
+    "anisotropic filtering",
+    "point filtering",
+    "Direct3D 12",
+    "alpha test"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Add sw(shader based) anisotropic filtering"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Hardware anisotropy can violate the texture's required filter mode"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D does not provide the needed combination of anisotropic filtering with point filtering in PCSX2's path, so enabling AF previously pushed affected textures toward linear sampling. Linear interpolation blends neighboring colors before alpha testing; a transparent texel can therefore pull in a color that the game never intended to display. The result is most visible on sloped alpha-tested surfaces and texture edges."
+    },
+    {
+      "type": "heading",
+      "text": "The shader path controls directional samples explicitly"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14188 adds a software, shader-based anisotropic filter to the Direct3D renderers. Because PCSX2 selects and combines samples itself, it can preserve point-like color decisions while covering the elongated footprint created by an oblique surface. The setting is separate from the normal anisotropic level, allowing users to enable the new route deliberately instead of silently replacing hardware behavior."
+    },
+    {
+      "type": "heading",
+      "text": "Non-mipmapped AMD DX12 textures gain a consistent alternative"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source also reports that AMD's Direct3D 12 driver does not apply hardware AF to textures without mipmaps, even though comparable Vulkan rendering works. Shader sampling bypasses that host limitation and aims for parity with Vulkan behavior across AMD and NVIDIA. It is described as more aggressive than NVIDIA hardware AF, especially at native resolution, so the output is not assumed to be visually identical."
+    },
+    {
+      "type": "heading",
+      "text": "Tests need alpha edges, no-mipmap textures, and several vendors"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enable anisotropic filtering and the shader option, then compare alpha-tested geometry against hardware AF, linear filtering, and Vulkan on the same scene. Include textures without mipmaps, native and upscaled resolutions, steep viewing angles, and transparent borders from issue #14077. Record texture samples and GPU time on AMD and NVIDIA Direct3D 11 and 12. Verify that hidden colors do not bleed through and that aggressive sharpening does not create shimmer or aliasing in motion."
+    },
+    {
+      "type": "callout",
+      "text": "Shader anisotropy exists to preserve guest filtering intent when Direct3D hardware choices either blend forbidden neighbors or skip the texture entirely."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

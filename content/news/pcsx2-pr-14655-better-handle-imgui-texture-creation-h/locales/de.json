@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 verhindert fehlgeschlagene ImGui-Texturzuweisungen, bevor sie zu einem Absturz führen",
+  "summary": "Erstellungs-, Upload- und Zerstörungspfade behandeln jetzt fehlende BackendUserData als echten Zustand und verhindern, dass ein Zuweisungsfehler in native-Handle- und Map-Operationen durchfällt.",
+  "heroAlt": "Quellbeweis aus dem PCSX2 Pull Request #14655: GS: Bessere Handhabung von Gefahren bei der ImGui-Texturerstellung.",
+  "searchKeywords": [
+    "PCSX2",
+    "ImGui-Textur",
+    "Zuweisungsfehler",
+    "GSTexture",
+    "Absturz"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Bessere Handhabung von Gefahren bei der ImGui-Texturerstellung."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui kann eine Textur anfordern, wenn GPU keine bereitstellen kann"
+    },
+    {
+      "type": "paragraph",
+      "text": "Schriftatlas und andere Schnittstellenbilder durchlaufen die Zustände WantCreate, WantUpdates und WantDestroy. Die Texturzuweisung kann aufgrund von Geräteverlust, Ressourcenbelastung, nicht unterstützten Dimensionen oder einem anderen Backend-Fehler fehlschlagen. Der alte Erstellungszweig meldete den Fehler, fuhr jedoch fort, als ob eine GSTexture existierte, verlangte deren nativen Handle und fiel in den Upload-Code durch. Die Diagnose trat daher einem Null-Dereferenzierungsfehler voraus, anstatt ihn zu enthalten."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate setzt nur mit gültigen Backend-Daten fort."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14655 umschließt CreateTexture in einem Zweig für erfolgreiche Pointer. Nur eine echte Textur erhält eine ImTextureID und BackendUserData, bevor der Code mit dem Upload in voller Größe fortfährt. Im Fehlerfall gibt PCSX2 pxFailRel aus und bricht den Zustand ab. WantUpdates überprüft separat BackendUserData vor Map- oder Reihen-für-Reihe-Update-Operationen, sodass ein zuvor fehlgeschlagener Create-Vorgang nicht mit einer initialisierten Ressource verwechselt werden kann."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy akzeptiert ebenfalls, dass die Erstellung möglicherweise nie abgeschlossen wurde."
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Zerstörungszustand recycelt und invalidiert die Textur jetzt nur, wenn BackendUserData nicht null ist. Das ist relevant, wenn ImGui eine Atlas-Anforderung nach einem Zuweisungsfehler verwirft oder wenn ein Zustandsübergang mit der Wiederherstellungslogik konkurriert. Das Recycling-Verhalten selbst bleibt für gültige Texturen unverändert, einschließlich der Wiederverwendung von Atlas der gleichen Größe; der Patch sorgt dafür, dass das Lebensdauer-Diagramm einen Zweig für nicht vorhandene Ressourcen von Anfang bis Ende einschließt."
+    },
+    {
+      "type": "heading",
+      "text": "Die Fehlerinjektion ist stärker als das Warten auf Issue #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduzieren Sie, wenn möglich, den verknüpften Crash-Dump, und fügen Sie dann einen kontrollierten Backend-Hook hinzu, der dazu führt, dass das nächste ImGui CreateTexture null zurückgibt. OSD- und Font-Rendering sollten einen Fehler melden, ohne abzustürzen, Pixel hochzuladen oder einen ungültigen Pointer zu recyceln. Stellen Sie die Zuweisung wieder her und bestätigen Sie, dass später ein Atlas erstellt und angezeigt werden kann. Wiederholen Sie das Scheitern während der Größenänderung, Font-Evakuierung, Gerätezurücksetzung und beim Herunterfahren über alle Hardware-Backends hinweg und führen Sie normale OSD-Tests durch, um sicherzustellen, dass der geschützte Pfad gültige Aktualisierungen nicht blockiert."
+    },
+    {
+      "type": "callout",
+      "text": "Die Korrektur vervollständigt die Textur-Zustandsmaschine: Ein Allokationsfehler ist ein terminaler Zweig für diese Anfrage, nicht eine Warnung gefolgt vom normalen Upload-Code."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Lesen Sie die PCSX2-Entwicklungsdiskussion und die Quelländerungen"
+    }
+  ]
+}

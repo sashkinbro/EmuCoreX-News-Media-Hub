@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguir solavancos de shader na primeira execução de engasgos recorrentes no tempo de quadro",
+  "summary": "Execute uma rota fixa a frio e a quente sem excluir o cache, marque cada local de engasgo e classifique apenas as pausas na primeira visita como candidatas à compilação, enquanto preserva engasgos recorrentes de E/S, cena ou ciclo de vida para diagnóstico separado.",
+  "heroAlt": "Gráfico oficial de otimização de shaders PCSX2 representando a carga de trabalho de compilação e do renderizador",
+  "searchKeywords": [
+    "Solavanco de shader EmuCoreX",
+    "Engasgo recorrente PS2",
+    "rota fria e quente",
+    "cache de shader",
+    "pico no tempo de quadro"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Desempenho",
+    "stutter": "Gagueira"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan orientação sobre pipeline e desempenho",
+    "pcsx2-vulkan": "PCSX2 desenvolvimento de shader-cache"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Marcar locais de travamento em rotas frias e quentes idênticas"
+    },
+    {
+      "type": "paragraph",
+      "text": "A compilação de shader normalmente ocorre quando um novo material ou efeito é encontrado pela primeira vez e deve diminuir uma vez que a pipeline relevante esteja em cache. A gagueira recorrente se repete na mesma transição, leitura de armazenamento, evento em segundo plano ou limite de sincronização de quadros. Escolha uma rota determinística que contenha vários efeitos e registre timestamps em vez de confiar na memória."
+    },
+    {
+      "type": "callout",
+      "text": "Não limpe o cache de shaders entre as passagens fria e quente. Fazer isso força ambas as rotas a se comportarem como se fossem visitas iniciais e destrói a comparação."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare uma linha do tempo de travadas"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um salvamento normal antes de uma rota determinística de dois a cinco minutos.",
+        "System driver, um renderizador e perfil gráfico inalterado.",
+        "Uma sobreposição de tempo de quadro ou gravação de tela sincronizada usada em cada passagem.",
+        "Estado do cache documentado antes da primeira execução.",
+        "Downloads em segundo plano, captura e notificações controlados."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Compare a primeira visita, replay imediato e reinício do aplicativo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Reinicie o aplicativo sem excluir o cache de gráficos e faça uma inicialização fria da rota.",
+        "2. Marque o timestamp e o conteúdo visível para cada pico de tempo de quadro.",
+        "3. Retorne ao save normal e faça replay imediatamente sem alterar as configurações.",
+        "4. Classifique os engasgos que desaparecem na segunda visita como candidatos à compilação.",
+        "5. Marque os travamentos que se repetem na mesma fronteira de carregamento ou animação.",
+        "6. Feche e reabra o aplicativo sem limpar o cache, e então execute uma terceira passagem.",
+        "7. Reinicie o Android e repita apenas quando a persistência do ciclo de vida estiver sendo testada.",
+        "8. Envie locais recorrentes para armazenamento, CPU/GPU, ou diagnóstico de sincronização de quadros em vez de chamar tudo de tremulação de shader."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma comparação com cache aquecido transforma o tempo em evidência. Pausas que ocorrem apenas na primeira vez se encaixam na criação do pipeline; um atraso que se repete em cada porta pode ser E/S ou sincronização; uma falha em intervalos regulares pode vir de trabalho em segundo plano. A terceira passagem testa se o cache sobrevive a uma reinicialização comum do aplicativo."
+    },
+    {
+      "type": "heading",
+      "text": "Aceitação de classificação de tremulação"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cada rótulo deve ser respaldado pelo seu comportamento ao longo das passagens."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Engasgos que ocorrem apenas na primeira visita desaparecem ou diminuem na reprodução imediata.",
+        "Paradas recorrentes mantêm um carimbo de data/hora ou limite de cena reproduzível.",
+        "Configurações, driver, política de cache e rota permanecem inalterados.",
+        "O comportamento na terceira execução revela se o cache persiste após reiniciar o aplicativo.",
+        "Evidências do tempo de quadro concordam com a cadência visível e de áudio."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Linhas do tempo para repetir"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Inimigos aleatórios ou mudanças climáticas alteram a rota: escolha um ponto de verificação determinístico.",
+        "A captura de vídeo é feita em apenas uma execução: normalize a sobrecarga.",
+        "Android atualiza ou limpa o cache durante o teste: reinicie a sequência completa.",
+        "Mudanças significativas na temperatura do dispositivo: iguale o estado térmico antes da comparação."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Retorne os overlays e a política de cache ao normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desative o overlay de tempo de quadro de diagnóstico, preserve o cache de shader válido, restaure o comportamento de aplicativos em segundo plano e faça um cold-boot do título uma vez. Não agende a exclusão rotineira de cache para travamentos já comprovados que desaparecem após a compilação."
+    },
+    {
+      "type": "heading",
+      "text": "Nem todo travamento na primeira visita é um shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uploads de textura, leituras de disco, descompactação e lógica de jogo também podem ocorrer uma vez por área. Trate o desaparecimento na primeira passagem como uma classificação candidata, depois use contadores e registros para confirmar o subsistema responsável. Repita a rota exata após um reinício a quente e novamente após uma condição de limpeza real do cache somente quando essa operação estiver documentada e for segura. Se o travamento se mover com o acesso ao armazenamento ou aparecer em cada volta na mesma fronteira de streaming, preserve os dados do shader e investigue a carga de trabalho recorrente em vez de deletar caches repetidamente."
+    },
+    {
+      "type": "link",
+      "text": "Revise a orientação de otimização Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

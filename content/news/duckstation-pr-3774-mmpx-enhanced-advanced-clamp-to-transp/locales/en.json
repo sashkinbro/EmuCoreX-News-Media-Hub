@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation gives MMPX a transparent boundary instead of repeated edge pixels",
+  "summary": "Out-of-bounds neighbor taps now contribute zero alpha and color, preventing clamp-to-edge duplication from inventing shapes that confuse the scaler's morphology rules.",
+  "heroAlt": "Source evidence from DuckStation pull request #3774: MMPX Enhanced/Advanced clamp-to-transparent out-of-bounds mapping",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "clamp to edge",
+    "transparent pixels",
+    "shader sampling"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Enhanced/Advanced clamp-to-transparent out-of-bounds mapping"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Clamp-to-edge manufactures neighbors the source image does not contain"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX decides how to expand pixels by examining local color shapes and trends. At a texture boundary, normal clamped sampling repeats the last valid texel for every out-of-range coordinate. That behavior is convenient for ordinary filtering, but a morphological scaler interprets the repeated color as additional structure. Corners and lines near the border can therefore be classified differently from identical shapes in the middle of the image."
+    },
+    {
+      "type": "heading",
+      "text": "Coordinate masks turn invalid taps into transparent samples"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3774 changes the srcf helper in both MMPX Enhanced and Advanced shader generation. Each neighbor still calls SampleFromVRAM, but the result is multiplied by horizontal and vertical step masks comparing the requested coordinate with uv_limits. A coordinate outside the permitted rectangle receives a zero multiplier, making the effective sample transparent rather than a copy of the edge texel."
+    },
+    {
+      "type": "heading",
+      "text": "The change is local to shape analysis, not global texture addressing"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation does not replace clamp behavior for every PlayStation texture. The mask lives in the generated MMPX sampling helpers because these algorithms require a conceptual empty neighborhood beyond the source image. Other shader paths can continue using their established wrap or clamp semantics. That narrow scope prevents a pixel-art scaling fix from changing how games themselves address texture edges."
+    },
+    {
+      "type": "heading",
+      "text": "Border fixtures should mirror interior shapes exactly"
+    },
+    {
+      "type": "paragraph",
+      "text": "Build test images containing diagonals, corners, one-pixel lines, and four-pixel intersections both at the texture edge and several pixels inward. After scaling, the border form should match the interior form except for the missing outside area. Repeat with nonzero UV subrectangles, texture pages, transparency, and odd dimensions. Compare Enhanced and Advanced variants and inspect all four sides; a sign error in one coordinate mask could fix the right edge while breaking the left."
+    },
+    {
+      "type": "callout",
+      "text": "For MMPX morphology, space outside the image is empty; repeating the edge color is not harmless filtering but false shape evidence."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

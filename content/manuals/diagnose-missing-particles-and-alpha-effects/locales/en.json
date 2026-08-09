@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-particles-and-alpha-effects",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnose missing particles and per-pixel alpha effects",
+  "summary": "Use a repeatable smoke, sparks, rain, or energy effect to separate missing draws from incorrect per-pixel alpha blending, compare software and hardware paths, and retain the least expensive correction that preserves layer order.",
+  "heroAlt": "Official PCSX2 corrected hardware-rendering comparison with restored game geometry and effects",
+  "searchKeywords": [
+    "PS2 missing particles",
+    "EmuCoreX sparks invisible",
+    "PABE",
+    "alpha effects",
+    "smoke renderer fix"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "effects": "Effects"
+  },
+  "sourceLabels": {
+    "pcsx2-pabe": "PCSX2 per-pixel alpha blending implementation",
+    "pcsx2-alpha": "PCSX2 alpha-test and blend analysis"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Determine whether particles are absent or composited incorrectly"
+    },
+    {
+      "type": "paragraph",
+      "text": "A particle system can draw geometry that is present but fully transparent, use the wrong alpha test, appear behind an opaque surface, or vanish because a manual draw rule discards it. Select an effect that can be triggered on demand and has a known lifetime: a weapon spark, exhaust plume, rainfall burst, spell trail, or smoke cloud. Record its spawn point, duration, background color, and camera position."
+    },
+    {
+      "type": "callout",
+      "text": "Do not increase blending accuracy and skip-draw together. One can restore composition while the other deletes draws, leaving no defensible explanation for the result."
+    },
+    {
+      "type": "heading",
+      "text": "Pin a short effect timeline"
+    },
+    {
+      "type": "list",
+      "items": [
+        "An in-game save immediately before a repeatable particle event.",
+        "A direct recording from spawn through disappearance.",
+        "Native resolution, system driver, and manual GS fixes reset.",
+        "A software-rendered correctness capture where practical.",
+        "Performance counters from the most particle-heavy portion."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Trace draw presence before blend accuracy"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot and trigger the effect on the baseline hardware API at native resolution.",
+        "2. Inspect individual frames for faint geometry, solid rectangles, wrong color, reversed order, or complete absence.",
+        "3. Close the session and repeat on the other supported hardware API with identical settings.",
+        "4. Use software rendering briefly to record the intended count, opacity curve, and order against foreground objects.",
+        "5. Return to the more stable hardware path and raise blending accuracy one tier when draws exist but composition differs.",
+        "6. If particles remain completely absent, restore blending and remove broad skip-draw or discard rules before retesting.",
+        "7. Verify a second alpha feature such as foliage, shadows, fog, or a translucent HUD overlay.",
+        "8. Warm the device and replay the peak effect to measure the actual sustained cost."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Per-pixel alpha blending can require the emulator to reproduce operations the host hardware blend unit cannot express directly. Software-assisted paths improve accuracy but may add synchronization and cost. A spawn-to-fade recording shows whether particle count, opacity, and order are correct rather than treating any visible blob as success."
+    },
+    {
+      "type": "heading",
+      "text": "Particle and alpha pass criteria"
+    },
+    {
+      "type": "paragraph",
+      "text": "The accepted correction must preserve the full lifetime and surrounding layers."
+    },
+    {
+      "type": "list",
+      "items": [
+        "The expected particles appear at the correct spawn point and time.",
+        "Opacity changes smoothly instead of switching between invisible and solid.",
+        "Foreground geometry occludes particles correctly while background remains visible through them.",
+        "The second alpha feature does not regress.",
+        "Sustained effects remain within the title's playable frame-time budget."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Alpha evidence that needs a different diagnosis"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Software output is also empty: confirm game state, image integrity, and original behavior.",
+        "Particles appear only after an emulator state load: reproduce from an in-game save.",
+        "A blending tier restores smoke but removes foliage: reject the combined profile and isolate the title behavior.",
+        "Only a custom GPU driver fails: restore the system driver and report that driver separately."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Remove blending and draw-rule experiments separately"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restore Automatic blending first, confirm the recorded baseline, then remove any temporary skip-draw or alpha-test override. Cold-boot the spawn checkpoint after each rollback so the responsible variable remains identifiable."
+    },
+    {
+      "type": "heading",
+      "text": "Video compression can erase small particles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Thin rain, sparks, and translucent smoke are easily lost to low-bitrate encoding. Use local direct captures for QA and avoid judging particle count from a recompressed social or streaming preview."
+    },
+    {
+      "type": "link",
+      "text": "Read the PCSX2 PABE implementation notes",
+      "url": "https://pcsx2.net/blog/2025/pcsx2-2.4_2.2/"
+    }
+  ]
+}

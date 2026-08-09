@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation memberikan MMPX batas transparan alih-alih piksel tepi yang diulang",
+  "summary": "Ketukan tetangga di luar batas sekarang memberikan alpha dan warna nol, mencegah duplikasi clamp-to-edge menciptakan bentuk yang membingungkan aturan morfologi scaler.",
+  "heroAlt": "Bukti sumber dari permintaan tarik DuckStation #3774: MMPX Pemetaan out-of-bounds clamp-to-transparent yang Ditingkatkan/Lanjutan",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "clamp ke tepi",
+    "piksel transparan",
+    "pengambilan sampel shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Pemetaan out-of-bounds clamp-to-transparent yang Ditingkatkan/Lanjutan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Clamp-to-edge membuat tetangga yang tidak dimiliki gambar sumber"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX memutuskan bagaimana memperluas piksel dengan memeriksa bentuk dan tren warna lokal. Pada batas tekstur, pengambilan sampel yang dikunci secara normal mengulang texel valid terakhir untuk setiap koordinat yang berada di luar jangkauan. Perilaku itu nyaman untuk penyaringan biasa, tetapi pengubah skala morfologis menafsirkan warna yang diulang sebagai struktur tambahan. Sudut dan garis dekat tepi bisa diklasifikasikan berbeda dari bentuk yang identik di tengah gambar."
+    },
+    {
+      "type": "heading",
+      "text": "Masker koordinat mengubah ketukan yang tidak valid menjadi sampel transparan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3774 mengubah bantuan srcf di MMPX Enhanced dan pembuatan shader Advanced. Setiap tetangga masih memanggil SampleFromVRAM, tetapi hasilnya dikalikan dengan masker langkah horizontal dan vertikal yang membandingkan koordinat yang diminta dengan uv_limits. Koordinat di luar persegi panjang yang diperbolehkan menerima pengali nol, menjadikan sampel efektif transparan daripada salinan texel tepi."
+    },
+    {
+      "type": "heading",
+      "text": "Perubahan ini bersifat lokal pada analisis bentuk, bukan pada penentuan alamat tekstur global"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation tidak menggantikan perilaku clamp untuk setiap tekstur PlayStation. Masker berada dalam pembantu sampling MMPX yang dihasilkan karena algoritma ini memerlukan lingkungan kosong konseptual di luar gambar sumber. Jalur shader lain dapat terus menggunakan semantik wrap atau clamp yang sudah ada. Lingkup yang sempit itu mencegah perbaikan skalasi pixel-art mengubah cara permainan sendiri menangani tepi tekstur."
+    },
+    {
+      "type": "heading",
+      "text": "Perlengkapan border harus mencerminkan bentuk interior secara tepat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat gambar uji yang berisi diagonal, sudut, garis satu piksel, dan persimpangan empat piksel baik di tepi tekstur maupun beberapa piksel ke dalam. Setelah diskala, bentuk border harus sesuai dengan bentuk interior kecuali untuk area luar yang hilang. Ulangi dengan subrectangle UV nonzero, halaman tekstur, transparansi, dan dimensi ganjil. Bandingkan varian Enhanced dan Advanced dan periksa keempat sisi; kesalahan tanda di salah satu masker koordinat bisa memperbaiki tepi kanan sekaligus merusak tepi kiri."
+    },
+    {
+      "type": "callout",
+      "text": "Untuk morfologi MMPX, ruang di luar gambar kosong; mengulangi warna tepi bukanlah penyaringan yang tidak berbahaya tetapi bukti bentuk palsu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Baca diskusi rekayasa DuckStation dan perubahan sumber"
+    }
+  ]
+}

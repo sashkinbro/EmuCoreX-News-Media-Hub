@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin leitet die GameCube-Speichergröße von der Disc ab, die sie anfordert",
+  "summary": "Das bi2.bin-Simulationsspeicherfeld wählt nun MEM1 innerhalb der Hardwaregrenzen, während manuelle Überschreibungen weiterhin für gezielte Experimente verfügbar bleiben.",
+  "heroAlt": "Quellenbeleg aus dem Dolphin Pull-Request #14665: Core: Emulierten Speicher automatisch anpassen.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "GameCube-Devkit",
+    "Speichergröße"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Core: Emulierten Speicher automatisch anpassen."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Discheader trug bereits einen Speicherentwicklungsvertrag"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die GameCube-Datei bi2.bin enthält an Offset 0x04 eine simulierte Speicherkapazität. Auf Entwicklungs-Hardware mit mehr RAM verwendete Apploader diesen Wert, um während Tests eine kleinere Zielmaschine zu simulieren. Dolphin zeigte die Speicherbemessung zuvor hauptsächlich als manuelle Übersteuerung mit einer starken Warnung an, da beliebige Werte viele Spiele zerstören können. Dadurch konnten Disc-Images, die auf ihren eigenen Headern basieren, die passende Kapazität nicht automatisch anfordern."
+    },
+    {
+      "type": "heading",
+      "text": "Metadaten werden nun von VolumeDisc an MemoryManager übertragen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14665 liest das Feld als vertauschte 32-Bit-Ganzzahl aus der Spielpartition, speichert es mit laufenden Spiel-Metadaten, kopiert es während der Initialisierung in Core::System und macht es für die Speicherzuordnung verfügbar. Das automatische Ergebnis wird auf mindestens die Einzelhandelsgröße von 24 MiB MEM1 und maximal 64 MiB begrenzt, der maximalen Kapazität des Speicherkontrollers von Flipper. WAD- und Nicht-Disc-Quellen melden null."
+    },
+    {
+      "type": "heading",
+      "text": "Explizite Übersteuerungen haben weiterhin Vorrang, aber gewöhnliche Benutzer benötigen keine Schätzungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn die manuelle RAM-Überschreibung aktiviert ist, steuern ihre konfigurierten Werte weiterhin die Karte. Andernfalls kann eine Kopfzeile über der Einzelhandelskapazität MEM1 erweitern und damit zusammenhängende FIFO-Aufzeichnungsverhalten aufzeichnen. Ein Wert unter dem Einzelhandelswert verkleinert die Konsole nicht unter das, was veröffentlichte Software erwartet. Die Beschreibung der Einstellungen erklärt nun, dass Dolphin normalerweise den Wert aus Spielinformationen bestimmt und legitimes metadatenbasiertes Verhalten von riskanten manuellen Experimenten trennt."
+    },
+    {
+      "type": "heading",
+      "text": "Tests benötigen echte Kopfzeilen, fehlerhafte Werte und Subsystem-Konsumenten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen Sie Disc-Fixturen mit null, 24 MiB, mittleren, 48 MiB, 64 MiB und Werten über dem Controller-Limit. Überprüfen Sie Endian-Decodierung, Clamp-Verhalten, MEM1-Adressbereiche, IOS-Release-Verhalten, Analysen und FIFO-Aufzeichnungen. Wechseln Sie Spiele ohne Neustart, um sicherzustellen, dass Metadaten nicht zwischen den Systemen übertragen werden können. Bestätigen Sie, dass manuelle Überschreibungen Vorrang haben und der WAD-Start die Einzelhandelsgröße beibehält. Führen Sie schließlich Entwicklungs-Images aus, die wirklich zusätzlichen Speicher verwenden, und Einzelhandelsspiele, deren Kopfzeilen ungewöhnliche Werte enthalten."
+    },
+    {
+      "type": "callout",
+      "text": "Der sichere Standardwert ist nicht länger eine universelle Zahl; es ist der Verkaufsboden plus eine begrenzte Anforderung, die aus den eigenen Entwicklungsmetadaten der Festplatte stammt."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Lesen Sie die Dolphin Ingenieurdiskussion und Quelländerungen"
+    }
+  ]
+}

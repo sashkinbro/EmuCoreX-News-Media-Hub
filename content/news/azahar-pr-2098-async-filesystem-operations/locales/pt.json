@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar move solicitações lentas do sistema de arquivos 3DS para fora da thread de emulação sem tornar o FS_USER simultâneo",
+  "summary": "Uma fila dedicada de trabalhador único permite que threads do convidado continuem durante operações de armazenamento caras, preservando a serialização exigida pelo serviço FS_USER não thread-safe do Azahar.",
+  "heroAlt": "Solicitação de pull assíncrona do sistema de arquivos Azahar mostrando o design do trabalhador FS_USER dedicado",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "sistema de arquivos assíncrono",
+    "Trabalhador de Thread",
+    "Android engasgo de armazenamento"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Armazenamento",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "core: Adicionar operações assíncronas do sistema de arquivos"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma pausa de armazenamento do host não deve congelar todas as threads de aplicação emuladas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Algumas chamadas do sistema de arquivos 3DS podem demorar o suficiente no host para se tornarem percepíveis como travamentos, especialmente através dos provedores de armazenamento Android usados na versão do Google Play. Executar a operação de forma inline bloqueia o thread de emulação mesmo quando outro trabalho do convidado poderia continuar. A pull request #2098 altera esse limite de agendamento: IPC do sistema de arquivos pode colocar o thread do convidado que fez a chamada para dormir enquanto a operação do host roda em outro lugar."
+    },
+    {
+      "type": "heading",
+      "text": "Um worker de um thread resolve a restrição de segurança FS_USER"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar não poderia simplesmente enviar todas as requisições para o pool de threads geral porque FS_USER e seu estado de arquivo não são thread-safe. A mudança dá ao serviço um ThreadWorker dedicado contendo exatamente um thread de trabalho. As requisições são assíncronas em relação à emulação, mas serializadas em relação umas às outras. Isso preserva as suposições de ordenação do serviço sem forçar threads emulados não relacionados a esperarem pelo sistema de arquivos do host."
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker separa o trabalho do host da resposta IPC"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext ganha um auxiliar que encapsula a operação de armazenamento em uma tarefa empacotada, a coloca na fila no trabalhador escolhido e mantém um futuro para a conclusão. A thread do cliente convidado dorme enquanto a tarefa é executada. Uma vez concluída, Azahar acorda essa thread e constrói o resultado IPC no lado do emulador. Um fallback síncrono permanece disponível para o modo de operação assíncrona determinística e para casos em que a configuração está desativada."
+    },
+    {
+      "type": "heading",
+      "text": "O patch evita pagar o overhead da fila para cada pequena leitura"
+    },
+    {
+      "type": "paragraph",
+      "text": "A implementação é seletiva. Abrir, excluir, renomear arquivos, diretórios e caminhos relacionados FS_USER podem usar o trabalhador dedicado. Operações de arquivo em cache seguem o caminho assíncrono quando os dados não estão prontos, enquanto muitas pequenas leituras e escritas não em cache permanecem síncronas porque a comunicação entre threads poderia custar mais do que o I/O. Fechamento e redimensionamento de arquivos também respeitam a configuração, e o destruidor FS_USER espera pelas requisições enfileiradas antes que o serviço desapareça."
+    },
+    {
+      "type": "heading",
+      "text": "Menos travamentos podem ser trocados por um carregamento ligeiramente mais longo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permitir que outras threads de convidados sejam executadas altera quando o progresso é visível, não a rapidez com que o dispositivo de armazenamento host termina. Portanto, a fonte espera uma grande redução nos bloqueios relacionados ao sistema de arquivos, mas reconhece que algumas cargas podem levar marginalmente mais tempo. A opção é ativada por padrão nas configurações de armazenamento Android e Qt, tornando a troca visível e reversível em vez de ocultá-la em uma compilação específica da plataforma."
+    },
+    {
+      "type": "heading",
+      "text": "O teste de correção deve sobreviver à operação e ao serviço."
+    },
+    {
+      "type": "paragraph",
+      "text": "Um benchmark útil registra tempos de quadro e duração do carregamento com a opção ligada e desligada usando a mesma localização de armazenamento. A cobertura de correção deve abranger aberturas, leituras de diretório, solicitações de renomear e excluir; fechar um título enquanto o trabalho está na fila; e verificar os hashes dos dados salvos posteriormente. O armazenamento de documentos lento Android é o principal caso de desempenho, mas caminhos locais de desktop e com suporte de rede são valiosos para expor regressões de ordem, desligamento e propagação de erros."
+    },
+    {
+      "type": "callout",
+      "text": "A escolha de design principal é a assincronia serializada: um trabalhador FS_USER remove os atrasos da thread de emulação sem fingir que o serviço de sistema de arquivos é seguro para acesso paralelo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "Revise o trabalhador FS_USER de Azahar, o despertar de IPC e a implementação de configuração de armazenamento"
+    }
+  ]
+}

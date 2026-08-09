@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin define limites rígidos em torno da descompressão de saves do NetPlay",
+  "summary": "Decodificação segura LZO, acumulação verificada e validação do tamanho final exato impedem que blocos de save remotos ultrapassem a memória ou manipulem a alocação de forma descontrolada.",
+  "heroAlt": "Evidência na fonte a partir do pull request Dolphin #14740: NetPlay: limitar a saída de descompressão LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Save do NetPlay",
+    "descompressão",
+    "segurança de buffer"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Segurança",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: limitar a saída de descompressão LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A sincronização comprimida ultrapassa um limite de tamanho hostil"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay pode transferir arquivos ou pastas salvos de outro peer antes de jogar. Cada bloco comprimido LZO e o tamanho final declarado vêm da rede. O caminho anterior invocava o decodificador sem verificação sem definir a capacidade de saída, então dados comprimidos malformados poderiam ser escritos além do destino. Um caminho de buffer também foi alocado diretamente a partir do tamanho fornecido pelo peer, permitindo que a própria reivindicação gerasse pressão de memória antes que a descompressão provasse qualquer coisa."
+    },
+    {
+      "type": "heading",
+      "text": "Agora, cada bloco recebe uma capacidade de destino real"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14740 muda para lzo1x_decompress_safe. A saída do arquivo inicializa new_len com o tamanho fixo do buffer de saída e verifica se o bloco decodificado cabe no total restante declarado antes de escrever. A saída da pasta em memória decodifica em um bloco temporário limitado, verifica tanto a subtração do tamanho declarado quanto a aritmética max_size do vetor, e então adiciona apenas os bytes produzidos com sucesso. O total remoto não é mais usado como uma solicitação de alocação imediata."
+    },
+    {
+      "type": "heading",
+      "text": "O total final deve ser exato, não apenas abaixo de um limite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aceitar menos bytes do que o declarado pode deixar um salvamento truncado que é analisado de forma imprevisível, enquanto aceitar mais ultrapassaria o limite de formato declarado pelo remetente. Tanto o caminho de arquivo quanto o de buffer acumulam uma contagem de 64 bits e requerem igualdade no final. Erros do decodificador, condições de estouro aritmético, saída além da reivindicação, ou uma incompatibilidade retornam falha com um alerta controlado em vez de passar conteúdo parcial para extração de salvamento posterior."
+    },
+    {
+      "type": "heading",
+      "text": "Um corpus de descompressão deve testar o uso de recursos, bem como gravações"
+    },
+    {
+      "type": "paragraph",
+      "text": "Forneça transferências válidas vazias, de bloco único, multi-bloco e o máximo normal, depois fluxos corrompidos, bombas de expansão, blocos truncados, blocos finais, reivindicações zero, reivindicações enormes e totais um pouco acima ou abaixo da saída real. Execute sob AddressSanitizer e limites de memória, verificando que a falha remove arquivos parciais e não deixa uma sessão aguardando indefinidamente. Faça testes cruzados entre as versões do remetente e do receptor, pastas de salvamento com muitas entradas e redes interrompidas. Um máximo em nível de protocolo ainda pode ser desejável além dos limites de segurança de memória."
+    },
+    {
+      "type": "callout",
+      "text": "A descompressão segura precisa de três acordos: cada bloco encaixa em seu buffer, os bytes acumulados não podem transbordar, e o fluxo completo é igual à carga útil declarada."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Leia a discussão de engenharia Dolphin e as alterações de código-fonte"
+    }
+  ]
+}

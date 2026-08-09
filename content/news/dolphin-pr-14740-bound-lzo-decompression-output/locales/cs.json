@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin stanovuje pevné hranice kolem dekomprese uložených souborů NetPlay",
+  "summary": "Bezpečné dekódování LZO, kontrolované kumulace a přesná kontrola konečné velikosti zabraňují tomu, aby vzdálené uložené bloky přetekly paměť nebo neřízeně ovlivnily alokaci.",
+  "heroAlt": "Důkaz ze zdroje z žádosti o Pull Request Dolphin #14740: NetPlay: ohraničit výstup dekomprese LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Uložení NetPlay",
+    "dekompresní",
+    "bezpečnost bufferu"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Bezpečnost",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: ohraničit výstup dekomprese LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Komprimovaná synchronizace překračuje nepřátelskou velikostní hranici"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay může přenášet uložené soubory nebo složky od jiného účastníka před hraním. Každý komprimovaný blok LZO a deklarovaná konečná velikost pochází ze sítě. Předchozí cesta vyvolala nekontrolovaný dekodér bez nastavení kapacity výstupu, takže poškozená komprimovaná data mohla zapisovat za cílové místo. Jedna cesta bufferu také alokovala přímo podle velikosti poskytnuté účastníkem, což umožnilo samotnému požadavku vyvolat tlak na paměť, než dekomprese cokoli prokázala."
+    },
+    {
+      "type": "heading",
+      "text": "Každý blok nyní dostává skutečnou cílovou kapacitu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14740 přepíná na lzo1x_decompress_safe. Výstup souboru inicializuje new_len na pevnou velikost výstupního bufferu a ověřuje, že dekódovaný blok se vejde do zbývající deklarované celkové velikosti před zápisem. Výstup složky v paměti dekóduje do omezeného dočasného bloku, ověřuje jak odečítání deklarované velikosti, tak aritmetiku max_size vektoru, a poté připojuje pouze úspěšně vytvořené byty. Vzdálený celkový součet se již nepoužívá jako okamžitý požadavek alokace."
+    },
+    {
+      "type": "heading",
+      "text": "Konečný součet musí být přesný, nikoliv pouze pod stropem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Přijímání menšího počtu bajtů než deklarovaných by mohlo zanechat zkrácenou uloženou soubor, který se parsuje nepředvídatelně, zatímco přijímání většího počtu by překročilo deklarovanou formátovou hranici odesílatele. Cesty souboru i vyrovnávací paměti kumulují 64bitový počet a vyžadují shodu na konci. Chyby dekodéru, aritmetický přetečení, výstup mimo deklarovaný rozsah nebo nesoulad všechny vracejí selhání s řízeným upozorněním, místo aby předávaly částečný obsah pro pozdější extrakci uložených dat."
+    },
+    {
+      "type": "heading",
+      "text": "Korpus dekomprese by měl testovat využití zdrojů stejně jako zápisy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poskytujte platné prázdné, jedno-blokové, více-blokové a maximální normální přenosy, poté poškozené toky, expanzní bomby, zkrácené bloky, koncové bloky, nulová tvrzení, obrovská tvrzení a celkové hodnoty těsně nad nebo pod skutečný výstup. Spouštějte pod AddressSanitizerem a s paměťovými limity, kontrolujte, že selhání odstraňuje částečné soubory a nenechává relaci čekat navždy. Křížově testujte verze odesílatele a příjemce, složky ukládání s mnoha položkami a přerušené sítě. Na úrovni protokolu může být stále vhodné mít maximální hranici nad rámec bezpečných limitů paměti."
+    },
+    {
+      "type": "callout",
+      "text": "Bezpečná dekomprese potřebuje tři dohody: každý blok se vejde do svého bufferu, nahromaděné bajty nemohou přetéct a dokončený proud se rovná deklarovanému datovému objemu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny Dolphin"
+    }
+  ]
+}

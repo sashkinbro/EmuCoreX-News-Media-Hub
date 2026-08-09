@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP leitet Plattform-Eingaben durch die UI-Ereignisschleife weiter",
+  "summary": "Touch-, Tastatur- und Achsen-Callbacks legen nun Daten in eine Warteschlange für geordnete Verarbeitung im UI-Thread, wodurch unsynchronisierte Bildschirmmethoden und ein breites rekursives Lock entfernt werden.",
+  "heroAlt": "Quellenhinweis aus dem Pull Request #21857 von PPSSPP: Überarbeitung der Eingabewarteschlange für die UI, Entfernen von Unsync*-Events",
+  "searchKeywords": [
+    "PPSSPP",
+    "Eingabewarteschlange",
+    "ScreenManager",
+    "Touch",
+    "Controller"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Eingabe",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Überarbeitung der Eingabewarteschlange für die UI, Entfernen von Unsync*-Events"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eingabe-Callbacks und Bildschirmänderungen teilten sich eine fragile Grenze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desktop- und mobile Backends können Touch-, Tastatur- und Controller-Ereignisse aus Kontexten melden, die nicht den aktuellen Bildschirmstapel von PPSSPP besitzen. Das frühere Design vermischte eine rekursive Eingabesperre mit den Einstiegspunkten UnsyncTouch, UnsyncKey und UnsyncAxis, die direkt durch Ansichten navigieren konnten. Bildschirmwechsel, Overlays und Ereignisverteilung hingen daher von einer großen Sperre und davon ab, dass die Aufrufer wussten, welche unsynchronisierte Methode sicher war."
+    },
+    {
+      "type": "heading",
+      "text": "Callbacks führen jetzt nur noch eine kurze Warteschlangenoperation aus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #21857 definiert typisierte wartende Ereignisse für Touch-, Tasten- und Achseneingaben. ScreenManager-Callbacks kopieren das Ereignis und fügen es hinzu, während eventQueueLock gehalten wird. Während des Updates verschiebt der UI-Thread den gesamten Deque in eine lokale Variable, gibt das Mutex frei und verteilt die Ereignisse in der Reihenfolge. Der kritische Abschnitt führt keinen View-Code aus, sodass Handler die Latenz des Plattform-Callbacks nicht verlängern oder die Warteschlangensperre rekursiv erwerben können."
+    },
+    {
+      "type": "heading",
+      "text": "Spezielle Lieferregeln bleiben explizit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alle Touch-Events werden weiterhin an jede Bildschirmebene weitergeleitet, und Key-Up-Events breiten sich weiterhin aus, sodass eine Hintergrundebene eine festhängende Taste nach Stapeländerungen nicht behalten kann. Gewöhnliche Eingaben gehen zum vorderen Bildschirm, während ein Overlay zuerst Touch-Down erhält, sodass es sich selbst schließen und das Event verbrauchen kann. Die Fokus-Navigationskonvertierung wird zu einem normalen KeyEventToFocusMoves-Helfer, und viele Unsync-Methoden verschwinden, da die Zustellung jetzt im Besitz-Thread erfolgt."
+    },
+    {
+      "type": "heading",
+      "text": "Reihenfolge und Bildschirmübergänge sind die schwierigen Tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generiere vermischte Touch-, Key- und Achsen-Events beim Öffnen und Schließen von Popups, Wechseln der Bildschirme, Drehen des Geräts, Wiederverbinden von Controllern und Halten von Tasten über einen Übergang hinweg. Bestätige die FIFO-Reihenfolge und dass Freigabe-Events jeden gedrückten Zustand löschen. Belastung der Erzeuger aus mehreren Threads und Verwendung von ThreadSanitizer für den Zugriff auf die Warteschlange und den Bildschirmstapel. Definiere das Verhalten, wenn sich ein Bildschirm ändert, nachdem ein Event in die Warteschlange gestellt, aber vor dem Update verarbeitet wurde; die Implementierung zielt absichtlich auf den Stapel ab, der zum Zeitpunkt der Zustellung aktuell ist, sodass die Tests diesen Vertrag eindeutig festlegen müssen."
+    },
+    {
+      "type": "callout",
+      "text": "Plattform-Callbacks melden jetzt Eingaben; der UI-Thread entscheidet, wo sie gehören, wenn er die geordnete Warteschlange verarbeitet."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Lesen Sie die PPSSPP-Engineering-Diskussion und Quellcodeänderungen"
+    }
+  ]
+}

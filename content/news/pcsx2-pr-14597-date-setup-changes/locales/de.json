@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 lässt die DATE-Konfiguration von der Alpha-Test-Überlappung abhängig machen",
+  "summary": "Eine gezielte GS-Entscheidung trennt komplexe alpha-getestete Darstellungen, die sicher den einen DATE-Pfad verwenden können, von überlappenden Darstellungen, die eine Barriere benötigen und diesen Pfad vermeiden müssen.",
+  "heroAlt": "Visuelle Beweise aus dem Pull-Request #14597 von PCSX2: GS/HW: Änderungen der DATE-Konfiguration.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "Alpha-Test",
+    "Texture-Barriere",
+    "GS Renderer"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW: Änderungen der DATE-Konfiguration."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Komplexes Alpha-Testing reicht nicht aus, um den DATE-Pfad zu wählen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Destination-Alpha-Test-Emulation interagiert sowohl mit dem Alpha-Test des Draws als auch damit, ob sie einen sich überschneidenden Bereich liest oder schreibt. Die frühere Konfiguration von PCSX2 behandelte die Bedingung komplexes Alpha zu umfassend. Pull Request #14597 fügt Überlappung zur Entscheidung hinzu, da der nicht überlappende Fall DATE eins ohne die Reihenfolgeproblematik verwenden kann, die auftritt, wenn derselbe Bereich am Draw beteiligt ist."
+    },
+    {
+      "type": "heading",
+      "text": "DATE eins und die DATE-Barriere werden zu beabsichtigten gegenseitigen Entscheidungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Hardware-Renderer erlaubt jetzt DATE eins, wenn ein komplexer Alpha-Test keine Überlappung aufweist. Wenn eine Überlappung vorhanden ist, wird dieser Pfad unterdrückt und stattdessen die DATE-Barriere aktiviert. Dies ist kein neuer Rendering-Effekt; es handelt sich um eine Routing-Korrektur innerhalb von GSRendererHW, sodass die für die Destination-Alpha-Regel gewählte Implementierung dem tatsächlichen Abhängigkeitsmuster des Draws entspricht."
+    },
+    {
+      "type": "heading",
+      "text": "Die Single-File-Änderung hat eine enge, aber sichtbare Regressionoberfläche"
+    },
+    {
+      "type": "paragraph",
+      "text": "Da der Patch nur die Setup-Logik ändert, sollte eine gründliche Überprüfung identifizieren, welchen Zweig jeder betroffene Draw nimmt, anstatt nicht zusammenhängende Renderer-Ausgaben zu vergleichen. Das Risiko ist symmetrisch: Das Erzwingen der Barriere bei harmlosen, sich nicht überlappenden Arbeiten kann Kosten verursachen, während das Zulassen von DATE bei einem überlappenden komplexen Alpha-Test falsche Masken oder Schatten erzeugen kann. Der Zweig muss daher mit der berechneten Überlappung bei jedem Draw übereinstimmen."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 und Energy Airforce verankern die visuellen Überprüfungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelle liefert Vergleiche für die Schatten von Persona 4 und Energy Airforce sowie ein Direct3D 11 Laufprotokoll, das zusätzliche Barriere- und Kopieränderungen abdeckt. Die Validierung sollte diese Szenen mit demselben Renderer und denselben Einstellungen erneut ablaufen lassen, den DATE-Modus, den Status von komplex-alpha, die Überlappung und die Barrierenauswahl aufzeichnen und dann auf einer anderen Hardware-Backend wiederholen. Das erwartete Ergebnis ist dasselbe Bild, wobei die Entscheidung nur wechselt, wenn sich die Überlappung ändert."
+    },
+    {
+      "type": "callout",
+      "text": "Die Regel ist bedingt, nicht global: Komplexes Alpha-Testing kann DATE ohne Überlappung verwenden, aber überlappende Arbeit erfordert den Barrierepfad."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Lesen Sie die PCSX2 Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

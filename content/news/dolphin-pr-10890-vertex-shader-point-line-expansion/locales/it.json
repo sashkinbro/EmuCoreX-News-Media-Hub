@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin ricostruisce punti e linee larghe all'interno dello shader dei vertici",
+  "summary": "L'espansione dei quadrati esce dalla fase di geometria, ripristinando le primitive larghe su Metal e MoltenVK offrendo allo stesso tempo un percorso più veloce su alcuni desktop GPUs.",
+  "heroAlt": "Evidenza della fonte dal pull request #10890 di Dolphin: VideoCommon: Aggiungere l'espansione di punti/linee nello shader dei vertici",
+  "searchKeywords": [
+    "Dolphin",
+    "shader dei vertici",
+    "Metal",
+    "MoltenVK",
+    "linee larghe"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: Aggiungere l'espansione di punti/linee nello shader dei vertici"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I moderni APIs non forniscono tutti la vecchia fase di espansione Dolphin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il software per GameCube e Wii può richiedere punti e linee più larghe di un pixel. Dolphin tradizionalmente espande tali primitive con uno shader di geometria, ma Metal non ha uno stadio equivalente e MoltenVK eredita quella limitazione. Il percorso mancante era visibile in contenuti come la mappa di Metroid Prime 2, dove linee larghe potevano essere renderizzate in modo errato. Gli shader di geometria possono anche essere relativamente costosi anche su hardware che li supporta."
+    },
+    {
+      "type": "heading",
+      "text": "I bit dell'indice dicono allo shader dei vertici quale angolo del quadrato costruire"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #10890 rappresenta un punto o una linea espansa come un quadrato. Gli indici modificati riservano i loro due bit inferiori per identificare l'angolo generato. Lo shader dei vertici carica il vertice sorgente o gli endpoint associati, esegue la trasformazione usuale e calcola lo spostamento nello spazio dello schermo necessario per quell'angolo. La canalizzazione dinamica del caricatore di vertici fornisce i dati aggiuntivi e le costanti della geometria attraverso binding delle risorse specifici del backend."
+    },
+    {
+      "type": "heading",
+      "text": "La capacità del backend decide se il percorso è richiesto o opzionale"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal e Vulkan-through-MoltenVK possono usare l'espansione dei vertici per ottenere funzionalità che non potrebbero esprimere con uno shader geometrico. D3D12, Vulkan, OpenGL e altri percorsi compatibili espongono il supporto, mentre una preferenza avanzata permette agli utenti di selezionare l'espansione dei vertici dove esistono entrambi i metodi. Il profiling su un Radeon Pro 5600M ha mostrato un vantaggio evidente nella mappa di Metroid Prime 2, ma l'opzione rimane contestuale piuttosto che una promessa universale di prestazioni."
+    },
+    {
+      "type": "heading",
+      "text": "La copertura deve includere la semantica dei primitivi, non solo una mappa."
+    },
+    {
+      "type": "paragraph",
+      "text": "Confrontare punti e linee a diverse larghezze, rapporti d'aspetto, risoluzioni interne, scale del viewport, confini di ritaglio e trasformazioni prospettiche. Includere offset di texture, perché la discussione originale li ha identificati come un'area che necessita di maggiore copertura nei giochi. Catturare output Metal, MoltenVK, nativo Vulkan, D3D12 e OpenGL contro l'espansione geometrica dove disponibile. Controllare vertici provocatori, profondità, interpolazione, linee degeneri, cambiamenti di stato e savestate; testare separatamente il carico della pipeline rispetto all'esecuzione dello shader."
+    },
+    {
+      "type": "callout",
+      "text": "L'espansione dei vertici è sia un ponte di compatibilità per Metal sia un'alternativa misurabile agli shader di geometria, ma le regole dei primitivi identiche restano il test di accettazione."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Leggi la discussione ingegneristica Dolphin e le modifiche al codice sorgente"
+    }
+  ]
+}

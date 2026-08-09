@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnose eines PS2-Spiels, das das HUD rendert, aber nicht die Welt",
+  "summary": "Verwenden Sie das noch vorhandene HUD als Beweis dafür, dass die Darstellung aktiv ist, überprüfen Sie das Disc-Image, setzen Sie Zeichensperr-Overrides zurück, vergleichen Sie Hardware-APIs und eine kurze Software-Referenz und erfassen Sie dann den kleinsten reproduzierbaren Fehler in der Weltgeometrie.",
+  "heroAlt": "PCSX2-Spielaufnahme aus einem Renderer-Regressionsvergleich mit Interface- und Weltebenen",
+  "searchKeywords": [
+    "PS2 nur HUD sichtbar",
+    "EmuCoreX schwarze Welt",
+    "fehlende Geometrie",
+    "Zeichenzurücksetzung überspringen",
+    "Renderer-Diagnostik"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafiken",
+    "diagnostics": "Diagnose"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 saubere Fehlerbehebungs-Basislinie",
+    "pcsx2-performance": "PCSX2 Renderer und GS Indikatoren"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Behandle das sichtbare HUD als eine Ebenengrenze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn Zähler, Menüs oder das HUD des Spiels weiterhin angezeigt werden, sind die Ausgabefläche und mindestens ein Teil des GS-Befehlsstroms aktiv. Der fehlende Teil könnte Weltgeometrie, Framebuffer-Zusammensetzung oder eine breite manuelle Regel sein, die Zeichnungen verwirft. Bevor die Genauigkeit geändert wird, sollte aufgezeichnet werden, ob die Welt schwarz, transparent, auf einem früheren Frame eingefroren oder durch eine einzige flache Farbe ersetzt ist. Diese Symptome führen zu unterschiedlichen Tests."
+    },
+    {
+      "type": "callout",
+      "text": "Erhöhen Sie nicht die Skip-Draw-Werte, um eine beschädigte Ebene verschwinden zu lassen. Eine Skip-Regel kann die gesamte Welt entfernen und gleichzeitig 2D-Overlays belassen, was genau dieses Symptom reproduziert."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Boot-to-Gameplay-Checkpoint sollte beibehalten werden"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ein normales In-Game-Save, das die betroffene Szene ohne einen Emulator-Save-State erreicht.",
+        "Verifizierte Seriennummer, Region, Revision und persönlicher Bild-Hash.",
+        "Screenshots der aktuellen globalen und spielbezogenen Grafikwerte.",
+        "System GPU-Treiber mit deaktivierten Textur-Ersetzungen und Shadern.",
+        "Ein kurzes Protokoll, das die Renderer-Initialisierung und den Übergang ins Gameplay zeigt."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zeichnungen vor der Genauigkeit wiederherstellen"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Das Spiel kalt starten und bestätigen, ob Menüs, FMV und Gameplay an unterschiedlichen Grenzen fehlschlagen.",
+        "2. Setze Skip-Draw, manuelle Hardwarekorrekturen, Texturversätze und vererbte pro-Spiel-Patches für diese Seriennummer zurück.",
+        "3. Teste erneut bei nativer interner Auflösung auf der originalen Hardware-API.",
+        "4. Schließe die Sitzung, wähle die andere unterstützte Hardware-API und spiele denselben Übergang erneut ab.",
+        "5. Wenn beide Pfade nur das HUD beibehalten, führe die Szene kurz im Software-Rendering aus und prüfe, ob die Weltgeometrie zurückkommt.",
+        "6. Wenn die Software korrekt ist, kehre zur Hardware zurück und teste nur einen dokumentierten titel-spezifischen Renderer oder GS-Korrektur.",
+        "7. Wenn die Software ebenfalls leer ist, überprüfen Sie das Bild erneut und testen Sie ein sauberes Profil, bevor Sie von einem reinen Grafikfehler ausgehen.",
+        "8. Erfassen Sie Protokolle und genaue Einstellungen von dem kleinsten Durchlauf, der die fehlende Welt reproduziert."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "HUD und Welt verwenden oft unterschiedliche Zeichnungspfade. Ein korrektes Software-Frame beweist, dass das Spiel Weltbefehle erzeugt hat, und beschränkt den Fehler auf die Hardwareübersetzung oder das Verhalten des Host-Treibers. Ein Versagen über saubere Hardware- und Softwarepfade deutet zurück auf das Bild, Patches, Spielfortschritt oder eine umfassendere Emulator-Regression. Das Zurücksetzen von zeichnungsblockierenden Steuerungen zuerst verhindert, dass ein selbst erzeugtes Symptom diese Entscheidung verfälscht."
+    },
+    {
+      "type": "heading",
+      "text": "Kriterien zur Wiederherstellung der Welt-Ebene"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das korrigierte Profil muss mehr als nur ein bequemes Standbild darstellen."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Weltgeometrie, Charaktere, Partikel und HUD erscheinen in der vorgesehenen Reihenfolge.",
+        "Menüs und FMV wechseln weiterhin in das Gameplay, ohne dass ein schwarzer Überblender angezeigt wird.",
+        "Kamerabewegungen dürfen keine großen fehlenden Sektoren offenbaren.",
+        "Ein zweites Gebiet startet mit derselben spielbezogenen Einstellung.",
+        "Die Korrektur ist nur an die verifizierte Seriennummer und Revision gebunden."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Eskalationsnachweise"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Software- und Hardware-APIs schlagen bei einem verifizierten Bild mit sauberen Einstellungen fehl: einen Regressionsbericht sammeln.",
+        "Nur ein benutzerdefinierter Treiber schlägt fehl: zum Systemtreiber zurückkehren und das Treiberpaket separat melden.",
+        "Die Welt kehrt zurück, wenn Skip-Draw null ist: die kopierte Überschreibung zurückziehen.",
+        "Der Fehler beginnt nach dem Laden eines Speicherzustands: aus einem gespeicherten Spielstand reproduzieren, bevor grafische Beweise eingereicht werden."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Das Titelprofil aus den Standardeinstellungen neu aufbauen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Entfernen Sie das experimentelle Profil, stellen Sie den aufgezeichneten globalen Renderer wieder her, wählen Sie den Systemtreiber aus und starten Sie kalt im nativen Modus. Wenden Sie nur die eine verifizierte Korrektur erneut an, wenn sie jede Bereichsüberprüfung bestanden hat; lassen Sie alle Discard-Draw-Steuerungen deaktiviert, es sei denn, offizielle, titel-spezifische Beweise erfordern sie."
+    },
+    {
+      "type": "heading",
+      "text": "Eine schwarze Welt ist nicht immer ein schwarzer Bildschirm"
+    },
+    {
+      "type": "paragraph",
+      "text": "Anzeigeumfang und OLED-Schwarzpegel können dunkle Szenen verschlechtern, aber sie können die Geometrie auf einem direkten Screenshot nicht verschwinden lassen. Überprüfen Sie einen aufgenommenen Frame und den Renderer-Log, bevor Sie Fernseher- oder HDR-Einstellungen ändern."
+    },
+    {
+      "type": "link",
+      "text": "Folgen Sie der PCSX2 allgemeinen Fehlerbehebungsgrundlinie",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

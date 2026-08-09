@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 教 OpenGL 状态跟踪，使纹理单元可以不再是二维",
+  "summary": "立方体贴图绑定暴露了一个缓存状态假设，即每个单元都拥有 GL_TEXTURE_2D；通过跟踪目标类型并初始化空立方体可以在稍后恢复二维操作。",
+  "heroAlt": "来源证据来自 Azahar 拉取请求 #2242：renderer_gl：修复 OpenGL 纹理单元状态跟踪",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "纹理单元",
+    "立方体贴图",
+    "状态跟踪"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl：修复 OpenGL 纹理单元状态跟踪"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "没有目标类型，缓存的纹理句柄是不完整的"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL 通过单元和目标绑定纹理。Azahar 的状态缓存通常假设一个单元代表 GL_TEXTURE_2D，这在引入空立方体贴图跟踪之前是可行的，一旦单元持有 GL_TEXTURE_CUBE_MAP，后续代码可能仅根据缓存的数值对象跳过或执行绑定，即使目标命名空间和下游采样期望已经改变。"
+    },
+    {
+      "type": "heading",
+      "text": "状态记录现在区分 2D、立方体和空转换。"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2242 更新了光栅器缓存工具和 OpenGL 渲染路径，因此纹理单元保留了决定状态更改是否冗余所需的绑定目标。NULL_SURFACE_CUBE_ID 已正确初始化，为无表面立方体贴图路径提供了定义的资源。Vulkan 文件收到相关共享缓存调整，但观察到的失败和状态机更正发生在 OpenGL。"
+    },
+    {
+      "type": "heading",
+      "text": "宝可梦和 WWE 显示出源自一个陈旧假设的下游破坏。"
+    },
+    {
+      "type": "paragraph",
+      "text": "宝可梦究极之月和WWE全明星的前后对比图表明，问题并不仅仅是缺少立方体贴图。绑定立方体贴图会改变后续纹理操作的解释方式，因此下游的普通表面可能会渲染不正确。因此，正确的缓存必须在整个序列中恢复状态，而不仅仅是在设置立方体贴图的瞬间显示它。"
+    },
+    {
+      "type": "heading",
+      "text": "回归序列应在同一单元上交替切换目标。"
+    },
+    {
+      "type": "paragraph",
+      "text": "在一个单元上重复绑定2D、立方体、空立方体和2D纹理，并验证发出的GL调用和采样输出。重现这两款游戏，然后测试阴影贴图、环境贴图、渲染目标采样和表面销毁。在调试构建中，将缓存状态与glGet诊断进行比较。优化仍只能在对象和目标都匹配时跳过绑定；减少调用绝不能保留先前使用的目标。"
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL 状态缓存仅在记住绑定目标和纹理对象时才有效。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "阅读 Azahar 工程讨论和源代码变更"
+    }
+  ]
+}

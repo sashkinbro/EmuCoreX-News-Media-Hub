@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP zatrzymuje przestarzałe wątki pomocnicze przed uszkodzeniem przywróconego savestate",
+  "summary": "Loader savestate teraz odłącza stare wrappers hosta sceUtility i PSMF przed zniszczeniem, chroniąc aktywne wątki jądra i pamięć, która może ponownie używać tych samych identyfikatorów.",
+  "heroAlt": "Dowody źródłowe z pull requesta PPSSPP #21988: Savestate: nie pozwalaj przestarzałym wątkom pomocniczym HLE modyfikować przywróconego stanu jądra",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: nie pozwalaj przestarzałym wątkom pomocniczym HLE modyfikować przywróconego stanu jądra"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Destruktor mógłby działać na złej generacji stanu jądra"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP utrzymuje po stronie hosta opakowania HLEHelperThread dla pracy asynchronicznej, takiej jak dostęp do zapisanych danych i odtwarzanie PSMF. Podczas ładowania emulator zastępuje te opakowania obiektami ze strumienia zserializowanego. Dwie ścieżki normalnie niszczyły opakowanie przed ładowaniem, umożliwiając jego destruktorowi wywołanie __KernelDeleteThread i zwolnienie bloku wpisu po tym, jak nowy stan jądra został już zainstalowany. IDs wewnątrz starego opakowania nie opisywał już obiektów, które miał prawo posiadać."
+    },
+    {
+      "type": "heading",
+      "text": "Ponowne użycie identyfikatorów zmieniło szkodliwy hałas logów w cichą korupcję"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jeśli przywrócony stan nie zawierał przestarzałego ID wątku lub alokacji, błąd powodował komunikat o brakującym wątku lub nieprawidłowym zwolnieniu. Niebezpieczna sytuacja miała miejsce, gdy przywrócony stan miał zrecyklingowaną którąkolwiek z tych wartości. Destruktor mógł wtedy zakończyć prawidłowy, aktywny wątek lub zwolnić pamięć używaną przez inny obiekt. Ładowanie podczas pracy ze zapisanymi danymi lub aktywnego odtwarzacza PSMF sprawiało, że ten podatny na czas błąd własności był znacznie łatwiejszy do wystąpienia."
+    },
+    {
+      "type": "heading",
+      "text": "Forget oddziela czas życia opakowania hosta od własności gościa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21988 stosuje wzorzec już używany przez obsługę stanu I/O PPSSPP. sceUtility wyraźnie wywołuje Forget, usuwa swój accessThread i czyści wskaźnik, zanim Do go odtworzy. Podczas odczytów PSMF, loader przegląda istniejącą mapę odtwarzacza i wywołuje Forget na każdym finishThread, zanim deserializacja mapy zniszczy odtwarzaczy. Forget nie usuwa przywróconego stanu gościa; informuje nieaktualny host wrapper, że nie jest już właścicielem tych zasobów jądra."
+    },
+    {
+      "type": "heading",
+      "text": "Macierz regresji musi ćwiczyć recyklingowany IDs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testowe zapisy wykonywane przed, w trakcie i po operacjach savedata oraz odtwarzaniu PSMF, a następnie załaduj każdy z nich z sesji o innym aktywności. Należy instrumentować usuwanie wątków i zwolnienia BlockAllocator, aby udowodnić, że żaden wrapper przed załadowaniem nie modyfikuje przywróconej generacji. Uwzględnij wielokrotne cykle ładowania, przewijanie, przełączanie slotów, nieudane stany i zamknięcie po załadowaniu. Skierowany test powinien celowo odtworzyć ten sam ID wątku i blok adresu, ponieważ sam stary przypadek harmless-log nie ujawniłby cichej korupcji."
+    },
+    {
+      "type": "callout",
+      "text": "Przywrócenie savestate zmienia właściciela według pokoleń; destruktory hosta muszą zapomnieć nieaktualne uchwyty gościa, zanim przywrócone jądro stanie się autorytatywne."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Przeczytaj dyskusję inżynierską PPSSPP i zmiany w źródle"
+    }
+  ]
+}

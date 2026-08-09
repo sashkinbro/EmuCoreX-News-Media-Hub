@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-corrupted-skyboxes",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticare skybox PS2 corrotti attraverso angoli di ripresa e cold boot",
+  "summary": "Separare una texture del cielo non funzionante dall'ordinamento della profondità, dalla cache grafica obsoleta, dall'upscaling e dal comportamento del driver registrando un percorso panoramico a risoluzione nativa e cambiando un livello usa-e-getta alla volta.",
+  "heroAlt": "Scena PCSX2 prima della correzione che mostra una evidente corruzione grafica su un ampio livello di sfondo",
+  "searchKeywords": [
+    "skybox PS2 danneggiato",
+    "cielo EmuCoreX corrotto",
+    "cache delle texture",
+    "sfarfallio del livello di sfondo",
+    "errore grafico dell'angolo di ripresa"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "accuracy": "Precisione"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 contatori di texture e obiettivi",
+    "pcsx2-report": "PCSX2 punto di ingresso per la segnalazione dei problemi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Registra come la corruzione segue la telecamera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un skybox può essere una mesh distante, una cupola texturizzata, una sequenza di sprite di sfondo o uno strato del framebuffer. Ruota la telecamera attraverso un giro completo e osserva se il difetto rimane fisso sullo schermo, segue la direzione del mondo, appare solo vicino alla geometria, o cambia dopo il caricamento di un'area. Un blocco fisso allo schermo suggerisce composizione; una cucitura fissa al mondo suggerisce campionamento di texture o mesh; sfarfallio alle intersezioni suggerisce ordinamento della profondità."
+    },
+    {
+      "type": "callout",
+      "text": "Cancella solo la cache che l'emulatore documenta esplicitamente come eliminabile. Schede di memoria, salvataggi di gioco, profili, firmware e immagini di gioco non sono cache grafiche."
+    },
+    {
+      "type": "heading",
+      "text": "Costruisci un percorso panoramico nel cielo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio di gioco in un'area esterna con movimento libero della telecamera.",
+        "Un panorama a risoluzione nativa catturato su un profilo del titolo pulito.",
+        "Il renderer, il driver GPU, il pre-caricamento delle texture e i valori di mipmapping registrati.",
+        "Un elenco di posizioni della cache grafica eliminabile dai controlli o dalla documentazione dell'app.",
+        "Un'area esterna successiva per conferma indipendente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Distinguere texture, profondità e stato memorizzato nella cache"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avviare a freddo e ruotare lentamente la fotocamera attraverso gli stessi punti di riferimento mentre si registra l'output diretto.",
+        "2. Reimpostare le sostituzioni delle texture, il post-processing e gli offset manuali; ripetere alla risoluzione interna nativa.",
+        "3. Confrontare le API hardware supportate mantenendo fissi driver e tutti i valori di accuratezza.",
+        "4. Utilizzare un panorama software-renderizzato breve per stabilire se i dati di sfondo stessi sono corretti.",
+        "5. Se il malfunzionamento appare solo dopo un crash o una ripresa, riavviare Android e ricostruire solo la cache grafica usa e getta documentata una volta.",
+        "6. Quando l'aumento di scala da solo espone le giunture, riduci al moltiplicatore pulito precedente prima di valutare una correzione del campionamento specifica del titolo.",
+        "7. Controlla la seconda area esterna per la stessa direzione del mondo, l'intersezione della profondità o il comportamento della cache.",
+        "8. Archivia le catture con stato freddo/caldo in modo che una ricostruzione della cache eseguita una sola volta non venga scambiata per una correzione permanente."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Grandi sfondi amplificano piccoli errori di coordinate e di profondità. La loro texture può rimanere stabile mentre la geometria del primo piano cambia, il che rende le evidenze relative alla telecamera particolarmente utili. La ricostruzione della cache è giustificata solo quando un'esecuzione a freddo pulita differisce da un'esecuzione post-crash; non dovrebbe diventare un rituale dopo ogni errore visivo."
+    },
+    {
+      "type": "heading",
+      "text": "Prova di stabilità dello skybox"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un passaggio richiede copertura spaziale, del ciclo di vita e dell'area."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Il panorama non presenta nuove giunture, tessere mescolate o settori mancanti.",
+        "La geometria del primo piano oscura il cielo nell'ordine corretto.",
+        "Il risultato sopravvive a due avvii a freddo senza cancellare di nuovo la cache.",
+        "Un'area esterna successiva viene resa correttamente sotto lo stesso profilo.",
+        "Le modifiche alla risoluzione interna non reintroducono HUD o artefatti della texture non correlati."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modelli che riducono il rapporto"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Solo le sessioni post-crash falliscono: includere prove del ciclo di vita e della ricostruzione della cache.",
+        "Una singola direzione del mondo mostra una cucitura sopra la risoluzione nativa: riportare il moltiplicatore esatto e l'orientamento della telecamera.",
+        "L'output del software è corrotto anche su un'immagine verificata: testare patch pulite e progressione del gioco.",
+        "Il cielo cambia solo con un driver personalizzato: torna al driver di sistema e isola quel pacchetto."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ripristina cache e confini del renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Torna al driver di sistema, API hardware originale, controlli automatici delle texture e ultima risoluzione pulita. Se il backup della cache è supportato, ripristina i suoi metadati solo quando la ricostruzione peggiora il comportamento; altrimenti lascia che l'emulatore rigeneri i dati usa e getta una volta da un avvio a freddo."
+    },
+    {
+      "type": "heading",
+      "text": "I cambiamenti di nuvole e meteo richiedono salvataggi corrispondenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "I giochi possono animare il tempo o scegliere varianti del cielo in base al tempo, allo stato della missione o a semi casuali. Confronta lo stesso salvataggio e percorso in gioco in modo che cambiamenti di sfondo legittimi non siano etichettati come corruzione."
+    },
+    {
+      "type": "link",
+      "text": "Leggi le linee guida di segnalazione PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

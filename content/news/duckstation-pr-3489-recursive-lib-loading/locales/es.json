@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation sigue bibliotecas PSF anidadas hasta el punto de entrada real del programa",
+  "summary": "Un cambio de recursión de dos líneas hace que la _lib del primer padre más profundo proporcione PC y SP, solucionando un cargador que detenía la búsqueda del punto de entrada un nivel demasiado pronto.",
+  "heroAlt": "Evidencia de fuente del pull request #3489 de DuckStation: PSFLoader: Solucionar la carga recursiva de _lib",
+  "searchKeywords": [
+    "DuckStation",
+    "Cargador PSF",
+    "_lib",
+    "contador de programa",
+    "puntero de pila"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Almacenamiento",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Solucionar la carga recursiva de _lib"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un PSF puede heredar el estado ejecutable a través de más de una biblioteca"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los archivos Portable Sound Format pueden hacer referencia a un padre a través de _lib, y ese padre puede hacer referencia a otra primera biblioteca. Cargar los datos recursivamente no es suficiente si el cargador elige PC y SP del nivel equivocado. La guía de formato citada por el cambio dice que se debe seguir la primera cadena _lib hasta su miembro más profundo; ese contexto ejecutable inicializa la reproducción después de que se hayan ensamblado todas las secciones heredadas."
+    },
+    {
+      "type": "heading",
+      "text": "La antigua verificación de profundidad consumía la bandera de punto de entrada demasiado pronto"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader anteriormente creaba lib_use_pc_sp a partir de depth == 0. Eso permitía que la primera biblioteca padre reclamara el contador de programa y el puntero de pila, luego impedía que la recursión más profunda lo hiciera. La solicitud de extracción #3489 en su lugar pasa la bandera use_pc_sp del llamador a LoadLibraryPSF recursivamente y la establece como falsa solo después de que la llamada a la primera biblioteca retorne. El padre más profundo recibe la bandera antes de que cualquier nivel más superficial la consuma."
+    },
+    {
+      "type": "heading",
+      "text": "Solo la cadena de la primera biblioteca posee la selección de PC y SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Borrar use_pc_sp durante el desenrollado preserva otra regla de PSF: las bibliotecas posteriores pueden contribuir con datos sin reemplazar repetidamente los registros iniciales. El parche no aplana cada _lib en una lista desordenada. Distingue la ruta recursiva del primer padre que establece la ejecución de los hermanos cargados después, manteniendo el cambio más pequeño posible en psf_loader.cpp en lugar de reescribir el formato del contenedor."
+    },
+    {
+      "type": "heading",
+      "text": "Un fixture de regresión necesita al menos tres niveles anidados"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construya un PSF cuyo raíz, primer padre y primer padre más profundo declaren cada uno valores diferentes de PC y SP, además de una biblioteca secundaria con otro par. DuckStation debería cargar todos los datos requeridos pero comenzar desde los registros del primer padre más profundo; cambiar una biblioteca no principal no debe mover el punto de entrada. Compare la reproducción y los registros registrados con Mednafen u otro cargador que cumpla con el formato, luego pruebe referencias de bibliotecas faltantes, cíclicas e ilegibles para errores limpios en lugar de recursión ilimitada."
+    },
+    {
+      "type": "callout",
+      "text": "La solución trata sobre el orden de recursión: los datos pueden provenir de muchas bibliotecas, pero el PC y SP iniciales pertenecen al miembro más profundo de la primera cadena _lib."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Lea la discusión de ingeniería DuckStation y los cambios en el código fuente"
+    }
+  ]
+}

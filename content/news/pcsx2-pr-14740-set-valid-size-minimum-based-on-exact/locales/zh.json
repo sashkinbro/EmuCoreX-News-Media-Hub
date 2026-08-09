@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 让上传的图像大小定义预加载目标的有效区域",
+  "summary": "精确的 EE 到 GS 上传边界防止后续 RTA 缩放将整个图像裁剪到之后绘制的小区域，同时一像素重叠可以阻止重新定位原本有效的目标。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14740 的源证据：GS/TC：基于精确预加载目标设置有效尺寸最小值",
+  "searchKeywords": [
+    "PCSX2",
+    "纹理缓存",
+    "预加载",
+    "RTA 缩放",
+    "EE 到 GS 上传"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC：基于精确预加载目标设置有效尺寸最小值"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一次微小的绘制可能会缩小已完成完整上传的目标"
+    },
+    {
+      "type": "paragraph",
+      "text": "一些游戏会将情感引擎的图像上传到GS内存，将该图像作为目标预加载，然后只绘制一个小区域。预加载可能是正确的，但PCSX2的有效大小跟踪可能会跟随后续绘制而不是上传。如果RTA缩放随后调整了目标尺寸，它只会将那几个绘制的像素视为有效，并裁掉预加载图像的其余部分。"
+    },
+    {
+      "type": "heading",
+      "text": "上传覆盖现在提供了最小有效高度"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求#14740 检测填充预加载的EE到GS上传的尺寸，并使用这些尺寸来确定目标的有效高度。后续的小绘制可以在适当的情况下扩展有效性，但不能将其降低到已知上传内容以下。此修正确认在GSTextureCache中，因为这是所有权和覆盖元数据，而不是在图像已被截断后应用的着色器效果。"
+    },
+    {
+      "type": "heading",
+      "text": "单像素重叠不再移动目标的身份"
+    },
+    {
+      "type": "paragraph",
+      "text": "一个单独的案例允许一个新的上传文件与另一个目标重叠仅一个像素，以调整该目标的起始位置并重新调整大小。随后通过原始基地址的查找失败，即使该资源在该基地址仍然有效。预加载处理现在能够容忍轻微的块重叠而无需重新定位目标，从而保持其他缓存操作用来查找它的地址身份。"
+    },
+    {
+      "type": "heading",
+      "text": "Vexx 和 Lucifer's Call 测试了两个独立的修复"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx 是完整预加载图像的来源复现者，该图像由有效大小跟踪裁剪。Shin Megami Tensei: Lucifer's Call 涵盖重叠行为。测试应记录上传边界、目标基地址、有效高度、后续绘制边界以及任何 RTA 重新调整大小。比较原始和放大后的帧，然后添加一个负面案例，即真正较大的重叠仍应改变所有权。修复单像素容差不得使冲突目标无限期共存。"
+    },
+    {
+      "type": "callout",
+      "text": "预加载有效性现在遵循已存在于 GS 内存中的证据：精确的上传大小和稳定的基地址优先于后来的微小绘制或可忽略的重叠。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K przenosi dispatch argumentu HLE z czasu wykonywania do szablonów",
+  "summary": "Układy argumentów ARM w czasie kompilacji oraz zwykłe wskaźniki do funkcji zmniejszają potrzebę mechanizmu mostu dla każdego importu przy zachowaniu jawnej konwersji skalara, argumentów zmiennej długości i wartości zwracanej.",
+  "heroAlt": "Dowody źródłowe z pull request #3881 Vita3K: module/bridge: HLE dispatch w czasie kompilacji, unikanie dodatkowej pośredniej dereferencji wskaźnika",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE most",
+    "ARM ABI",
+    "szablony",
+    "dispatch funkcji"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Rdzeń",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge: HLE dispatch w czasie kompilacji, unikanie dodatkowej pośredniej dereferencji wskaźnika"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Każdy import gościa przechodzi przez tę samą granicę translacji ABI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wywołanie funkcji Vita przychodzi z argumentami rozdzielonymi pomiędzy ogólne rejestry ARM, rejestry zmiennoprzecinkowe i stos. Most Vita3K HLE musi je zlokalizować, przekonwertować wskaźniki i reprezentacje gościa na typy hosta, wywołać poprawny eksport i zapisać wartość zwracaną. Starszy most budował stan układu i przechwytywał wskaźnik eksportu oraz jego nazwę w std::function, dodając ogólne mechanizmy w czasie wykonywania do ścieżki wykorzystywanej przez prawie każde emulowane wywołanie usługi."
+    },
+    {
+      "type": "heading",
+      "text": "Funkcja eksportowa staje się częścią typu mostu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3881 wprowadza make_bridge z ExportFn jako parametrem szablonu nie będącym typem. lay_out działa jako constexpr dla pakietu argumentów eksportu, tworząc stałe wpisy ArgLayout i stan dla varargs. Wygenerowana funkcja nieprzechwytująca odczytuje każdy argument przez read_bridged_arg, wywołuje ExportFn bezpośrednio i warunkowo zapisuje wynik, chyba że typ zwracany to void. ImportFn może więc być zwykłym wskaźnikiem do funkcji."
+    },
+    {
+      "type": "heading",
+      "text": "Typy mostu zachowują kontrakt gość-do-hosta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Układ w czasie kompilacji nie oznacza reinterpretacji rejestrów jako dowolnych obiektów C++. BridgeTypes wybiera reprezentację ARM dla każdego argumentu i konwertuje ją przy użyciu emulowanej pamięci tam, gdzie jest to potrzebne. module::vargs przenosi swój obliczony stan zamiast udawać, że jest jednym skalarnym argumentem. Zakresy Tracy nadal otrzymują nazwę eksportu przez pamięć statyczną, zachowując profilowanie dla każdej funkcji przy usuwaniu wcześniejszego przechwytywania zamknięcia."
+    },
+    {
+      "type": "heading",
+      "text": "Zgodność ABI wymaga testów w czasie kompilacji i podczas wykonywania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utwórz mostki dla zerowej liczby argumentów, czterech i pięciu liczb całkowitych, wartości wyrównanych do 64 bitów, floatów, wskaźników, struktur reprezentowanych przez typy mostków, varargs, zwrotów typu void i kodów błędów. Porównaj lokalizacje w rejestrach i na stosie z ABI Vity oraz wcześniejszą implementacją. Skompiluj każdy wygenerowany moduł na wspieranych kompilatorach, sprawdź rozmiar kodu i kształt wywołań oraz przetestuj wydajność przy obciążeniach z dużą liczbą importów. Nieprawidłowe lub nieobsługiwane typy powinny zakończyć się błędem podczas kompilacji z jasnym komunikatem diagnostycznym, zamiast cicho wybierać zły układ."
+    },
+    {
+      "type": "callout",
+      "text": "Optymalizacja działa, ponieważ sygnatura eksportu już zawiera fakty ABI; szablony mogą przekształcić te fakty w stały most przed rozpoczęciem emulacji."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Przeczytaj dyskusję inżynierską Vita3K i zmiany w źródle"
+    }
+  ]
+}

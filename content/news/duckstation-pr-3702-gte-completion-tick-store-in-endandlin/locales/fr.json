@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation corrige un registre hôte incorrect dans le timing GTE de RISC-V",
+  "summary": "EndAndLinkBlock a calculé le tick de complétion correct dans RARG2 mais a stocké RARG1, un décalage d'une instruction qui pourrait entraîner une préparation incorrecte du coprocesseur dans le bloc recompilé suivant.",
+  "heroAlt": "Preuve source provenant de la pull request DuckStation #3702 : CPU/RISCV64 : Correction du stockage de gte_completion_tick dans EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "recompilateur",
+    "tick de complétion"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "Processeur",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64 : Correction du stockage de gte_completion_tick dans EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le calcul était correct jusqu'au stockage final"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation suit quand le moteur de transformation géométrique de la PlayStation termine son travail afin que, suivant les instructions de CPU, le timing correct des dépendances soit respecté. Dans le chemin EndAndLinkBlock du recompilateur RISC-V 64, la nouvelle valeur de complétion avait déjà été calculée dans RARG2. Le stockage émis a néanmoins utilisé RARG1, écrivant un registre d'argument différent dans l'état global du timing GTE juste avant que le contrôle ne passe à un autre bloc."
+    },
+    {
+      "type": "heading",
+      "text": "Une substitution de registre aligne le RISC-V avec les autres recompilateurs"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3702 change l'instruction SW pour stocker RARG2 dans g_state.gte_completion_tick. Aucune formule de timing ni changement du décodeur d'instructions invité. La preuve est le flux de données à ce point exact et le comportement correspondant des autres backends d'architecture. De petits correctifs de ce type sont précieux précisément parce qu'un registre incorrect peut survivre à la compilation, produire un code machine valide et échouer seulement sur une famille d'hôtes."
+    },
+    {
+      "type": "heading",
+      "text": "Un tick de complétion obsolète change le moment où les instructions ultérieures croient que le GTE est prêt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si la valeur incorrecte est antérieure au tick calculé, le code invité peut consommer les résultats de géométrie trop tôt ; si elle est ultérieure, DuckStation peut insérer une attente inutile. Dans les deux cas, cela peut modifier des jeux qui intercalent le travail de CPU avec les commandes GTE, même si l'arithmétique transformée elle-même est correcte. L'erreur est transmise à travers une limite de bloc, de sorte qu'un test limité aux instructions à l'intérieur d'un bloc généré peut ne pas la détecter."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests doivent forcer la valeur d'achèvement à travers EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un test de recompilateur ciblé devrait émettre une commande GTE, terminer le bloc alors que l'unité est encore occupée, se lier à du code qui lit ou dépend du résultat, et comparer l'interpréteur, RISC-V et un autre backend de recompilateur. Consignez la valeur RARG2 calculée et le tick global stocké. Couvrez les sorties conditionnelles et les différents cas de nouveau-PC gérés par EndAndLinkBlock. Exécutez les tests de temporisation GTE existants de manière répétée sur le matériel RISC-V natif afin que les différences d'allocation de registres ou de convention d'appel soient mises à l'épreuve."
+    },
+    {
+      "type": "callout",
+      "text": "Le correctif est un opérande unique, mais l'invariant est architectural : chaque backend hôte doit transmettre le tick de complétion GTE calculé à travers un lien de bloc."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Lisez la discussion technique DuckStation et les modifications du code source"
+    }
+  ]
+}

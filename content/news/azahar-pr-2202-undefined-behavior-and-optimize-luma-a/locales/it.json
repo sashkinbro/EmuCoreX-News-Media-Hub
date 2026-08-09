@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar rimuove l'ambiguità di overflow con segno dall'alias di memoria di Luma",
+  "summary": "Una maschera senza segno del bit 31 rende la rilevazione degli alias definita in C++, mentre i ritorni anticipati e i rami improbabili MMIO danno ai percorsi di memoria comuni un flusso di istruzioni più lineare.",
+  "heroAlt": "Prove dalla sorgente dal pull request Azahar #2202: core/memory: Correggi comportamento indefinito e ottimizza il percorso alias di Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias di Luma",
+    "comportamento indefinito",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Core",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Correggi comportamento indefinito e ottimizza il percorso alias di Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il bit 31 veniva formato tramite aritmetica con segno"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS espone una forma di indirizzo alias il cui bit più alto indica a Azahar di bypassare le normali tabelle delle pagine per FCRAM o MMIO. Il codice testava e azzerava quel bit con 1 << 31. Quando int è a 32 bit, spostare un uno con segno nella posizione del segno è comportamento indefinito, consentendo a un compilatore ottimizzante di trasformare il codice circostante in modi che non preservano la maschera prevista."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u rende sia le operazioni di test che di azzeramento definite"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2202 dichiara LUMA_ALIAS_BIT come il letterale senza segno 0x80000000u. I percorsi di lettura e scrittura testano vaddr rispetto a quella costante e derivano paddr azzerandola. La modifica è piccola ma architetturale: la manipolazione degli indirizzi dovrebbe usare il tipo senza segno che rappresenta un VAddr, senza dipendere dal risultato scelto dal compilatore per l'aritmetica a segno che eccede."
+    },
+    {
+      "type": "heading",
+      "text": "I ritorni anticipati separano FCRAM dal percorso freddo MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'alias FCRAM rimane il percorso principale utile e termina con un ritorno immediato. MMIO viene controllato in seguito e segnato come improbabile, così come la voce alias stessa rispetto all'accesso ordinario alla tabella delle pagine. Appiattire la precedente catena else-if permette a Clang di posizionare il flusso comune in modo più lineare e mantiene il codice raro del gestore personalizzato lontano dal percorso della cache delle istruzioni utilizzato dalla maggior parte delle letture e scritture."
+    },
+    {
+      "type": "heading",
+      "text": "Le affermazioni di ottimizzazione richiedono copertura del compilatore e dell'alias"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eseguire letture e scritture degli alias Luma per FCRAM, MMIO valido a 32 bit, un indirizzo alias al di fuori di entrambi gli intervalli e indirizzi normali della tabella delle pagine. Confrontare Clang e GCC a diversi livelli di ottimizzazione con UBSan abilitato, verificando l'assenza di segnalazioni di shift con segno e risultati identici. Esaminare il codice generato per i ritorni anticipati previsti, ma dare priorità alla correttezza. Le larghezze MMIO diverse dal percorso supportato strettamente a 32 bit devono comunque proseguire o fallire secondo la semantica esistente."
+    },
+    {
+      "type": "callout",
+      "text": "Il percorso più veloce inizia con un comportamento definito: un flag di indirizzo deve essere una maschera di bit senza segno prima che i suggerimenti di ramificazione o la forma dell'assembly possano essere considerati affidabili."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Leggi la discussione ingegneristica Azahar e le modifiche al codice sorgente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 supprime la gestion du tampon de dessin lorsqu'aucun lot ne peut l'utiliser",
+  "summary": "Les dessins désactivés ou immédiatement non tamponnables ne copient plus et ne restaurent plus les environnements GS, tandis que les références locales remplacent le trafic de pointeurs ajouté aux chemins de rendu fréquents.",
+  "heroAlt": "Preuve source du pull request PCSX2 #14729 : GS : Optimiser le tampon de dessin et la logique des pointeurs",
+  "searchKeywords": [
+    "PCSX2",
+    "tampon de dessin",
+    "Thread GS",
+    "chemin critique",
+    "performance"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS : Optimiser le tampon de dessin et la logique des pointeurs"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une optimisation désactivée payait encore son coût de mise en place"
+    },
+    {
+      "type": "paragraph",
+      "text": "La mise en tampon du dessin peut combiner des travaux compatibles, mais PCSX2 peut la désactiver globalement ou découvrir que le dessin suivant ne peut pas être mis en tampon. L’implémentation sauvegardait toujours l’environnement de dessin et le restaurait lors des vidages, même si aucun lot futur ne pouvait consommer ce cliché. Sur une charge de travail intensive en GS, les copies répétées transforment une fonctionnalité inactive en une surcharge mesurable CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Les copies d’environnement suivent désormais l’éligibilité réelle à la mise en tampon"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #14729 restreint les opérations de sauvegarde et de restauration aux chemins où la mise en tampon du dessin peut conserver les travaux suivants. Si la mise en tampon est désactivée ou si la compatibilité échoue immédiatement, le moteur continue à utiliser le contexte actuel sans générer de copie de récupération. Cela préserve le comportement fonctionnel de vidage tout en supprimant le trafic d’état dont le seul but était d’annuler un lot qui n’a jamais existé."
+    },
+    {
+      "type": "heading",
+      "text": "Les références locales remplacent la recherche de pointeurs dans les chemins les plus critiques"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implémentation précédente du buffering introduisait des pointeurs utilisés tout au long du traitement du dessin afin que le code puisse basculer entre l'état en direct et l'état en mémoire tampon. Lorsque cette indirectisation n'est plus nécessaire, le correctif utilise des références locales. Les références permettent au compilateur de garder l'état fréquemment accédé plus proche de l'opération et de réduire les chargements répétés de pointeurs, sans changer la propriété ou la durée de vie du contexte GS sous-jacent."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de débit doivent garder l'état de buffering visible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utilisez des jeux lourds et des dumps GS pour comparer le temps maximum FPS, GS-thread et les comptes de copies d'environnement avec le tampon activé, désactivé et fréquemment rejeté. Les CPUs plus faibles sont les bénéficiaires attendus. Une comparaison d'image sans perte est toujours requise car une sauvegarde ignorée à une limite de compatibilité pourrait laisser passer un état modifié dans le dessin suivant. Profiliez les causes représentatives de vidage et vérifiez que l'amélioration n'est pas seulement un cas artificiel de coureur."
+    },
+    {
+      "type": "callout",
+      "text": "L'optimisation supprime le travail des chemins qui ne peuvent pas bénéficier de la mise en mémoire tampon ; elle n'affaiblit pas la restauration de l'état requise par un lot réellement mis en mémoire tampon."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-two-ps2-library-folders-without-duplicates",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Fusionner deux dossiers de bibliothèque PS2 avec un tableau de conflits de hachage",
+  "summary": "Consolider deux racines jouables dans une nouvelle destination en classant les hachages identiques, les révisions régionales, les ensembles multi-disques et les copies de travail corrigées avant que EmuCoreX ne scanne jamais le dossier fusionné.",
+  "heroAlt": "Interface de préservation des médias affichant les champs d'identité des supports optiques utilisés pour distinguer les disques sources lors d'une fusion",
+  "searchKeywords": [
+    "fusionner les dossiers de jeux PS2",
+    "dédoubler la bibliothèque EmuCoreX",
+    "variantes régionales PS2",
+    "tableau de conflits de hachage",
+    "ensemble multi-disques"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Bibliothèque",
+    "integrity": "Intégrité"
+  },
+  "sourceLabels": {
+    "powershell-hash": "Référence d'inventaire SHA-256",
+    "pcsx2-discs": "Structure du jeu de disques PS2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Fusionner dans un troisième dossier, jamais dans l'un ou l'autre des dossiers source"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une fusion sûre préserve le Dossier A et le Dossier B tout en créant un Dossier C vide. Cette troisième localisation rend chaque décision réversible. La collision de nom de fichier n'est que le premier signal : des hachages identiques peuvent utiliser des noms différents, tandis que des noms identiques peuvent masquer des régions, des révisions, des disques ou des copies de travail patchées différentes. La table des conflits doit donc stocker le chemin, les octets, SHA-256, le numéro de série, la région et le rôle dans un ensemble multidisque."
+    },
+    {
+      "type": "callout",
+      "text": "Ne laissez pas un gestionnaire de fichiers répondre Remplacer, Ignorer ou Conserver les deux pour l’ensemble de l’opération. Ces boutons ne savent pas quelle copie est un maître vérifié, laquelle est patchée, ou si le Disque 2 appartient à côté du Disque 1."
+    },
+    {
+      "type": "heading",
+      "text": "Construisez des inventaires pour A et B"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Rapports en lecture seule SHA-256 pour les deux racines sources.",
+        "Capacité distincte suffisante pour la destination complète dédupliquée.",
+        "Exporter les journaux ou les enregistrements sériels pour les paires régionales et de révision ambiguës.",
+        "Une convention de nommage incluant le numéro de disque lorsque nécessaire.",
+        "Les deux racines sources temporairement supprimées du scan EmuCoreX pendant l'acceptation finale."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Classer les collisions avant de copier"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Joindre les deux inventaires par hachage pour identifier les fichiers identiques en octets indépendamment du nom.",
+        "2. Rejoindre à nouveau par nom de fichier normalisé pour exposer les conflits de même nom, mais avec des hachages différents.",
+        "3. Pour les hachages identiques, choisir un nom de fichier canonique fonctionnel et enregistrer quelle source l'a fourni.",
+        "4. Pour les hachages différents, inspecter le numéro de série, la région, la révision, le numéro de disque et l'état du patch ; conserver chaque variante légitime sous un nom non ambigu.",
+        "5. Copier les fichiers classifiés dans le dossier C vide par groupes, puis calculer un nouveau rapport de hachage pour la destination.",
+        "6. Comparer C avec le tableau de conflits et vérifier que chaque variante planifiée et chaque composant multidisque existe une fois.",
+        "7. Autoriser uniquement le Dossier C dans EmuCoreX, actualiser et tester une entrée de chaque classe de conflit.",
+        "8. Conserver A et B en lecture seule jusqu'à ce que C survive au redémarrage et que chaque identité régionale ou multidisc soit correcte."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Une image patchée ne doit pas remplacer un master de préservation intact. Préférez le patch externe lorsque cela est possible et gardez le master en dehors des analyses actives. Si un fichier cue référence des pistes, l'ensemble reçoit une seule décision de conflit ; copier uniquement le cue ou le plus grand BIN crée un élément de bibliothèque trompeur mais incomplet."
+    },
+    {
+      "type": "heading",
+      "text": "Fermer chaque ligne dans le tableau de conflits"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une fusion est complète lorsque chaque fichier d'entrée a une disposition documentée et que chaque sortie a un enregistrement d'intégrité."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Chaque groupe de hachages identiques contribue à une copie active prévue.",
+        "Les collisions de hachages différents ont des explications explicites concernant le numéro de série, la région, la révision ou le correctif.",
+        "Chaque ensemble multidisque et cue/bin est complet.",
+        "Les hachages de destination correspondent aux copies d'entrée sélectionnées.",
+        "EmuCoreX montre les titres prévus sans racines sources qui se chevauchent."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Conflits nécessitant une pause"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Deux fichiers partagent un titre mais ne disposent pas de preuves de série : conservez les deux en dehors de la racine active jusqu'à identification.",
+        "Le hachage de destination ne correspond à aucune source : répétez la copie à partir du fichier vérifié choisi.",
+        "Un signal démarre sans son : une piste référencée a été renommée ou omise.",
+        "Les favoris sont attachés à la mauvaise région : corrigez l'identité de l'image avant de déplacer des sauvegardes ou des profils."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Jetez C et revenez à la carte source"
+    },
+    {
+      "type": "paragraph",
+      "text": "Supprimez la concession du dossier C, actualisez-la et réautorisez A et B exactement comme ils l'étaient. Comme aucune source n'a été modifiée, aucune copie inverse n'est nécessaire. Conservez la table des conflits, marquez les lignes contestées et reconstruisez C uniquement après la résolution de ces identités."
+    },
+    {
+      "type": "heading",
+      "text": "La déduplication et la conservation des sauvegardes sont des décisions différentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une copie active par hachage empêche l'encombrement de la bibliothèque, mais une deuxième copie hors ligne sur un autre périphérique physique constitue une résilience légitime. La table de hachage doit distinguer Actif, Maître de préservation et Sauvegarde afin qu'un nettoyage ne supprime jamais la dernière copie récupérable."
+    },
+    {
+      "type": "link",
+      "text": "Utilisez la référence officielle de commande SHA-256",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

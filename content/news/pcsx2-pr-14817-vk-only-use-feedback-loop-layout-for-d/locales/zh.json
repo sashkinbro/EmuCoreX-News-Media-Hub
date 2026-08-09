@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 门 Vulkan 深度反馈布局基于使其合法的能力",
+  "summary": "当纹理屏障被禁用时，深度只读采样现在会回退到 GENERAL 布局，从而避免在没有所需 Vulkan 功能位的情况下选择反馈循环布局。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14817 的源证据：GS:VK: 仅当支持纹理屏障时，才对深度使用反馈循环布局。",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "反馈循环布局",
+    "纹理屏障",
+    "验证层"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: 仅当支持纹理屏障时，才对深度使用反馈循环布局。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "仅当启用其功能契约时，图像布局才有效"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan 的附件反馈循环布局描述了一种通过反馈关系使用的图像。PCSX2 仅在纹理屏障或深度反馈支持处于激活状态时才添加相应的功能位。然而，在强制关闭屏障后，深度只读采样路径仍可能选择该布局，从而产生矛盾：命令记录声称设备配置刻意未启用的功能。"
+    },
+    {
+      "type": "heading",
+      "text": "不受支持的深度反馈现在使用 GENERAL 布局"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14817 使布局选择依赖于与控制功能位的支持测试相同的条件。受支持的路径保留专用的反馈循环布局。当功能不可用或被强制禁用时，深度采样使用 GENERAL，这是一个在更广泛同步要求下的合法回退。此更改使图像状态和设备特性源自同一决策，而不是独立的乐观检查。"
+    },
+    {
+      "type": "heading",
+      "text": "验证错误在像素出现故障之前暴露了真正的可移植性问题"
+    },
+    {
+      "type": "paragraph",
+      "text": "驱动程序可能在没有立即视觉异常的情况下接受非法布局组合，特别是在调试模式之外。Vulkan 验证层会确定性地标记不匹配，使其成为此补丁的正当证据。避免警告并非只是美化日志：它确保命令流保持在各供应商和驱动版本所要求的合同范围内，而不是依赖于宽松的行为。"
+    },
+    {
+      "type": "heading",
+      "text": "源代码转储测试了精确的 capability-off 路径"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Vulkan 上运行附带的《Time Crisis 3 GunCon》转储，并将覆盖纹理屏障设置为强制禁用，同时启用调试设备。修正后的路径不应发出反馈循环布局验证错误，并应保留帧。重复支持屏障的操作以验证专用布局仍然存在，然后测试深度只读、颜色反馈、后端重置以及若干 GPUs。捕获图像过渡，以防缺少警告掩盖了错误使用 GENERAL 同步的情况。"
+    },
+    {
+      "type": "callout",
+      "text": "布局和功能是一体合同：如果 PCSX2 未启用深度反馈支持，则不得通过图像布局宣传该支持。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

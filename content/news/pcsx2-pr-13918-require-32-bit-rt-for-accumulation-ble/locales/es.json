@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13918-require-32-bit-rt-for-accumulation-ble",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 se niega a la combinación de acumulación en objetivos de 16 bits con máxima precisión",
+  "summary": "Una protección de precisión desactiva una optimización cuyo orden de redondeo puede superar la escala de color de 16 bits representable, alineando la salida de hardware de alta precisión con la referencia de software.",
+  "heroAlt": "Evidencia de la fuente del pull request #13918 de PCSX2: GS/HW: Requerir RT de 32 bits para la combinación de acumulación en la mezcla máxima.",
+  "searchKeywords": [
+    "PCSX2",
+    "combinación de acumulación",
+    "objetivo de renderizado de 16 bits",
+    "mezcla máxima",
+    "difuminado (dithering)"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13918": "GS/HW: Requerir RT de 32 bits para la combinación de acumulación en la mezcla máxima."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La acumulación cambia qué valor recibe el redondeo de 16 bits"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 puede optimizar algunas mezclas acumulando a través de un objetivo de renderizado anfitrión. En un objetivo de 32 bits, la precisión extra generalmente es compatible con el resultado previsto. Un objetivo GS de 16 bits cuantifica el color de manera diferente: aplicar el redondeo después del intermedio incorrecto puede producir RGB 255 incluso cuando la escala prevista del formato llega hasta alrededor de 240. La imagen puede parecer cercana mientras que su patrón de tramado y los tonos exactos divergen."
+    },
+    {
+      "type": "heading",
+      "text": "La máxima precisión ahora requiere un objetivo de 32 bits para la ruta rápida"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #13918 añade una condición en GSRendererHW. Cuando la precisión de la mezcla se establece al máximo, la mezcla por acumulación sigue estando disponible solo si el objetivo de renderizado es de 32 bits. Un objetivo de 16 bits vuelve a la ruta sin acumulación que respeta su cuantización. Los modos de menor precisión pueden continuar haciendo sus compromisos de rendimiento documentados; el cambio alinea la configuración más estricta con su promesa de precisión."
+    },
+    {
+      "type": "heading",
+      "text": "Sonic Riders: Zero Gravity expone la diferencia en el detalle del tramado"
+    },
+    {
+      "type": "paragraph",
+      "text": "La comparación suministrada Vulkan utiliza un marco de 16 bits de Sonic Riders: Zero Gravity e incluye renderizado por software como referencia. A tamaño normal el cambio puede ser difícil de ver, pero al hacer zoom en el patrón de tramado se revela la diferente escala de colores. Esta es la razón por la que las imágenes de referencia a nivel de píxel son importantes: una captura de pantalla de amplia compatibilidad podría pasar por alto el error numérico que la configuración máxima está específicamente diseñada para evitar."
+    },
+    {
+      "type": "heading",
+      "text": "Las verificaciones de regresión deben cubrir tanto las profundidades de destino como los modos de mezcla."
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduce el volcado de origen en Vulkan y otros backends de hardware, compara los píxeles sin pérdida con la salida por software, y verifica que la ruta de acumulación sea rechazada solo para objetivos de 16 bits bajo la mezcla máxima. Un objetivo de 32 bits debería conservar la optimización. Registra la ruta de dibujo y el tiempo GPU, porque deshabilitar una optimización puede afectar el rendimiento incluso cuando la corrección de salida es transparente. Prueba varios patrones de tramado y ecuaciones de acumulación en lugar de una única textura de base."
+    },
+    {
+      "type": "callout",
+      "text": "La precisión máxima de mezcla ahora trata la precisión del objetivo como parte del algoritmo: una superficie de 16 bits no puede usar de manera segura el acceso directo de acumulación de 32 bits."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13918",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente PCSX2"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar chroni wypełnienie kolorem Vulkan, gdy wtyczka 3GX pojawia się przed buforem ramki",
+  "summary": "Kolejność uruchamiania ujawniona przez PokeReader może wywołać FillScreen, zanim docelowy obraz istnieje; renderer teraz traktuje brakujący obraz jako stan odroczonej konfiguracji zamiast awarii.",
+  "heroAlt": "Dowód źródłowy z pull request #2241 Azahar: video_core: vulkan: Napraw awarię podczas wypełniania kolorem przed konfiguracją bufora ramki",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "bufor ramki"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Napraw awarię podczas wypełniania kolorem przed konfiguracją bufora ramki"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wtyczka może żądać koloru ekranu zanim Vulkan będzie posiadał obraz"
+    },
+    {
+      "type": "paragraph",
+      "text": "Włączenie loadera 3GX z PokeReader powodowało konsekwentny crash Windows na systemie AMD Vulkan zgłaszającego po wdrożeniu funkcji FillScreen. Logi i git bisect wskazały regresję w tym wdrożeniu. Kolejność klawiszy jest nietypowa, ale prawidłowa dla frontendu: uruchomienie pluginu dociera do konfiguracji wypełnienia kolorem zanim obraz Vulkan tekstury framebuffer został utworzony."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture teraz sprawdza zasób, a nie zamysł"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2241 dodaje wąski mechanizm ochronny w RendererVulkan::ConfigureFramebufferTexture. Jeśli texture.image jest nieobecny, funkcja zwraca wartość przed skonfigurowaniem lub wypełnieniem framebuffer. Późniejsze wywołanie z prawidłowym obrazem podąża normalną ścieżką. Poprawka nie tworzy obrazka zastępczego ani nie zakłada wymiarów, unikając placeholdera, którego układ i czas życia mogłyby nie zgadzać się z rzeczywistym framebuffer."
+    },
+    {
+      "type": "heading",
+      "text": "Awaria może wyjaśniać raporty poza jednym GPU, ale dowody pozostają ograniczone"
+    },
+    {
+      "type": "paragraph",
+      "text": "Źródło cytuje PokeReader, Windows, Vulkan, a potencjalnie AMD jako kombinację możliwą do odtworzenia i łączy kilka problemów z możliwie powiązanym zachowaniem. Te raporty są wskazówkami, a nie potwierdzonymi poprawkami. Jedynym sprawdzonym niezmiennikiem jest to, że żadna operacja Vulkan nie może używać obrazu bufora ramki, zanim on nie istnieje. Inne awarie wymagają własnych logów, aby ustalić, czy osiągają ten sam wczesny stan FillScreen."
+    },
+    {
+      "type": "heading",
+      "text": "Testy regresji powinny wymusić zarówno wczesną, jak i normalną kolejność wypełniania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uruchomienie z wyłączoną i włączoną obsługą 3GX, z wybranym PokeReader, na AMD, NVIDIA i mobilnym Vulkan tam, gdzie dostępne. Należy instrumentować tworzenie obrazu i kolejność FillScreen, zweryfikować czy wczesne wywołanie zwraca bez błędów walidacji oraz potwierdzić, że później zainicjalizowane wypełnienie nadal czyści ekran. Powtarzać odładowanie wtyczki, restart gry, ponowne utworzenie powierzchni i zmianę backendu. Brak awarii jest niewystarczający, jeśli zabezpieczenie pozostawia trwale niewypełniony lub przestarzały bufor ramki."
+    },
+    {
+      "type": "callout",
+      "text": "Renderer teraz rozróżnia żądane wypełnienie od zainicjowanego celu; prace Vulkan rozpoczynają się dopiero po faktycznym utworzeniu obrazu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany w kodzie źródłowym"
+    }
+  ]
+}

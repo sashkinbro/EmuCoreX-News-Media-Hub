@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "correct-depth-fighting-and-flickering-surfaces",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Memperbaiki depth fighting tanpa membingungkannya dengan kedipan frame-pacing",
+  "summary": "Bekukan satu kamera di mana dua permukaan bergantian, buktikan konflik pada frame yang ditangkap, bandingkan output perangkat lunak asli dan perangkat keras, lalu uji hanya koreksi terkait depth yang terdokumentasi sambil melindungi decals dan bayangan.",
+  "heroAlt": "PCSX2 perbandingan renderer frame dengan geometri yang tumpang tindih digunakan untuk investigasi akurasi depth",
+  "searchKeywords": [
+    "PS2 z fighting",
+    "EmuCoreX permukaan berkedip",
+    "buffer depth",
+    "poligon bergantian",
+    "urutan gambar grafis"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "depth": "Kedalaman"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 penghitung gambar dan perender",
+    "pcsx2-upscaling": "PCSX2 penjelasan pengambilan sampel-host"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Verifikasi bahwa permukaan bergantian pada satu posisi kamera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pertarungan kedalaman terjadi ketika dua gambar bersaing untuk kedalaman yang hampir sama dan pemenang yang terlihat berubah dengan perbedaan presisi atau kamera kecil. Pemecahan frame dapat membuat seluruh adegan berguncang, sementara animasi tekstur dapat secara sengaja mengganti karya seni. Hentikan input di posisi kamera di mana hanya dinding, jalan, decal, atau lapisan karakter yang dicurigai yang berubah-ubah. Rekam frame langsung dan catat apakah geometri sekitarnya tetap stabil."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan menggunakan pengabaian gambar luas untuk menghentikan kedipan. Menghapus satu permukaan yang bersaing juga dapat menghapus bayangan, decal, cermin, atau proses berikutnya yang berbagi pola gambar tersebut."
+    },
+    {
+      "type": "heading",
+      "text": "Sematkan frame konflik kedalaman"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Sebuah penyimpanan normal sebelum posisi kamera statis yang dapat diulang.",
+        "Tangkapan singkat tanpa kehilangan yang menunjukkan piksel mana yang bergantian.",
+        "Resolusi internal asli dan rasio aspek asli.",
+        "Konversi kedalaman manual, lewati-gambar, dan override layar lebar direset.",
+        "Sebuah adegan independen yang berisi stiker atau bayangan proyeksi."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Pisahkan presisi dari timing"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Tahan kamera tetap dan tangkap beberapa detik; pastikan hanya permukaan lokal yang bergantian.",
+        "2. Aktifkan bukti waktu-frame dan pastikan kedipan tidak disinkronkan dengan penghentian seluruh frame.",
+        "3. Uji kembali pada resolusi asli di kedua API perangkat keras tanpa perubahan pengaturan lain.",
+        "4. Ambil referensi singkat yang dirender perangkat lunak dari simpanan dalam game yang identik.",
+        "5. Jika perangkat lunak stabil, konsultasikan dokumentasi untuk judul dan serial sebelum menguji konversi kedalaman atau kontrol akurasi.",
+        "6. Terapkan satu perubahan terkait kedalaman dan periksa kedua permukaan yang bersaing dari beberapa jarak kamera.",
+        "7. Kunjungi adegan decal-dan-bayangan untuk menangkap perbaikan yang berhasil dengan menghapus lapisan yang sah.",
+        "8. Panaskan perangkat dan ulangi pengambilan diam untuk mengecualikan ketidakstabilan driver atau termal."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Bukti yang berguna adalah lokalitas spasial. Konflik kedalaman mengubah fragmen terdekat mana yang menang; penjadwalan frame mengubah kapan frame lengkap tiba. Rendering perangkat lunak memberikan referensi keakuratan dengan jalur host yang berbeda. Koreksi yang hanya menekan decal gagal bahkan jika dinding asli berhenti berkedip."
+    },
+    {
+      "type": "heading",
+      "text": "Penerimaan urutan kedalaman"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permukaan yang stabil harus mempertahankan semua overlay yang disengaja di sekitarnya."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Area yang konflik tetap stabil selama keadaan diam dan pergerakan kamera lambat.",
+        "Decal, bayangan proyeksi, cermin, dan perpotongan partikel tetap terlihat.",
+        "Tidak ada geometri jauh yang mulai menembus objek di depan.",
+        "Hasil bertahan setelah memuat ulang area dan boot dingin.",
+        "Perilaku waktu frame tetap sebanding dengan baseline yang bersih."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Tolak hasil kedalaman yang menyesatkan"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Seluruh frame berkedip dengan lonjakan waktu: alihkan ke kinerja atau diagnosis driver.",
+        "Kedipan ada di perangkat lunak dan referensi asli: konfirmasi animasi atau perilaku game yang disengaja.",
+        "Perbaikan menghapus permukaan atas sepenuhnya: kembalikan ke pengaturan default dan dokumentasikan penghapusan.",
+        "Hanya patch layar lebar yang memicunya: verifikasi serial dan batas patch secara terpisah."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Hapus override kedalaman terlebih dahulu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nonaktifkan kontrol kedalaman yang diuji, kembalikan perbaikan otomatis GS dan profil aspek asli, lalu lakukan cold-boot pada frame yang dipin. Simpan klip perbandingan; hapus eksperimen skip-draw yang bukan bagian dari solusi yang diterima."
+    },
+    {
+      "type": "heading",
+      "text": "Perekaman OLED dapat melebih-lebihkan kedipan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pencahayaan kamera otomatis dapat membuat patch kecil yang bergantian tampak berdenyut di layar. Gunakan tangkapan frame langsung untuk bukti pada tingkat piksel dan sertakan rekaman kamera hanya jika layar eksternal itu sendiri sedang diuji."
+    },
+    {
+      "type": "link",
+      "text": "Tinjau penghitung grafik PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

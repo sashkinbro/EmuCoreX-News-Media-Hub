@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14115-elf-load-address-semantics",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin, bir ELF segmentinin yükleme adresini sanal adresinden ayırır",
+  "summary": "Yükleyici artık segmentin yükleme belleği adresi olarak p_paddr'yi tercih eder ve yalnızca fiziksel bir adres sağlanmamışsa p_vaddr'ye geri döner.",
+  "heroAlt": "Dolphin çekme isteği #14115'ten kaynak kanıtı: Core/Boot: ELF yükleme adresi semantiğini düzelt",
+  "searchKeywords": [
+    "Dolphin",
+    "ELF",
+    "p_paddr",
+    "p_vaddr",
+    "homebrew"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14115": "Core/Boot: ELF yükleme adresi semantiğini düzelt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ELF program başlıkları iki farklı adresi tanımlayabilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yüklenebilir bir ELF segmenti, program yürütülürken kullanılan adres olan p_vaddr ve genellikle gömülü ortamlarda yükleme bellek adresi olarak kabul edilen p_paddr'i içerir. Birçok ikili dosya bunları eşit olarak ayarlar, bu da alanları karıştıran yükleyicileri gizler. Homebrew, önyükleme bileşenleri veya geliştirme görüntüleri bunları kasıtlı olarak ayırabilir. Dolphin daha önce segment baytlarını dosya tarafından kodlanan fiziksel yerleştirmeyi görmezden gelerek koşulsuz olarak p_vaddr'e kopyalıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Yükleyici artık sıfır olmayan fiziksel alanı öncelikli olarak verir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14115 her iki değeri de kaydeder ve writeAddr'i p_paddr'den başlatır. Sıfır olmayan bir fiziksel adres, 0x80000000 biti ayarlanarak PowerPC sanal bölgesine eşlenir. Eğer p_paddr sıfırsa, Dolphin uyumluluk için geri dönüş olarak p_vaddr'i kullanır. Sadece MEM1 kontrolü ayrıca gerçek seçilen yazma adresine geçer, bu nedenle filtreleme, baytların nereye yazılacağını değerlendirir, farklı bir başlık alanını değil."
+    },
+    {
+      "type": "heading",
+      "text": "Bu bir yükleyici anlamsal düzeltmesidir, keyfi bir taşınma değildir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin yeni bir konum hesaplamaz veya ikili dosya içindeki referansları yeniden yazmaz. Program başlığının verdiği yükleme adresini izler ve belirlenen sanal eşleme kuralını korur. Bu ayrım, kontrol akışı veya başlangıç kodu tarafından kullanmadan önce bir konuma kopyalanan segmentler için önemlidir. Ayrıca, adresleri ayırt etmeyen dosyalarda yaygın olan sıfır p_paddr'nin kazara belleğin tabanına eşlenmesini önler."
+    },
+    {
+      "type": "heading",
+      "text": "Armatürler eşit, ayrı, sıfır ve geçersiz aralıkları kapsamalıdır"
+    },
+    {
+      "type": "paragraph",
+      "text": "p_paddr'nin p_vaddr'ye eşit olduğu, sıfır olan, farklı fakat MEM1 içinde kalan, bir sınırın yakınında konumlanan veya yazılabilir emüle edilmiş RAM dışında işaret eden küçük ELFs oluşturun. Her segmenti benzersiz bir desenle doldurun ve kesin hedefi, BSS temizlemeyi, giriş yürütmesini ve örtüşme işlemlerini doğrulayın. only_in_mem1 filtrelemesini writeAddr karşısında uygulayın ve her iki alan için de logları inceleyin. Gerçek homebrew, bozuk dosyalarla birlikte test edilmelidir, böylece geliştirilmiş semantik kontrolsüz misafir bellek yazmalarına dönüşmez."
+    },
+    {
+      "type": "callout",
+      "text": "Gömülü bir ELF yük-bellek adresi sağladığında, yükleyici bunu dikkate almalıdır; sanal adres yürütmeyi tanımlar, her zaman baytların ilk olarak ait olduğu yeri değil."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14115",
+      "label": "Dolphin mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

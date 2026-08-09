@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin učí vyextrahované disky Triforce o adresním okně DIMM",
+  "summary": "DirectoryBlob nyní vyhýbá se zastíněnému rozsahu paměti arkád a používá menší zarovnání souborů Triforce místo použití předpokladů rozvržení GameCube a Wii.",
+  "heroAlt": "Důkazy ze zdrojového kódu z požadavku o sloučení Dolphin #14599: DirectoryBlob: oprava zarovnání dat pro GC/Triforce a přeskočení rozsahu paměti DIMM Triforce",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "zarovnání disku"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "Úložiště",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob: oprava zarovnání dat pro GC/Triforce a přeskočení rozsahu paměti DIMM Triforce"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Disk s podporou adresáře stále potřebuje umístění specifické pro platformu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin může připojit extrahované soubory přes DirectoryBlob, jako by šlo o obraz disku. Toto virtuální uspořádání přiřazuje každému souboru offsety a zarovnání. Znovupoužití pravidel pro GameCube a Wii pro arkádovou platformu Sega Triforce přehlédlo hardware připojený k AMMediaboard. Adresy v určité oblasti disku jsou zastíněny SRAM a vrací obsah DIMM, takže zcela platný hostitelský soubor se po umístění do této oblasti může stát nečitelným."
+    },
+    {
+      "type": "heading",
+      "text": "Znak Triforce mění dva rozhodnutí o rozložení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14599 zaznamenává, zda zdrojový svazek je Triforce. Před umístěním souboru DirectoryBlob kontroluje, zda navrhovaný rozsah nepřekrývá oblast 0x1F000000 až 0x1F800000. Pokud ano, offset se posune na 0x1F800000, čímž je celý soubor umístěn za zastíněným oknem. Následné soubory Triforce se zarovnávají na 0x20 bajtů místo konzervativní hranice 0x8000 bajtů použité pro adresářové disky GameCube a Wii."
+    },
+    {
+      "type": "heading",
+      "text": "Zamezení překrývání musí zohlednit celý interval souboru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kontrola pouze počáteční adresy by přehlédla soubor, který začíná pod oknem a zasahuje do něj. Kód porovnává jak data_offset, tak data_offset plus velikost položky, a poté přemisťuje celou položku. Menší zarovnání na 32 bajtů také zabraňuje zbytečným mezerám v arcade obrazech při zachování očekávané granularitě platformy. Objemů Non-Triforce se nikdy nedotýká žádná větev, takže jejich stanovené umístění zůstává bajt po bajtu určeno starší politikou."
+    },
+    {
+      "type": "heading",
+      "text": "Kontrolní přípravky by měly zkoumat každou stranu otvoru."
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvářejte stromové adresáře, které umisťují soubory s nulovou délkou, malé a velké soubory okamžitě před, napříč, uvnitř a za oběma hranicemi DIMM. Ověřte vygenerované FST offsety, zarovnání na 0x20, obsah souborů načtený prostřednictvím emulované AMMediaboard a celkovou velikost obrazu. Opakujte stejný strom jako u GameCube a Wii, abyste prokázali, že zarovnání na 0x8000 se nezměnilo. Zahrňte aritmetiku s přesným koncem a velmi velké offsety, aby se zachytilo přetečení, a poté spusťte reprezentativní tituly Triforce z extrahovaných adresářů místo pouhé kontroly metadat."
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob je virtuální tvůrce disků; správné názvy souborů nestačí, když hardware arkády mění, které fyzické adresní rozsahy mohou vracet data z disku."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "Přečtěte si inženýrskou diskusi Dolphin a změny zdrojového kódu"
+    }
+  ]
+}

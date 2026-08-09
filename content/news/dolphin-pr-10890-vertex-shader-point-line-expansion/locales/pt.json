@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin reconstrói pontos e linhas largas dentro do shader de vértice",
+  "summary": "A expansão de quad se move para fora do estágio de geometria, restaurando primitivas largas em Metal e MoltenVK enquanto oferece um caminho mais rápido em alguns GPUs de desktop.",
+  "heroAlt": "Evidência da fonte do pull request #10890 de Dolphin: VideoCommon: Adicionar expansão de ponto/linha no shader de vértice",
+  "searchKeywords": [
+    "Dolphin",
+    "shader de vértice",
+    "Metal",
+    "MoltenVK",
+    "linhas largas"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: Adicionar expansão de ponto/linha no shader de vértice"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "As APIs modernas não fornecem todas o antigo estágio de expansão do Dolphin"
+    },
+    {
+      "type": "paragraph",
+      "text": "O software do GameCube e Wii pode solicitar pontos e linhas mais largos que um pixel. Dolphin tradicionalmente expande essas primitivas com um shader de geometria, mas Metal não possui um estágio equivalente e MoltenVK herda essa limitação. O caminho ausente era visível em conteúdos como o mapa de Metroid Prime 2, onde linhas largas podiam ser renderizadas incorretamente. Shaders de geometria também podem ser relativamente caros, mesmo em hardware que os suporta."
+    },
+    {
+      "type": "heading",
+      "text": "Os bits de índice informam ao vertex shader qual canto do quadrado construir"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #10890 representa um ponto ou linha expandida como um quadrado. Índices modificados reservam seus dois bits inferiores para identificar o canto gerado. O vertex shader carrega o vértice ou os pontos finais associados, executa a transformação usual e calcula o deslocamento no espaço da tela necessário para aquele canto. A tubulação dinâmica do carregador de vértices fornece os dados adicionais e constantes de geometria por meio de bindings de recursos específicos do backend."
+    },
+    {
+      "type": "heading",
+      "text": "A capacidade do backend decide se o caminho é necessário ou opcional"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal e Vulkan-a-MoltenVK podem usar expansão de vértices para obter funcionalidades que não poderiam expressar com um shader de geometria. D3D12, Vulkan, OpenGL e outros caminhos capazes expõem suporte, enquanto uma preferência avançada permite que os usuários selecionem a expansão de vértices quando ambos os métodos existem. O perfil em um Radeon Pro 5600M mostrou uma vantagem perceptível no mapa de Metroid Prime 2, mas a opção continua contextual, em vez de uma promessa universal de desempenho."
+    },
+    {
+      "type": "heading",
+      "text": "A cobertura deve incluir a semântica de primitivos, não apenas um mapa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Compare pontos e linhas em várias larguras, proporções, resoluções internas, escalas de viewport, limites de recorte e transformações de perspectiva. Inclua offsets de textura, porque a discussão original os identificou como uma área que precisa de mais cobertura de jogo. Capture a saída Metal, MoltenVK, nativa Vulkan, D3D12 e OpenGL contra a expansão de geometria quando disponível. Verifique vértices provocadores, profundidade, interpolação, linhas degeneradas, mudanças de estado e savestates; faça o benchmark da alteração do pipeline separadamente da execução do shader."
+    },
+    {
+      "type": "callout",
+      "text": "A expansão de vértice é tanto uma ponte de compatibilidade para Metal quanto uma alternativa mensurável aos shaders de geometria, mas as regras de primitiva idênticas continuam sendo o teste de aceitação."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Leia a discussão de engenharia Dolphin e as alterações de código-fonte"
+    }
+  ]
+}

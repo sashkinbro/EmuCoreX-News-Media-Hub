@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar wandelt spezielle Dateien in einen kombinierbaren Stack von Speicherebenen um",
+  "summary": "Eine neue IOFileBase-Kette ermöglicht es, begrenzte Ansichten, Kompression und Verschlüsselung ineinander zu verschachteln und ersetzt die Vererbung, die fragil wurde, als mehrere spezielle Dateitypen zusammenarbeiten mussten.",
+  "heroAlt": "Quellenbeleg aus dem Azahar Pull Request #2352: core: Refactor IOFile und abgeleitete Dateitypen",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Speicher",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: Refactor IOFile und abgeleitete Dateitypen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die Vererbung hörte auf zu skalieren, als eine Datei mehrere Verhaltensweisen benötigte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar leitete ursprünglich komprimierte und verschlüsselte Dateien direkt von IOFile ab. Jede spezielle Klasse konnte grundlegende Operationen überschreiben, aber ihre Kombination erforderte Tricks, da C++-Vererbung beschreibt, was ein Objekt ist, und nicht eine geordnete Pipeline von Transformationen. Das Hinzufügen eines weiteren Dateityps für kommende Arbeiten hätte diese Kombinationen vervielfacht und Offsets, Serialisierung und Fehler davon abhängig gemacht, welche Unterklasse zufällig an der Spitze stand."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase delegiert über eine eigene untergeordnete Schicht"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #2352 führt eine abstrakte IOFileBase mit dem vollständigen Zugriffskontrakt und einem unique_ptr child_file ein. Eine Schicht überschreibt nur Operationen, die sie transformiert, und delegiert ansonsten an ihr untergeordnetes Element. Die unterste Ebene ist IOFile oder NullIOFile. Ein komprimierter CCI RomFS kann daher SubIOFile für RomFS, ein weiteres SubIOFile für NCCH innerhalb von NCSD, Z3DSReadIOFile zur Dekompression und IOFile für den Host-Zugriff sein."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile und NullIOFile machen Grenzen und Fehler zu expliziten Objekten"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile bietet ein festes Fenster und übersetzt Lese-, Schreib-, Größen- und Suchoperationen, ohne dass jeder Aufrufer Offset- oder Grenzprüfungen wiederholen muss. NCSD- und NCCH-Parsing verwenden es bereits. NullIOFile implementiert dieselbe Schnittstelle, gibt jedoch Fehlerwerte zurück, sodass fehlgeschlagene Konstruktionen und Serialisierungen eine gültige Objektstruktur behalten, anstatt nullptr-Prüfungen durch jede Ebene verteilen zu müssen."
+    },
+    {
+      "type": "heading",
+      "text": "Verschlüsselte Dateien erhalten eine Identität, während alte Daten weiterhin unterstützt werden."
+    },
+    {
+      "type": "paragraph",
+      "text": "Neue CryptoIOFile-Ausgaben beginnen mit einem AZCR-Header, der Version, Headergröße und einen aus Schlüssel und Nonce abgeleiteten Hash enthält. Azahar kann das Format identifizieren und einen falschen Schlüssel ablehnen, ohne zu raten, ob die entschlüsselten Bytes plausibel aussehen. Alte dateilose Dateien öffnen sich weiterhin über die Kompatibilitätslogik. Tests sollten jede Schichtreihenfolge zusammensetzen, über Subfile-Grenzen hinaus suchen, fehlgeschlagene Objekte serialisieren, falsche Schlüssel überprüfen und alte verschlüsselte Assets erneut öffnen, ohne sie umzuschreiben."
+    },
+    {
+      "type": "callout",
+      "text": "Die architektonische Änderung ist Komposition: Jede Dateiebene hat eine Verantwortung und gibt den Rest über dasselbe Interface weiter."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Lesen Sie die Azahar Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Backend Direct3D 12 PCSX2 pamięta trafienia w bufor klatkowy poza bieżącą zmianą",
+  "summary": "Zmiany stanu koloru lub głębi mogą teraz rozszerzać wykrywanie trafień dla przyszłych rysowań, zmniejszając późniejsze przetwarzanie render-pass zamiast odrzucać użyteczne pokrycie, ponieważ bieżące przejście było nieuniknione.",
+  "heroAlt": "Dowód źródłowy z pull request PCSX2 #14595: GS/DX12: Rozszerzenie backportu wykrywania trafień optymalizacji buforu ramki z GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "optymalizacja buforu ramki",
+    "ynek render-pass",
+    "wykrywanie trafień"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Rozszerzenie backportu wykrywania trafień optymalizacji buforu ramki z GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nieuniknione przejście nadal może ujawnić użyteczne przyszłe pokrycie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Optymalizacje bufora ramki śledzą, kiedy późniejsze rysowanie może pozostać w zgodnym stanie render-pass. Ścieżka Direct3D 12 wcześniej traktowała zmianę stanu koloru lub głębokości jako powód, aby nie rozszerzać wykrywania trafień. To było zbyt krótkowzroczne: bieżąca zmiana może być konieczna, ale dotknięty region wciąż informuje PCSX2, że następne zmiany stanu można pominąć."
+    },
+    {
+      "type": "heading",
+      "text": "Zarówno kolor, jak i głębokość mogą rozszerzyć okno optymalizacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14595 wprowadza szersze zachowanie już zbadane w OpenGL i Direct3D 11. W GSDevice12 trafienie z dowolnego attachmentu może rozszerzyć śledzony warunek, nawet gdy jeden z nich wywołuje teraz przejście. Optymalizacja nie usuwa wymaganej bieżącej bariery ani zmiany render-pass; zachowuje informację, która sprawia, że następna zgodna operacja jest tańsza."
+    },
+    {
+      "type": "heading",
+      "text": "Poprawka zależy od prawidłowego zarządzania stanem render-pass"
+    },
+    {
+      "type": "paragraph",
+      "text": "Źródło podkreśla, że prawidłowe zmiany w render-pass wynikające z powiązanych prac stanowią część testowanej bazy. Ta zależność ma znaczenie, ponieważ mniejsza liczba przejść jest korzystna tylko wtedy, gdy zasady ładowania, zapisu i przejścia załączników pozostają ważne. Zbyt szerokie trafienie może zachować dane, które powinny zostać rozwiązane lub wyczyszczone. Zgłoszony efekt to zmniejszenie liczby render-pass od jednocyfrowej do dwucyfrowej w tych samych grach używanych w poprzednich pracach optymalizacyjnych."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja wydajności musi obejmować porównanie dokładnych klatek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Odtwórz odwoływany zestaw zrzutów na Direct3D 12, zbierz liczniki render-pass, barier, kopiowania i GPU-czasu, a następnie porównaj klatki ze ścieżką nieoptymalizowaną. Skonstruuj przypadki, w których zmienia się tylko kolor, tylko głębia i oba, po czym wykonaj rysunki, które powinny lub nie powinny ponownie używać stanu. Spadek liczby przejść bez tożsamości pikseli jest regresją. Testy muszą również obejmować kilku dostawców GPU, ponieważ zachowanie render-pass sterownika i koszt przejścia mogą się różnić."
+    },
+    {
+      "type": "callout",
+      "text": "Optymalizacja zapamiętuje trafienie na to, co nastąpi dalej; nigdy nie wykorzystuje przyszłych oszczędności, aby pominąć przejście wymagane przez obecne zużycie."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

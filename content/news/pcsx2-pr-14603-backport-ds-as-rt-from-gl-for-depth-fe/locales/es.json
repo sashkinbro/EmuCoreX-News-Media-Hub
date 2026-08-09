@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 intercambia Direct3D 11 copias de profundidad por copias de objetivo de renderizado más rápidas",
+  "summary": "Un camino de profundidad-como-objetivo-de-renderizado realiza más operaciones de copia pero usa una forma que Direct3D 11 maneja más rápido, orientada a escenas con retroalimentación intensa de AA1 y AAT cuando ROV está deshabilitado.",
+  "heroAlt": "Evidencia fuente del pull request #14603 de PCSX2: GS/DX11: Reintegrar ds como rt desde GL para retroalimentación de profundidad.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "retroalimentación de profundidad",
+    "copia de objetivo de renderizado",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Reintegrar ds como rt desde GL para retroalimentación de profundidad."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El recuento de copias por sí solo no predice el costo de Direct3D 11"
+    },
+    {
+      "type": "paragraph",
+      "text": "La retroalimentación de profundidad requiere que PCSX2 ponga la información de profundidad a disposición de un dibujo posterior sin violar las reglas de uso del objetivo. Direct3D 11 puede realizar una copia de profundidad GPU, pero la fuente informa que esa operación es particularmente lenta. Por lo tanto, una solución con menos copias puede perder frente a un camino que convierte la profundidad en forma de objetivo de renderizado y realiza copias adicionales a través de hardware y shaders optimizados para objetivos similares al color."
+    },
+    {
+      "type": "heading",
+      "text": "La estrategia OpenGL profundidad-como-RT se adapta a DX11"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14603 agrega la conversión y la infraestructura del dispositivo necesarias para tratar la retroalimentación de profundidad como copias de objetivos de renderizado en Direct3D 11. Los cambios en los shaders exponen la ruta de formato necesaria, y GSDevice11 realiza un seguimiento de los recursos utilizados por la conversión. Direct3D 12 recibe ajustes compartidos relacionados, pero el objetivo de rendimiento es DX11. El diseño se prueba explícitamente sin ROV para que la retroalimentación ordenada no oculte la diferencia en la ruta de copiado."
+    },
+    {
+      "type": "heading",
+      "text": "Más operaciones aún pueden terminar antes cuando cada operación es más barata"
+    },
+    {
+      "type": "paragraph",
+      "text": "El compromiso central del artículo es medible: la nueva ruta puede ejecutar copias adicionales, pero evita el costoso comportamiento de copia de profundidad nativa. No debe describirse como universalmente más rápida solo a partir del conteo de operaciones. La conversión de formato, el ancho de banda de memoria, el tamaño del objetivo, el proveedor GPU y el número de eventos de retroalimentación determinan el resultado. La corrección también depende de preservar la precisión de la profundidad a través de la representación del objetivo de renderizado."
+    },
+    {
+      "type": "heading",
+      "text": "Los juegos AA1 y AAT proporcionan la prueba de estrés prevista"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hacer benchmarks de Final Fantasy X, Everybody's Golf y otros títulos AA1 o AAT en Direct3D 11 con ROV deshabilitado, manteniendo la resolución y la escena constantes. Registrar tipos de copia, conteo, tiempo GPU y salida de fotogramas frente a la ruta de copia de profundidad anterior. Probar tamaños nativos y escalados y varios proveedores. Comparar efectos dependientes de la profundidad y ordenamiento z píxel por píxel; una aceleración que introduce cuantización o profundidad obsoleta no es aceptable."
+    },
+    {
+      "type": "callout",
+      "text": "La optimización elige la primitiva más barata para DX11, no la de menor número: copias adicionales de render-target pueden superar una única ruta de copia de profundidad costosa."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin rebuilds wide points and lines inside the vertex shader",
+  "summary": "Quad expansion moves out of the geometry stage, restoring wide primitives on Metal and MoltenVK while offering a faster path on some desktop GPUs.",
+  "heroAlt": "Source evidence from Dolphin pull request #10890: VideoCommon: Add vertex shader point/line expansion",
+  "searchKeywords": [
+    "Dolphin",
+    "vertex shader",
+    "Metal",
+    "MoltenVK",
+    "wide lines"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: Add vertex shader point/line expansion"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Modern APIs do not all provide Dolphin's old expansion stage"
+    },
+    {
+      "type": "paragraph",
+      "text": "GameCube and Wii software can request points and lines wider than one pixel. Dolphin traditionally expands those primitives with a geometry shader, but Metal has no equivalent stage and MoltenVK inherits that limitation. The missing path was visible in content such as the Metroid Prime 2 map, where wide lines could render incorrectly. Geometry shaders can also be relatively expensive even on hardware that supports them."
+    },
+    {
+      "type": "heading",
+      "text": "Index bits tell the vertex shader which quad corner to build"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #10890 represents an expanded point or line as a quad. Modified indices reserve their bottom two bits to identify the generated corner. The vertex shader loads the associated source vertex or endpoints, performs the usual transform, and calculates the screen-space offset needed for that corner. Dynamic vertex-loader plumbing supplies the additional data and geometry constants through backend-specific resource bindings."
+    },
+    {
+      "type": "heading",
+      "text": "Backend capability decides whether the path is required or optional"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal and Vulkan-through-MoltenVK can use vertex expansion to gain functionality they could not express with a geometry shader. D3D12, Vulkan, OpenGL, and other capable paths expose support, while an advanced preference lets users select vertex expansion where both methods exist. Profiling on a Radeon Pro 5600M showed a noticeable advantage in the Metroid Prime 2 map, but the option remains contextual rather than a universal performance promise."
+    },
+    {
+      "type": "heading",
+      "text": "Coverage must include primitive semantics, not only one map"
+    },
+    {
+      "type": "paragraph",
+      "text": "Compare points and lines at several widths, aspect ratios, internal resolutions, viewport scales, clipping boundaries, and perspective transforms. Include texture offsets, because the original discussion identified them as an area needing more game coverage. Capture Metal, MoltenVK, native Vulkan, D3D12, and OpenGL output against geometry expansion where available. Check provoking vertices, depth, interpolation, degenerate lines, state changes, and savestates; benchmark pipeline churn separately from shader execution."
+    },
+    {
+      "type": "callout",
+      "text": "Vertex expansion is both a compatibility bridge for Metal and a measurable alternative to geometry shaders, but identical primitive rules remain the acceptance test."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

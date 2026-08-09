@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "O backend PCSX2 do Direct3D 12 lembra acertos de framebuffer além da transição atual",
+  "summary": "Alterações no estado de cor ou profundidade agora podem expandir a detecção de acertos para desenhos futuros, reduzindo o retrabalho em passes de renderização posteriores em vez de descartar cobertura útil porque a transição presente era inevitável.",
+  "heroAlt": "Evidência da fonte do pull request #14595 do PCSX2: GS/DX12: Expandir a retrolidação da detecção de acertos de otimização de fb de GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "otimização de framebuffer",
+    "passagem de renderização",
+    "detecção de acertos"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Expandir a retrolidação da detecção de acertos de otimização de fb de GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma transição inevitável ainda pode revelar cobertura útil futura"
+    },
+    {
+      "type": "paragraph",
+      "text": "As otimizações de frame-buffer rastreiam quando um desenho posterior pode permanecer dentro de um estado de renderização compatível. O caminho Direct3D 12 anteriormente tratava uma mudança de estado de cor ou profundidade como um motivo para não expandir a detecção de acertos. Isso era muito míope: a transição atual pode ser necessária, mas a região afetada ainda informa ao PCSX2 que mudanças de estado subsequentes podem ser evitadas."
+    },
+    {
+      "type": "heading",
+      "text": "Tanto cor quanto profundidade podem expandir a janela de otimização"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14595 traz de volta um comportamento mais amplo já explorado nos OpenGL e Direct3D 11. No GSDevice12, um acerto de qualquer um dos anexos pode expandir a condição rastreada mesmo quando um deles dispara uma transição agora. A otimização não apaga a barreira ou a mudança de render-pass necessária; ela mantém informações que tornam a próxima operação compatível mais barata."
+    },
+    {
+      "type": "heading",
+      "text": "O patch depende do gerenciamento correto do estado do render-pass"
+    },
+    {
+      "type": "paragraph",
+      "text": "A fonte observa que alterações adequadas de render-pass a partir de trabalhos relacionados fazem parte da base testada. Essa dependência é importante porque menos passes são benéficos apenas se as regras de carregamento, armazenamento e transição de anexos permanecerem válidas. Um acerto muito amplo pode preservar dados que deveriam ter sido resolvidos ou limpos. O efeito relatado é uma redução de um a dois dígitos nos render passes para os mesmos jogos usados pelos trabalhos de otimização anteriores."
+    },
+    {
+      "type": "heading",
+      "text": "A validação de desempenho deve incluir comparação quadro a quadro exata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduza o conjunto de dumps referenciado no Direct3D 12, colete contadores de render-pass, barreira, cópia e GPU-tempo, e compare os quadros com o caminho não otimizado. Construa casos em que apenas a cor muda, apenas a profundidade muda, e ambos mudam, seguidos por desenhos que deveriam ou não reutilizar o estado. Uma queda na contagem de passes sem identidade de pixel é uma regressão. Os testes também precisam de vários fornecedores GPU porque o comportamento do driver em render-pass e o custo de transição podem diferir."
+    },
+    {
+      "type": "callout",
+      "text": "A otimização lembra um acerto para o que vem a seguir; ela nunca usa economias futuras para pular uma transição exigida pelo consumo atual."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações do código-fonte"
+    }
+  ]
+}

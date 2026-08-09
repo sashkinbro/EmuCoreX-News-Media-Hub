@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3881-hle-compile-time-dispatch-avoid-extra",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K move HLE despacho de argumentos do tempo de execução para os templates",
+  "summary": "Layouts de argumentos ARM em tempo de compilação e ponteiros de função simples reduzem a maquinaria de ponte por importação, mantendo a conversão de escalares, varargs e valores de retorno explícita.",
+  "heroAlt": "Evidência de fonte do pull request Vita3K #3881: module/bridge: HLE despacho em tempo de compilação, evitar indireção adicional de ponteiro",
+  "searchKeywords": [
+    "Vita3K",
+    "HLE bridge",
+    "ARM ABI",
+    "templates",
+    "despacho de função"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3881": "module/bridge: HLE despacho em tempo de compilação, evitar indireção adicional de ponteiro"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cada importação de convidado atravessa a mesma fronteira de tradução ABI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma chamada de função Vita chega com argumentos divididos entre registradores gerais ARM, registradores de ponto flutuante e a pilha. A ponte Vita3K de HLE deve localizá-los, converter ponteiros e representações de convidado para tipos do host, invocar a exportação correta e escrever um valor de retorno de volta. A ponte mais antiga construía o estado do layout e capturava um ponteiro de exportação e nome em std::function, adicionando mecanismos de tempo de execução de uso geral a um caminho exercitado por quase todas as chamadas de serviço emulado."
+    },
+    {
+      "type": "heading",
+      "text": "A função de exportação torna-se parte do tipo de ponte"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #3881 introduz make_bridge com ExportFn como um parâmetro de template não-tipo. lay_out é executado como constexpr para o conjunto de argumentos da exportação, produzindo entradas fixas ArgLayout e estado de varargs. Uma função gerada não-capturadora lê cada argumento através de read_bridged_arg, chama ExportFn diretamente e, condicionalmente, escreve o resultado a menos que o tipo de retorno seja void. Portanto, ImportFn pode ser um ponteiro de função comum."
+    },
+    {
+      "type": "heading",
+      "text": "Tipos de ponte retêm o contrato de convidado para host"
+    },
+    {
+      "type": "paragraph",
+      "text": "O layout em tempo de compilação não significa reinterpretar os registradores como objetos C++ arbitrários. BridgeTypes seleciona a representação ARM de cada argumento e a converte usando memória emulada, quando necessário. module::vargs carrega seu estado calculado em vez de fingir ser um único argumento escalar. Os escopos do Tracy ainda recebem o nome de exportação através de armazenamento estático, preservando o perfil por função enquanto elimina a captura de closure anterior."
+    },
+    {
+      "type": "heading",
+      "text": "A conformidade com ABI requer testes em tempo de compilação e de execução"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instancie bridges para zero argumentos, quatro e cinco inteiros, valores alinhados a 64 bits, floats, ponteiros, estruturas representadas por tipos bridge, varargs, retornos void e códigos de erro. Compare os locais de registrador e pilha com o ABI do Vita e a implementação anterior. Compile todos os módulos gerados em compiladores suportados, inspecione o tamanho do código e a forma de chamada, e faça benchmarking de cargas de trabalho com muitas importações. Tipos inválidos ou não suportados devem falhar durante a compilação com um diagnóstico claro em vez de selecionar silenciosamente um layout incorreto."
+    },
+    {
+      "type": "callout",
+      "text": "A otimização funciona porque a assinatura de exportação já contém os fatos ABI; os templates podem transformar esses fatos em uma ponte fixa antes de a emulação começar."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3881",
+      "label": "Leia a discussão de engenharia Vita3K e as alterações de código-fonte"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14603-backport-ds-as-rt-from-gl-for-depth-fe",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 tauscht Direct3D 11 Tiefenkopien für schnellere Renderzielkopien aus",
+  "summary": "Ein Tiefen-als-Renderziel-Pfad führt mehr Kopiervorgänge aus, verwendet aber eine Form von Direct3D 11Handles schneller, wobei er auf feedback-intensive AA1- und AAT-Szenen abzielt, wenn ROV deaktiviert ist.",
+  "heroAlt": "Quellenbeweis aus dem PCSX2 Pull Request #14603: GS/DX11: Depth als RT von GL für Tiefenfeedback rückportiert.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 11",
+    "Tiefen-Feedback",
+    "Renderzielkopie",
+    "AA1"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14603": "GS/DX11: Depth als RT von GL für Tiefenfeedback rückportiert."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nur die Kopieranzahl sagt die Direct3D 11-Kosten nicht voraus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tiefen-Feedback erfordert, dass PCSX2 Tiefeninformationen für einen späteren Draw verfügbar macht, ohne die Zielnutzungsregeln zu verletzen. Direct3D 11 kann eine GPU Tiefenkopie durchführen, aber die Quelle meldet, dass dieser Vorgang besonders langsam ist. Eine Lösung mit weniger Kopien kann daher einer Methode unterliegen, die die Tiefe in Render-Target-Form konvertiert und zusätzliche Kopien über Hardware und Shader durchführt, die für farbähnliche Ziele optimiert sind."
+    },
+    {
+      "type": "heading",
+      "text": "Die OpenGL-Tiefe-als-RT-Strategie ist an DX11 angepasst"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14603 fügt die Konvertierung und Geräteanschlüsse hinzu, die erforderlich sind, um Tiefen-Feedback als Render-Target-Kopien auf Direct3D 11 zu behandeln. Shader-Änderungen machen den notwendigen Formatpfad sichtbar, und GSDevice11 verfolgt Ressourcen, die von der Konvertierung verwendet werden. Direct3D 12 erhält verwandte gemeinsame Anpassungen, das Leistungsziel ist jedoch DX11. Das Design wird ausdrücklich ohne ROV getestet, sodass geordnetes Feedback den Unterschied im Kopierpfad nicht verschleiert."
+    },
+    {
+      "type": "heading",
+      "text": "Mehr Operationen können immer noch schneller abgeschlossen werden, wenn jede Operation günstiger ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der zentrale Kompromiss des Artikels ist messbar: Der neue Pfad kann zusätzliche Kopien ausführen, vermeidet jedoch das teure native Tiefenkopierverhalten. Es sollte nicht allein anhand der Anzahl der Operationen als universell schneller beschrieben werden. Formatkonvertierung, Speicherbandbreite, Zielgröße, GPU-Anbieter und die Anzahl der Feedback-Ereignisse bestimmen das Ergebnis. Die Korrektheit hängt auch davon ab, die Tiefengenauigkeit durch die Renderziel-Darstellung zu bewahren."
+    },
+    {
+      "type": "heading",
+      "text": "AA1- und AAT-Spiele bieten den vorgesehenen Stresstest"
+    },
+    {
+      "type": "paragraph",
+      "text": "Benchmarken Sie Final Fantasy X, Everybody's Golf und andere AA1- oder AAT-Titel auf Direct3D 11 mit deaktiviertem ROV, wobei Auflösung und Szene konstant gehalten werden. Zeichnen Sie Kopiertypen, Anzahl, GPU-Zeit und Frame-Ausgabe gegenüber dem vorherigen Tiefenkopie-Pfad auf. Testen Sie native und hochskaliert Größen sowie mehrere Anbieter. Vergleichen Sie tiefenabhängige Effekte und Z-Ordnung Pixel für Pixel; eine Beschleunigung, die Quantisierung oder veraltete Tiefe einführt, ist nicht akzeptabel."
+    },
+    {
+      "type": "callout",
+      "text": "Die Optimierung wählt das günstigere Primitive für DX11, nicht die kleinere Anzahl: zusätzliche Renderziel-Kopien können eine einzelne teure Tiefenkopie-Methode übertreffen."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14603",
+      "label": "Lesen Sie die PCSX2-Engineering-Diskussion und die Quelländerungen"
+    }
+  ]
+}

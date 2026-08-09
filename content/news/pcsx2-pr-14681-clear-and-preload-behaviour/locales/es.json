@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 conserva los datos del objetivo de renderizado sin modificaciones a través de borrados parciales",
+  "summary": "El seguimiento de borrado y precarga ahora distingue entre una superposición completa y una operación de medio objetivo, evitando que filas válidas sean descartadas y copiadas de vuelta como datos corruptos.",
+  "heroAlt": "Evidencia visual del pull request #14681 de PCSX2: GS/TC: Mejorar el comportamiento de borrado y precarga",
+  "searchKeywords": [
+    "PCSX2",
+    "caché de texturas",
+    "borrado parcial",
+    "precarga",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Mejorar el comportamiento de borrado y precarga"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un borrado de medio objetivo estaba invalidando el frame anterior"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 solo puede borrar la segunda mitad de un objetivo de renderizado mientras que las primeras 256 líneas ya contienen datos necesarios para el siguiente fotograma. PCSX2 previamente marcó el objetivo más amplio como inválido, luego precargó desde un rango que ya había declarado inusable. La copia era internamente consistente con el mapa de validez incorrecto, produciendo parpadeos aunque el juego nunca borró la mitad preservada."
+    },
+    {
+      "type": "heading",
+      "text": "Borrar la validez ahora requiere un objetivo coincidente o superposición completa."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #14681 cambia cuándo los canales RGB y alfa pierden su estado válido. Un borrado solo puede descartar el contenido rastreado cuando el objetivo coincide o cubre completamente el rango relevante. La superposición parcial mantiene viva la porción intacta. El renderizador también maneja los borrados de mitad pareados de manera más deliberada y omite un dibujo de borrado normal cuando un objetivo se resuelve a cero, evitando trabajo que no puede contribuir con píxeles."
+    },
+    {
+      "type": "heading",
+      "text": "La precarga sigue la cobertura restante en lugar de la etiqueta del objetivo antiguo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los cambios de precarga de acompañamiento son importantes porque la validez y la restauración son dos caras de la misma decisión de caché. Cuando se reutiliza un objetivo que se superpone, PCSX2 debe copiar solo los datos que se sabe que sobreviven; de lo contrario, un borrado correcto aún puede ser seguido por una precarga obsoleta o indefinida. El trabajo en GSRendererHW y GSTextureCache alinea esos pasos, con los auxiliares de registro GS proporcionando la información de cobertura utilizada por la decisión."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 y X-Men Origins cubren diferentes patrones de borrado"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente identifica el parpadeo de Gran Turismo 4 como el principal reproductor y incluye capturas de antes y después para Time Crisis 3 y X-Men Origins. Las pruebas deben revisitar los mismos fotogramas mientras se alterna entre renderizado nativo y escalado, y luego observar varios fotogramas subsecuentes para detectar corrupción retardada. La iluminación de Need for Speed es otro chequeo solicitado. Una traza útil registra los límites del objetivo, la validez del canal y los límites de precarga para cada borrado superpuesto."
+    },
+    {
+      "type": "callout",
+      "text": "La corrección clave es temporal: un borrado parcial no debe eliminar el conocimiento en caché sobre píxeles que el invitado dejó deliberadamente para un cuadro posterior."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Lea la discusión de ingeniería y los cambios de fuente de PCSX2"
+    }
+  ]
+}

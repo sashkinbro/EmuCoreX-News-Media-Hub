@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 标记 OpenGL 与导致它的渲染器操作相关的工作",
+  "summary": "围绕绘制和纹理运行时路径的命名调试作用域将 GPU 捕获转化为重新解释、清除、复制、上传、下载、生成 Mipmap 和缩放工作的层次结构。",
+  "heroAlt": "来自 Azahar 拉取请求 #2133 的原始证据：renderer_gl：向栅格化器和纹理运行时添加 `DebugScopes`",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL 调试",
+    "调试作用域",
+    "RenderDoc",
+    "纹理运行时"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "工具",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl：向栅格化器和纹理运行时添加 `DebugScopes`"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "GL 命令流丢失了每个调用背后的 C++ 原因"
+    },
+    {
+      "type": "paragraph",
+      "text": "GPU 调试器可以显示 glBindTexture、glFramebufferTexture、绘制和复制操作，但长时间的捕获不会自动显示是哪个 Azahar 操作产生了它们。因此，诊断渲染器故障需要手动将 API 顺序与 CPU 跟踪进行关联。拉取请求 #2133 在光栅化器和纹理运行时边界处添加了结构化标签，此时模拟器仍然知道语义操作。"
+    },
+    {
+      "type": "heading",
+      "text": "作用域包含区分相似操作的参数"
+    },
+    {
+      "type": "paragraph",
+      "text": "补丁命名了 RasterizerOpenGL::Draw 和纹理重新解释、带或不带 FBO 的清除、复制、快速复制、Mip 映射生成、句柄复制、上传、自定义上传、下载、附加、放大以及快速放大路径。标签在有用的情况下包括像素格式、清除颜色、复制次数或缩放值。因此，一个捕获可以区分来自不同格式或缩放决策的两个视觉上相似的复制。"
+    },
+    {
+      "type": "heading",
+      "text": "只有在启用渲染器调试时才会计算作用域深度"
+    },
+    {
+      "type": "paragraph",
+      "text": "采样器作用域深度会根据 Settings::values.renderer_debug 有条件地增加。正常游戏过程中不应维持诊断嵌套，它永远不会导出。当启用时，层次结构可以被调试标记和捕获工具使用，将一组 GL 调用关联到一个 C++ 调用栈。这些作用域不会改变同步或修复渲染本身；它们使后续调查更加精确。"
+    },
+    {
+      "type": "heading",
+      "text": "捕获验证应涵盖嵌套和被禁用的开销"
+    },
+    {
+      "type": "paragraph",
+      "text": "启用渲染器调试，捕获上传、重新解释、清除、复制、缩放和下载纹理的场景，并确认每个 GL 组具有正确的名称和参数，同时嵌套平衡。触发早期返回或失败操作以确保 RAII 关闭作用域。禁用调试并验证标记和深度增加消失，然后基准测试 CPU 开销。标签必须识别实际执行的操作，而不是创建虚假证据的复制名称。"
+    },
+    {
+      "type": "callout",
+      "text": "调试范围不会改变像素；它们改变的是捕获是否能回答哪些 Azahar 操作生成了这些像素。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "阅读 Azahar 工程讨论和源代码更改"
+    }
+  ]
+}

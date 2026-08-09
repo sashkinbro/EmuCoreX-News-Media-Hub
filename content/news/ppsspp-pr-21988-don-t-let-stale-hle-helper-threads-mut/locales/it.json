@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP impedisce ai thread helper obsoleti di danneggiare un savestate ripristinato",
+  "summary": "Il loader savestate ora stacca i vecchi wrapper host sceUtility e PSMF prima della distruzione, proteggendo i thread del kernel attivi e la memoria che potrebbe riutilizzare gli stessi identificatori.",
+  "heroAlt": "Prove di origine dalla pull request #21988 di PPSSPP: Savestate: non permettere ai thread helper obsoleti HLE di modificare lo stato del kernel ripristinato",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: non permettere ai thread helper obsoleti HLE di modificare lo stato del kernel ripristinato"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un distruttore potrebbe agire sulla generazione sbagliata dello stato del kernel"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP mantiene sul lato host i wrapper HLEHelperThread per lavoro asincrono come l'accesso ai dati salvati e la riproduzione PSMF. Durante un caricamento, l'emulatore sostituisce quei wrapper con oggetti provenienti dal flusso serializzato. Due percorsi distruggevano normalmente il wrapper pre-caricamento, permettendo al suo distruttore di chiamare __KernelDeleteThread e liberare un blocco di ingresso dopo che il nuovo stato del kernel era già installato. Il IDs all'interno del vecchio wrapper non descriveva più gli oggetti che era autorizzato a possedere."
+    },
+    {
+      "type": "heading",
+      "text": "Il riutilizzo degli identificatori trasformava il rumore di log innocuo in corruzione silenziosa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se lo stato ripristinato non conteneva l'ID del thread o l'allocazione obsoleti, l'errore produceva un messaggio riguardante un thread mancante o una free non valida. Il caso pericoloso si verificava quando lo stato ripristinato aveva riciclato uno dei due valori. In tal caso, il distruttore poteva terminare un thread legittimo ancora attivo o liberare memoria utilizzata da un altro oggetto. Caricare mentre il lavoro sui dati salvati o un lettore PSMF era attivo rendeva questo bug dipendente dai tempi di possesso molto più facile da raggiungere."
+    },
+    {
+      "type": "heading",
+      "text": "Forget separa la durata del wrapper host dalla proprietà del guest"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21988 applica il modello già utilizzato dalla gestione dello stato I/O di PPSSPP. sceUtility chiama esplicitamente Forget, elimina il suo accessThread e cancella il puntatore prima che Do lo ricrei. Nelle letture PSMF, il loader scorre la mappa dei player esistenti e chiama Forget su ogni finishThread prima che la deserializzazione della mappa distrugga i player. Forget non cancella lo stato ospite ripristinato; informa l'obsoleta shell host che non possiede più quelle risorse del kernel."
+    },
+    {
+      "type": "heading",
+      "text": "La matrice di regressione deve esercitare IDs riciclato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testare i salvataggi effettuati prima, durante e dopo le operazioni di savedata e la riproduzione PSMF, quindi caricare ciascuno da una sessione con attività diversa. Strumentare l'eliminazione dei thread e le liberazioni di BlockAllocator per dimostrare che nessuno wrapper pre-load muta la generazione ripristinata. Includere cicli di caricamento ripetuti, riavvolgimento, cambio slot, stati falliti e spegnimento dopo un caricamento. Un test mirato dovrebbe ricreare deliberatamente lo stesso ID del thread e l'indirizzo del blocco, perché il solo vecchio caso harmless-log non esporrebbe corruzioni silenziose."
+    },
+    {
+      "type": "callout",
+      "text": "Il ripristino savestate modifica le generazioni di proprietà; i distruttori dell'host devono dimenticare i riferimenti ospite obsoleti prima che il kernel ripristinato diventi autorevole."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Leggi la discussione ingegneristica PPSSPP e le modifiche al codice sorgente"
+    }
+  ]
+}

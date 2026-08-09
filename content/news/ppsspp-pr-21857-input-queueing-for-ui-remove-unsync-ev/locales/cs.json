@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP směruje vstup platformy přes smyčku událostí UI",
+  "summary": "Callbacky pro dotyk, klávesy a osy nyní zařazují data do fronty pro uspořádané zpracování v UI vlákně, čímž se odstraňují nesynchronizované metody obrazovky a široký rekurzivní zámek.",
+  "heroAlt": "Důkazy ze zdroje z pull requestu PPSSPP #21857: Přepracování front vstupů pro UI, odstranění událostí Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "fronta vstupů",
+    "ScreenManager",
+    "dotyk",
+    "ovladač"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Vstup",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Přepracování front vstupů pro UI, odstranění událostí Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Callbacky vstupu a mutace obrazovky sdílely křehkou hranici"
+    },
+    {
+      "type": "paragraph",
+      "text": "Backendy pro desktop a mobil mohou hlásit události dotyku, klávesnice a ovladače z kontextů, které nevlastní aktuální zásobník obrazovek PPSSPP. Původní návrh kombinoval rekurzivní zámek vstupu s vstupními body UnsyncTouch, UnsyncKey a UnsyncAxis, které mohly procházet pohledy přímo. Přepínání obrazovek, překryvy a odesílání událostí tedy závisely na velkém zámku a na tom, že volající věděli, která nesynchronizovaná metoda je bezpečná."
+    },
+    {
+      "type": "heading",
+      "text": "Zpětné volání nyní vykonávají pouze krátkou operaci fronty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21857 definuje typované frontové události pro dotykové, klávesové a osové vstupy. Zpětné volání ScreenManageru kopírují událost a přidávají ji při držení eventQueueLock. Během aktualizace vlákno UI přesune celý deque do lokální proměnné, uvolní mutex a dispatchuje události v pořadí. Kritická sekce nespouští kód view, takže handlery nemohou prodlužovat latenci platformního callbacku ani rekurzivně získávat zámek fronty."
+    },
+    {
+      "type": "heading",
+      "text": "Speciální pravidla doručení zůstávají explicitní"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uvolnění všech dotykových událostí stále zasahuje každou vrstvu obrazovky a události uvolnění kláves se stále šíří tak, že pozadí nemůže zachovat zaseknutou klávesu po změnách zásobníku. Běžný vstup jde na přední obrazovku, zatímco překryv nejprve přijímá stisknutí dotyku, aby se mohl sám zavřít a spotřebovat událost. Konverze navigace fokusů se stává běžnou pomocnou funkcí KeyEventToFocusMoves a mnoho metod Unsync mizí, protože odesílání nyní probíhá na vlastním vlákně."
+    },
+    {
+      "type": "heading",
+      "text": "Pořadí a přechody obrazovky jsou těžké testy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generujte prokládané události dotyku, kláves a os během otevírání a zavírání vyskakovacích oken, přepínání obrazovek, otáčení zařízení, znovupřipojování ovladačů a držení tlačítek během přechodu. Potvrďte pořadí FIFO a že události uvolnění vymažou všechny stavy stisknutých tlačítek. Zatěžujte producenty z více vláken a používejte ThreadSanitizer kolem přístupu k frontě a zásobníku obrazovek. Definujte chování, když se obrazovka změní po zařazení události do fronty, ale před aktualizací; implementace cíleně zasahuje zásobník aktuální v době odeslání, takže testy musí tento kontrakt pevně stanovit."
+    },
+    {
+      "type": "callout",
+      "text": "Platformní zpětné volání nyní hlásí vstup; vlákno UI rozhoduje, kam patří, když zpracovává objednanou frontu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Přečtěte si inženýrskou diskusi PPSSPP a změny zdrojového kódu"
+    }
+  ]
+}

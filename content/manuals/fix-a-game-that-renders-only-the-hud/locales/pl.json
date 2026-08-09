@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zdiagnozuj grę PS2, która renderuje HUD, ale nie świat",
+  "summary": "Użyj pozostałego HUD jako dowodu, że prezentacja jest aktywna, zweryfikuj obraz płyty, zresetuj nadpisania wyłączające rysowanie, porównaj interfejsy sprzętowe i krótkie odniesienie oprogramowania, a następnie uchwyć najmniejszą powtarzalną awarię geometrii świata.",
+  "heroAlt": "Przechwycenie gry PCSX2 z porównania regresji renderera z warstwami interfejsu i świata",
+  "searchKeywords": [
+    "Widoczny tylko HUD w PS2",
+    "Czarny świat w EmuCoreX",
+    "brakująca geometria",
+    "pomiń reset rysowania",
+    "diagnostyka renderera"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "diagnostics": "Diagnostyka"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 czysta linia bazowa rozwiązywania problemów",
+    "pcsx2-performance": "PCSX2 renderera i GS wskaźniki"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Traktuj widoczny HUD jako granicę warstwy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jeżeli liczniki, menu lub HUD gry nadal się rysują, powierzchnia wyjściowa i przynajmniej część strumienia poleceń GS są aktywne. Brakująca część może dotyczyć geometrii świata, kompozycji bufora ramki lub ogólnej reguły ręcznej odrzucającej rysowania. Przed zmianą dokładności zapisz, czy świat jest czarny, przezroczysty, zamrożony na wcześniejszej klatce, czy zastąpiony jednolitym kolorem. Te objawy prowadzą do różnych testów."
+    },
+    {
+      "type": "callout",
+      "text": "Nie zwiększaj wartości pomijania rysowania, aby zniknęła uszkodzona warstwa. Reguła pomijania może usunąć cały świat, pozostawiając nakładki 2D, dokładnie odtwarzając ten objaw."
+    },
+    {
+      "type": "heading",
+      "text": "Zachowaj punkt kontrolny od uruchomienia do rozgrywki"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normalny zapis w grze, który dociera do dotkniętej sceny bez użycia zapisu stanu emulatora.",
+        "Zweryfikowany numer seryjny, region, rewizja i osobisty skrót obrazu.",
+        "Zrzuty ekranu aktualnych globalnych i per-gry wartości grafiki.",
+        "System GPU sterownik z wyłączonymi zamiennikami tekstur i shaderami.",
+        "Krótki log pokazujący inicjalizację renderera i przejście do rozgrywki."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Przywróć rysunki przed dodaniem dokładności"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Uruchom tytuł od zimnego startu i potwierdź, czy menu, FMV i rozgrywka zawodzą na różnych granicach.",
+        "2. Zresetuj pomijanie renderowania, ręczne poprawki sprzętowe, przesunięcia tekstur i dziedziczone poprawki specyficzne dla gry dla tego numeru seryjnego.",
+        "3. Ponownie przetestuj w natywnej rozdzielczości wewnętrznej na oryginalnym API sprzętowym.",
+        "4. Zamknij sesję, wybierz inne obsługiwane API sprzętowe i odtwórz tę samą zmianę.",
+        "5. Jeśli obie ścieżki wyświetlają tylko HUD, uruchom krótko scenę w renderowaniu programowym i sprawdź, czy geometria świata wraca.",
+        "6. Gdy renderowanie programowe będzie prawidłowe, wróć do sprzętu i przetestuj tylko udokumentowany, specyficzny dla tytułu renderer lub poprawkę GS.",
+        "7. Jeśli oprogramowanie jest również puste, ponownie zweryfikuj obraz i przetestuj czysty profil, zanim uznasz usterkę wyłącznie sprzętową.",
+        "8. Zarejestruj logi i dokładne ustawienia z najmniejszego uruchomienia, które odtwarza brakujący świat."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "HUD i świat często używają różnych ścieżek renderowania. Poprawna ramka oprogramowania potwierdza, że gra wygenerowała polecenia świata i zawęża przyczynę awarii do tłumaczenia sprzętowego lub zachowania sterownika hosta. Awaria na czystych ścieżkach sprzętowych i programowych wskazuje na problem po stronie obrazu, poprawek, postępu gry lub szerszej regresji emulatora. Najpierw zresetowanie kontrolerów wyłączających renderowanie zapobiega powstaniu własnego objawu, który mógłby wpłynąć na tę decyzję."
+    },
+    {
+      "type": "heading",
+      "text": "Kryteria odzyskiwania warstwy świata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Skorygowany profil musi wyświetlać więcej niż wygodną, nieruchomą klatkę."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Geometria świata, postacie, cząstki i HUD pojawiają się w zamierzonej kolejności.",
+        "Menu i FMV nadal przechodzą do rozgrywki bez czarnej klatki przejściowej.",
+        "Ruch kamery nie ujawnia dużych brakujących sektorów.",
+        "Drugi obszar uruchamia się na zimno przy tych samych ustawieniach gry.",
+        "Poprawka jest dołączona tylko do zweryfikowanego numeru seryjnego i wersji."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Dowody eskalacji"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Oprogramowanie i zarówno interfejsy sprzętowe (API) zawodzą na zweryfikowanym obrazie z czystymi ustawieniami: zbierz raport regresji.",
+        "Tylko jeden niestandardowy sterownik zawodzi: wróć do sterownika systemowego i zgłoś pakiet sterownika osobno.",
+        "Świat pojawia się, gdy skip-draw wynosi zero: usuń skopiowane nadpisanie.",
+        "Błąd zaczyna się po załadowaniu stanu zapisanego: odtwórz z zapisanego stanu w grze przed złożeniem dowodów graficznych."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Odbuduj profil tytułu z ustawień domyślnych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Usuń eksperymentalny profil, przywróć nagrany globalny renderer, wybierz sterownik systemowy i uruchom zimny rozruch przy natywnej rozdzielczości. Ponownie zastosuj tylko jedną zweryfikowaną korektę, jeśli przeszła wszystkie kontrole obszaru; pozostaw wszystkie sterowania discard-draw wyłączone, chyba że oficjalne dowody specyficzne dla tytułu tego wymagają."
+    },
+    {
+      "type": "heading",
+      "text": "Czarny świat nie zawsze oznacza czarny ekran"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zakres wyświetlania i poziom czerni OLED mogą przytłoczyć ciemne sceny, ale nie mogą sprawić, że geometria zniknie z bezpośredniego zrzutu ekranu. Sprawdź przechwycony kadr i dziennik renderera przed zmianą ustawień telewizora lub HDR."
+    },
+    {
+      "type": "link",
+      "text": "Postępuj zgodnie z ogólną linią rozwiązywania problemów PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

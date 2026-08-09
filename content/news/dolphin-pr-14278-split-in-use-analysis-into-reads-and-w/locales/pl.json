@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin uczy swoich JIT, czy rejestr na żywo zostanie odczytany, czy nadpisany",
+  "summary": "Oddzielne maski przyszłego odczytu i przyszłego zapisu pozwalają pamięciom podręcznym x64 i ARM64 podejmować bezpieczniejsze, bardziej precyzyjne decyzje o wstępnym załadowaniu i opróżnieniu niż pojedyncza flaga użycia.",
+  "heroAlt": "Dowody źródłowe z pull requestu #14278 Dolphin: PPCAnalyst: Podział analizy „w użyciu” na odczyty i zapisy",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "pamięć podręczna rejestru",
+    "analiza żywotności",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "Procesor",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Podział analizy „w użyciu” na odczyty i zapisy"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bycie aktywnym nie mówi, co zrobi następna instrukcja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rejestr gościa może być istotny dla pozostałej części bloku, ponieważ przyszła instrukcja odczytuje jego bieżącą wartość, ponieważ przyszła instrukcja nadpisuje ją albo z obu powodów. Starsza maska w użyciu Dolphin scalała te przypadki. Pamięć podręczna rejestrów JIT miała wtedy ograniczone informacje przy podejmowaniu decyzji o wczytaniu wartości gościa, zapisaniu brudnej wartości hosta z powrotem, odrzuceniu mapowania lub zachowaniu go przez granicę awaryjną."
+    },
+    {
+      "type": "heading",
+      "text": "Dwa zestawy przyszłego użycia czynią przepływ danych jawny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14278 propaguje gprWillBeRead i gprWillBeWritten, z równoważnymi maskami dla rejestrów zmiennoprzecinkowych i warunkowych. Wczytywanie z wyprzedzeniem uwzględnia rejestry, które będą uczestniczyć w obu kierunkach, jednocześnie wyłączając dane wejściowe możliwe do odrzucenia. Pełne opróżnianie celuje w wartości, które nie są już używane przez następne operacje. Wyjścia, które nie będą później zapisywane, otrzymują osobne traktowanie, aby ich bieżąca brudna wartość dotarła do stanu gościa zanim pamięć podręczna oznaczy je jako czyste."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty zachowuje użyteczne mapowanie po zatwierdzeniu jego wartości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Refaktoryzacja nazw precyzyjnie opisuje zachowanie flush. Pełne zapisy powodują zapisanie danych z brudnym stanem i usunięcie odwzorowania. MaintainState zachowuje istniejący stan tam, gdzie jest to wymagane. Nowy tryb Undirty zapisuje wartość jako brudną, ale zachowuje skojarzenie rejestru hosta jako czyste. Jest to przydatne, gdy wyjście musi być zewnętrznie spójne na granicy, a mimo to może być później odczytane. Obie ścieżki x64 i ARM64 przyjmują tę terminologię, włącznie z wolnym dostępem do pamięci i miejscami awaryjnego wykonywania w interpreterze."
+    },
+    {
+      "type": "heading",
+      "text": "Testy bloków różnicowych muszą koncentrować się na trudnym przepływie sterowania."
+    },
+    {
+      "type": "paragraph",
+      "text": "Porównaj interpreter, JIT64 i JITARM64 w generowanych blokach dla wzorców tylko do odczytu, tylko do zapisu, najpierw odczyt–potem zapis, najpierw zapis–potem odczyt, odrzucone, natychmiastowe, zmiennoprzecinkowe i rejestry warunkowe. Dodaj wyjątki, błędy pamięci, kontrole rurociągów zbiorczych, rozgałęzienia, instrukcje awaryjne i wyjścia z bloków w każdej pozycji. Zainstrumentuj przelewy hosta i zapisanie gości aby zweryfikować, że optymalizacja faktycznie zmniejsza nakład pracy bez zmiany stanu. Losowe wykonanie różnicowe powinno porównać wszystkie rejestry architektoniczne po każdej wymuszonej granicy."
+    },
+    {
+      "type": "callout",
+      "text": "Rejestr żywotności staje się działający tylko wtedy, gdy JIT wie, czy przyszłość potrzebuje dzisiejszej wartości, czy tylko potrzebuje nazwy rejestru do późniejszego nadpisania."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Przeczytaj dyskusję inżynieryjną Dolphin i zmiany w źródle"
+    }
+  ]
+}

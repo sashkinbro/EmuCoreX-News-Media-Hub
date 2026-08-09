@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP usuwa wyścig między wątkami w dostarczaniu dźwięku libretro",
+  "summary": "Każda operacja na współdzielonym buforze przetworzonych próbek teraz używa jednego mutexu, co zapobiega zmianie rozmiaru lub zamknięciu pamięci podczas gdy inny wątek zapisuje dźwięk.",
+  "heroAlt": "Dowody źródłowe z pull requesta PPSSPP #21883: libretro: naprawa wyścigu danych bufora dźwięku i wypychania próbek większych niż 1024 klatki",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "wyścig dźwięku",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Dźwięk",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: naprawa wyścigu danych bufora dźwięku i wypychania próbek większych niż 1024 klatki"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dwa wątki mogłyby naraz posiadać ten sam wskaźnik surowy"
+    },
+    {
+      "type": "paragraph",
+      "text": "W ścieżce frontend libretro, System_AudioPushSamples konwertuje dźwięk PSP i dopisuje go do output_audio_buffer. W backendach OpenGL, próbki mogą przychodzić przez kolejkę poleceń GL po stronie emulacji, podczas gdy retro_run opróżnia bufor w wątku libretro. Inicjalizacja, zamykanie i zwiększanie pojemności również zastępują lub zwalniają przydział. Bez jednej zasady własności, realloc mógłby unieważnić wskaźnik, podczas gdy inny wątek go czytał lub zapisywał."
+    },
+    {
+      "type": "heading",
+      "text": "Pojedynczy mutex definiuje teraz czas życia bufora"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883 dodaje output_audio_buffer_mutex i używa go podczas inicjalizacji, niszczenia, przesyłania i w System_AudioPushSamples. Pomocnik pojemności jest wyraźnie udokumentowany jako wymagający, aby wywołujący trzymał ten lock, więc zwiększanie pojemności odbywa się w tej samej sekcji krytycznej co dopisywanie, które go wymaga. Przesyłanie zachowuje lock przez wywołanie zwrotne batch i reset rozmiaru, zapobiegając producentowi w zmianie danych w trakcie dostarczania."
+    },
+    {
+      "type": "heading",
+      "text": "Poprawka chroni strukturę i próbki razem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zabezpieczenie tylko rozmiaru lub pojemności nie wystarczy: dane, rozmiar i pojemność tworzą jeden niezmiennik. Wskaźnik musi odnosić się do alokacji o długości co najmniej pojemności elementów, a rozmiar musi określać zainicjowane próbki w jej obrębie. Mutex sprawia, że aktualizacje wszystkich trzech elementów są widoczne jako jedna operacja. Jest to szczególnie istotne w przypadku wielowątkowego odmierzania czasu w GL, ale inicjalizacja i zwalnianie używają tej samej zasady, więc szybkie ponowne uruchomienie rdzenia nie może rywalizować z późnym producentem."
+    },
+    {
+      "type": "heading",
+      "text": "Testy obciążeniowe muszą zmieniać wywoływanie zwrotne i czas renderowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uruchom libretro z OpenGL, Vulkan i renderowaniem programowym, jednocześnie wielokrotnie zatrzymując, przewijając do przodu, resetując, zmieniając zawartość i zamykając rdzeń. Używaj wywołań zwrotnych audio, które konsumują szybko, wolno i w nieregularnych partiach, a także przesuwania próbek powyżej zwykłych rozmiarów ramek. ThreadSanitizer nie powinien wykryć niezsynchronizowanego dostępu do krotki bufora. Słuchaj i haszuj przechwycone PCM pod kątem luk lub zmiany kolejności oraz potwierdź, że żadne wywołanie zwrotne nie wchodzi ponownie na ścieżkę, która czeka na ten sam niemutualny mutex."
+    },
+    {
+      "type": "callout",
+      "text": "Rozszerzalny bufor audio jest jednym wspólnym obiektem, a nie trzema niezależnymi polami; jego wskaźnik, rozmiar i pojemność muszą przechodzić między wątkami pod tym samym blokadą."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Przeczytaj dyskusję inżynieryjną PPSSPP i zmiany w źródłach"
+    }
+  ]
+}

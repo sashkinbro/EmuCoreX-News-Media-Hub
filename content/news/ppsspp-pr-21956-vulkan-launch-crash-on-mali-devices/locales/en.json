@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP fixes a Vulkan device-creation trap on Mali hardware",
+  "summary": "The libretro wrapper now chooses exactly one Vulkan feature channel, satisfying the rule that pEnabledFeatures must be null when VkPhysicalDeviceFeatures2 is chained.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21956: Libretro: fix Vulkan launch crash on Mali devices",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: fix Vulkan launch crash on Mali devices"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tolerant drivers hid an invalid create-info combination"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan offers a legacy pEnabledFeatures pointer and the extensible VkPhysicalDeviceFeatures2 structure in pNext. When Features2 is present, the specification requires the legacy pointer to be null. PPSSPP's libretro wrapper could populate both while adding frontend-required capabilities. Some drivers accepted the malformed device request, but Mali returned VK_ERROR_INITIALIZATION_FAILED, so a Vulkan-rendered core failed before game execution began."
+    },
+    {
+      "type": "heading",
+      "text": "The wrapper now discovers which feature route the core chose"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21956 walks the device-create pNext chain and records whether it contains VkPhysicalDeviceFeatures2. If found, frontend-required features are merged into that structure and newInfo.pEnabledFeatures is explicitly null. If absent, the wrapper preserves the existing legacy behavior by copying or creating VkPhysicalDeviceFeatures and assigning the pointer. The two legal Vulkan paths are therefore mutually exclusive."
+    },
+    {
+      "type": "heading",
+      "text": "Validation covered both strict and tolerant mobile GPUs"
+    },
+    {
+      "type": "paragraph",
+      "text": "The author tested hardware rendering on Android 14 with a Mali-G615 device and Android 13 with a Snapdragon 865 Adreno device. Both launched and ran. On the Mali system, passing device creation exposed a separate virtual-swapchain capacity issue handled by another change; keeping that distinction matters because solving one startup gate should not lead the Hub to claim every later Vulkan failure has the same cause."
+    },
+    {
+      "type": "heading",
+      "text": "Feature-chain tests should inspect structure ownership"
+    },
+    {
+      "type": "paragraph",
+      "text": "Capture VkDeviceCreateInfo with validation layers for a legacy core, a Features2 core, chains with additional feature structs, and absent optional features. Repeat on Mali, Adreno, desktop Vulkan, and multiple RetroArch versions. Verify required bits are preserved rather than overwritten, pNext pointers remain valid through vkCreateDevice, and pEnabledFeatures is null only in the Features2 case. Also test software and OpenGL paths to ensure wrapper initialization does not assume Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "Vulkan feature negotiation has two legal routes; combining them may work on permissive drivers, but it is still invalid and fails on stricter hardware."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1385-secondary-layout-and-menu-improvements",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar turns Android's second display into an independently managed 3DS screen",
+  "summary": "Four secondary-screen layouts, display selection, and safer surface handling let foldables, external monitors, casting targets, and XR glasses behave differently from the primary display.",
+  "heroAlt": "Azahar Android secondary-display pull request with layout and display-management changes",
+  "searchKeywords": [
+    "Azahar",
+    "Android secondary display",
+    "dual-screen",
+    "Chromecast",
+    "Nintendo 3DS layout"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "frontend": "Android frontend",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-1385": "Android: Secondary Layout and Menu Improvements"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mirroring the primary layout wastes the reason a second panel exists"
+    },
+    {
+      "type": "paragraph",
+      "text": "A 3DS has two displays with different roles, while Android devices can expose a foldable companion panel, a television, a wireless casting target or XR glasses as a second display. Pull request #1385 stops treating that output as a passive mirror. Azahar gives it its own enable switch, layout setting and active-display choice, so the primary device can prioritize touch interaction while the external panel carries the game view."
+    },
+    {
+      "type": "heading",
+      "text": "Opposite Screen follows the primary panel; the other layouts remain independent"
+    },
+    {
+      "type": "paragraph",
+      "text": "The new default, Opposite Screen, shows whichever 3DS screen is absent from a single-screen primary layout. When the user swaps the primary screen, the secondary output changes with it. Original, Hybrid and Large Screen deliberately do not inherit that swap flag: someone may keep the touch-oriented bottom screen on the phone while always presenting the top screen as the dominant image on a television. This distinction avoids making one global toggle fight two different viewing jobs."
+    },
+    {
+      "type": "heading",
+      "text": "Display controls appear only when Android reports something to manage"
+    },
+    {
+      "type": "paragraph",
+      "text": "The in-game menu hides secondary-display management when no extra display is available. With one target it exposes layout and enable controls; with two or more it adds a selector for the preferred display. SecondaryDisplay tracks both the preferred and current display IDs, listens for display changes, and can rebuild the Presentation when the available set changes. That matters when a foldable panel and a cast receiver exist at the same time."
+    },
+    {
+      "type": "heading",
+      "text": "Surface dimensions, not primary-device orientation, drive the external framebuffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "The native window path now rechecks width and height even when Android reuses the same surface object. Secondary windows do not inherit the primary portrait flag, and an invalid or missing Presentation surface is logged instead of being dereferenced. The layout code adds explicit state for whether the additional rectangle contains the bottom screen; both OpenGL and Vulkan consume that flag rather than guessing from the primary swap setting."
+    },
+    {
+      "type": "heading",
+      "text": "A realistic test needs transitions, not one static screenshot"
+    },
+    {
+      "type": "paragraph",
+      "text": "Each layout should be exercised with primary-screen swapping, device rotation and emulation pause/resume. Test a wired display, a wireless target, and a device exposing more than one secondary panel; then disconnect the selected target and reconnect it with different dimensions. The expected result is a valid surface, the chosen display ID, and the correct top/bottom assignment without stretching, stale frames or a crash."
+    },
+    {
+      "type": "heading",
+      "text": "The feature serves several hardware shapes without hard-coding one of them"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation does not assume that every second display is a particular foldable model. It builds on Android's DisplayManager and Azahar's existing framebuffer layouts, then exposes only the decisions the user must make. That keeps casting, dual-screen devices and future external-display hardware on one lifecycle path while preserving per-layout 3DS behavior."
+    },
+    {
+      "type": "callout",
+      "text": "Opposite Screen is linked to primary swapping by design; Original, Hybrid and Large Screen are intentionally independent."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1385",
+      "label": "Inspect Azahar's secondary-display layouts and Android lifecycle changes"
+    }
+  ]
+}

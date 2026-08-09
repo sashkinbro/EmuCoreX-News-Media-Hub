@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Temukan gambar PS2 yang duplikat dengan SHA-256 sebelum menghapus apa pun",
+  "summary": "Buat inventaris hash hanya-baca di Windows, Linux, atau macOS; kelompokkan gambar cakram pribadi yang identik byte; bedakan salinan aktif dari cadangan offline; dan hapus hanya redundansi yang terverifikasi dari folder yang dipindai.",
+  "heroAlt": "Referensi Microsoft Learn Get-FileHash yang menunjukkan sintaks perintah PowerShell SHA-256",
+  "searchKeywords": [
+    "duplikat PS2 ISO",
+    "Get-FileHash SHA-256",
+    "sha256sum audit perpustakaan",
+    "EmuCoreX permainan duplikat",
+    "verifikasi file identik"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Perpustakaan",
+    "integrity": "Integritas"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Referensi Microsoft Get-FileHash",
+    "gnu-sha2": "Referensi utilitas GNU SHA-256"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inventarisasi root yang dipindai dalam mode baca-saja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dua file hanya dianggap duplikat ketika byte-nya cocok, bukan ketika judul atau nama file terlihat mirip. Edisi regional, revisi, disc demo, disc bonus, trek CD, dan salinan kerja yang sudah dipatch bisa memiliki nama yang sama meskipun berisi data yang berbeda. Mulailah dengan membuat daftar setiap root perpustakaan EmuCoreX dan jangan memindahkan file apapun. Audit harus membaca gambar, menulis laporannya di suatu tempat di luar root tersebut, dan mengabaikan kartu memori serta data emulator."
+    },
+    {
+      "type": "callout",
+      "text": "Sebuah SHA-256 yang cocok membuktikan identitas byte antara file yang Anda ukur. Ini tidak membuktikan bahwa dump asli akurat, berlisensi untuk didistribusikan ulang, atau aman untuk dihapus dari setiap backup. Simpan satu master pelestarian yang sudah diverifikasi di luar perpustakaan aktif."
+    },
+    {
+      "type": "heading",
+      "text": "Buat laporan hash Windows PowerShell"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sambungkan penyimpanan ke komputer Windows yang tepercaya atau kerjakan langsung pada folder yang sudah tersedia di sana. Ganti D:\\PS2 dengan path literal ke satu root yang dipindai. Get-FileHash menggunakan SHA-256 secara default, tetapi menentukan algoritma membuat laporan menjadi jelas sendiri. Mengekspor CSV menjaga path lengkap dan mencegah pemotongan di konsol."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Buka PowerShell tanpa hak administrator; melakukan hash pada file library biasa tidak memerlukan hak istimewa.",
+        "2. Jalankan: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. Tunggu hingga prompt kembali. Citra DVD berukuran besar memerlukan pembacaan setiap byte, sehingga penyimpanan yang dapat dilepas dapat memakan waktu lama.",
+        "4. Buka CSV dan kelompokkan baris yang bersebelahan dengan nilai Hash yang sama. Pastikan bahwa nilai Path yang dilaporkan mengarah ke file yang berbeda, bukan file yang sama yang terdaftar melalui dua pintasan.",
+        "5. Ulangi perintah untuk setiap root yang tidak tumpang tindih dan simpan laporan bersama dengan tanggal audit, identitas drive, dan setiap kesalahan baca."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan sha256sum atau shasum pada sistem mirip Unix"
+    },
+    {
+      "type": "paragraph",
+      "text": "Di Linux, GNU sha256sum menyediakan digest yang setara. Bangun daftar file dengan find menggunakan pemisah null agar spasi dan karakter yang tidak biasa tetap utuh, lalu arahkan outputnya ke luar direktori yang dipindai. Di macOS, shasum -a 256 umumnya tersedia. Jangan menempelkan perintah internet yang belum diperiksa yang secara otomatis menghapus file; prosedur ini sengaja memisahkan deteksi dari pembersihan."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Contoh Linux: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "Contoh macOS: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "Jika sebuah perintah melaporkan kesalahan Input/output, hentikan pembersihan dan selidiki perangkat sumber. Digest yang dihasilkan setelah pembacaan yang tidak stabil bukan merupakan baseline migrasi yang sehat.",
+        "Untuk dump CD cue/bin, perlakukan lembar cue dan setiap trek yang direferensikan sebagai satu set; hanya melakukan hashing pada BIN terbesar dapat melewatkan trek audio yang hilang."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Klasifikasikan setiap grup yang cocok sebelum pembersihan"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Simpan salinan di dalam root pemindaian yang dimaksud saat salinan identik lainnya berada di folder unduhan atau impor sementara.",
+        "Simpan master pelestarian ketika salinan aktif yang sesuai adalah file kerja yang diubah namanya; master berada di luar setiap root pemindaian EmuCoreX.",
+        "Simpan kedua salinan fisik ketika salah satunya adalah satu-satunya cadangan offline di perangkat lain. Duplikasi byte di berbagai tingkat cadangan adalah redundansi yang disengaja, bukan kekacauan perpustakaan.",
+        "Jangan gabungkan file dengan hash berbeda hanya karena judul yang ditampilkan sama. Catat nomor seri, wilayah, revisi, nomor disk, dan status patch terlebih dahulu.",
+        "Untuk game multi-disk, pastikan bahwa Disk 1 dan Disk 2 sengaja berbeda; nama file saja tidak cukup untuk merekonstruksi set nanti."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Karantina daripada menghapus pada langkah pertama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat folder karantina di luar semua root perpustakaan yang dipilih. Pindahkan satu salinan kerja yang berlebihan dari setiap grup yang dikonfirmasi ke dalamnya, segarkan EmuCoreX sekali, dan verifikasi bahwa entri yang tersisa membuka wilayah yang diharapkan. Pertahankan karantina setidaknya melalui satu kali restart aplikasi dan satu kali peluncuran setiap judul yang terpengaruh. Hanya kemudian hapus salinan kerja yang berlebihan, dan hanya jika salinan cadangan atau preservasi lain yang diverifikasi tetap berada di bawah kendali Anda."
+    },
+    {
+      "type": "heading",
+      "text": "Validasi perpustakaan yang telah dideduplikasi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Jumlah entri EmuCoreX sesuai dengan salinan yang dapat dimainkan yang dimaksud, termasuk set beberapa disc.",
+        "Setiap judul yang terpengaruh mengarah ke jalur yang dipilih sebagai kanonik dan memulai dari jalur tersebut.",
+        "SHA-256 dari file yang disimpan tetap sama dengan ringkasan yang dicatat sebelum karantina.",
+        "Favorit dan profil per-game masih mengarah ke serial dan wilayah yang dimaksud.",
+        "Salinan untuk pelestarian offline dan laporan auditnya tidak berada di dalam folder yang dipindai oleh EmuCoreX."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Pulihkan dari klasifikasi yang salah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jika sebuah judul hilang atau membuka revisi yang salah, tutup EmuCoreX dan pindahkan file yang dikarantina kembali ke jalur literal aslinya. Segarkan sekali, bandingkan serial, dan pulihkan nama file sebelumnya jika telah diubah. Jangan mengganti dengan menyalin simpanan antar entri regional; selesaikan identitas gambar terlebih dahulu. Jika drive sumber menghasilkan kesalahan baca, simpan kedua salinan dan laporannya sampai dump baru dari disc yang dimiliki menetapkan master yang dapat dipercaya."
+    },
+    {
+      "type": "link",
+      "text": "Periksa sintaks Microsoft Learn untuk Get-FileHash",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin legt harte Grenzen um die NetPlay-Speicher-Dekompression fest",
+  "summary": "Sicheres LZO-Dekodieren, überprüfte Akkumulation und genaue Endgrößenvalidierung verhindern, dass entfernte Speicherblöcke den Speicher überschreiben oder die Speicherzuweisung unkontrolliert steuern.",
+  "heroAlt": "Quellenbeweis aus Dolphin Pull Request #14740: NetPlay: begrenze LZO-Dekompressionsausgabe",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "NetPlay-Speicher",
+    "Dekompression",
+    "Puffersicherheit"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Sicherheit",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: begrenze LZO-Dekompressionsausgabe"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Komprimierte Synchronisation überschreitet eine feindliche Größenbegrenzung"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay kann Speicherdateien oder -ordner von einem anderen Peer vor dem Spielen übertragen. Jeder komprimierte LZO-Block und die deklarierte Endgröße stammen aus dem Netzwerk. Der vorherige Pfad rief den ungeprüften Decoder auf, ohne die Ausgabekapazität festzulegen, sodass fehlerhafte komprimierte Daten über das Ziel hinaus schreiben konnten. Ein Pufferpfad wurde ebenfalls direkt aus der vom Peer bereitgestellten Größe zugewiesen, wodurch die Anforderung selbst den Speicherbedarf vor der erfolgreichen Dekomprimierung erhöhen konnte."
+    },
+    {
+      "type": "heading",
+      "text": "Jeder Block erhält nun eine echte Zielkapazität"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull-Request #14740 wechselt zu lzo1x_decompress_safe. Die Dateiausgabe initialisiert new_len auf die feste Größe des Ausgabepuffers und überprüft, dass der dekodierte Block in den verbleibenden deklarierten Gesamtspeicher passt, bevor er geschrieben wird. Die Ausgabe eines Ordners im Speicher dekodiert in einen begrenzten temporären Block, prüft sowohl die Subtraktion der deklarierten Größe als auch die Vektor-max_size-Arithmetik und hängt dann nur die erfolgreich produzierten Bytes an. Die entfernte Gesamtsumme wird nicht mehr als sofortige Speicheranforderung verwendet."
+    },
+    {
+      "type": "heading",
+      "text": "Die endgültige Gesamtsumme muss genau sein, nicht nur unter einer Obergrenze liegen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Akzeptieren von weniger Bytes als angegeben könnte zu einem abgeschnittenen Speicherstand führen, der unvorhersehbar geparst wird, während das Akzeptieren von mehr die vom Sender angegebene Formatgrenze überschreiten würde. Sowohl Datei- als auch Pufferspeicherpfade sammeln eine 64-Bit-Zählung und erfordern am Ende Gleichheit. Decoderfehler, arithmetische Überlaufbedingungen, Ausgabe über die Angabe hinaus oder eine Nichtübereinstimmung führen alle zu einem Fehlschlag mit einer kontrollierten Warnung, anstatt teilweise Inhalte zur späteren Speicherextraktion zu übergeben."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Dekompressions-Korpus sollte sowohl die Ressourcennutzung als auch die Schreibvorgänge testen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Geben Sie gültige leere, einblockige, mehrblockige und maximale normale Übertragungen ein, dann beschädigte Streams, Expansionsbomben, abgeschnittene Blöcke, nachgestellte Blöcke, Null-Angaben, riesige Angaben und Gesamtsummen knapp über oder unter dem tatsächlichen Ausgang. Führen Sie dies unter AddressSanitizer und Speichergrenzen aus und prüfen Sie, dass ein Fehlschlag teilweise Dateien entfernt und keine Sitzung für immer warten lässt. Testen Sie Sender- und Empfängerversionen gegenseitig, Speicherordner mit vielen Einträgen und unterbrochene Netzwerke. Ein Protokoll-Limit auf Ebene des Protokolls kann dennoch jenseits der Speicher-Sicherheitsgrenzen wünschenswert sein."
+    },
+    {
+      "type": "callout",
+      "text": "Sicheres Dekomprimieren benötigt drei Vereinbarungen: Jeder Block passt in seinen Puffer, die akkumulierten Bytes dürfen nicht überlaufen, und der fertige Stream entspricht der deklarierten Nutzlast."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Lesen Sie die Dolphin-Ingenieursdiskussion und die Quellcodeänderungen"
+    }
+  ]
+}

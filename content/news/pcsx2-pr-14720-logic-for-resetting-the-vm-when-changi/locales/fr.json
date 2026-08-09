@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ordonne la réinitialisation du changement de disque avant que Qt ne puisse reprendre la VM",
+  "summary": "Un état de réinitialisation différée était écrasé par l'événement de reprise de VMLock ; déplacer la transition de la vue d'émulation après la publication de la réinitialisation préserve le cycle de vie prévu de la VM.",
+  "heroAlt": "Preuve source de la demande de tirage PCSX2 #14720 : Qt : Corriger la logique de réinitialisation de la VM lors du changement de disques",
+  "searchKeywords": [
+    "PCSX2",
+    "changement de disque",
+    "Réinitialisation de la VM",
+    "VMLock",
+    "fenêtre séparée"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Noyau",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt : Corriger la logique de réinitialisation de la VM lors du changement de disques"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Changer un disque de la liste de jeux traverse les cycles de vie UI et VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avec l'option Rendre dans une fenêtre séparée activée, Qt peut changer de vue, verrouiller la VM, envoyer des événements et demander une réinitialisation en une seule action de l'utilisateur. La réinitialisation elle-même a été différée. MainWindow s'est déplacée vers la vue d'émulation tandis que la portée du verrou prenait fin, et le destructeur de VMLock a envoyé un événement de reprise. Cet événement ultérieur pouvait remplacer VMState::Resetting avant l'exécution effective du gestionnaire de réinitialisation."
+    },
+    {
+      "type": "heading",
+      "text": "La course est l'ordre des événements, pas un problème de synchronisation manquante"
+    },
+    {
+      "type": "paragraph",
+      "text": "La VM avait un état de réinitialisation valide et un verrou destiné à protéger la transition. Le problème était que deux modifications différées de l'état avaient été mises en file dans le mauvais ordre. Un événement de reprise envoyé lors du nettoyage de l'UI a été autorisé à s'exécuter comme si la réinitialisation était terminée. Cela explique pourquoi changer de disque depuis un chemin frontend particulier échouait alors que la réinitialisation directe et la pause/reprise ordinaire fonctionnaient."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView suit maintenant la réinitialisation envoyée"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14720 déplace MainWindow::switchToEmulationView après que l'événement de réinitialisation ait été posté. La machine virtuelle ne fonctionne pas pendant que la demande de réinitialisation est établie, et la transition de vue ne peut plus provoquer que VMLock piétine Resetting avec une reprise prématurée. La source note qu'une refonte plus large de l'état de la VM est possible, mais ce changement corrige la faute d'ordre connue sans élargir le champ."
+    },
+    {
+      "type": "heading",
+      "text": "Les changements de disque en fenêtre séparée doivent être répétés à travers chaque état"
+    },
+    {
+      "type": "paragraph",
+      "text": "Activer le rendu dans une fenêtre séparée, démarrer un titre multi-disques et sélectionner un autre disque dans la liste de jeux pendant l'exécution, en pause, et avec une fenêtre modale UI ouverte. Le journal a publié les événements de réinitialisation et de reprise et affirme que la réinitialisation survit jusqu'à l'achèvement de la réinitialisation. Répéter après suspension, chargement de l'état et sélections rapides et consécutives de disques. Les modifications standard dans la même fenêtre et les réinitialisations manuelles sont des témoins négatifs ; la correction de l'ordre ne doit pas laisser le VM en pause de manière permanente ou changer les vues trop tard."
+    },
+    {
+      "type": "callout",
+      "text": "La réinitialisation VM a déjà été demandée ; la correction garantit qu'aucun événement de nettoyage UI n'est autorisé à reprendre l'exécution avant que cette demande ne prenne effet."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

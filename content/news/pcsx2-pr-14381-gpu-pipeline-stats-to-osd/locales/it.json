@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14381-gpu-pipeline-stats-to-osd",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 espone i conteggi delle invocazioni degli shader prima che il sovrapposto li modifichi",
+  "summary": "Una metrica OSD opzionale riporta le invocazioni degli shader vertex e pixel raccolte prima del disegno di ImGui, rendendo i confronti sul carico di lavoro del backend più stabili e più facili da leggere.",
+  "heroAlt": "Evidenza sorgente dalla pull request PCSX2 #14381: GS: Aggiungi statistiche della pipeline GPU all'OSD.",
+  "searchKeywords": [
+    "PCSX2",
+    "Statistiche della pipeline GPU",
+    "invocazioni dello shader vertex",
+    "invocazioni dello shader pixel",
+    "OSD"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Strumenti",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14381": "GS: Aggiungi statistiche della pipeline GPU all'OSD."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il frame rate non può dire se una scena ha incrementato il lavoro del vertex o del pixel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una regressione delle prestazioni può derivare da un maggior numero di vertici inviati, più campioni coperti, passaggi extra o sincronizzazione. PCSX2 ha già mostrato diverse metriche del renderer, ma mancavano i conteggi diretti delle invocazioni della pipeline. La pull request #14381 aggiunge VSI e PSI in modo che uno sviluppatore possa vedere se lo GPU ha eseguito migliaia di chiamate al vertex shader o milioni di chiamate al pixel shader nell'intervallo misurato."
+    },
+    {
+      "type": "heading",
+      "text": "Le query sono implementate in tutte le API hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le classi di dispositivo Direct3D 11, Direct3D 12, OpenGL, Vulkan e Metal espongono statistiche della pipeline alle metriche di prestazione comuni. L'impostazione appare nella configurazione OSD e l'overlay formatta i numeri grandi con i suffissi decimali K, M e B. La raccolta tramite query del backend è necessaria perché una stima comune dai conteggi di draw perderebbe il clipping, l'instancing, la copertura dei campioni e l'esecuzione specifica delle API."
+    },
+    {
+      "type": "heading",
+      "text": "Il campionamento prima di ImGui rimuove l'overlay dalla propria misurazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "I primi risultati variavano in modo drammatico perché la query poteva includere il rendering OSD e ImGui. Il comportamento finale raccoglie le statistiche prima di disegnare l'overlay, stabilizzando i numeri e rendendo più significative le comparazioni tra le scene. Il rendering software si presenta ancora tramite Vulkan, quindi i valori possono apparire lì ma descrivono la presentazione piuttosto che il carico di lavoro software GS; la fonte avverte che quei numeri non dovrebbero essere interpretati come statistiche del renderer hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Una comparazione valida fissa la scena e l'intervallo della query"
+    },
+    {
+      "type": "paragraph",
+      "text": "Abilitare Mostra Statistiche Pipeline GPU e mantenere una scena ferma su tutti i backend, verificando che VSI e PSI appaiano e scalino in modo plausibile quando cambiano risoluzione o geometria. Attivare e disattivare l'OSD stesso e confermare che i valori misurati non saltino conteggiando i suoi pixel. Eseguire reset della query, perdita del dispositivo, pausa e cambio backend. I conteggi cross-API possono ancora differire perché le specifiche e il conteggio dei campioni variano, quindi diagnosticare i trend all'interno di un backend prima di dichiarare una parità esatta."
+    },
+    {
+      "type": "callout",
+      "text": "L'OSD riporta i risultati delle query hardware, non una verità universale tra le API; prendere il campione prima di ImGui lo rende utile senza far sì che il misuratore si misuri da solo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14381",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

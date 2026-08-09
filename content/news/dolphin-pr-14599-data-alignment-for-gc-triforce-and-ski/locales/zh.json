@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14599-data-alignment-for-gc-triforce-and-ski",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 教授提取的 Triforce 光盘关于 DIMM 地址窗口的知识",
+  "summary": "DirectoryBlob 现在避免了被遮蔽的街机内存范围，并使用 Triforce 的更小文件对齐，而不是应用 GameCube 和 Wii 布局假设。",
+  "heroAlt": "来自 Dolphin 拉取请求 #14599 的源代码证据：DirectoryBlob：修复 GC/Triforce 的数据对齐并跳过 Triforce DIMM 内存范围",
+  "searchKeywords": [
+    "Dolphin",
+    "Triforce",
+    "DirectoryBlob",
+    "DIMM",
+    "光盘对齐"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "storage": "存储",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14599": "DirectoryBlob：修复 GC/Triforce 的数据对齐并跳过 Triforce DIMM 内存范围"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "基于目录的光盘仍然需要特定平台的放置"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin 可以通过 DirectoryBlob 挂载提取的文件，就像它们是光盘映像一样。该虚拟布局为每个文件分配偏移量和对齐。将游戏机 GameCube 和 Wii 的规则重用到世嘉的 Triforce 街机平台时，忽略了附加在 AMMediaboard 上的硬件。在特定光盘区域中的地址会被 SRAM 覆盖并返回 DIMM 内容，因此一个完全有效的主机文件在放置到那里后可能会变得不可读取。"
+    },
+    {
+      "type": "heading",
+      "text": "Triforce 标志会更改两个布局决策"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14599 记录源卷是否为 Triforce。在放置文件之前，DirectoryBlob 会检查其建议的范围是否与 0x1F000000 到 0x1F800000 重叠。如果重叠，偏移量跳转到 0x1F800000，使整个文件保持在被覆盖窗口之外。随后 Triforce 文件的对齐为 0x20 字节，而不是 GameCube 和 Wii 目录光盘使用的保守 0x8000 字节边界。"
+    },
+    {
+      "type": "heading",
+      "text": "避免重叠必须考虑整个文件区间"
+    },
+    {
+      "type": "paragraph",
+      "text": "仅检查起始地址会错过那些从窗口下方开始并延伸到窗口内的文件。代码比较了 data_offset 和 data_offset 加上条目大小，然后重新定位整个条目。较小的 32 字节对齐也可以防止街机图像中不必要的间隙，同时保留平台预期的粒度。非 Triforce 卷永远不会进入任一分支，因此它们既定的位置仍按旧策略逐字节管理。"
+    },
+    {
+      "type": "heading",
+      "text": "边界固定装置应探测孔的每一侧"
+    },
+    {
+      "type": "paragraph",
+      "text": "构建目录树，将零长度、小文件和大文件立即放置在 DIMM 边界的前面、跨越、内部或之后。验证生成的 FST 偏移量、0x20 对齐、通过模拟 AMMediaboard 读取的文件内容以及总镜像大小。将同样的树重复用于 GameCube 和 Wii，以证明 0x8000 对齐未改变。包括精确结束算术和非常大的偏移量以捕捉溢出，然后从提取的目录启动代表性 Triforce 游戏，而不仅仅是检查元数据。"
+    },
+    {
+      "type": "callout",
+      "text": "DirectoryBlob 是一个虚拟光盘构建工具；当街机硬件更改哪些物理地址范围可以返回光盘数据时，仅仅正确的文件名是不够的。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14599",
+      "label": "阅读 Dolphin 的工程讨论和源码变更"
+    }
+  ]
+}

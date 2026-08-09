@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22051-the-websocket-debug-interface-to-be-th",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP přesouvá práci na ladění WebSocket na vlákno CPU",
+  "summary": "Synchronní most úkolů nahrazuje zámky distribuovaného ladicího programu a disassembler vynechává sloučené makro-operace, které činily velikost krokování nejednoznačnou.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu #22051 PPSSPP: Refaktorovat rozhraní ladění websocketu tak, aby bylo bezpečné pro více vláken, odstranit \"makro operace\" v disasm",
+  "searchKeywords": [
+    "PPSSPP",
+    "WebSocket debugger",
+    "CPU vlákno",
+    "záložky",
+    "disassemblování"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Nástroje",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22051": "Refaktorovat rozhraní ladění websocketu tak, aby bylo bezpečné pro více vláken, odstranit \"makro operace\" v disasm"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Požadavky vzdáleného debuggeru překračovaly hranici vlastnictví"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debugger WebSocket běží na síťovém vlákně, ale zarážky, krokování, přístup k registrům a většina emulované paměti spadá pod CPU vykonávací vlákno. Ochrana jednotlivých funkcí s nepříbuznými zámky způsobuje, že správnost závisí na pořadí zámků a na tom, aby každý budoucí handler pamatoval stejné pravidla. Je to obzvlášť křehké, když je jádro pozastaveno, protože požadavek může potřebovat stav vlákna CPU právě ve chvíli, kdy běžný postup rámce zastavil."
+    },
+    {
+      "type": "heading",
+      "text": "Jedna mostní metoda serializuje operace vlastněné CPU v hlavní smyčce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #22051 přidává Core_RunOnCPUThread. Volající zabalí funkci do sdíleného úkolu, vloží ji pod mutex fronty a čeká na podmínkovou proměnnou. Core_RunLoopUntil vyprazdňuje frontu na začátku své smyčky, vykonává funkce na vlákně CPU, označuje je jako dokončené pod mutexem a probouzí čekající. Volání již na vlákně CPU se vykonají okamžitě, čímž se vyhnou vlastnímu deadlocku. Smyčka se vyprazdňuje kontinuálně při krokování nebo pozastavení a alespoň jednou za hostitelský rámec při běhu."
+    },
+    {
+      "type": "heading",
+      "text": "Rozložení nyní uchovává velikost kroku v jedné jednotce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Stejná úprava odstraňuje makro operace disassembleru, které kombinovaly vzory instrukcí, jako například lui plus ori, do jednoho řádku prezentace. Ačkoli je to pohodlné pro čtení, sloučené operace zamlžují, zda velikost kroku znamená bajty, instrukce hostitele nebo řádky zobrazení. Nová smlouva považuje stepSize za počet čtyřbajtových instrukcí MIPS a výpočty adres přerušení se podle toho násobí. Pohledy mohou později přidat vizuální nápovědu, aniž by se změnila základní vykonávací jednotka."
+    },
+    {
+      "type": "heading",
+      "text": "Testy souběžnosti vyžadují pauzované a znovu vstupující případy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Proveďte současně čtení, zápisy, změny breakpointů, prohledávání paměti a jednotlivé kroky WebSocket, zatímco hra běží, je pozastavena a přechází mezi stavy. Odpojte klienty, zatímco úkoly čekají, zastavte jádro s neprázdnou frontou a volejte most z vlákna CPU přímo. ThreadSanitizer by neměl hlásit žádné závody debuggera. Ověřte, že každý požadavek obdrží dokončení nebo řízenou chybovou zprávu při ukončení, a porovnejte adresy disassemblace kolem bývalých makro vzorů, aby při krokování nikdy nedošlo ke přeskočení nebo opakování instrukce hostitele."
+    },
+    {
+      "type": "callout",
+      "text": "Debugger již nevyžaduje mnoho zámků, aby napodobil vlastnictví CPU; operaci posílá vláknu, které již stav vlastní."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22051",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PPSSPP"
+    }
+  ]
+}

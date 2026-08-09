@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar teaches OpenGL state tracking that a texture unit can stop being 2D",
+  "summary": "Cubemap binding exposed a cached-state assumption that every unit held GL_TEXTURE_2D; tracking target type and initializing the null cube restore later 2D operations.",
+  "heroAlt": "Source evidence from Azahar pull request #2242: renderer_gl: Fix OpenGL texture unit state tracking",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "texture unit",
+    "cubemap",
+    "state tracking"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Fix OpenGL texture unit state tracking"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A cached texture handle is incomplete without its target type"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL binds textures by both unit and target. Azahar's state cache often assumed a unit represented GL_TEXTURE_2D, which worked until null-cubemap tracking introduced real cubemap bindings. Once a unit had held GL_TEXTURE_CUBE_MAP, later code could skip or issue a bind based on the cached numeric object alone, even though the target namespace and downstream sampling expectations had changed."
+    },
+    {
+      "type": "heading",
+      "text": "State records now distinguish 2D, cube, and null transitions"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2242 updates rasterizer-cache utilities and OpenGL renderer paths so texture units retain the binding target needed to decide whether a state change is redundant. NULL_SURFACE_CUBE_ID is initialized properly, giving the no-surface cubemap path a defined resource. Vulkan files receive related shared-cache adjustments, but the observed failure and state-machine correction are in OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon and WWE show downstream corruption from one stale assumption"
+    },
+    {
+      "type": "paragraph",
+      "text": "Before-and-after images for Pokémon Ultra Moon and WWE All Stars demonstrate that the fault was not confined to a missing cubemap. A cubemap bind changed how later texture operations were interpreted, so ordinary surfaces downstream could render incorrectly. Correct caching must therefore restore state across a sequence, not merely display the cubemap at the moment it is set."
+    },
+    {
+      "type": "heading",
+      "text": "A regression sequence should alternate targets on the same unit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bind 2D, cube, null cube, and 2D textures repeatedly on one unit and verify both emitted GL calls and sampled output. Reproduce the two games, then test shadow maps, environment maps, render-target sampling, and surface destruction. Compare cached state with glGet diagnostics in a debug build. The optimization may still skip a bind only when object and target both match; reducing calls must never preserve a target from the previous use."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL state caching is valid only when it remembers the binding target as well as the texture object."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

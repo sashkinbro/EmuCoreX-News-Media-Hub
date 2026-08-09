@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K rozděluje čtyři druhy stavu uvnitř svého audio engine NGS",
+  "summary": "Bajty viditelné pro hosta, dočasné vyrovnávací paměti, obnovitelná logika a objekty běhu hostitele mají nyní odlišné vlastníky, což usnadňuje pochopení směrování hlasu a životnosti dekodéru.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu Vita3K #3969: ngs: refaktorizace vlastnictví stavu ngs/audio a některé úpravy",
+  "searchKeywords": [
+    "Vita3K",
+    "NGS audio",
+    "ATRAC9",
+    "stav hlasu",
+    "směrování zvuku"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: refaktorizace vlastnictví stavu ngs/audio a některé úpravy"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jeden audio hlas obsahuje stav s velmi odlišnou životností"
+    },
+    {
+      "type": "paragraph",
+      "text": "Systém NGS na zařízení Vita zpřístupňuje stav modulů čtený hostem, ale emulátor také potřebuje dekodéry pouze pro hostitele, přepisovače vzorků, dočasné PCM, historii smyček a odkazy pro směrování. Uchovávání těchto částí v volně souvisejících prvcích způsobuje, že reset, opětovné použití hlasů, zpětné volání a zničení jsou náchylné k zastaralým ukazatelům. Blok paměti hosta by náhodou neměl vlastnit hostitelský dekodér a dočasný buffer by neměl být zaměněn za data požadovaná pro obnovení logického přehrávání."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData nyní pojmenovává každou kategorii vlastnictví"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3969 poskytuje modulu guest_state_data pro ABI-viditelné bajty a scratch_data pro dočasnou práci. Polymorfní logical_state ukládá informace, jako je historie ADPCM nebo exportovaná historie dekodéru ATRAC9, která musí přežít hranice zpracování. Samostatný runtime_state vlastní hostitelské zdroje, jako jsou aktivní dekodéry a přepisovače vzorků, které lze vymazat nebo přestavět. Moduly továrny vytvářejí každou vrstvu a inicializují data hlasu pomocí jednoho rozhraní."
+    },
+    {
+      "type": "heading",
+      "text": "Trasy identifikují hlasy, aniž by udržovaly křehké surové koncové body"
+    },
+    {
+      "type": "paragraph",
+      "text": "Objekty patchů uchovávají zdroj a cíl jako indexy racku a hlasu a poté je při potřebě řeší prostřednictvím systému a emulované paměti. To zabraňuje tomu, aby patch slepě sledoval ukazatel hlasu po změně racku. ATRAC9 načítá uloženou historii logického dekodéru do běhového dekodéru před prací a po ní ji exportuje. Moduly přehrávače uchovávají historii ADPCM v logickém stavu, zatímco výstupní a resamplovací buffery používají explicitní běhové kontejnery s čistými a kompaktními operacemi."
+    },
+    {
+      "type": "heading",
+      "text": "Testy životního cyklu musí přerušovat audio v každé fázi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvářejte, směrujte, spouštějte, pozastavujte, obnovujte, zastavujte, resetujte a ničte hlasy pomocí modulů PCM, ADPCM, ATRAC9, výstupu a resamplingu. Znovu používejte sloty racku a odstraňte kterýkoli konec, zatímco existuje patch. Spouštějte zpětné volání hosta, přechody smyček, vyprázdněte buffery a změny konfigurace, poté porovnejte kontinuální výstup s výstupem přes uložení logického stavu a běhovou rekonstrukci. Vlákna a sanitizátory adres by měly pokrývat body odblokování/zablokování plánovače, demontáž a neplatné handly hosta. Žádný ukazatel hostitele by neměl být dohledatelný z bajtů viditelných pro hosta."
+    },
+    {
+      "type": "callout",
+      "text": "Správnost zvuku se zlepšuje, když engine dokáže určit, která data patří ABI hosta, obnovitelnému stavu signálu, dočasné práci a běhovému dekodéru hostitele."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Přečtěte si inženýrskou diskusi Vita3K a změny zdrojového kódu"
+    }
+  ]
+}

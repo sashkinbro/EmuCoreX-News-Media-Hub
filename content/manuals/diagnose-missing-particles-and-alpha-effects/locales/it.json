@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-particles-and-alpha-effects",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostica particelle mancanti ed effetti alpha per pixel",
+  "summary": "Usa un effetto ripetibile di fumo, scintille, pioggia o energia per separare i disegni mancanti dal blending alpha per pixel incorretto, confronta le vie software e hardware e mantieni la correzione meno costosa che preserva l'ordine dei livelli.",
+  "heroAlt": "Confronto ufficiale della resa hardware corretto PCSX2 con geometria di gioco ed effetti ripristinati",
+  "searchKeywords": [
+    "Particelle mancanti PS2",
+    "Scintille invisibili EmuCoreX",
+    "PABE",
+    "effetti alpha",
+    "Correzione del renderer del fumo"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "effects": "Effetti"
+  },
+  "sourceLabels": {
+    "pcsx2-pabe": "PCSX2 implementazione della fusione alpha per pixel",
+    "pcsx2-alpha": "PCSX2 analisi del test alpha e della fusione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Determinare se le particelle sono assenti o composte in modo errato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un sistema di particelle può disegnare geometria presente ma completamente trasparente, utilizzare un test alpha errato, apparire dietro una superficie opaca o scomparire perché una regola di disegno manuale la scarta. Seleziona un effetto che può essere attivato su richiesta e ha una durata nota: una scintilla d'arma, una nube di scarico, un improvviso acquazzone, una scia di incantesimo o una nube di fumo. Registra il suo punto di generazione, la durata, il colore di sfondo e la posizione della telecamera."
+    },
+    {
+      "type": "callout",
+      "text": "Non aumentare la precisione della fusione e lo skip-draw insieme. Uno può ripristinare la composizione mentre l'altro cancella i draw, lasciando nessuna spiegazione difendibile per il risultato."
+    },
+    {
+      "type": "heading",
+      "text": "Blocca una timeline di effetto breve"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio in-game immediatamente prima di un evento di particelle ripetibile.",
+        "Una registrazione diretta dalla generazione fino alla scomparsa.",
+        "Risoluzione nativa, driver di sistema e correzioni manuali GS resettati.",
+        "Una cattura della correttezza renderizzata via software dove praticabile.",
+        "Contatori di prestazioni dalla parte più carica di particelle."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Tracciare la presenza del disegno prima di fondere la precisione"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avviare a freddo e attivare l'effetto sull'API hardware di riferimento alla risoluzione nativa.",
+        "2. Ispezionare i singoli fotogrammi per geometria debole, rettangoli solidi, colore sbagliato, ordine invertito o assenza completa.",
+        "3. Chiudere la sessione e ripetere sull'altra API hardware supportata con impostazioni identiche.",
+        "4. Usare il rendering software brevemente per registrare il numero previsto, la curva di opacità e l'ordine rispetto agli oggetti in primo piano.",
+        "5. Torna al percorso hardware più stabile e aumenta di un livello la precisione del blending quando ci sono disegni ma la composizione differisce.",
+        "6. Se le particelle restano completamente assenti, ripristina il blending e rimuovi le regole di saltare o scartare ampie prima di ritestare.",
+        "7. Verifica una seconda caratteristica alpha come fogliame, ombre, nebbia o un overlay HUD traslucido.",
+        "8. Riscalda il dispositivo e riproduci l'effetto al picco per misurare il reale costo sostenuto."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La miscelazione alpha per pixel può richiedere all'emulatore di riprodurre operazioni che l'unità di miscelazione dell'hardware host non può esprimere direttamente. I percorsi assistiti dal software migliorano l'accuratezza ma possono aggiungere sincronizzazione e costo. Una registrazione da generazione a dissolvenza mostra se il numero di particelle, l'opacità e l'ordine sono corretti invece di trattare qualsiasi macchia visibile come successo."
+    },
+    {
+      "type": "heading",
+      "text": "Criteri di passaggio per particelle e alpha"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione accettata deve preservare l'intera durata e gli strati circostanti."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Le particelle previste appaiono nel punto e nel tempo di generazione corretti.",
+        "L'opacità cambia in modo fluido invece di passare tra invisibile e solido.",
+        "La geometria in primo piano oscura correttamente le particelle mentre lo sfondo rimane visibile attraverso di esse.",
+        "La seconda caratteristica alpha non peggiora.",
+        "Gli effetti sostenuti rimangono entro il budget di tempo di frame giocabile del titolo."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Prove alpha che necessitano di una diagnosi diversa"
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'output del software è anche vuoto: confermare lo stato del gioco, l'integrità dell'immagine e il comportamento originale.",
+        "Le particelle compaiono solo dopo il caricamento di uno stato dell'emulatore: riprodurre da un salvataggio in-game.",
+        "Un livello di fusione ripristina il fumo ma rimuove la vegetazione: rifiuta il profilo combinato e isola il comportamento del titolo.",
+        "Solo un driver personalizzato GPU fallisce: ripristina il driver di sistema e segnala quel driver separatamente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rimuovi separatamente gli esperimenti di fusione e di regola-di-disegno."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ripristina prima la fusione automatica, conferma la baseline registrata, poi rimuovi qualsiasi override temporaneo di skip-draw o alpha-test. Riavvia a freddo il checkpoint di spawn dopo ogni rollback in modo che la variabile responsabile rimanga identificabile."
+    },
+    {
+      "type": "heading",
+      "text": "La compressione video può cancellare piccole particelle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pioggia sottile, scintille e fumo traslucido si perdono facilmente con la codifica a bassa velocità in bit. Usa catture dirette locali per il QA e evita di giudicare il numero di particelle da un'anteprima ricompressa sui social o in streaming."
+    },
+    {
+      "type": "link",
+      "text": "Leggi le note di implementazione PCSX2 PABE",
+      "url": "https://pcsx2.net/blog/2025/pcsx2-2.4_2.2/"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "correct-depth-fighting-and-flickering-surfaces",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Correggere il depth fighting senza confonderlo con lo sfarfallio dovuto al frame-pacing",
+  "summary": "Bloccare una telecamera dove due superfici si alternano, dimostrare il conflitto nei fotogrammi catturati, confrontare l'output nativo del software e dell'hardware, quindi testare solo una correzione documentata relativa alla profondità proteggendo decalcomanie e ombre.",
+  "heroAlt": "PCSX2 confronto del renderer con geometria sovrapposta utilizzata per un'indagine sulla precisione della profondità",
+  "searchKeywords": [
+    "PS2 z fighting",
+    "EmuCoreX superficie che sfarfalla",
+    "buffer di profondità",
+    "poligoni alternati",
+    "ordine di disegno grafico"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "depth": "Profondità"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 contatori di disegno e rendering",
+    "pcsx2-upscaling": "PCSX2 spiegazione del campionamento dell'host"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Verificare che le superfici si alternino in una posizione della fotocamera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il combattimento di profondità si verifica quando due draw competono per una profondità quasi identica e il vincitore visibile cambia con piccole differenze di precisione o di telecamera. Il frame pacing può far tremare l'intera scena, mentre l'animazione delle texture può cambiare intenzionalmente l'opera d'arte. Ferma l'input in una posizione della telecamera dove solo il muro sospetto, la strada, il decalcomania o il livello del personaggio alternano. Registra i frame diretti e annota se la geometria circostante rimane stabile."
+    },
+    {
+      "type": "callout",
+      "text": "Non usare il broad draw skipping per silenziare un flicker. Rimuovere una superficie concorrente può anche cancellare ombre, decalcomanie, specchi o passaggi successivi che condividono il suo modello di disegno."
+    },
+    {
+      "type": "heading",
+      "text": "Blocca un fotogramma di conflitto di profondità"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio normale prima di una posizione di telecamera statica ripetibile.",
+        "Una breve cattura senza perdita che mostra quali pixel alternano.",
+        "Risoluzione interna nativa e rapporto d'aspetto originale.",
+        "Conversione manuale della profondità, salto-disegno e ripristino delle sovrascritture widescreen.",
+        "Una scena indipendente contenente decalcomanie o ombre proiettate."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separare precisione e tempi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Tenere ferma la telecamera e catturare per diversi secondi; verificare che alternino solo le superfici locali.",
+        "2. Abilitare le prove basate sul tempo del frame e confermare che il flicker non sia sincronizzato con le interruzioni dell'intero frame.",
+        "3. Testare nuovamente alla risoluzione nativa su entrambe le API hardware senza modificare altri settaggi.",
+        "4. Catturare un breve riferimento renderizzato via software dalla stessa salvataggio di gioco.",
+        "5. Se il software è stabile, consultare la documentazione del titolo e del seriale prima di testare una conversione di profondità o un controllo di precisione.",
+        "6. Applicare una modifica relativa alla profondità e ispezionare entrambe le superfici concorrenti da diverse distanze della telecamera.",
+        "7. Visita la scena di decalcomanie e ombre per catturare una correzione che vince eliminando livelli legittimi.",
+        "8. Riscalda il dispositivo e ripeti la cattura statica per escludere instabilità del driver o termiche."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La prova utile è la località spaziale. Un conflitto di profondità cambia quale frammento vicino vince; il ritmo dei frame cambia quando arrivano frame completi. Il rendering software fornisce un riferimento di correttezza con un percorso host differente. Una correzione che sopprime semplicemente le decalcomanie fallisce anche se il muro originale smette di lampeggiare."
+    },
+    {
+      "type": "heading",
+      "text": "Accettazione dell'ordine di profondità"
+    },
+    {
+      "type": "paragraph",
+      "text": "La superficie stabile deve mantenere tutte le sovrapposizioni intenzionali intorno ad essa."
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'area in conflitto rimane stabile durante l'immobilità e i movimenti lenti della telecamera.",
+        "Decalcomanie, ombre proiettate, specchi e intersezioni di particelle rimangono visibili.",
+        "Nessuna geometria distante inizia a tagliare attraverso gli oggetti in primo piano.",
+        "Il risultato persiste dopo il ricaricamento dell'area e l'avvio a freddo.",
+        "Il comportamento del tempo di frame rimane comparabile alla baseline pulita."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rifiutare risultati di profondità fuorvianti"
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'intero frame lampeggia con picchi di temporizzazione: passa alla diagnosi delle prestazioni o del driver.",
+        "Il flicker esiste nel software e nei riferimenti originali: confermare che si tratta di un'animazione intenzionale o di un comportamento del gioco.",
+        "Una correzione rimuove completamente la superficie superiore: ripristinare le impostazioni predefinite e documentare l'eliminazione.",
+        "Solo una patch widescreen lo attiva: verificare separatamente seriali e limiti della patch."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rimuovere prima l'override della profondità"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disabilitare il controllo della profondità testato, ripristinare le correzioni automatiche GS e il profilo originale dell'aspetto, quindi effettuare un cold-boot del frame bloccato. Conservare il clip di confronto; rimuovere qualsiasi esperimento di salto disegno che non faceva parte della soluzione accettata."
+    },
+    {
+      "type": "heading",
+      "text": "La registrazione OLED può esagerare il lampeggio"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'esposizione automatica della fotocamera può far apparire una piccola area alternata pulsare sullo schermo. Utilizzare catture di frame dirette per prove a livello di pixel e includere una registrazione della fotocamera solo se lo schermo esterno stesso è sotto test."
+    },
+    {
+      "type": "link",
+      "text": "Revisionare i contatori grafici PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

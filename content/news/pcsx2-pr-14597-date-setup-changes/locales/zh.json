@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 使 DATE 设置依赖于 alpha 测试重叠",
+  "summary": "一个集中的 GS 决策将可以安全使用 DATE 的复杂 alpha 测试绘制与需要屏障且必须避免该路径的重叠绘制分开。",
+  "heroAlt": "来自 PCSX2 拉取请求 #14597 的视觉证据：GS/HW：DATE 设置更改。",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "alpha 测试",
+    "纹理屏障",
+    "GS 渲染器"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW：DATE 设置更改。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "复杂的 alpha 测试不足以选择 DATE 路径"
+    },
+    {
+      "type": "paragraph",
+      "text": "目标 Alpha 测试模拟同时与绘制的 alpha 测试以及是否读取或写入重叠区域交互。PCSX2 之前的设置对复杂 alpha 条件的处理过于宽泛。拉取请求 #14597 将重叠情况加入决策，因为在非重叠情况下可以使用 DATE one 而不会出现当同一区域参与绘制时发生的排序风险。"
+    },
+    {
+      "type": "heading",
+      "text": "DATE one 和 DATE 栅栏成为相互明确的选择"
+    },
+    {
+      "type": "paragraph",
+      "text": "当复杂 alpha 测试没有重叠时，硬件渲染器现在允许使用 DATE one。如果存在重叠，该路径将被禁止，并启用 DATE 栅栏。这不是新的渲染效果；它是 GSRendererHW 内部的路由修正，从而使目标 alpha 规则选择的实现与绘制的实际依赖模式一致。"
+    },
+    {
+      "type": "heading",
+      "text": "单文件变更的回归范围有限，但可见"
+    },
+    {
+      "type": "paragraph",
+      "text": "由于补丁仅更改了设置逻辑，因此良好的审查应确定每个受影响的绘制所采取的分支，而不是比较无关的渲染器输出。风险是对称的：在无害的不重叠工作上强制屏障可能增加开销，而允许 DATE 通过重叠的复杂 alpha 测试可能产生错误的遮罩或阴影。因此，分支必须与每个绘制上计算的重叠情况一致。"
+    },
+    {
+      "type": "heading",
+      "text": "女神异闻录4和能源空军是视觉检查的依据"
+    },
+    {
+      "type": "paragraph",
+      "text": "源代码提供了女神异闻录4和能源空军的阴影比较，以及涵盖额外屏障和复制更改的 Direct3D 11 运行日志。验证应使用相同的渲染器和设置重放这些场景，记录 DATE 模式、复杂 alpha 状态、重叠和屏障选择，然后在另一套硬件后端重复。预期结果是图像相同，决策仅在重叠变化时切换。"
+    },
+    {
+      "type": "callout",
+      "text": "该规则是有条件的，而非全局的：复杂的 alpha 测试可以使用没有重叠的 DATE one，但重叠工作则需要障碍路径。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "阅读 PCSX2 的工程讨论和源代码更改"
+    }
+  ]
+}

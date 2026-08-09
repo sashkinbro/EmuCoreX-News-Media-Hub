@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar transforme les fichiers spéciaux en une pile composable de couches de stockage",
+  "summary": "Une nouvelle chaîne IOFileBase permet aux vues limitées, à la compression et au chiffrement de s'enrouler les unes autour des autres, remplaçant l'héritage qui devenait fragile lorsque plusieurs types de fichiers spéciaux devaient coopérer.",
+  "heroAlt": "Preuve source de la requête d’extraction Azahar #2352 : noyau : Refactoriser IOFile et les types de fichiers dérivés",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Stockage",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "noyau : Refactoriser IOFile et les types de fichiers dérivés"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L’héritage a cessé de s’adapter lorsque qu’un fichier avait besoin de plusieurs comportements"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar dérivait à l'origine des fichiers compressés et chiffrés directement à partir de IOFile. Chaque classe spéciale pouvait surcharger les opérations de base, mais les combiner nécessitait des astuces parce que l'héritage en C++ décrit ce qu'est un objet, et non pas un pipeline ordonné de transformations. Ajouter un autre type de fichier pour un travail à venir aurait multiplié ces combinaisons et rendu les décalages, la sérialisation et les erreurs dépendants de la sous-classe qui se trouvait au sommet."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase délègue à travers une couche enfant possédée"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2352 introduit un IOFileBase abstrait avec le contrat d'accès complet et un child_file de type unique_ptr. Une couche surcharge uniquement les opérations qu'elle transforme et délègue sinon à son enfant. Le bas est IOFile ou NullIOFile. Un RomFS CCI compressé peut donc être un SubIOFile pour RomFS, un autre SubIOFile pour NCCH à l'intérieur de NCSD, Z3DSReadIOFile pour la décompression, et IOFile pour l'accès hôte."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile et NullIOFile rendent les limites et les échecs explicites comme objets"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile expose une fenêtre fixe et traduit les opérations de recherche, de taille, de lecture et d'écriture sans obliger chaque appelant à répéter les vérifications de décalage ou de limites. L'analyse NCSD et NCCH l'utilise déjà. NullIOFile implémente la même interface mais renvoie des valeurs d'erreur, permettant à la construction et à la sérialisation échouées de conserver un graphe d'objets valide au lieu de distribuer des vérifications de nullptr à chaque niveau."
+    },
+    {
+      "type": "heading",
+      "text": "Les fichiers chiffrés acquièrent une identité tandis que les données héritées restent supportées"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sortie de New CryptoIOFile commence par un en-tête AZCR contenant la version, la taille de l'en-tête et un hachage dérivé de la clé et du nonce. Azahar peut identifier le format et rejeter une clé incorrecte sans deviner si les octets déchiffrés semblent plausibles. Les fichiers hérités sans en-tête s'ouvrent encore grâce à la logique de compatibilité. Les tests doivent composer chaque ordre de couche, chercher au-delà des limites du sous-fichier, sérialiser les objets échoués, vérifier les clés incorrectes et rouvrir d'anciens fichiers chiffrés sans les réécrire."
+    },
+    {
+      "type": "callout",
+      "text": "Le changement architectural est la composition : chaque couche de fichier possède une responsabilité et transmet le reste vers le bas via la même interface."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Lisez la discussion technique Azahar et les modifications du code source"
+    }
+  ]
+}

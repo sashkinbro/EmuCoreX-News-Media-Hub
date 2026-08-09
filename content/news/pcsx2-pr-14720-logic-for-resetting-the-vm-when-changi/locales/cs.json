@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 objednává reset přepínače disků, než Qt může obnovit pozastavení VM",
+  "summary": "Stav odloženého resetu byl přepsán událostí obnovení pozastavení VMLocku; přesunutí přechodu pohledu emulace po odeslání resetu zachovává zamýšlený životní cyklus VM.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PCSX2 #14720: Qt: Oprava logiky pro resetování VM při změně disků",
+  "searchKeywords": [
+    "PCSX2",
+    "přepínač disků",
+    "reset VM",
+    "VMLock",
+    "samostatné okno"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Jádro",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Oprava logiky pro resetování VM při změně disků"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Změna disku ze seznamu her přeruší životní cykly UI a VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "S povolenou možností Render To Separate Window může Qt při jedné uživatelské akci přepínat pohledy, zamknout VM, odeslat události a požádat o reset. Samotný reset byl odložen. MainWindow se přesunulo směrem k emulačnímu pohledu, zatímco rozsah zámku skončil, a destruktor VMLock odeslal událost pro opětovné spuštění. Tato pozdější událost mohla nahradit VMState::Resetting ještě před tím, než byl skutečně vykonán reset handler."
+    },
+    {
+      "type": "heading",
+      "text": "Souboj je v pořadí událostí, ne v chybějící synchronizaci"
+    },
+    {
+      "type": "paragraph",
+      "text": "VM měl platný stav resetování a zámek, který měl chránit přechod. Problém byl v tom, že dvě odložené změny stavu byly zařazeny ve špatném pořadí. Odeslané opětovné spuštění z úklidu UI mohlo běžet, jako by reset skončil. To vysvětluje, proč změna disků z určité frontendové cesty selhala, i když přímý reset a běžné pozastavení/obnovení fungovaly."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView nyní následuje po odeslaném resetu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14720 přesouvá MainWindow::switchToEmulationView po odeslání události resetu. VM neběží, zatímco je ustanovován požadavek na reset, a přechod pohledu již nemůže způsobit, že VMLock roztrhá Resetting při předčasném obnovění pozastavení. Zdroje uvádějí, že je možná širší přepracování stavu VM, ale tato změna opravuje známou chybu pořadí bez rozšiřování rozsahu."
+    },
+    {
+      "type": "heading",
+      "text": "Změny samostatného okna disku musí být opakovány ve všech stavech"
+    },
+    {
+      "type": "paragraph",
+      "text": "Povolit Render do samostatného okna, spustit titul s více disky a vybrat jiný disk ze seznamu her během běhu, pozastavení nebo s otevřeným modálním UI. Zaznamenat odeslané události resetu a obnovení pozastavení a ověřit, že Resetting přežije až do dokončení resetu. Opakujte po pozastavení, načtení stavu a rychlých následných výběrech disku. Standardní změny stejného okna a ruční resetování slouží jako negativní kontrola; oprava pořadí nesmí způsobit, aby byla VM trvale pozastavena nebo aby se přepínaly pohledy příliš pozdě."
+    },
+    {
+      "type": "callout",
+      "text": "Reset VM již byl požadován; oprava zajišťuje, že žádná událost úklidu UI nemůže pokračovat ve vykonávání, dokud tento požadavek nenabude účinku."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

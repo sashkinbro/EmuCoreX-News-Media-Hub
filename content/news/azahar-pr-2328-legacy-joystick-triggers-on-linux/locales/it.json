@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2328-legacy-joystick-triggers-on-linux",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar calibra i centri dei trigger legacy invece di presumere zero",
+  "summary": "Gli assi del trigger dello Steam Deck possono restare vicino a -32767 con l'API Joystick di SDL; registrare il centro iniziale ripristina le vecchie mappature che altrimenti riportano L e R come premuti.",
+  "heroAlt": "Prova di origine dalla pull request #2328 di Azahar: BUGFIX: Trigger joystick legacy su Linux",
+  "searchKeywords": [
+    "Azahar",
+    "Steam Deck",
+    "SDL Joystick",
+    "calibrazione del trigger",
+    "EmuDeck"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2328": "BUGFIX: Trigger joystick legacy su Linux"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il valore neutro di un trigger dipende dall'API SDL e dalla mappatura del dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli utenti di Steam Deck tramite EmuDeck hanno segnalato che i pulsanti L e R risultano permanentemente premuti. I loro profili legacy utilizzavano gli assi dei trigger tramite l'API Joystick di SDL, dove il valore a riposo poteva essere -32767 invece di zero. Una nuova implementazione a stato diretto ha smesso di conservare campioni storici e quindi ha riutilizzato un'assunzione a centro zero che era valida per alcuni dispositivi ma trattava questa posizione neutra come una pressione completa."
+    },
+    {
+      "type": "heading",
+      "text": "L'inizializzazione cattura il vero centro a riposo del dispositivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2328 aggiunge la calibrazione per asse nello strato legacy del joystick. Quando il dispositivo viene inizializzato, Azahar registra il centro corrente e confronta i valori successivi con esso. La mappatura misura quindi il movimento dal punto neutro osservato invece di codificare rigidamente una interpretazione di intervallo SDL. Questo è particolarmente appropriato per la compatibilità all'indietro perché le vecchie configurazioni salvate possono fare riferimento agli assi del joystick grezzi."
+    },
+    {
+      "type": "heading",
+      "text": "Le nuove mappature normalmente utilizzano SDL Controller ed evitano l'ambiguità legacy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lo standard moderno Controller API di Azahar standardizza la semantica dei trigger e non è il target di questa correzione. Gli utenti che ora mappano un controller non dovrebbero quindi notare cambiamenti. La patch preserva i profili legacy dello Joystick e i controlli insoliti che rimangono al di fuori dell'API standardizzata. Mantenere il comportamento circoscritto previene che le euristiche di calibrazione modifichino un backend che già riporta correttamente i trigger del controller normalizzati."
+    },
+    {
+      "type": "heading",
+      "text": "I test necessitano di assi centrati a zero e centrati negativamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avviare ogni dispositivo con i trigger rilasciati, confermare il centro calibrato, quindi premere e rilasciare lentamente e completamente. Testare Steam Deck, un controller desktop che utilizza la API legacy, hot-plug, sospensione/riattivazione e un dispositivo connesso mentre un trigger è tenuto premuto. I profili esistenti devono recuperare senza rimappatura, mentre i nuovi profili Controller-API rimangono identici. Un caso con trigger tenuto all'inizializzazione richiede un percorso di recupero documentato affinché un cattivo campione non diventi il centro permanente della sessione."
+    },
+    {
+      "type": "callout",
+      "text": "La calibrazione ripristina il punto di riferimento mancante: un valore di trigger grezzo significa premuto solo rispetto alla posizione neutra osservata di quel dispositivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2328",
+      "label": "Leggi la discussione ingegneristica Azahar e le modifiche del codice sorgente"
+    }
+  ]
+}

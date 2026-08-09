@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar chrání vyplňování barvy Vulkan, když plugin 3GX dorazí před framebufferem",
+  "summary": "Pořadí spuštění odhalené PokeReaderem může volat FillScreen před tím, než cílový obrázek existuje; renderer nyní tuto chybějící obrazovku považuje za odložený stav nastavení místo toho, aby došlo k havárii.",
+  "heroAlt": "Zdrojový důkaz z Azahar pull request #2241: video_core: vulkan: Oprava havárie při vyplňování barvy před nastavením framebufferu",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Oprava havárie při vyplňování barvy před nastavením framebufferu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Plugin může požadovat barvu obrazovky, než Vulkan bude vlastnit obrázek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Povolení 3GX loaderu s PokeReaderem způsobilo konzistentní pád Windows na systému AMD Vulkan u reportéra poté, co byla implementována funkce FillScreen. Logy a git bisect umístily regresi na tuto implementaci. Pořadí kláves je neobvyklé, ale pro frontend platné: spuštění pluginu dosáhne konfigurace vyplnění barvou dříve, než byla vytvořena textura rámce obrazu Vulkan."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture nyní kontroluje zdroj, ne záměr"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2241 přidává úzkou ochranu v RendererVulkan::ConfigureFramebufferTexture. Pokud texture.image chybí, funkce se vrátí před konfigurací nebo vyplněním framebufferu. Pozdější volání s platným obrazem následuje normální cestu. Oprava nevytváří dummy obrázek ani nepředpokládá rozměry, čímž se vyhýbá zdroji zástupného znaku, jehož uspořádání a životnost by se mohly lišit od skutečného framebufferu."
+    },
+    {
+      "type": "heading",
+      "text": "Selhání může vysvětlit zprávy nad rámec jednoho GPU, ale důkazy zůstávají omezené."
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdroj uvádí PokeReader, Windows, Vulkan a potenciálně AMD jako reprodukovatelnou kombinaci a spojuje několik problémů s možným souvisejícím chováním. Tyto zprávy jsou vodítka, nikoli potvrzené opravy. Jedinou prokázanou konstantou je, že žádná operace Vulkan nesmí používat obraz z rámce snímku dříve, než existuje. Ostatní pády potřebují vlastní protokoly, aby bylo možné stanovit, zda dosahují stejného raného stavu FillScreen."
+    },
+    {
+      "type": "heading",
+      "text": "Regresní testování by mělo vynutit jak časné, tak normální pořadí vyplnění"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spusťte s vypnutou i zapnutou podporou 3GX, s vybraným PokeReader, na AMD, NVIDIA a mobilních Vulkan, kde je k dispozici. Sledujte vytváření obrázků a pořadí FillScreen, ověřte, že rané volání vrací bez validačních chyb, a potvrďte, že později inicializované vyplnění stále vymaže obrazovku. Opakujte odpojení pluginu, restart hry, znovuvytvoření povrchu a přepnutí backendu. Nepřítomnost pádu není dostačující, pokud strážcová kontrola nechá trvale nevyplněný nebo zastaralý framebuffer."
+    },
+    {
+      "type": "callout",
+      "text": "Renderer nyní rozlišuje mezi požadovaným vyplněním a inicializovaným cílem; práce Vulkan začíná až poté, co obraz skutečně existuje."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu Azahar"
+    }
+  ]
+}

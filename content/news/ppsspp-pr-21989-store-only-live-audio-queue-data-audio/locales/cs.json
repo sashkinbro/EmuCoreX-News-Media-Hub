@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP zkracuje savestate ukládáním pouze živých audio vzorků",
+  "summary": "Kompaktní formát fronty serializuje vzorky, které lze ještě přehrát, místo aby kopíroval všechny devět audio bufferů s pevnou kapacitou do každého stavu.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu PPSSPP #21989: Savestate: ukládat pouze data živé audio fronty (sekce AudioChannel verze 3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "audio fronta",
+    "savestate velikost",
+    "přetočit",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: ukládat pouze data živé audio fronty (sekce AudioChannel verze 3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pevná kapacita byla mylně považována za významný stav"
+    },
+    {
+      "type": "paragraph",
+      "text": "Každý kanál sceAudio používá FixedSizeQueue s prostorem pro 32768 krát osm 16bitových hodnot, záložní pamětí 512 KB. Existuje devět front kanálů. Původní serializátor kopíroval každý bajt těchto polí, i když mohl být vytažen pouze malý logický úsek mezi head a count. V důsledku toho se přibližně 4,6 MB převážně mrtvých dat dostalo do manuálních ukládání, slotů pro ukládání, komprimovaného vstupu a každého periodického snímku v paměti pro zpětné přehrávání."
+    },
+    {
+      "type": "heading",
+      "text": "Kompaktní forma zachovává pořadí fronty při přetočení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21989 zavádí DoStateCompact jako formát, do kterého je nutné se přihlásit. Když je živá oblast souvislá, zapisuje jedno surové pole. Když head plus count překročí konec úložiště, zapisuje ocas a začátek jako dvě části v pořadí pop. POD DoArray zapisuje surové bajty bez hlavičky pro každý volání, takže tyto části tvoří stejný proud, který spotřebuje jediný lineární čtení. Při načítání se sekvence umístí na index nula a nový ocas se odvodí z count."
+    },
+    {
+      "type": "heading",
+      "text": "Verzování chrání starší stavy a ostatní volající"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sekce AudioChannel přechází na novou úroveň formátu a pouze tam vybírá kompaktní serializaci. Starší úrovně sekce stále používají původní metodu plného ukládání, takže stávající uložené soubory zůstávají čitelné. Staré funkce FixedSizeQueue zůstávají nezměněné, protože jejich bytové uspořádání není zaměnitelné a jiný volající se na ně může spoléhat. Načítací program také odmítá počet mimo rozsah od nuly do kapacity pomocí SetError, čímž se zabrání tomu, aby poškozený soubor způsoboval desynchronizaci všech následujících polí."
+    },
+    {
+      "type": "heading",
+      "text": "Základními testy jsou zabalené, prázdné a plné fronty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvořte deterministické fronty, které jsou prázdné, částečně zaplněné, přesně plné a zabalené při různých posunech hlavy. Uložte je a načtěte, poté porovnejte každý vyjmutý vzorek s původním pořadím. Proveďte všechny devět kanálů během hraní, hranice podtečení a přetečení zvuku, přetočení, poměry komprese a kompatibilitu s původním stavem. Poškoďte uložený počet, abyste potvrdili čisté selhání načtení. Měřte čas ukládání a zatížení paměti samostatně; očekává se menší objem dat, ale správnost zůstává primární podmínkou."
+    },
+    {
+      "type": "callout",
+      "text": "Kapacita je implementační detail; savestate potřebuje živou audio sekvenci a dostatek metadat k rekonstukci ekvivalentní fronty."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Přečtěte si inženýrskou diskusi PPSSPP a změny ve zdrojovém kódu"
+    }
+  ]
+}

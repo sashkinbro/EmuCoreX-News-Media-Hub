@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar protege el relleno de color Vulkan cuando un plugin 3GX llega antes del framebuffer",
+  "summary": "Un orden de inicio expuesto por PokeReader puede llamar a FillScreen antes de que exista la imagen objetivo; el renderizador ahora trata esa imagen faltante como un estado de configuración diferida en lugar de fallar.",
+  "heroAlt": "Evidencia de fuente del pull request #2241 de Azahar: video_core: vulkan: Corregir fallo en relleno de color antes de la configuración del framebuffer",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Corregir fallo en relleno de color antes de la configuración del framebuffer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un plugin puede solicitar el color de la pantalla antes de que Vulkan tenga una imagen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilitar el cargador 3GX con PokeReader produjo un bloqueo consistente de Windows en el sistema AMD Vulkan del reportero después de que se implementara FillScreen. Los registros y un git bisect ubicaron la regresión en esa implementación. El orden de las teclas es inusual pero válido para el frontend: el inicio del plugin alcanza la configuración de relleno de color antes de que la imagen Vulkan de la textura del framebuffer haya sido creada."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture ahora verifica el recurso, no la intención"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #2241 agrega una protección estrecha en RendererVulkan::ConfigureFramebufferTexture. Si texture.image está ausente, la función regresa antes de configurar o rellenar el framebuffer. Una llamada posterior con una imagen válida sigue el camino normal. La corrección no crea una imagen ficticia ni asume dimensiones, evitando un recurso de marcador de posición cuyo diseño y duración podrían no coincidir con el framebuffer real."
+    },
+    {
+      "type": "heading",
+      "text": "El fallo puede explicar reportes más allá de uno GPU, pero la evidencia se mantiene limitada"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fuente cita PokeReader, Windows, Vulkan y potencialmente AMD como la combinación reproducible y vincula varios problemas con un comportamiento posiblemente relacionado. Esos informes son pistas, no correcciones confirmadas. La única constante comprobada es que ninguna operación Vulkan puede usar una imagen de framebuffer antes de que exista. Otros bloqueos necesitan sus propios registros para establecer si alcanzan el mismo estado temprano de FillScreen."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas de regresión deben forzar tanto el orden de llenado temprano como el normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lanzar con soporte 3GX desactivado y activado, con PokeReader seleccionado, a través de AMD, NVIDIA y Vulkan móvil donde esté disponible. Instrumentar la creación de imágenes y el orden de FillScreen, verificar que la llamada temprana devuelva sin errores de validación y confirmar que un llenado inicializado posteriormente aún borra la pantalla. Repetir la descarga del complemento, reinicio del juego, recreación de superficie y cambio de backend. La ausencia de bloqueo es insuficiente si la protección deja un framebuffer permanentemente sin llenar o desactualizado."
+    },
+    {
+      "type": "callout",
+      "text": "El renderizador ahora distingue un relleno solicitado de un objetivo inicializado; el trabajo Vulkan comienza solo después de que la imagen realmente exista."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Lea la discusión de ingeniería y los cambios de código fuente de Azahar"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP mengaitkan rehashing tekstur dengan sinkronisasi tamu GPU",
+  "summary": "Validitas tekstur kini mengikuti titik di mana perangkat lunak PSP dapat mengamati atau menulis ulang memori GPU, menggantikan heuristik jumlah frame dengan domain sinkronisasi eksplisit.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21808: Cache tekstur: Rehashing tekstur yang lebih cerdas",
+  "searchKeywords": [
+    "PPSSPP",
+    "cache tekstur",
+    "rehashing",
+    "Sinkronisasi GE",
+    "memori GPU"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Cache tekstur: Rehashing tekstur yang lebih cerdas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Usia frame hanya merupakan proxy untuk visibilitas memori"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tekstur PSP yang di-cache dapat tetap tidak berubah selama ratusan frame atau ditulis ulang beberapa kali dalam satu frame. Strategi backoff tekstur sebelumnya menggunakan mini-hash, penghitung frame, petunjuk invalidasi, dan jadwal eksponensial untuk memutuskan kapan melakukan hash penuh. Itu mengurangi pekerjaan, tetapi frame yang telah berlalu tidak secara langsung menggambarkan kapan CPU dan GPU tamu telah tersinkronisasi di sekitar memori, jadi heuristik tersebut bisa melakukan pemeriksaan yang tidak perlu atau mempertahankan konten kadaluarsa."
+    },
+    {
+      "type": "heading",
+      "text": "Domain sinkronisasi menandai momen ketika asumsi dapat berubah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21808 meningkatkan textureSyncTimeDomain pada tunggu GE, perubahan alamat yang ditahan, sinkronisasi gambar, salinan framebuffer, dan transfer blok yang relevan. Setiap entri tekstur yang tidak dapat diandalkan mencatat domain terakhir di mana ia diperiksa. Flag HASH_RECHECK dan CLUT_RECHECK yang eksplisit masih memaksa pekerjaan untuk kasus invalidasi yang diketahui, sementara tekstur seperti font yang dapat diandalkan dapat melewati uji domain. Keputusan sekarang terkait dengan peristiwa visibilitas yang diemulasikan daripada timer."
+    },
+    {
+      "type": "heading",
+      "text": "Desain ulang juga menghapus pembukuan yang bisa menyimpang"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch menghapus toggle backoff yang terlihat pengguna, jadwal mini-hash per-entri, flag frekuensi-perubahan, dan penghitung ukuran cache yang dapat diubah. Tekanan cache diperoleh dengan menjumlahkan entri saat ini ketika decimation dijalankan, menukar perhitungan sesekali untuk keadaan yang tidak bisa menjadi tidak konsisten setelah jalur penghapusan yang tidak biasa. Tekstur video dan varian palet mempertahankan perilaku khusus karena pola mutasinya berbeda dari gambar statis biasa."
+    },
+    {
+      "type": "heading",
+      "text": "Kebenaran membutuhkan permainan yang menulis ulang tekstur dalam urutan yang tidak biasa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uji pemutaran video, efek render-ke-teksur, permainan yang memodifikasi memori tekstur dari CPU, banyak varian CLUT, salinan framebuffer, dan font UI statis yang bertahan lama. Bandingkan hash dan tangkapan layar sebelum dan sesudah setiap transisi domain sinkronisasi. Ukur jumlah hash penuh, waktu CPU, ukuran cache, dan perilaku penggusuran selama sesi panjang. Pemuatan savestate, invalidasi memori, dan pergantian backend harus mengatur ulang atau memajukan status domain sehingga suatu entri tidak dapat mewarisi klaim kesegaran yang salah."
+    },
+    {
+      "type": "callout",
+      "text": "Pertanyaan yang berguna bukan berapa banyak frame yang bertahan pada sebuah tekstur, tetapi apakah sinkronisasi yang terlihat tamu menciptakan kesempatan baru bagi memorinya untuk berubah."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Baca diskusi rekayasa PPSSPP dan perubahan sumber"
+    }
+  ]
+}

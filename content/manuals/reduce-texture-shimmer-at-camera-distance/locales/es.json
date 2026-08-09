@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "reduce-texture-shimmer-at-camera-distance",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Reducir el parpadeo de texturas distantes sin difuminar la imagen PS2",
+  "summary": "Construir una ruta de cámara repetible a través de carreteras, cercas o terreno, probar mipmapping antes del filtrado anisotrópico, comparar la resolución nativa con la resolución objetivo y aceptar únicamente una configuración que estabilice el detalle en movimiento.",
+  "heroAlt": "Diagrama de muestreo de resolución nativa PCSX2 usado para explicar el comportamiento de la textura durante el escalado",
+  "searchKeywords": [
+    "Parpadeo de texturas PS2",
+    "Texturas distantes EmuCoreX",
+    "Mipmapping",
+    "Filtrado anisotrópico",
+    "Parpadeo por movimiento de cámara"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "sampling": "Muestreo"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 explicación del muestreo de texturas",
+    "pcsx2-performance": "PCSX2 indicadores de mipmapping y filtrado"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Usa movimiento para exponer detalles inestables de la textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parpadeo es un problema temporal: los patrones de textura fina cambian rápidamente a medida que la cámara se mueve porque los texeles distantes se muestrean de manera inconsistente. Una imagen estática puede verse nítida mientras la ruta brilla durante el juego. Elige un camino recto, piso en mosaico, cerca de alambre o pendiente de terreno con velocidad de cámara controlable. La ruta debe ser lo suficientemente larga para ver transiciones de distancia y lo suficientemente corta para repetirla con los mismos parámetros."
+    },
+    {
+      "type": "callout",
+      "text": "No comience forzando el nivel anisotrópico más alto y un shader de nitidez juntos. Cualquiera de los dos puede cambiar el detalle aparente sin demostrar si se están seleccionando correctamente los niveles mip del título."
+    },
+    {
+      "type": "heading",
+      "text": "Cree una ruta de estabilidad de texturas"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una guardada en el juego antes de un movimiento de cámara de diez a veinte segundos.",
+        "Grabaciones de resolución nativa y resolución objetivo de la ruta sin cambios.",
+        "Filtrado de texturas por defecto y mipmapping automático por hardware grabados.",
+        "Nitidez posterior, reemplazo de texturas y mejora de pantalla deshabilitados.",
+        "Un elemento UI en primer plano a la vista para detectar desenfoque global no deseado."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Probar la selección de mip antes del filtrado oblicuo"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Ejecutar la ruta a resolución nativa y marcar dónde el detalle distante comienza a parpadear.",
+        "2. Repetir con el multiplicador de escala deseado sin cambiar el filtrado ni el motor de render.",
+        "3. Si el parpadeo aumenta con la resolución, volver a la nativa y probar el siguiente nivel de precisión de mipmapping soportado.",
+        "4. Grabar la misma ruta y comparar las transiciones en lugar de cuadros individuales nítidos.",
+        "5. Una vez que las transiciones de mip sean estables, prueba el filtrado anisotrópico moderado en superficies vistas en un ángulo pronunciado.",
+        "6. Inspecciona fuentes, sprites y bordes de atlas de texturas en busca de halos, costuras o suavizado inesperado.",
+        "7. Vuelve a la resolución objetivo y repite después de que el dispositivo alcance la temperatura normal de funcionamiento.",
+        "8. Almacena el mipmapping y el filtrado únicamente en el perfil del título afectado si un segundo juego presenta retroceso."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Los mipmaps proporcionan niveles de textura prefiltrados más pequeños para superficies lejanas, mientras que el filtrado anisotrópico mejora las muestras vistas en ángulos oblicuos. Resuelven problemas de muestreo relacionados pero diferentes. La ampliación puede revelar huecos y suposiciones del atlas que estaban ocultas a la tasa de muestreo del PS2, por lo que una salida más nítida no es automáticamente más estable o fiel."
+    },
+    {
+      "type": "heading",
+      "text": "Pase de estabilidad de textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Juzga la ruta completa a velocidad de reproducción normal y luego inspecciona fotogramas representativos."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Los patrones distantes cambian suavemente en lugar de parpadear entre fotogramas.",
+        "Las carreteras y los suelos permanecen detallados en ángulos oblicuos sin bordes que se arrastren.",
+        "El texto del HUD y los sprites 2D mantienen su nitidez prevista.",
+        "Los bordes del atlas de texturas no se mezclan con el arte adyacente.",
+        "La combinación elegida no tiene penalización térmica sostenida ni de tiempo de cuadro."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Cambios de muestreo para rechazar"
+    },
+    {
+      "type": "list",
+      "items": [
+        "El parpadeo disminuye solo porque todo el cuadro está desenfocado: restaure el filtro anterior.",
+        "Aparecen nuevas costuras de color alrededor de los sprites: elimine el filtrado forzado y vuelva a probar el atlas.",
+        "Solo falla un multiplicador de escala alto: mantener la última resolución estable en lugar de apilar correcciones.",
+        "El parpadeo de la superficie permanece en el software con la salida nativa: confirmar si el juego original se comporta igual."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Devolver los controles de muestreo a valores seguros para el juego"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restaurar el mipmapping automático, el filtrado de texturas controlado por el juego y la resolución interna anterior. Deshabilitar cualquier etapa de enfoque introducida durante la comparación, iniciar en frío la ruta guardada y confirmar el patrón de parpadeo base antes de intentar una solución documentada específica para el título."
+    },
+    {
+      "type": "heading",
+      "text": "La compresión de video oculta e inventa parpadeo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las grabaciones de baja tasa de bits pueden convertir los detalles finos en bloques o suavizar el arrastre temporal. Mantenga capturas locales de alta calidad para el análisis y trate las versiones transmitidas únicamente como ayudas de navegación, no como evidencia final."
+    },
+    {
+      "type": "link",
+      "text": "Estudie la explicación de muestreo PCSX2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

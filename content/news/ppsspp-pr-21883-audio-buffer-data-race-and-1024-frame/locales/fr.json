@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP ferme une condition de concurrence cross-thread dans la livraison audio libretro",
+  "summary": "Chaque opération sur le tampon d'échantillon converti partagé utilise désormais un mutex, empêchant la réallocation ou l'arrêt de rendre la mémoire invalide pendant qu'un autre thread écrit de l'audio.",
+  "heroAlt": "Preuve source provenant de la pull request PPSSPP #21883 : libretro : corriger la condition de concurrence du tampon audio et les pushs d'échantillons de plus de 1024 frames",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "concurrence audio",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Audio",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro : corriger la condition de concurrence du tampon audio et les pushs d'échantillons de plus de 1024 frames"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Deux threads pouvaient posséder le même pointeur brut en même temps"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dans le chemin frontal libretro, System_AudioPushSamples convertit l'audio PSP et l'ajoute à output_audio_buffer. Avec les backends OpenGL, les poussées d'échantillons peuvent arriver par la file de commandes GL côté émulation, tandis que retro_run vide le tampon sur le thread libretro. L'initialisation, l'arrêt et l'augmentation de capacité remplacent également ou libèrent l'allocation. Sans règle de propriété unique, un realloc pourrait invalider le pointeur pendant que l'autre thread le lisait ou écrivait."
+    },
+    {
+      "type": "heading",
+      "text": "Un seul mutex définit désormais la durée de vie du tampon"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21883 ajoute output_audio_buffer_mutex et le prend lors de l'initialisation, de la destruction, du téléchargement et de System_AudioPushSamples. L'assistant de capacité est explicitement documenté comme nécessitant que l'appelant détienne ce verrou, donc la croissance se produit à l'intérieur de la même section critique que l'ajout qui en a besoin. Upload conserve le verrou pendant le rappel par lots et la réinitialisation de taille, empêchant un producteur de modifier la charge utile au milieu de la livraison."
+    },
+    {
+      "type": "heading",
+      "text": "La correction protège la structure et les échantillons ensemble"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verrouiller uniquement la taille ou la capacité ne serait pas suffisant : les données, la taille et la capacité forment un invariant unique. Le pointeur doit faire référence à une allocation d'au moins autant d'éléments que la capacité, et la taille doit identifier les échantillons initialisés à l'intérieur. Le mutex rend les mises à jour des trois visibles comme une seule opération. Cela est particulièrement pertinent pour la synchronisation GL multithreadée, mais l'initialisation et la libération utilisent la même règle, de sorte que les redémarrages rapides du noyau ne peuvent pas faire concurrence à un producteur tardif."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests de stress doivent varier le timing des rappels et du rendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Exécutez libretro avec OpenGL, Vulkan et le rendu logiciel tout en mettant en pause, avançant rapidement, réinitialisant, changeant de contenu et fermant le noyau de manière répétée. Utilisez des rappels audio qui consomment rapidement, lentement et par lots irréguliers, en plus de pousser des échantillons dépassant la taille de trame ordinaire. ThreadSanitizer ne doit détecter aucun accès non synchronisé au tuple de tampon. Écoutez et hachez le PCM capturé pour détecter des lacunes ou un réarrangement, et confirmez qu’aucun rappel ne réentre dans un chemin qui attend sur le même mutex non récursif."
+    },
+    {
+      "type": "callout",
+      "text": "Un tampon audio extensible est un seul objet partagé, pas trois champs indépendants ; son pointeur, sa taille et sa capacité doivent traverser les threads sous le même verrou."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications de source"
+    }
+  ]
+}

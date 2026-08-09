@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar powoduje, że zrzuty ekranu Vulkan podążają za rzeczywistym porządkiem kanałów swapchain.",
+  "summary": "QImage oczekuje bajtów BGRA, ale niektóre sterowniki Vulkan prezentują RGBA; przekazanie wybranego formatu powierzchni do obu ścieżek zrzutu ekranu umożliwia tani przestawienie czerwonego i niebieskiego tylko tam, gdzie jest to wymagane.",
+  "heroAlt": "Dowód źródłowy z pull requestu Azahar #2170: renderer_vulkan: Napraw kolory kanałów zrzutu ekranu w formatach swapchain RGBA",
+  "searchKeywords": [
+    "Azahar",
+    "Zrzut ekranu Vulkan",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Napraw kolory kanałów zrzutu ekranu w formatach swapchain RGBA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wyświetlana klatka może być poprawna, podczas gdy zapisany obraz jest niepoprawny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan wybiera format swapchainu spośród opcji obsługiwanych przez sterownik. Niektóre platformy preferują BGRA, a inne RGBA. Shadery prezentacyjne Azahar obsługiwały wybrany format, ale pamięć zrzutu ekranu była przekazywana do QImage::Format_RGB32, który oczekuje kolejności bajtów BGRA. W przypadku swapchainu RGBA, czerwony i niebieski były więc zamieniane miejscami tylko w przechwyconym pliku, co powodowało, że renderer wyglądał niepoprawnie poza aktywnym oknem."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow udostępnia negocjowany format kodowi przechwytującemu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2170 dodaje GetSurfaceFormat do implementacji Vulkan present-window i sprawdza go w obu ścieżkach przechwytywania zrzutu ekranu: staging-copy i host-memory. Gdy format to eR8G8B8A8Unorm, Azahar przechodzi przez szerokość razy wysokość pikseli i zamienia miejscami bajty zerowy i drugi. Swapchain BGRA używa istniejących bajtów bez zmian, unikając konwersji na platformach już zgodnych z QImage."
+    },
+    {
+      "type": "heading",
+      "text": "Zamiana bajtów jest tańsza niż zmiana kontraktu obrazu w frontendzie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana formatu QImage wymagałaby przekazania informacji o kolejności kanałów dalej do frontendu i zapewnienia, że każdy odbiorca ją rozumie. Lokalny swizzle utrzymuje ustalony kontrakt RGB32 i kosztuje jedną wymianę czerwony-niebieski na piksel w czasie tworzenia zrzutu ekranu, a nie na wyświetlanej klatce. Autor wymusił RGBA na Macu preferującym BGRA w celu testu, podczas gdy Linux Mesa został zidentyfikowany jako prawdopodobnie naturalnie dotknięta platforma wymagająca potwierdzenia."
+    },
+    {
+      "type": "heading",
+      "text": "Zarówno trasy przechwytywania, jak i alfa wymagają dokładnych elementów koloru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyrenderuj wzór testowy zawierający czystą czerwień, niebieski, zielony, czarny, biały i nieliniową alfę, następnie przechwyć poprzez ścieżki staging i pamięci hosta na natywnych swapchainach RGBA i BGRA. Porównaj zapisane bajty i wyświetlany wynik. Powtórz przy nietypowych wymiarach, skalowanych układach i po odtworzeniu swapchainu. Dotknięty użytkownik Linux powinien potwierdzić naturalną trasę formatu. Swizzle musi wystąpić dokładnie raz; podwójna konwersja może sprawić, że jeden backend wyda się naprawiony, podczas gdy inny cofnie się."
+    },
+    {
+      "type": "callout",
+      "text": "Teraz kod zrzutu ekranu konwertuje z formatu Vulkan faktycznie negocjowanego, zamiast zakładać, że każdy sterownik prezentuje piksele w preferowanej kolejności QImage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany źródłowe"
+    }
+  ]
+}

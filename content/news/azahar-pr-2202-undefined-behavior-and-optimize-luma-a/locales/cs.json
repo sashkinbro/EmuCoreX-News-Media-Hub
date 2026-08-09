@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar odstraňuje nejednoznačnost přetečení se znaménkem z aliasu paměti Luma",
+  "summary": "Maska neznaménkového bitu 31 činí detekci aliasů definovanou v C++, zatímco rané návraty a nepravděpodobné větve MMIO poskytují běžným paměťovým cestám přímější tok instrukcí.",
+  "heroAlt": "Důkaz ze zdroje z žádosti o stažení Azahar #2202: core/memory: Oprava nedefinovaného chování a optimalizace cesty aliasu Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias Luma",
+    "nedefinované chování",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Jádro",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Oprava nedefinovaného chování a optimalizace cesty aliasu Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bit 31 byl tvořen pomocí aritmetiky se znaménkem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS poskytuje formu aliasové adresy, jejíž nejvyšší bit říká Azahar, aby obešel běžné stránkové tabulky pro FCRAM nebo MMIO. Kód tento bit testoval a mazal pomocí 1 << 31. Když je int 32bitový, posunutí podepsané jedničky do pozice znaménka je nedefinované chování, což dává optimalizujícímu kompilátoru možnost transformovat okolní kód způsoby, které nezachovávají zamýšlenou masku."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u činí operace testu i mazání definovanými"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2202 deklaruje LUMA_ALIAS_BIT jako unsigned literál 0x80000000u. Cesty čtení i zápisu testují vaddr proti této konstantě a odvozují paddr jejím vymazáním. Změna je malá, ale architektonická: manipulace s adresami by měla používat unsigned typ, který reprezentuje VAddr, a neměla by záviset na výsledku, který kompilátor vybere pro přetečení podepsané aritmetiky."
+    },
+    {
+      "type": "heading",
+      "text": "Rané návraty oddělují FCRAM od studé cesty MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alias FCRAM zůstává hlavní užitečnou cestou a končí okamžitým návratem. Poté je kontrolován MMIO a označen jako nepravděpodobný, stejně jako samotný záznam aliasu vzhledem k běžnému přístupu k tabulce stránek. Zploštění předchozího řetězce else-if umožňuje Clangu umístit běžný tok lineárněji a udržuje vzácný kód vlastního obslužného programu mimo cestu instrukční cache používanou většinou čtení a zápisů."
+    },
+    {
+      "type": "heading",
+      "text": "Optimalizační tvrzení vyžadují pokrytí kompilátorem a aliasem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spusťte čtení a zápisy Luma aliasů pro FCRAM, platný 32bitový MMIO, adresu aliasu mimo oba rozsahy a normální adresy tabulky stránek. Porovnejte Clang a GCC na různých úrovních optimalizace s povoleným UBSan, ověřte žádné hlášení o posunu znaménka a identické výsledky. Prozkoumejte generovaný kód pro zamýšlené rané návraty, ale upřednostňujte správnost. Šířky MMIO jiné než striktně podporovaná 32bitová cesta musí stále projít nebo selhat podle stávající sémantiky."
+    },
+    {
+      "type": "callout",
+      "text": "Rychlejší cesta začíná definovaným chováním: adresní příznak musí být neznaménkovou bitovou maskou, než lze důvěřovat nápovědám větvení nebo tvaru assembleru."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny Azahar"
+    }
+  ]
+}

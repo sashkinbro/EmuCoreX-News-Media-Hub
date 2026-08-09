@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin places hard bounds around NetPlay save decompression",
+  "summary": "Safe LZO decoding, checked accumulation, and exact final-size validation prevent remote save blocks from overrunning memory or steering allocation unchecked.",
+  "heroAlt": "Source evidence from Dolphin pull request #14740: NetPlay: bound LZO decompression output",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "NetPlay save",
+    "decompression",
+    "buffer safety"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Security",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: bound LZO decompression output"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Compressed synchronization crosses a hostile size boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay can transfer save files or folders from another peer before play. Each compressed LZO block and the declared final size come from the network. The previous path invoked the unchecked decoder without setting output capacity, so malformed compressed data could write beyond the destination. One buffer path also allocated directly from the peer-provided size, allowing the claim itself to drive memory pressure before decompression proved anything."
+    },
+    {
+      "type": "heading",
+      "text": "Every block now receives a real destination capacity"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14740 switches to lzo1x_decompress_safe. File output initializes new_len to the fixed output buffer size and verifies that the decoded block fits in the remaining declared total before writing. In-memory folder output decodes into a bounded temporary block, checks both declared-size subtraction and vector max_size arithmetic, then appends only the successfully produced bytes. The remote total is no longer used as an immediate allocation request."
+    },
+    {
+      "type": "heading",
+      "text": "The final total must be exact, not merely below a ceiling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Accepting fewer bytes than declared could leave a truncated save that parses unpredictably, while accepting more would cross the sender's stated format boundary. Both file and buffer paths accumulate a 64-bit count and require equality at the end. Decoder errors, arithmetic overflow conditions, output beyond the claim, or a mismatch all return failure with a controlled alert instead of handing partial content to later save extraction."
+    },
+    {
+      "type": "heading",
+      "text": "A decompression corpus should test resource use as well as writes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Feed valid empty, single-block, multi-block, and maximum normal transfers, then corrupted streams, expansion bombs, truncated blocks, trailing blocks, zero claims, huge claims, and totals just above or below actual output. Run under AddressSanitizer and memory limits, checking that failure removes partial files and does not leave a session waiting forever. Cross-test sender and receiver versions, save folders with many entries, and interrupted networks. A protocol-level maximum may still be desirable beyond memory-safety bounds."
+    },
+    {
+      "type": "callout",
+      "text": "Safe decompression needs three agreements: each block fits its buffer, accumulated bytes cannot overflow, and the completed stream equals the declared payload."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

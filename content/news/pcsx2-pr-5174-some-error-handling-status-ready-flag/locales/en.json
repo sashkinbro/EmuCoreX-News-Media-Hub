@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 gives invalid CDVD requests a defined drive-state exit",
+  "summary": "Zero-length, negative, and past-end reads now update ready, status, error, and interrupt state coherently, alongside corrected CdStop and tray transitions.",
+  "heroAlt": "Source evidence from PCSX2 pull request #5174: CDVD: Some Error handling, Status+Ready Flag changes and fix CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "sector count",
+    "drive status",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Some Error handling, Status+Ready Flag changes and fix CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Several games send disc commands that are awkward but observable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, the Aberanbou Princess trial, Evergrace demo, and Animation Battle exercise sector counts or addresses that PCSX2's older CDVD flow did not finish cleanly. A zero or negative count could keep a read path alive, while an address beyond the disc lacked one consistent error transition. The result ranged from invalid LSN behavior to TLB misses, failed boot, or later movie hangs."
+    },
+    {
+      "type": "heading",
+      "text": "Ready and Status become explicit drive-state assignments"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #5174 distinguishes ready, busy, data-ready, device-connected, and error bits instead of repeatedly ORing or clearing one flag in place. cdvdUpdateStatus records current and sticky status, while command completion uses a common IRQ path. Tray open, close, seek, read, pause, stop, break, and new-disc callbacks therefore publish a coherent pair of status and readiness values rather than leaving bits from a previous operation."
+    },
+    {
+      "type": "heading",
+      "text": "Invalid counts and disc bounds now terminate the command"
+    },
+    {
+      "type": "paragraph",
+      "text": "The drive records MaxSector from the mounted disc and checks a read before continuing beyond it. An out-of-range request sets an outermost-track error, returns to pause, clears DMA waiting, and raises the command interrupt. A sector count at or below zero likewise completes and returns to ready instead of scheduling another transfer. CdStop and SCMD result bookkeeping are corrected within the same state-machine cleanup."
+    },
+    {
+      "type": "heading",
+      "text": "Savestate and multi-game tests must inspect flags, not only boot"
+    },
+    {
+      "type": "paragraph",
+      "text": "The state layout change required a savestate version bump, so old and new state handling needs explicit coverage. Reproduce the named games and log command, LSN, count, Ready, Status, Error, IRQ, and DMA state. Test tray changes, stop, break, valid end-of-disc reads, and deliberately invalid requests. Some source cases still required separate game patches or had later FMV hangs; those limits must remain documented rather than credited to this state cleanup."
+    },
+    {
+      "type": "callout",
+      "text": "The improvement is a complete exit path: even a malformed disc request must leave the drive, DMA engine, and interrupt controller agreeing about what happened."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

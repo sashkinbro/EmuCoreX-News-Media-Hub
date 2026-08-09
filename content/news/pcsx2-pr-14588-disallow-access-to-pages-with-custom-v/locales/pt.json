@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14588-disallow-access-to-pages-with-custom-v",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 bloqueia clientes PINE de acessar manipuladores MMIO ligados a threads",
+  "summary": "A interface de memória externa agora rejeita páginas VTLB fornecidas por callbacks de dispositivos personalizados, limitando suas leituras diretas a memória que seja segura fora da thread de emulação.",
+  "heroAlt": "Evidência de origem do pull request #14588 do PCSX2: PINE: Proibir acesso a páginas com manipuladores VTLB personalizados",
+  "searchKeywords": [
+    "PCSX2",
+    "PINE",
+    "VTLB",
+    "MMIO",
+    "segurança de thread"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "security": "Segurança",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14588": "PINE: Proibir acesso a páginas com manipuladores VTLB personalizados"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um endereço de guest pode representar RAM ou um registrador de hardware ativo"
+    },
+    {
+      "type": "paragraph",
+      "text": "PINE expõe operações de memória para ferramentas externas. Através da camada de tradução virtual do PCSX2, alguns endereços apontam para RAM comum suportada pelo host, enquanto outros passam por manipuladores personalizados para registros MMIO e periféricos emulados. Chamar um manipulador personalizado não é uma leitura passiva: pode alterar o estado do dispositivo, exigir ordenação de threads do emulador, ou tocar em componentes que não têm sincronização para uma thread de servidor arbitrária."
+    },
+    {
+      "type": "heading",
+      "text": "Páginas de manipulador personalizado são rejeitadas antes do acesso"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14588 altera o caminho VTLB do PINE para reconhecer páginas cujo acesso é implementado por um manipulador personalizado e negá-las. A memória mapeada diretamente permanece disponível para os clientes. O limite é baseado em como a página é servida, não em uma lista fixa e frágil de intervalos de registradores, então manipuladores MMIO recém-registrados herdam a proteção sem outra atualização de endereço específica do PINE."
+    },
+    {
+      "type": "heading",
+      "text": "vtlb_ramRead é reescrito em torno da mesma distinção mais segura"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch também alinha a declaração e definição do template vtlb_ramRead e simplifica sua implementação. Um microbenchmark na máquina do autor mostrou uma pequena melhoria de velocidade, mas isso é secundário. A garantia principal é a propriedade de threads: o PINE não deve permitir que o GS, SPU, CDVD ou outro periférico execute callbacks em uma thread que ignore o escalonador de VM."
+    },
+    {
+      "type": "heading",
+      "text": "Os clientes precisam de semânticas de falha claras e cobertura de regressão de RAM."
+    },
+    {
+      "type": "paragraph",
+      "text": "Teste os depuradores PINE existentes com RAM normal, memória temporária ou outros mapeamentos diretos explicitamente suportados, limites de página e endereços não mapeados. Tente leituras e escritas em páginas representativas MMIO e confirme um erro de protocolo limpo sem efeitos colaterais periféricos ou falhas. Repita enquanto a VM funciona, pausa, reinicia e desliga. Isso é descrito como uma correção inicial pendente de um trabalho de design mais amplo, portanto, não se deve prometer acesso seguro a registradores de dispositivos até que exista um mecanismo de thread de emulador com marshaling."
+    },
+    {
+      "type": "callout",
+      "text": "PINE continua sendo uma interface de memória, não um segundo thread de execução de hardware; manipuladores VTLB personalizados são negados até que possam ser gerenciados com segurança."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14588",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

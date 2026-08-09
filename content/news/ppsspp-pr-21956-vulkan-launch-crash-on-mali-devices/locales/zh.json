@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 修复了 Mali 硬件上的 Vulkan 设备创建陷阱",
+  "summary": "libretro 包装现在精确选择一个 Vulkan 功能通道，满足在 VkPhysicalDeviceFeatures2 链接时 pEnabledFeatures 必须为 null 的规则。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21956 的来源证据：Libretro：修复 Mali 设备上的 Vulkan 启动崩溃",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "图形",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro：修复 Mali 设备上的 Vulkan 启动崩溃"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "容错驱动程序隐藏了无效的创建信息组合"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan 提供了一个 legacy pEnabledFeatures 指针以及可扩展的 VkPhysicalDeviceFeatures2 结构在 pNext 中。当 Features2 存在时，规范要求将 legacy 指针置为 null。PPSSPP 的 libretro 封装可以在添加前端必需功能的同时填充两者。一些驱动接受了这种格式错误的设备请求，但 Mali 返回了 VK_ERROR_INITIALIZATION_FAILED，因此 Vulkan 渲染的核心在游戏执行开始前就失败了。"
+    },
+    {
+      "type": "heading",
+      "text": "该封装现在可以发现核心选择了哪条功能路线"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21956 遍历 device-create 的 pNext 链并记录其是否包含 VkPhysicalDeviceFeatures2。如果发现，则将前端必需的功能合并到该结构中，并显式将 newInfo.pEnabledFeatures 置为 null。如果未发现，则封装通过复制或创建 VkPhysicalDeviceFeatures 并分配指针来保留现有 legacy 行为。因此，这两条合法的 Vulkan 路径是互斥的。"
+    },
+    {
+      "type": "heading",
+      "text": "验证涵盖了严格和宽容的移动 GPUs"
+    },
+    {
+      "type": "paragraph",
+      "text": "作者在带有 Mali-G615 设备的 Android 14 和带有 Snapdragon 865 Adreno 设备的 Android 13 上测试了硬件渲染。两者均能够启动并运行。在 Mali 系统上，通过设备创建暴露了一个单独的虚拟交换链容量问题，该问题由另一个更改处理；保持这种区分很重要，因为解决一个启动关卡不应导致 Hub 声称每一个后续的 Vulkan 失败都有相同原因。"
+    },
+    {
+      "type": "heading",
+      "text": "功能链测试应检查结构的所有权"
+    },
+    {
+      "type": "paragraph",
+      "text": "使用验证层捕获 VkDeviceCreateInfo，用于旧核心、Features2 核心、带有额外功能结构的链，以及缺失可选功能的情况。在 Mali、Adreno、桌面 Vulkan 以及多个 RetroArch 版本上重复进行。验证所需的位是否被保留而非覆盖，pNext 指针在 vkCreateDevice 过程中保持有效，并且 pEnabledFeatures 仅在 Features2 情况下为 null。还需测试软件和 OpenGL 路径，以确保包装器初始化不会假设 Vulkan。"
+    },
+    {
+      "type": "callout",
+      "text": "Vulkan 功能协商有两种合法路径；将它们结合可能在宽容的驱动程序上有效，但在更严格的硬件上仍然无效并会失败。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "阅读 PPSSPP 工程讨论和源代码更改"
+    }
+  ]
+}

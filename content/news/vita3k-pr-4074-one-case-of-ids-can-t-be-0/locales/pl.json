@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K rozróżnia obiekt SPIR-V IDs od numerów ścieżek wektorowych",
+  "summary": "Konstrukcja mieszania wektorów teraz oznacza wektory źródłowe jako IDs, a selektory komponentów jako literały, co zapobiega temu, by pas zerowy stał się nieprawidłowym SPIR-V ID.",
+  "heroAlt": "Dowody źródłowe z pull requestu Vita3K #4074: shader: Napraw jeden przypadek 'id nie mogą być 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "przekompilator shaderów",
+    "blok uniform"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Napraw jeden przypadek 'id nie mogą być 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ten sam typ całkowity może reprezentować dwie różne koncepcje SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instrukcje SPIR-V odwołują się do wcześniej zdefiniowanych obiektów za pomocą liczbowego ID, a niektóre zawierają również liczby literalne. OpVectorShuffle przyjmuje dwa wektorowe IDs, po których następują selektory komponentów. Selektor o wartości zero oznacza pierwszy tor pierwszego wektora; obiekt ID o wartości zero jest zabroniony. Przekazywanie każdego operand przez wektor typowany jedynie jako spv::Id powoduje utratę rozróżnienia dokładnie tam, gdzie prawidłowy numer toru dzieli wartość strażniczą z nieprawidłowym ID."
+    },
+    {
+      "type": "heading",
+      "text": "Budowniczy (builder) teraz otrzymuje jawny rodzaj (kind) dla każdego operandu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Request pull #4074 zmienia dwie listy operandów shuffle na spv::IdImmediate. Ładowania dest i dest_friend oraz kopiowanego wektora są oznaczone jako IDs. Indeksy linii generowane pętlą są oznaczone jako wartości bezpośrednie, niezależnie od tego, czy są zerem, cztery plus i, czy przesunięciem wyprowadzonym z start modulo cztery. createOp może wtedy zakodować każde słowo zgodnie z gramatyką instrukcji zamiast wywnioskować jego znaczenie z aliasu C++."
+    },
+    {
+      "type": "heading",
+      "text": "Dotknięta ścieżka łączy dane jednorodne (uniform) w ramach granic vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register obsługuje zakres, który obejmuje bieżący wektor docelowy i jego sąsiada. Tworzy komplementarne tasowania, tak aby zachowane pasma docelowe i nadchodzące pasma źródłowe znalazły się na właściwych pozycjach. Rozpoczęcia wyrównane do vec4 idą prostszą drogą; nie wyrównane rozpoczęcia testują logikę dwóch list. Korekta nie zmienia tego, która formuła pasma jest wybierana. Sprawia, że już obliczone selektory stają się legalnymi literałami."
+    },
+    {
+      "type": "heading",
+      "text": "Ustawienia oparte na walidatorze powinny wymieniać każdą początkową linię"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generuj jednolite kopie zaczynając od przesunięć zero do trzech o długości mieszczącej się w jednym vec4 i przekraczającej następny. Sprawdź wygenerowane słowa OpVectorShuffle, uruchom spirv-val i wykonaj shadery z unikalnie kolorowymi lub numerowanymi pasmami źródłowymi. Uwzględnij selektory zero, trzy, cztery, siedem i dowolny undef sentinel obsługiwany przez buildera. Testuj sterowniki Vulkan z rygorystyczną walidacją i porównuj wyrenderowane wyjście między producentami. Test regresji powinien sprawdzać rodzaje operandów oprócz końcowych pikseli."
+    },
+    {
+      "type": "callout",
+      "text": "W binarnym języku shaderów zero może być całkowicie prawidłowym lane i niemożliwym ID obiektu; twórca musi wiedzieć, którego z nich oczekuje instrukcja."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Przeczytaj dyskusję inżynieryjną Vita3K i zmiany w źródle"
+    }
+  ]
+}

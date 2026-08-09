@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 gates Vulkan depth feedback layout on the capability that legalizes it",
+  "summary": "Depth read-only sampling now falls back to GENERAL layout when texture barriers are disabled, avoiding a feedback-loop layout selected without its required Vulkan feature bits.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14817: GS:VK: Only use feedback loop layout for depth if texture barrier is supported.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "feedback loop layout",
+    "texture barrier",
+    "validation layer"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Only use feedback loop layout for depth if texture barrier is supported."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "An image layout is only valid when its feature contract is enabled"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan's attachment feedback-loop layout describes an image used through a feedback relationship. PCSX2 adds the corresponding capability bit only when texture barrier or depth-feedback support is active. The depth read-only sampling path could nevertheless choose that layout after barriers were forced off, creating a contradiction: command recording claimed a feature the device configuration had deliberately not enabled."
+    },
+    {
+      "type": "heading",
+      "text": "Unsupported depth feedback now uses GENERAL layout"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14817 makes layout selection conditional on the same support test that controls the capability bits. Supported paths retain the specialized feedback-loop layout. When the feature is unavailable or Force Disabled, depth sampling uses GENERAL, a legal fallback with broader synchronization requirements. The change keeps image state and device features derived from one decision instead of independently optimistic checks."
+    },
+    {
+      "type": "heading",
+      "text": "Validation errors expose a real portability fault before pixels fail"
+    },
+    {
+      "type": "paragraph",
+      "text": "A driver may accept an illegal layout combination without an immediate visual artifact, especially outside debug mode. Vulkan validation layers flag the mismatch deterministically, making them the right evidence for this patch. Avoiding the warning is not cosmetic log cleanup: it ensures the command stream stays within the contract required across vendors and driver versions rather than relying on permissive behavior."
+    },
+    {
+      "type": "heading",
+      "text": "The source dump tests the exact capability-off route"
+    },
+    {
+      "type": "paragraph",
+      "text": "Run the attached Time Crisis 3 GunCon dump on Vulkan with Override Texture Barriers set to Force Disabled and Use Debug Device enabled. The corrected path should emit no feedback-loop-layout validation error and preserve the frame. Repeat with barriers supported to verify the specialized layout still appears, then test depth read-only, color feedback, backend reset, and several GPUs. Capture image transitions so a missing warning cannot hide use of the wrong GENERAL synchronization."
+    },
+    {
+      "type": "callout",
+      "text": "Layout and capability are one contract: if PCSX2 does not enable depth feedback support, it must not advertise that support through the image layout."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

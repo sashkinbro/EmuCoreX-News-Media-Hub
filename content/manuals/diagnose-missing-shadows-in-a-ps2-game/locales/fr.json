@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostiquer les ombres manquantes sans empiler des astuces graphiques",
+  "summary": "Capturer une scène avec beaucoup d'ombres à la résolution native, identifier si la couche absente est la géométrie, la profondeur ou le mélange, comparer les API matérielles avec une référence logicielle, puis ne conserver que la correction par jeu la plus petite.",
+  "heroAlt": "PCSX2 capture de comparaison d'une correction de précision graphique dans une scène de jeu ombrée",
+  "searchKeywords": [
+    "PS2 ombres manquantes",
+    "EmuCoreX correction des ombres",
+    "précision graphique",
+    "comparaison avec un rendu logiciel",
+    "mélange de profondeur"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphiques",
+    "accuracy": "Précision"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 compteurs graphiques et indicateurs de réglage",
+    "pcsx2-report": "PCSX2 point d'entrée pour les rapports de problème"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Prouver quel calque d'ombre est absent"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une ombre peut être une texture projetée, un passage de framebuffer translucide, une géométrie sombre ordinaire ou un effet combiné avec un test de profondeur. La première question utile n'est donc pas de savoir quel truc activer, mais si le jeu dessine la couche du tout. Choisissez un endroit où le même personnage, la même lumière et la même caméra peuvent être restaurés de manière fiable. Enregistrez le numéro de série du jeu, le moteur de rendu actif, le pilote GPU, la résolution interne, le réglage du mélange et toutes les corrections héritées par jeu avant de toucher au profil."
+    },
+    {
+      "type": "callout",
+      "text": "Ne jugez pas le changement depuis un moment de la journée différent, un angle de caméra différent, un état de sauvegarde ou une image d'animation différente. L'éclairage dynamique peut faire paraître deux images valides comme une régression du moteur de rendu."
+    },
+    {
+      "type": "heading",
+      "text": "Préparer un point de contrôle d'ombre"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde normale en jeu juste avant une scène lumineuse répétable.",
+        "Une capture d'écran de référence avec le personnage et le sol visibles ensemble.",
+        "Résolution interne native et post-traitement désactivé pour la première comparaison.",
+        "Le pilote du système GPU sélectionné ; les pilotes personnalisés sont une expérience distincte.",
+        "Une copie écrite des remplacements graphiques globaux et spécifiques au jeu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Comportement séparé du rendu, du mélange et de la profondeur"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Démarrez le titre à froid et capturez le point de contrôle de référence sans charger un état de sauvegarde de l'émulateur.",
+        "2. Réinitialisez manuellement les correctifs GS pour ce titre, sélectionnez la résolution interne native et rejouez le même chemin de mouvement.",
+        "3. Passez uniquement entre les API matérielles prises en charge, en fermant le jeu entre les sessions afin que le moteur de rendu s'initialise correctement.",
+        "4. Si les deux chemins matériels omettent la couche, utilisez brièvement le rendu logiciel comme référence de précision et capturez la caméra identique.",
+        "5. Lorsque le logiciel montre l'ombre, retournez à l'API matérielle plus stable et augmentez uniquement d'un niveau la précision du mélange.",
+        "6. Si le mélange ne change rien, restaurez-le et testez la correction documentée liée à la profondeur appropriée au titre au lieu de combiner des suppositions.",
+        "7. Répétez une deuxième scène d’ombre qui utilise une surface ou une source de lumière différente.",
+        "8. Chauffez l’appareil pendant dix minutes et confirmez que la correction sélectionnée reste suffisamment rapide pour un jeu réel."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "La sortie logicielle est une preuve diagnostique, pas une promesse de vitesse jouable. Un cadre logiciel correct montre que l'image du disque et le code du jeu peuvent produire l'effet, tandis qu'une défaillance uniquement matérielle limite la recherche au comportement du rendu. Une modification du mélange qui restaure une ombre translucide est différente d'une correction de profondeur qui restaure une géométrie cachée par l'ordre. Garder ces branches séparées rend le résultat explicable et réversible."
+    },
+    {
+      "type": "heading",
+      "text": "Acceptation de la correction des ombres"
+    },
+    {
+      "type": "paragraph",
+      "text": "Acceptez le profil uniquement lorsque la couche est stable dans plus que le cadre de test initial."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La position de l'ombre suit le sujet en mouvement plutôt que de rester comme un rectangle figé.",
+        "L'opacité ressemble à la référence logicielle et ne noircit pas toute la passe du sol.",
+        "Les décalcomanies à proximité, le brouillard et la transparence de l'interface restent intacts.",
+        "L'effet survit à un démarrage à froid et à une transition ultérieure de zone.",
+        "La vitesse soutenue et le rythme des images restent dans le budget de base enregistré."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Des preuves qui indiquent autre chose"
+    },
+    {
+      "type": "list",
+      "items": [
+        "L'ombre est absente dans le logiciel également : vérifiez l'image et confirmez que la scène originale en contient vraiment une.",
+        "Seul le chargement de l'état de sauvegarde de l'émulateur le casse : retestez à partir d'une sauvegarde en jeu et éliminez l'état incompatible.",
+        "Toute surface sombre disparaît : réinitialisez l'option d'ignorance large du rendu ou appliquez manuellement les remplacements GS.",
+        "La correction fonctionne une fois mais échoue après la reprise : capturez les détails du moteur de rendu et du pilote pour un rapport du cycle de vie."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Retour à la référence graphique mesurée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restaurez le mélange automatique, désactivez la correction de profondeur testée, re-sélectionnez le rendu et le pilote système d'origine, et effectuez un démarrage à froid du point de contrôle. Conservez les captures avant et après avec leurs paramètres, mais supprimez les états de sauvegarde temporaires qui ne peuvent pas reproduire la scène de manière cohérente."
+    },
+    {
+      "type": "heading",
+      "text": "Ne publiez pas de sauvegardes ou de données de disque protégées par copyright."
+    },
+    {
+      "type": "paragraph",
+      "text": "Un rapport de support peut inclure le numéro de série, les paramètres, les journaux et les captures d'écran créées par l'utilisateur lorsque cela est autorisé. N'attachez pas d'image de jeu, de firmware, de matériel de chiffrement ou de sauvegarde contenant un contenu distribué par des tiers uniquement pour démontrer l'ombre."
+    },
+    {
+      "type": "link",
+      "text": "Lisez le guide de preuves de performance PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

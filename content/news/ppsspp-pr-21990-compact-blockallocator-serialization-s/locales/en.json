@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP gives kernel memory maps a leaner savestate format",
+  "summary": "BlockAllocator now writes a compact record per block and guarantees zero-padded tags when they are created, cutting structural work from large memory maps.",
+  "heroAlt": "Source evidence from PPSSPP pull request #21990: Savestate: compact BlockAllocator serialization (section v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "kernel memory",
+    "serialization",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: compact BlockAllocator serialization (section v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A thousand blocks multiplied small serialization costs"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serializes linked block lists for user, kernel, and volatile memory. A running game can keep roughly a thousand blocks alive. The prior layout opened a named serialization Section for each block, adding header work and payload repeatedly. It also called strlen and memset during every save to clear unused bytes in a fixed tag buffer, because the helper that copied a tag did not initialize the remaining padding."
+    },
+    {
+      "type": "heading",
+      "text": "The new record contains only fields that define a block"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21990 adds BlockAllocator section v2. Its compact branch writes start, size, taken, and the complete fixed-size tag array directly, with no nested block section. Reading performs the same field sequence. This is deliberately a BlockAllocator-level choice rather than a silent change to the old block method, because serialized formats need an explicit boundary whenever the byte layout differs."
+    },
+    {
+      "type": "heading",
+      "text": "Tag hygiene moves to the point of mutation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Block construction and SetAllocated now clear the entire tag buffer before copying text into it. That makes the padding deterministic throughout the object's lifetime and removes repeated strlen plus memset work from the hot save path. It also prevents uninitialized process memory from reaching a state file. Version one remains available for loading older states, while newly written compact states follow the normal forward-incompatibility rule for a section bump."
+    },
+    {
+      "type": "heading",
+      "text": "Allocator topology matters more than file size alone"
+    },
+    {
+      "type": "paragraph",
+      "text": "Build states with empty lists, one block, thousands of alternating free and taken blocks, maximum-length tags, reused blocks, volatile memory, and both top-down and bottom-up allocation. Load old v1 fixtures and new v2 fixtures, compare list order and every boundary, then allocate and free after restore to expose broken links. Inspect output for deterministic tag padding and no uninitialized bytes. Benchmark size and serialization time only after structural equivalence and corruption handling pass."
+    },
+    {
+      "type": "callout",
+      "text": "Compact serialization is safest when deterministic object state is established at mutation time, not repaired every time a save is written."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Read the PPSSPP engineering discussion and source changes"
+    }
+  ]
+}

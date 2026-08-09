@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar は、フレームバッファの前に 3GX プラグインが到着したときに Vulkan のカラーフィルをガードします",
+  "summary": "PokeReader によって公開された起動順序により、ターゲット画像が存在する前に FillScreen を呼び出すことができます。レンダラーは、欠落している画像をクラッシュさせるのではなく、遅延セットアップ状態として扱うようになりました。",
+  "heroAlt": "Azahar プルリクエスト #2241 のソース証拠: video_core: vulkan: フレームバッファセットアップ前のカラーフィルでのクラッシュを修正",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "フレームバッファ"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "グラフィックス",
+    "emulation": "エミュレーション"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: フレームバッファセットアップ前のカラーフィルでのクラッシュを修正"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "プラグインは Vulkan が画像を所有する前に画面色を要求することができます"
+    },
+    {
+      "type": "paragraph",
+      "text": "PokeReaderで3GXローダーを有効にすると、FillScreenが実装された後、報告者のAMD Vulkanシステムで一貫してWindowsがクラッシュしました。ログとgit bisectにより、この回帰はその実装に起因することが判明しました。キーの順序はフロントエンドとしては珍しいですが有効です：プラグインの起動は、フレームバッファテクスチャVulkanの画像が作成される前にカラー塗りつぶしの設定に到達します。"
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTextureは現在、意図ではなくリソースをチェックします"
+    },
+    {
+      "type": "paragraph",
+      "text": "プルリクエスト#2241ではRendererVulkan::ConfigureFramebufferTextureに狭いガードを追加しています。texture.imageが存在しない場合、関数はフレームバッファを設定または塗りつぶす前に終了します。その後、有効な画像で呼び出すと通常のパスが続きます。この修正はダミー画像を作成したりサイズを仮定したりせず、実際のフレームバッファと異なるレイアウトや寿命を持つプレースホルダーリソースを避けます。"
+    },
+    {
+      "type": "heading",
+      "text": "この障害は複数のGPUに関する報告を説明する可能性がありますが、証拠は限定的です"
+    },
+    {
+      "type": "paragraph",
+      "text": "ソースは、再現可能な組み合わせとして PokeReader、Windows、Vulkan、および潜在的に AMD を引用しており、関連する可能性のあるいくつかの問題を結び付けています。これらの報告は手がかりであり、確認済みの修正ではありません。唯一確認されている不変のものは、Vulkan の操作がフレームバッファの画像が存在する前に使用されてはならないということです。他のクラッシュについては、それらが同じ早期 FillScreen 状態に達するかどうかを確認するために独自のログが必要です。"
+    },
+    {
+      "type": "heading",
+      "text": "リグレッションテストでは、早期および通常のフィル順序の両方を強制する必要があります。"
+    },
+    {
+      "type": "paragraph",
+      "text": "3GX サポートをオン／オフにして、PokeReader を選択し、AMD、NVIDIA、および利用可能な場合はモバイル Vulkan で起動します。画像作成と FillScreen の順序を計測し、早期呼び出しが検証エラーなく返ることを確認し、後で初期化された fill がスクリーンをクリアすることを確認します。プラグインの解放、ゲームの再起動、サーフェスの再作成、バックエンドの切り替えを繰り返します。クラッシュが発生しないことだけでは不十分であり、ガードが恒久的に未填充または古いフレームバッファを残さないことを確認する必要があります。"
+    },
+    {
+      "type": "callout",
+      "text": "レンダラーは、要求された塗りつぶしと初期化されたターゲットを区別するようになりました；Vulkanの作業は、画像が実際に存在するようになってからのみ開始されます。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Azaharのエンジニアリングディスカッションとソースの変更を読んでください"
+    }
+  ]
+}

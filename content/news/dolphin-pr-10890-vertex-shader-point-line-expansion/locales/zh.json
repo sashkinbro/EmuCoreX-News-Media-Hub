@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 在顶点着色器内重建宽点和线",
+  "summary": "四边形展开从几何阶段移出，在 Metal 和 MoltenVK 上恢复宽基元，同时在某些桌面 GPUs 上提供更快的路径。",
+  "heroAlt": "来自 Dolphin 拉取请求 #10890 的源证据：VideoCommon: 添加顶点着色器点/线扩展",
+  "searchKeywords": [
+    "Dolphin",
+    "顶点着色器",
+    "Metal",
+    "MoltenVK",
+    "宽线"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "图形",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: 添加顶点着色器点/线扩展"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "现代 APIs 并不都提供 Dolphin 的旧扩展阶段"
+    },
+    {
+      "type": "paragraph",
+      "text": "GameCube 和 Wii 软件可以请求比一个像素更宽的点和线。Dolphin 传统上使用几何着色器扩展这些图元，但 Metal 没有相应的阶段，而 MoltenVK 继承了这一限制。缺失的路径在《Metroid Prime 2》地图等内容中可见，其中宽线可能会渲染不正确。即使在支持几何着色器的硬件上，几何着色器也可能相对昂贵。"
+    },
+    {
+      "type": "heading",
+      "text": "索引位告诉顶点着色器要构建哪个四边形角。"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #10890 将扩展的点或线表示为一个四边形。修改后的索引保留它们的最低两位以标识生成的角。顶点着色器加载相关的源顶点或端点，执行常规变换，并计算该角所需的屏幕空间偏移。动态顶点加载器管道通过后端特定的资源绑定提供附加数据和几何常量。"
+    },
+    {
+      "type": "heading",
+      "text": "后端能力决定该路径是必需的还是可选的。"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal 和 Vulkan 到 MoltenVK 可以使用顶点扩展来获得几何着色器无法表达的功能。D3D12、Vulkan、OpenGL 以及其他具备此功能的路径提供支持，而高级偏好设置允许用户在两种方法都存在时选择顶点扩展。在 Radeon Pro 5600M 上进行的性能分析显示，在《银河战士 Prime 2》的地图中有明显优势，但该选项仍是情境性的，而非通用的性能保证。"
+    },
+    {
+      "type": "heading",
+      "text": "覆盖范围必须包括图元语义，而不仅仅是一个地图"
+    },
+    {
+      "type": "paragraph",
+      "text": "在不同宽度、纵横比、内部分辨率、视口缩放、裁剪边界和透视变换下比较点和线。包括纹理偏移，因为最初的讨论指出这是需要更多游戏覆盖的区域。捕获 Metal、MoltenVK、本地 Vulkan、D3D12 和 OpenGL 输出，并在可用时与几何扩展进行比较。检查触发顶点、深度、插值、退化线、状态变化以及 savestate；单独基准测试管线的变化与着色器执行。"
+    },
+    {
+      "type": "callout",
+      "text": "顶点扩展既是 Metal 的兼容桥梁，也是几何着色器的可测量替代方案，但相同的图元规则仍然是接受测试。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "阅读 Dolphin 工程讨论和源代码更改"
+    }
+  ]
+}

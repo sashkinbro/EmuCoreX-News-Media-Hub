@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-missing-shadows-in-a-ps2-game",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mendiagnosis bayangan yang hilang tanpa menumpuk hack grafis",
+  "summary": "Tangkap satu adegan dengan banyak bayangan pada resolusi asli, identifikasi apakah lapisan yang hilang adalah geometri, kedalaman, atau pencampuran, bandingkan API perangkat keras dan referensi perangkat lunak, kemudian pertahankan hanya koreksi terkecil per permainan.",
+  "heroAlt": "PCSX2 tangkapan perbandingan dari perbaikan akurasi grafis di adegan permainan yang berbaya",
+  "searchKeywords": [
+    "PS2 bayangan hilang",
+    "EmuCoreX perbaikan bayangan",
+    "akurasi grafis",
+    "perbandingan perender perangkat lunak",
+    "pencampuran kedalaman"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "accuracy": "Akurasi"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "PCSX2 penghitung grafik dan indikator pengaturan",
+    "pcsx2-report": "PCSX2 titik masuk laporan masalah"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Buktikan lapisan bayangan mana yang tidak ada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bayangan bisa berupa tekstur yang diproyeksikan, pass framebuffer tembus pandang, geometri gelap biasa, atau efek yang digabungkan dengan pengujian kedalaman. Pertanyaan pertama yang berguna adalah bukan hack mana yang harus diaktifkan, tetapi apakah permainan memang menggambar lapisan tersebut. Pilih tempat di mana karakter, cahaya, dan kamera yang sama dapat dipulihkan dengan andal. Catat serial permainan, renderer aktif, driver GPU, resolusi internal, pengaturan blending, dan perbaikan per-game yang diwarisi sebelum menyentuh profil."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan menilai perubahan dari waktu yang berbeda dalam sehari, sudut kamera, keadaan simpan, atau frame animasi. Pencahayaan dinamis dapat membuat dua frame yang valid terlihat seperti regresi renderer."
+    },
+    {
+      "type": "heading",
+      "text": "Siapkan titik pemeriksaan bayangan"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Simpan permainan normal dalam game tepat sebelum adegan yang dapat diulang.",
+        "Satu tangkapan layar dasar dengan karakter dan tanah terlihat bersama.",
+        "Resolusi internal asli dan pemrosesan pasca nonaktif untuk perbandingan pertama.",
+        "Driver sistem GPU yang dipilih; driver kustom adalah eksperimen terpisah.",
+        "Salinan tertulis dari override grafik global dan per game."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Perilaku gambar, pencampuran, dan kedalaman yang terpisah"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Mulai dingin judul dan tangkap titik pemeriksaan dasar tanpa memuat keadaan simpan emulator.",
+        "2. Setel ulang perbaikan manual GS untuk judul ini, pilih resolusi internal asli, dan ulangi jalur gerakan yang sama.",
+        "3. Beralih hanya antara API perangkat keras yang didukung, tutup permainan di antara sesi agar renderer dapat diinisialisasi dengan bersih.",
+        "4. Jika kedua jalur perangkat keras melewatkan lapisan, gunakan rendering perangkat lunak sebentar sebagai referensi ketepatan dan tangkap kamera yang identik.",
+        "5. Ketika perangkat lunak menunjukkan bayangan, kembali ke API perangkat keras yang lebih stabil dan tingkatkan akurasi pencampuran hanya satu tingkat.",
+        "6. Jika pencampuran tidak mengubah apa pun, kembalikan dan uji koreksi terkait kedalaman yang tercatat sesuai dengan judul alih-alih menggabungkan tebakan.",
+        "7. Ulangi adegan bayangan kedua yang menggunakan permukaan atau sumber cahaya yang berbeda.",
+        "8. Panaskan perangkat selama sepuluh menit dan pastikan koreksi yang dipilih tetap cepat untuk dimainkan."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Keluaran perangkat lunak adalah bukti diagnostik, bukan janji kecepatan yang dapat dimainkan. Frame perangkat lunak yang benar menunjukkan bahwa citra cakram dan kode permainan dapat menghasilkan efek tersebut, sementara kegagalan hanya pada perangkat keras mempersempit pencarian pada perilaku renderer. Perubahan pencampuran yang mengembalikan bayangan transparan berbeda dari perbaikan kedalaman yang mengembalikan geometri yang tersembunyi oleh urutan. Memisahkan cabang-cabang tersebut membuat hasil dapat dijelaskan dan dapat dibalik."
+    },
+    {
+      "type": "heading",
+      "text": "Penerimaan koreksi bayangan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Terima profil hanya ketika lapisan stabil dalam lebih dari frame uji asli."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Posisi bayangan mengikuti subjek yang bergerak daripada tetap sebagai persegi panjang yang kaku.",
+        "Opasitas menyerupai referensi perangkat lunak dan tidak menggelapkan seluruh lapisan tanah.",
+        "Decal di dekatnya, kabut, dan transparansi HUD tetap utuh.",
+        "Efek ini bertahan setelah cold boot dan transisi area berikutnya.",
+        "Kecepatan berkelanjutan dan pacing frame tetap dalam anggaran baseline yang tercatat."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Bukti yang menunjukkan hal lain"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Bayangan juga tidak ada di perangkat lunak: verifikasi gambar dan konfirmasi bahwa scene asli memang mengandung bayangan.",
+        "Hanya pemuatan save-state emulator yang merusaknya: uji ulang dari save in-game dan buang state yang tidak kompatibel.",
+        "Setiap permukaan gelap menghilang: reset broad skip-draw atau override manual GS.",
+        "Perbaikan berhasil sekali tetapi gagal setelah dilanjutkan: tangkap detail renderer dan driver untuk laporan siklus hidup."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Kembali ke baseline grafik yang diukur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pulihkan penggabungan otomatis, nonaktifkan koreksi kedalaman yang diuji, pilih kembali renderer asli dan driver sistem, serta lakukan cold-boot pada checkpoint. Simpan tangkapan sebelum dan sesudah beserta pengaturannya, tetapi hapus status simpan sementara yang tidak dapat mereproduksi adegan secara konsisten."
+    },
+    {
+      "type": "heading",
+      "text": "Jangan mempublikasikan data simpanan atau disk yang memiliki hak cipta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Laporan dukungan dapat mencakup nomor seri, pengaturan, log, dan tangkapan layar buatan pengguna jika diizinkan. Jangan melampirkan gambar game, firmware, materi enkripsi, atau simpanan yang mengandung konten yang didistribusikan pihak ketiga hanya untuk menunjukkan bayangan."
+    },
+    {
+      "type": "link",
+      "text": "Baca panduan bukti kinerja PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

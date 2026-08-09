@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3479-big-game-patch-improvements",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K turns game patches into a clearer, multi-binary format",
+  "summary": "Named ARM instructions, shared patch lists, binary selectors, and compact byte strings make patches easier to read and extend without breaking existing files.",
+  "heroAlt": "Source evidence from Vita3K pull request #3479: vita3k: big game patch improvements",
+  "searchKeywords": [
+    "Vita3K",
+    "game patches",
+    "VitaGrafix",
+    "Thumb MOV",
+    "patchlist.txt"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3479": "vita3k: big game patch improvements"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Raw byte edits worked, but they hid intent"
+    },
+    {
+      "type": "paragraph",
+      "text": "A game patch ultimately replaces bytes at a segment offset, yet a list of unrelated hex values says little about why the modification works. Vita3K's initial format also centered on eboot.bin and individual files. Complex games can place code in other SELF modules, and maintaining many title-specific files makes distribution and review harder. The parser needed more structure without invalidating the small patch collection already in use."
+    },
+    {
+      "type": "heading",
+      "text": "Headers now identify both title and target binary"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3479 lets a section select any loaded binary; omitting the name still means eboot.bin. A shared patchlist.txt can hold many titles by placing title ID and optional binary in each header. Long hexadecimal strings are split into multiple bytes, so 0xF7EE000A no longer needs spaces between every byte. A one-value offset bug is also corrected, preserving the simplest possible patch."
+    },
+    {
+      "type": "heading",
+      "text": "Named instructions expose what selected bytes mean"
+    },
+    {
+      "type": "paragraph",
+      "text": "The first instruction translators encode nop and Thumb T1 mov from arguments. A Project Diva F 2nd frame-rate patch can therefore state t1_mov(0, 1) beside its remaining raw edits rather than requiring an author to remember the two-byte encoding. The instruction map and parser make additional encoders a contained extension. Existing raw values still work, keeping the format backward compatible instead of forcing an immediate migration."
+    },
+    {
+      "type": "heading",
+      "text": "Patch safety requires binary and segment boundaries"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test old per-title files, mixed patchlist entries, default and named binaries, one-byte and long values, uppercase and lowercase hex, comments, malformed headers, unknown instructions, invalid registers, and overlapping edits. Load modules in different orders and confirm only the named binary receives each patch. Offset plus value length must stay inside the chosen segment. A diagnostic should identify title, binary, section, and line so a broken community patch does not resemble an emulator regression."
+    },
+    {
+      "type": "callout",
+      "text": "A good patch format preserves byte-level control while making the title, target module, instruction intent, and failure location visible."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3479",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

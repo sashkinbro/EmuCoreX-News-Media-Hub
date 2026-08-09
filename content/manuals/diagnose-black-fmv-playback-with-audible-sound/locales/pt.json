@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-black-fmv-playback-with-audible-sound",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostique um PS2 preto FMV quando seu áudio continua",
+  "summary": "Reproduza uma cutscene exata de um boot completo, comprove se o vídeo decodificado chega à saída do software, verifique a imagem do disco independentemente e separe falhas de IPU, renderizador, ordem de campos e estado obsoleto.",
+  "heroAlt": "Exemplo de processamento de imagem PCSX2 de um título PS2 que utiliza a conversão de cores da IPU durante a reprodução de vídeo",
+  "searchKeywords": [
+    "PS2 preto FMV som funciona",
+    "Cutscene EmuCoreX preta",
+    "Reprodução de vídeo IPU",
+    "Renderizador de software FMV",
+    "Vídeo MPEG PS2"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "video": "Vídeo"
+  },
+  "sourceLabels": {
+    "pcsx2-whats-new-16": "PCSX2 relato sobre a conversão de cores do IPU e correções específicas do FMV",
+    "pcsx2-video-playback": "PCSX2 histórico sobre decodificação do IPU e comportamento de reprodução do FMV"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Prove que o intervalo preto pertence ao caminho do filme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diálogo audível sobre uma imagem preta sugere que o programa emulado ainda está avançando, mas isso por si só não identifica o estágio faltante. A Unidade de Processamento de Imagem PS2 decodifica dados relacionados a MPEG, transfere e converte frames em cores, e o caminho gráfico os apresenta com um modo de vídeo e ordem de campo. Uma imagem danificada ou incompleta também pode fornecer áudio enquanto as leituras de setores de vídeo falham. Escolha uma cena acessível rapidamente a partir de um save comum do jogo. Observe o frame exato em que a imagem desaparece, se legendas ou HUD permanecem visíveis, se a reprodução termina normalmente e se o gameplay é renderizado após o filme."
+    },
+    {
+      "type": "callout",
+      "text": "Não use um patch skip-FMV como primeiro passo diagnóstico. Ele ignora a carga de trabalho que está falhando e pode transformar um defeito de vídeo reproduzível em uma história inexplicável ou em uma transição de carregamento."
+    },
+    {
+      "type": "heading",
+      "text": "Crie um checkpoint de inicialização a frio FMV"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um save normal do jogo imediatamente antes da mesma cutscene não interativa; evite estados de save do emulador durante testes de referência.",
+        "Uma imagem de disco pessoal verificada com seu formato e hash registrados, além de acesso ao disco original para redump caso a verificação falhe.",
+        "Velocidade de emulação padrão, desentrelaçamento automático, resolução interna nativa, driver do sistema GPU e patches de jogo desativados.",
+        "Uma nota com carimbo de data/hora de imagem, áudio, legenda e comportamento pós-filme de dois boots completos.",
+        "Espaço de armazenamento livre suficiente para uma gravação direta curta e o registro do aplicativo cobrindo a transição."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Decodificação, transferência e apresentação em ordem"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Feche completamente o emulador, inicie o título pelo caminho normal de boot, carregue o save dentro do jogo e grave toda a transição no filme.",
+        "2. Repita o boot a frio uma vez antes de alterar as configurações; compare o carimbo de data/hora do quadro preto exato e se o tempo de áudio é idêntico.",
+        "3. Altere apenas a API de hardware suportada, reinicie novamente e observe se a primeira imagem decodificada aparece enquanto o restante do perfil permanece fixo.",
+        "4. Se os caminhos de hardware permanecerem pretos, use a renderização por software para esta sequência curta e registre se ele exibe vídeo, legendas e cor correta.",
+        "5. Quando o software mostrar o filme, volte para a API de hardware mais estável e teste a desentrelaçamento separadamente apenas se uma imagem existir, mas os campos estiverem em branco, alternando ou deslocados verticalmente.",
+        "6. Quando o software também estiver preto, execute o fluxo de trabalho de integridade aceito do repositório contra a imagem e redumpe o disco possuído se os hashes ou logs de leitura forem suspeitos.",
+        "7. Inspecione o log do aplicativo em busca de erros de leitura, falhas relacionadas ao IPU, perda do renderizador ou ativação de patch no timestamp do filme sem compartilhar caminhos de armazenamento privados.",
+        "8. Depois que um branch restaurar a imagem, assista ao clipe completo e à transição de volta ao jogo duas vezes a partir de lançamentos frescos antes de salvar o resultado por jogo."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Fluxos de áudio e vídeo podem continuar através de diferentes unidades e buffers emulados, de modo que o som comprova o progresso em vez de uma decodificação de imagem bem-sucedida. A renderização por software distingue um problema de apresentação de hardware de um problema mais amplo de IPU, temporização, patch ou dados. A verificação independente da imagem é importante porque danos em discos ópticos podem ser localizados: setores de menu e de jogabilidade podem ser lidos enquanto os setores de vídeo de um filme não. Inicializações a frio excluem o estado antigo do decodificador e do estado salvo que pode sobreviver a uma tentativa conveniente."
+    },
+    {
+      "type": "heading",
+      "text": "FMV aceitação de recuperação"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um resultado aprovado cobre a sequência audiovisual completa, não apenas seu primeiro quadro visível."
+    },
+    {
+      "type": "list",
+      "items": [
+        "O vídeo começa no mesmo compasso que o áudio e permanece visível durante cortes de cena e transições.",
+        "Legendas e sobreposições aparecem na camada pretendida, em vez de atrás de um retângulo preto.",
+        "A conversão de cores é plausível, sem verde sólido, corrupção de cores indexadas ou campos em branco alternados.",
+        "O filme termina normalmente e o controle retorna sem travamentos, áudio acelerado ou evento de carregamento perdido.",
+        "Dois reinícios independentes passam com a imagem verificada e o perfil por jogo documentado."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "FMV evidência que afina o próximo relatório"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Cada cópia feita a partir do mesmo disco arranhado falha na verificação nos setores correspondentes: preserve os registros e substitua a imagem de trabalho apenas a partir de um master legal e limpo.",
+        "O software mostra vídeo, mas ambas as APIs de hardware o perdem: anexe detalhes do renderizador e do driver a um relatório gráfico em vez de alterar o tempo CPU.",
+        "A imagem funciona apenas após o carregamento de um estado salvo no emulador: descarte esse resultado e reproduza a partir do salvamento dentro do jogo.",
+        "O filme está correto, mas o nível seguinte está preto: diagnostique a transição do jogo como um problema separado de renderização ou carregamento."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaure a linha de base do vídeo limpo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reative a desentrelaçamento automático, selecione o renderizador de hardware original e o driver do sistema, remova os ajustes experimentais FMV ou de tempo, e reinicie a partir do salvamento dentro do jogo. Coloque em quarentena qualquer imagem que não passou nas verificações de integridade; não a mantenha na biblioteca ativa apenas porque um patch de pulo alcança a jogabilidade."
+    },
+    {
+      "type": "heading",
+      "text": "Evidência legal curta é suficiente para um relatório"
+    },
+    {
+      "type": "paragraph",
+      "text": "As filmagens FMV são conteúdo de jogo protegido por direitos autorais. Grave apenas a seção breve necessária para mostrar a transição de quadro preto, onde a lei local e o canal de suporte permitirem. Um número de série, status de hash, carimbo de data/hora, trecho de log e comparação de configurações geralmente são mais úteis do que enviar uma cena inteira."
+    },
+    {
+      "type": "link",
+      "text": "Leia as notas de alteração do PCSX2 IPU e FMV",
+      "url": "https://pcsx2.net/blog/2020/whats-new-in-1-6/"
+    }
+  ]
+}

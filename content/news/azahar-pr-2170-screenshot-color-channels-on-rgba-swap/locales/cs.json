@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar způsobuje, že snímky obrazovky Vulkan sledují skutečné pořadí kanálů swapchainu",
+  "summary": "QImage očekává bajty BGRA, ale některé ovladače Vulkan zobrazují RGBA; předání zvoleného formátu povrchu do obou cest snímků obrazovky umožňuje levné přehazování červené a modré pouze tam, kde je to potřeba.",
+  "heroAlt": "Důkazy ze zdroje z pull requestu Azahar #2170: renderer_vulkan: Opravit barevné kanály snímků obrazovky u formátů swapchainu RGBA",
+  "searchKeywords": [
+    "Azahar",
+    "Snímek obrazovky Vulkan",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Opravit barevné kanály snímků obrazovky u formátů swapchainu RGBA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zobrazený snímek může být správný, zatímco uložený obrázek není"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan vybírá formát swapchainu z možností podporovaných ovladačem. Některé platformy preferují BGRA a jiné RGBA. Prezentace shaderů Azahar zpracovávala zvolený formát, ale paměť pro screenshot byla předána do QImage::Format_RGB32, který očekává pořadí bajtů BGRA. Na swapchainu s RGBA byly proto v zachyceném souboru červená a modrá vyměněny, což způsobilo, že renderer vypadal špatně mimo živé okno."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow zpřístupňuje dohodnutý formát kódu pro zachycení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2170 přidává GetSurfaceFormat do implementací present-window Vulkan a kontroluje jej v obou trasách screenshotů: zachycení kopií do stagingu a zachycení do paměti hostitele. Když je formát eR8G8B8A8Unorm, Azahar prochází pixely šířkou krát výškou a vyměňuje bajty nula a dva. Swapchain s BGRA používá stávající bajty beze změny, čímž se vyhne převodu na platformách, které již odpovídají QImage."
+    },
+    {
+      "type": "heading",
+      "text": "Přesmyčka bajtů je levnější než změna kontraktu obrazového frontendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změna formátu QImage by vyžadovala předání informace o pořadí kanálů dále do frontend a zajištění, že každý spotřebitel mu porozumí. Lokální swizzle zachovává zavedenou smlouvu RGB32 a stojí jednu výměnu červené a modré za pixel při tvorbě screenshotu, nikoli za zobrazený snímek. Autor vynutil RGBA na Macu preferujícím BGRA pro test, zatímco Linux Mesa byl identifikován jako pravděpodobná přirozeně postižená platforma, vyžadující potvrzení."
+    },
+    {
+      "type": "heading",
+      "text": "Obě cesty zachycení i alfa potřebují přesné barevné zámky."
+    },
+    {
+      "type": "paragraph",
+      "text": "Vykreslete testovací vzor obsahující čistou červenou, modrou, zelenou, černou, bílou a nenepatrnou alfa, poté zachyťte přes staging a hostitelskou paměť na nativních RGBA a BGRA swapchainech. Porovnejte uložené byty a zobrazený výstup. Opakujte při lichých rozměrech, škálovaných rozvrženích a po znovuvytvoření swapchainu. Poškozený uživatel Linuxu by měl potvrdit přirozenou cestu formátu. Swizzle se musí provést přesně jednou; dvojitá konverze může způsobit, že jeden backend bude vypadat opravený, zatímco jiný se zhorší."
+    },
+    {
+      "type": "callout",
+      "text": "Kód pro snímek obrazovky nyní převádí z formátu Vulkan skutečně dohodnutého, místo aby předpokládal, že každý ovladač zobrazuje pixely ve preferovaném pořadí QImage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Přečtěte si inženýrskou diskusi Azahar a změny zdrojového kódu"
+    }
+  ]
+}

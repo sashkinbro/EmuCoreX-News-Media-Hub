@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar rende i profili del controller portatili senza nascondere i controlli specifici del dispositivo",
+  "summary": "Un rifacimento dell'input desktop preferisce il modello di controller standardizzato di SDL, mantiene il fallback del joystick per pulsanti insoliti e permette di mappare un singolo dispositivo, un tipo di controller o tutti i controller.",
+  "heroAlt": "Richiesta di pull per i tasti rapidi del controller Azahar mostrando il lavoro di mappatura dell'input e la discussione della revisione",
+  "searchKeywords": [
+    "Azahar",
+    "profili del controller",
+    "SDL GameController",
+    "tasti rapidi del controller",
+    "mappatura dell'input"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Desktop: miglioramenti del controller - etichette leggibili, tasti rapidi del controller, opzione per applicare profili a tutti i controller"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gli identificatori grezzi dei joystick rendevano le mappature utili difficili da leggere e riutilizzare"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il percorso desktop più vecchio di Azahar si basava pesantemente sull'API Joystick di SDL. Poteva identificare un input fisico, ma le schermate di configurazione spesso mostravano valori tecnici dei pulsanti invece dei nomi dei pulsanti frontali riconosciuti dagli utenti. Anche i profili erano legati sia a un GUID del dispositivo sia a una porta, quindi spostare lo stesso controller in un altro slot—o condividere un layout con un controller corrispondente—poteva richiedere un'altra mappatura. La pull request #1717 considera questi due problemi come un'unica questione del modello di input piuttosto che come un semplice rinomino estetico."
+    },
+    {
+      "type": "heading",
+      "text": "GameController prima, Joystick solo quando la mappa standardizzata esaurisce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il layer condiviso SDL ora preferisce l'API GameController quando SDL conosce il dispositivo. Quel percorso fornisce controlli portatili in stile A/B/X/Y e etichette leggibili in stile Xbox o PlayStation. Azahar mantiene l'API Joystick come soluzione di riserva per i controlli fuori dal modello standard, inclusi i pulsanti posteriori e altri input specifici del dispositivo. I parametri registrano quale API ha prodotto una mappatura, impedendo che un valore memorizzato di GameController venga successivamente interpretato come un indice joystick grezzo."
+    },
+    {
+      "type": "heading",
+      "text": "Tre ambiti di mappatura risolvono diversi problemi di profilo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il nuovo tipo di mappa è esplicito. “Questo controller” mantiene il comportamento precedente GUID-e-porta; “questo tipo di controller” utilizza il GUID senza assegnare una porta; e “tutti i controller” accetta comandi corrispondenti da qualsiasi dispositivo collegato. La scelta si applica ai profili di input e ai tasti rapidi del controller. Questo preserva configurazioni precise multi-controller permettendo al contempo a un profilo da salotto di sopravvivere a sostituzioni di cavi o pad dello stesso modello."
+    },
+    {
+      "type": "heading",
+      "text": "I tasti rapidi del controller vengono monitorati separatamente dall’input normale del gioco"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt ottiene una pagina dedicata per i tasti rapidi del controller, una finestra di cattura e un HotkeyMonitor che controlla i controlli assegnati con un timer di 16 ms. Una scorciatoia può contenere uno o due input del controller, inclusi assi e pulsanti non standard. Il registro memorizza il QAction associato in modo che il monitor possa invocare lo stesso comando di una scorciatoia da tastiera. Lo stato normale del controller è ancora disponibile per il gioco; se un pulsante viene assegnato deliberatamente a entrambi i ruoli, avvengono entrambe le azioni invece che lo strato dei tasti rapidi consumi silenziosamente l'input di gioco."
+    },
+    {
+      "type": "heading",
+      "text": "L'automappatura ora rispetta l'ordine dei pulsanti frontali in stile Nintendo e Xbox"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il prompt sul desktop richiede il pulsante fisico frontale destro e mostra un'icona, corrispondente all'intento del flusso mobile. Se SDL segnala quella pressione come A, Azahar la interpreta come una scelta in layout Nintendo o come una mappatura con etichetta visibile intenzionale. Altre pressioni mantengono la disposizione familiare in stile XInput. La decisione si basa sul controllo catturato dall'utente piuttosto che assumere che ogni controller stampi le stesse lettere nelle stesse posizioni."
+    },
+    {
+      "type": "heading",
+      "text": "I test di regressione devono includere l'ordine degli allegati e i binding misti"
+    },
+    {
+      "type": "paragraph",
+      "text": "I record di origine verificano su Windows, Linux e macOS, oltre a cappelli, trigger analogici e hot-plug del controller dopo l'avvio. Un test di follow-up duraturo dovrebbe anche riaprire ogni mappatura, ricollegare il dispositivo su una porta diversa e verificare una hotkey a due pulsanti mentre entrambi i pulsanti rimangono mappati in gioco. I report dovrebbero includere il nome del dispositivo SDL, GUID, tipo di mappa selezionato e se l'input è arrivato tramite GameController o fallback Joystick."
+    },
+    {
+      "type": "callout",
+      "text": "Il vantaggio per l'utente non è solo avere etichette più belle: i profili diventano intenzionalmente portabili, mentre i controlli insoliti hanno ancora una via di fuga specifica per il dispositivo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Leggere l'architettura del controller Azahar e la discussione sui test"
+    }
+  ]
+}

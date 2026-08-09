@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Restaurar brilho quebrado em renderização de hardware sem superexpor a cena",
+  "summary": "Use pontos de verificação claros e escuros emparelhados para identificar uma passagem de framebuffer ausente ou desalinhada, comparar com uma referência de software e encontrar a correção de mistura ou escala nativa mais econômica.",
+  "heroAlt": "God of War PCSX2 captura mostrando um brilho e neblina incorretamente renderizados",
+  "searchKeywords": [
+    "PS2 brilho quebrado",
+    "EmuCoreX brilho excessivo",
+    "brilho em renderização de hardware",
+    "mistura de framebuffer",
+    "fantasma de escala nativa"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisão"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 descrição da mesclagem, leituras do framebuffer e escalonamento nativo para bloom",
+    "pcsx2-july-august-2015": "PCSX2 exemplos de precisão do bloom e da névoa antes e depois"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Classifique o bloom como ausente, deslocado, cortado ou excessivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "O efeito de bloom geralmente é montado a partir de mais de uma passagem: o jogo isola informações brilhantes, filtra ou reduz a resolução delas e compõe o resultado sobre a cena. Um renderizador de hardware pode, portanto, falhar de várias maneiras visivelmente diferentes. O bloom ausente deixa as fontes de luz com bordas duras; o bloom deslocado produz um efeito fantasma afastado da fonte; o bloom recortado torna-se um retângulo; o bloom excessivo ofusca a geometria próxima. Selecione um ponto de verificação com uma lâmpada ou feitiço isolado e forte e outro com pequenos destaques contra um fundo escuro. Registre o número de série do jogo, resolução interna, renderizador, driver GPU, precisão da mistura, status da escala nativa e se as correções manuais de framebuffer ou de desenho pulado estão ativas."
+    },
+    {
+      "type": "callout",
+      "text": "Não avalie o bloom a partir de uma única fotografia superexposta de celular. A exposição automática e o mapeamento de tons HDR podem apagar detalhes que estão presentes no quadro real do emulador."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare duas cenas de bloom com referências de luminância"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um salvamento dentro do jogo antes de um efeito brilhante repetível com geometria visível imediatamente ao redor dele.",
+        "Uma segunda cena escura contendo pequenos detalhes emissivos, para que uma configuração não possa passar apenas escurecendo toda a saída.",
+        "Capturas de tela diretas da saída do hardware nativo e uma breve referência de correção renderizada por software.",
+        "Shaders pós-processamento, camadas ReShade, exibição de conversão HDR, substituição de texturas e controles de cor personalizados desativados.",
+        "Uma amostra de desempenho de sessão aquecida da cena clara e um backup do perfil gráfico do título."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Separar a precisão da composição do alinhamento do upscale"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Faça um cold-start do checkpoint claro na resolução interna nativa com mesclagem automática e capture a fonte junto com os detalhes ao redor.",
+        "2. Renderize o mesmo momento brevemente em modo software e compare o raio do bloom, o centro, a oclusão e se objetos em primeiro plano bloqueiam corretamente o brilho.",
+        "3. Retorne ao modo de hardware e compare as APIs gráficas suportadas sem alterar o driver ou a resolução; mantenha o caminho que mais se aproxima da referência.",
+        "4. Quando o efeito bloom estiver ausente ou recortando em uma forma sólida na resolução nativa, aumente a precisão da mistura em um nível, reinicie a cena e pare no primeiro nível que restaurar a composição.",
+        "5. Quando o hardware nativo estiver correto, mas o bloom se separar de sua luz apenas após o upscale, restaure a mistura automática e teste a correção de escala nativa documentada do emulador.",
+        "6. Reproduza o ponto de verificação escuro e confirme que pequenos destaques brilham sem levantar fundos pretos ou clarear texturas de personagens.",
+        "7. Aqueça o dispositivo, meça a sequência de efeitos pesados e compare os contadores de barreira, passagem de renderização ou leitura, se o build os expuser.",
+        "8. Salve apenas o branch bem-sucedido no perfil deste jogo e anote se ele resolve a mistura na saída nativa ou o alinhamento pós-processamento ao ampliar."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "A precisão da mistura governa o quão fielmente a renderização de hardware reproduz interações com os conteúdos do framebuffer anterior, enquanto a escala nativa tem como alvo as passagens de pós-processamento que foram criadas para operar na escala original do PS2. Eles resolvem sintomas semelhantes em diferentes estágios. A renderização por software fornece uma referência de composição porque pode reproduzir o comportamento do GS de forma mais direta, mas sua velocidade não é o alvo de aceitação. O teste de duas cenas evita uma falsa correção em que reduzir o brilho faz uma lâmpada estourada parecer melhor enquanto apaga o brilho intencional em outro lugar."
+    },
+    {
+      "type": "heading",
+      "text": "Aceitação do perfil de bloom"
+    },
+    {
+      "type": "paragraph",
+      "text": "O perfil selecionado deve preservar a forma do efeito, a relação de profundidade, a faixa tonal e a jogabilidade."
+    },
+    {
+      "type": "list",
+      "items": [
+        "O brilho está centrado no objeto emissor e o acompanha durante o movimento da câmera ou do personagem.",
+        "A geometria em primeiro plano oculta o bloom onde a referência do software mostra uma obstrução.",
+        "Superfícies brilhantes mantêm o detalhamento da textura em vez de colapsarem em uma mancha branca uniforme.",
+        "O ponto de verificação escuro preserva áreas pretas e ainda exibe seus pequenos realces pretendidos.",
+        "O pacing de quadros sustentado permanece aceitável após a estabilização térmica e nenhuma transparência não relacionada regrediu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Resultados de bloom que requerem outra investigação"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A saída do software apresenta o mesmo brilho anormal: confirme a referência da cena e remova patches do jogo ou modificações de textura.",
+        "Apenas o monitor físico exibe bloom, enquanto capturas de tela diretas estão equilibradas: audite HDR, gama de cores, aprimoramento do painel e exposição da câmera.",
+        "Um nível maior de blending corrige a lâmpada, mas corrompe sombras ou névoa: reverta e colete um relatório de renderização específico do título.",
+        "O efeito deriva apenas em uma resolução personalizada incomum: use um multiplicador inteiro suportado antes de adicionar qualquer compensação manual."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Desfaça o experimento custoso de framebuffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Defina a mistura para Automática, desative a escala nativa testada ou a substituição de compensação, restaure a API original e reinicie o aplicativo. Reproduza os dois pontos de verificação para confirmar que o sintoma anterior é reproduzível; então escolha o último nível inferior que passou no desempenho ou retorne à resolução nativa até que exista uma correção precisa."
+    },
+    {
+      "type": "heading",
+      "text": "O brilho intencional pode ser visualmente agressivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alguns jogos PS2 usam deliberadamente um brilho amplo e intenso. O objetivo é fidelidade a uma referência confiável, não uma iluminação uniformemente suavizada. Evite publicar uma recomendação geral a partir de um único título, porque formatos de framebuffer, equações de mistura e escalonamento de pós-processamento diferem entre motores e até mesmo entre cenas."
+    },
+    {
+      "type": "link",
+      "text": "Revise a explicação PCSX2 sobre mistura moderna e escalonamento nativo",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

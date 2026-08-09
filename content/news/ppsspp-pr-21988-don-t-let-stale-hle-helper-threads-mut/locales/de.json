@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP verhindert, dass veraltete Helferthreads einen wiederhergestellten savestate beschädigen",
+  "summary": "Der savestate-Loader trennt jetzt alte sceUtility- und PSMF-Host-Wrapper vor der Zerstörung, um aktive Kernel-Threads und Speicher zu schützen, die möglicherweise dieselben Kennungen wiederverwenden.",
+  "heroAlt": "Quellenbelege aus dem PPSSPP Pull Request #21988: Savestate: veralteten HLE-Helferthreads nicht erlauben, den wiederhergestellten Kernelzustand zu verändern",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate: veralteten HLE-Helferthreads nicht erlauben, den wiederhergestellten Kernelzustand zu verändern"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Destruktor könnte auf die falsche Generation des Kernelzustands wirken"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP behält auf der Host-Seite HLEHelperThread-Wrapper für asynchrone Arbeiten wie den Zugriff auf gespeicherte Daten und die Wiedergabe von PSMF. Während eines Ladevorgangs ersetzt der Emulator diese Wrapper durch Objekte aus dem serialisierten Stream. Zwei Pfade zerstörten den Pre-Load-Wrapper normal, wodurch sein Destruktor __KernelDeleteThread aufrufen und einen Eintragsblock freigeben konnte, nachdem der neue Kernelzustand bereits installiert war. Die IDs innerhalb des alten Wrappers beschreiben nicht mehr die Objekte, die er besitzen durfte."
+    },
+    {
+      "type": "heading",
+      "text": "Die Wiederverwendung von Identifikatoren verwandelte harmlose Log-Nachrichten in stille Korruption"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn der wiederhergestellte Zustand die veraltete Thread-ID oder Zuordnung nicht enthielt, führte der Fehler zu einer Meldung über einen fehlenden Thread oder ein ungültiges Freigeben. Der gefährliche Fall trat auf, wenn der wiederhergestellte Zustand einen der beiden Werte wiederverwendet hatte. Der Destruktor könnte dann einen legitimen laufenden Thread terminieren oder Speicher freigeben, der von einem anderen Objekt verwendet wird. Das Laden während aktiver Savedata-Arbeiten oder eines PSMF-Players machte diesen zeitkritischen Besitzfehler viel leichter auslösbar."
+    },
+    {
+      "type": "heading",
+      "text": "Forget trennt die Lebensdauer des Host-Wrappers von der Eigentümerschaft des Gastes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull-Request #21988 wendet das bereits bei der I/O-Zustandsverwaltung von PPSSPP verwendete Muster an. sceUtility ruft explizit Forget auf, löscht seinen accessThread und setzt den Zeiger zurück, bevor Do ihn wieder erstellt. Bei PSMF-Lesungen durchläuft der Loader die vorhandene Player-Karte und ruft Forget für jeden finishThread auf, bevor die Karten-Deserialisierung die Player zerstört. Forget löscht nicht den wiederhergestellten Gastzustand; es teilt dem veralteten Host-Wrapper mit, dass er diese Kernel-Ressourcen nicht mehr besitzt."
+    },
+    {
+      "type": "heading",
+      "text": "Die Regressionsmatrix muss recycelte IDs prüfen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test-Saves werden vor, während und nach den Savedata-Operationen und der PSMF-Wiedergabe erstellt und dann jeweils aus einer Sitzung mit unterschiedlicher Aktivität geladen. Das Löschen von Threads und die Freigaben von BlockAllocator werden instrumentiert, um zu beweisen, dass kein Pre-Load-Wrapper die wiederhergestellte Generation verändert. Wiederholte Ladezyklen, Spulen, Slot-Wechsel, fehlgeschlagene Zustände und Herunterfahren nach einem Load einzubeziehen. Ein gezielter Test sollte absichtlich dieselbe Thread-ID und Blockadresse neu erstellen, da der alte harmlos-Log-Fall allein keine stille Korruption aufdecken würde."
+    },
+    {
+      "type": "callout",
+      "text": "Eine savestate-Wiederherstellung ändert Eigentumsgenerationen; Host-Destruktoren müssen veraltete Gast-Handles vergessen, bevor der wiederhergestellte Kernel autoritativ wird."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Lesen Sie die PPSSPP-Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

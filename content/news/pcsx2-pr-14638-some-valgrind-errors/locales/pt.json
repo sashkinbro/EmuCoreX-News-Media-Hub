@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 remove duas fontes de decisões com estado não inicializado encontradas pelo Valgrind",
+  "summary": "A geometria da tabela do depurador começa em zero, e as configurações de áudio comparam campos em vez de bytes brutos da struct, eliminando ramificações influenciadas por memória e padding nunca escritos.",
+  "heroAlt": "Evidência da fonte do pull request #14638 do PCSX2: Diversos: Corrigir alguns erros do valgrind",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "leitura não inicializada",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Ferramentas",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Diversos: Corrigir alguns erros do valgrind"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O depurador foi pintado com membros que não tinham valor inicial definido"
+    },
+    {
+      "type": "paragraph",
+      "text": "O Valgrind rastreou um ramo condicional em MemoryViewTable::DrawTable relacionado a contagens de linhas, posições, estado de seleção e membros de endereço que foram declarados sem inicialização. Caminhos normais de redimensionamento ou configuração frequentemente os atribuíram antes da pintura, o que tornava o defeito intermitente. Um evento de pintura que chegasse mais cedo poderia, no entanto, ler inteiros indeterminados e escolher o comportamento de layout a partir de quaisquer bits ocupando o objeto."
+    },
+    {
+      "type": "heading",
+      "text": "Inicializadores zerados dão à primeira pintura uma tabela vazia válida"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14638 inicializa rowCount, rowVisible, rowHeight, value e text axes, posição da primeira linha, start e endereços selecionados, e selectedIndex na declaração. Zero representa um estado seguro pré-layout até que dimensões reais cheguem. A mudança não adivinha um endereço ou seleção padrão; assegura que eventos iniciais vejam um modelo intencionalmente vazio em vez de dados indefinidos."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp estava comparando campos de áudio e preenchimento invisível juntos"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioStreamParameters implementou a igualdade comparando os bytes brutos do sizeof(struct). O preenchimento (padding) do C++ entre os membros não é um campo e pode reter valores indeterminados, então duas configurações logicamente idênticas poderiam ser consideradas diferentes. Isso alcançou verificações de configuração do SPU2 durante alterações de configurações e carregamento de savestate. O patch substitui == e != personalizados por uma comparação de três vias padrão, que compara os membros declarados de acordo com seus tipos e nunca trata o preenchimento como parte da configuração."
+    },
+    {
+      "type": "heading",
+      "text": "Os testes com Valgrind e de comportamento devem cobrir a ordem de eventos e o carregamento de estado."
+    },
+    {
+      "type": "paragraph",
+      "text": "Execute o depurador sob o Valgrind enquanto abre, redimensiona, pinta, seleciona e fecha as visualizações de memória antes e depois de uma VM iniciar. Em seguida, carregue savestates e aplique repetidamente configurações de áudio idênticas, confirmando que não há reinício espúrio e nenhum relatório de comparação não inicializada. Altere um campo de áudio real para garantir que a desigualdade ainda funcione. Compilações do compilador e do sanitizer com diferentes preenchimentos de struct são valiosas porque um resultado limpo em um layout não prova que o memcmp removido era seguro em outro lugar."
+    },
+    {
+      "type": "callout",
+      "text": "Ambas as correções substituem conteúdos de memória acidentais por estado em nível de linguagem: campos inicializados para layout de UI e igualdade por campo para configuração de áudio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

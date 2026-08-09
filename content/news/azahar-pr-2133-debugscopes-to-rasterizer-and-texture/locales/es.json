@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Las etiquetas Azahar asocian el trabajo OpenGL con la operación del renderizador que lo causó",
+  "summary": "Los DebugScopes nombrados alrededor de las rutas draw y texture-runtime convierten las capturas GPU en una jerarquía de trabajos de reinterpretar, limpiar, copiar, subir, descargar, mipmap y escalar.",
+  "heroAlt": "Evidencia de la fuente del pull request #2133 de Azahar: renderer_gl: Agregar `DebugScopes` al rasterizador y texture-runtime",
+  "searchKeywords": [
+    "Azahar",
+    "Depuración OpenGL",
+    "DebugScope",
+    "RenderDoc",
+    "runtime de texturas"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "Herramientas",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl: Agregar `DebugScopes` al rasterizador y texture-runtime"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una secuencia de comandos GL pierde la razón en C++ detrás de cada llamada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los depuradores GPU pueden mostrar glBindTexture, glFramebufferTexture, draws y copies, pero una captura larga no indica automáticamente qué operación Azahar las produjo. Diagnosticar un fallo del renderizador requiere entonces correlacionar manualmente el orden de la API con los rastros CPU. La solicitud de extracción #2133 agrega etiquetas estructuradas en los límites del rasterizador y del tiempo de ejecución de texturas, donde el emulador aún conoce la operación semántica."
+    },
+    {
+      "type": "heading",
+      "text": "Los ámbitos incluyen parámetros que distinguen operaciones similares"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche nombra RasterizerOpenGL::Draw y reinterpretación de texturas, clear con o sin FBO, copy, blit, generación de mipmap, handle copy, upload, upload personalizado, download, attach, paths de escalado y blit-escalado. Las etiquetas incluyen formatos de píxeles, colores de clear, conteos de copy o valores de escala cuando es útil. Por lo tanto, una captura puede separar dos copias visualmente similares que provienen de decisiones diferentes de formato o escalado."
+    },
+    {
+      "type": "heading",
+      "text": "La profundidad del ámbito solo se paga cuando la depuración del renderizador está habilitada"
+    },
+    {
+      "type": "paragraph",
+      "text": "La profundidad del ámbito del muestreador se incrementa condicionalmente según Settings::values.renderer_debug. El juego normal no debería mantener anidación de diagnóstico ya que nunca se exportará. Cuando está habilitado, la jerarquía puede ser utilizada por marcadores de depuración y herramientas de captura, vinculando un grupo de llamadas GL a un único stack de llamadas de C++. Los ámbitos no cambian la sincronización ni corrigen el renderizado por sí mismos; hacen que la investigación posterior sea precisa."
+    },
+    {
+      "type": "heading",
+      "text": "La validación de la captura debe cubrir la anidación y la sobrecarga deshabilitada."
+    },
+    {
+      "type": "paragraph",
+      "text": "Habilite la depuración del renderizador, capture escenas que carguen, reinterpretan, limpien, copien, escalen y descarguen texturas, y confirme que cada grupo GL tiene el nombre y los parámetros correctos con anidación equilibrada. Active un retorno temprano o una operación fallida para asegurar que RAII cierre el ámbito. Deshabilite la depuración y verifique que los marcadores y los incrementos de profundidad desaparezcan, luego mida la sobrecarga CPU. Las etiquetas deben identificar la operación que realmente se está ejecutando en lugar de nombres copiados que crean evidencia falsa."
+    },
+    {
+      "type": "callout",
+      "text": "Los alcances de depuración no cambian los píxeles; cambian si una captura puede responder qué operación Azahar produjo esos píxeles."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "Lea la discusión de ingeniería Azahar y los cambios en el código fuente"
+    }
+  ]
+}

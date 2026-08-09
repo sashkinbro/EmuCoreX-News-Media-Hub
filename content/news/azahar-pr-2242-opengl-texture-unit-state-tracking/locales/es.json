@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2242-opengl-texture-unit-state-tracking",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar enseña OpenGL seguimiento del estado de la unidad de textura que una unidad de textura puede dejar de ser 2D",
+  "summary": "La vinculación de cubemap expuso una suposición de estado en caché de que cada unidad tenía GL_TEXTURE_2D; seguimiento del tipo de objetivo e inicialización del cubo nulo para restaurar más tarde las operaciones 2D.",
+  "heroAlt": "Evidencia de fuente de la solicitud de extracción Azahar #2242: renderer_gl: Corregir el seguimiento del estado de la unidad de textura OpenGL",
+  "searchKeywords": [
+    "Azahar",
+    "OpenGL",
+    "unidad de textura",
+    "cubemap",
+    "seguimiento del estado"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2242": "renderer_gl: Corregir el seguimiento del estado de la unidad de textura OpenGL"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un identificador de textura en caché está incompleto sin su tipo de objetivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL enlaza texturas tanto por unidad como por objetivo. La caché de estado de Azahar a menudo asumía que una unidad representaba GL_TEXTURE_2D, lo cual funcionaba hasta que el seguimiento de cubemapas nulos introdujo enlaces reales de cubemapas. Una vez que una unidad había contenido GL_TEXTURE_CUBE_MAP, el código posterior podría omitir o emitir un enlace basado únicamente en el objeto numérico en caché, aunque el espacio de nombres del objetivo y las expectativas de muestreo posteriores hubieran cambiado."
+    },
+    {
+      "type": "heading",
+      "text": "Ahora los registros de estado distinguen transiciones 2D, cubemap y nulas"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #2242 actualiza las utilidades de caché de rasterizador y las rutas del renderizador OpenGL para que las unidades de textura retengan el objetivo de enlace necesario para decidir si un cambio de estado es redundante. NULL_SURFACE_CUBE_ID se inicializa correctamente, dando al camino de cubemap sin superficie un recurso definido. Los archivos Vulkan reciben ajustes relacionados de caché compartida, pero la falla observada y la corrección de la máquina de estados se encuentran en OpenGL."
+    },
+    {
+      "type": "heading",
+      "text": "Pokémon y WWE muestran corrupción posterior debido a una suposición desactualizada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las imágenes de antes y después de Pokémon Ultra Moon y WWE All Stars demuestran que la falla no se limitaba a un cubemap faltante. Un enlace de cubemap cambió la forma en que se interpretaban las operaciones de textura posteriores, por lo que las superficies ordinarias posteriores podrían renderizarse incorrectamente. Por lo tanto, la memoria caché correcta debe restaurar el estado a lo largo de una secuencia, no simplemente mostrar el cubemap en el momento en que se establece."
+    },
+    {
+      "type": "heading",
+      "text": "Una secuencia de regresión debe alternar objetivos en la misma unidad"
+    },
+    {
+      "type": "paragraph",
+      "text": "Enlazar texturas 2D, cúbicas, cúbicas nulas y 2D repetidamente en una unidad y verificar tanto las llamadas GL emitidas como la salida muestreada. Reproduzca los dos juegos, luego pruebe mapas de sombras, mapas de entorno, muestreo de render-target y destrucción de superficies. Compare el estado en caché con los diagnósticos de glGet en una compilación de depuración. La optimización aún puede omitir un enlace solo cuando el objeto y el objetivo coinciden; reducir llamadas nunca debe preservar un objetivo del uso anterior."
+    },
+    {
+      "type": "callout",
+      "text": "OpenGL el almacenamiento en caché del estado es válido solo cuando recuerda tanto el objetivo de enlace como el objeto de textura."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2242",
+      "label": "Lee la discusión de ingeniería Azahar y los cambios en el código fuente"
+    }
+  ]
+}

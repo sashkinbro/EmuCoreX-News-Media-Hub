@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21815-hopefully-bitwise-exact-vmul-vdiv",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "I documenti PPSSPP illustrano le regole PSP bit-esatte per VFPU moltiplicare e dividere",
+  "summary": "I helper di riferimento spiegano il comportamento di denormalizzazione, underflow, arrotondamento, segno, infinito e NaN in modo che i percorsi host JIT possano essere misurati rispetto ai risultati effettivi del PSP.",
+  "heroAlt": "Prove sorgente dalla richiesta di pull PPSSPP #21815: Implementare (si spera) vmul/vdiv bit-esatti",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "virgola mobile",
+    "vmul",
+    "vdiv"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "cpu": "CPU",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21815": "Implementare (si spera) vmul/vdiv bit-esatti"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "IEEE-754 lascia ancora spazio per comportamenti limite specifici dell'hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "La moltiplicazione e la divisione di numeri float ordinari sembrano portabili fino a quando gli input si avvicinano a denormalizzati, underflow, infinito o NaN. La PSP VFPU si comporta come float32 round-to-nearest-ties-to-even con i denormalizzati trattati come zero e i risultati molto piccoli azzerati, oltre a una specifica regola per il payload e il segno del NaN. Il host x86, ARM e le impostazioni del compilatore possono differire esattamente a quei limiti, causando rare discrepanze nella logica del gioco o nella grafica."
+    },
+    {
+      "type": "heading",
+      "text": "Il riferimento funziona dai bit grezzi prima e dopo l'aritmetica"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21815 aggiunge helper espliciti vfpu_mul e vfpu_div per il riferimento. Essi leggono gli operandi come valori uint32, riducono gli input subnormali a zero con segno, eseguono l'aritmetica e ispezionano i bit del risultato. I risultati al di sotto o uguali alla soglia di azzeramento misurata vengono ricalcolati in doppia precisione per decidere se mantenere il più piccolo risultato normale o restituire zero con segno. Qualsiasi NaN viene canonicalizzato al payload 0x7F800001 specifico per VFPU con segno derivato dall'operando."
+    },
+    {
+      "type": "heading",
+      "text": "La soglia cattura un confine che i flag FTZ dell'host potrebbero non condividere"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il limite di arrotondamento osservato è FLT_MIN meno un quarto di FLT_TRUE_MIN. Ciò sembra corrispondere al confine flush-to-zero testato su x86, ma non si presume che corrisponda a tutti gli host ARM. Codificare questo comportamento in un riferimento leggibile offre ai backend JIT una sorgente di verità anche se la loro implementazione più veloce utilizza modalità del registro di controllo, istruzioni vettoriali o rami correttivi. Gli helper sono materiale di riferimento e non un'affermazione che il C++ scalare sia il percorso più veloce definitivo."
+    },
+    {
+      "type": "heading",
+      "text": "Vettori di confine esaustivi devono guidare la conformità dei backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testare zero positivo e negativo, ogni classe subnormale, valori attorno alla soglia di flush, i numeri finiti più grandi, infiniti, NaN silenziosi e segnalanti, e combinazioni di segni degli operandi. Confrontare bit per bit i risultati di interpreter, x86, ARM64 e altri JIT per vmul e vdiv, non con un epsilon. I test differenziali casuali devono concentrarsi sulle coppie di esponenti vicine a overflow e underflow. Il fast-math del compilatore non deve cancellare la canonicalizzazione, e le operazioni fuse devono essere controllate separatamente perché hanno punti di arrotondamento differenti."
+    },
+    {
+      "type": "callout",
+      "text": "L'emulazione bit-esatta inizia dove si ferma l'uguaglianza numerica approssimativa: zero con segno, un bit di underflow o un payload NaN possono essere uno stato ospite osservabile."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21815",
+      "label": "Leggi la discussione ingegneristica PPSSPP e le modifiche al sorgente"
+    }
+  ]
+}

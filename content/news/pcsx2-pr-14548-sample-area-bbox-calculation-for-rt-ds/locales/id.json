@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14548-sample-area-bbox-calculation-for-rt-ds",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 membuat batas bahaya target-render menghormati pembungkus tekstur",
+  "summary": "Mode clamp dan wrap sekarang berpartisipasi dalam perhitungan area yang diambil sampelnya yang digunakan ketika sebuah draw membaca dari target render atau kedalaman sendiri, mencegah salinan bahaya mengabaikan piksel yang dapat dijangkau.",
+  "heroAlt": "Bukti visual dari pull request PCSX2 #14548: GS/DX11/GL: Perbaiki perhitungan area sampel bbox untuk bahaya sampling RT/DS.",
+  "searchKeywords": [
+    "PCSX2",
+    "bahaya sampling",
+    "kotak pembatas",
+    "ROV",
+    "pembungkus tekstur"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14548": "GS/DX11/GL: Perbaiki perhitungan area sampel bbox untuk bahaya sampling RT/DS."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Koordinat primitif saja tidak menentukan wilayah tekstur yang diambil sampelnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ketika sebuah draw mengambil sampel dari render target atau depth target yang juga sedang ditulis, PCSX2 mungkin memerlukan salinan aman atau barrier. Wilayah yang dibutuhkan tergantung pada penentuan alamat tekstur. Clamp dapat menahan koordinat ke tepi, sementara wrap dapat mengarahkannya ke bagian lain dari gambar. Kotak pembatas area sampel lama tidak sepenuhnya memperhitungkan mode-mode tersebut, sehingga dapat menyalin wilayah yang lebih kecil atau berbeda dari yang dicapai shader."
+    },
+    {
+      "type": "heading",
+      "text": "Batas yang menyadari clamp memberi jalur hazard RT/DS"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14548 memperbaiki perhitungan pembatas yang dibagikan oleh renderer perangkat keras dan jalur perangkat Direct3D 11 dan OpenGL. Setelah area sampel yang dapat dijangkau diketahui, logika hazard dapat melindungi atau menyalin piksel yang benar. Patch ini juga menyederhanakan penanganan full-barrier: menyimpan persegi panjang sampel terpisah untuk setiap kelompok primitif menambah kompleksitas tanpa menunjukkan manfaat yang cukup untuk kasus barrier."
+    },
+    {
+      "type": "heading",
+      "text": "Perbaikan ini spesifik untuk dependensi self-sampling."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ini bukan koreksi viewport atau gunting umum. Ini berlaku ketika target render atau depth secara bersamaan merupakan sumber tekstur, pola di mana urutan dan kepemilikan wilayah penting. Dengan ROV diaktifkan pada Direct3D 11, area yang disalin secara salah terlihat dalam dump Bakusou Dekotora Densetsu yang disediakan. Gambar tekstur biasa lainnya tidak seharusnya mengambil cabang bahaya dan oleh karena itu membentuk uji negatif yang penting."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian harus menjalankan jalur clamp, wrap, dan full-barrier secara terpisah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dump yang dilaporkan telah diperiksa dengan Direct3D 11 dan ROV dan merupakan satu-satunya gambar yang berubah dalam jalannya itu. Matriks yang lebih kuat harus memvariasikan mode clamp horizontal dan vertikal, grup primitif yang melintasi batas wrap, pengambilan sampel target render dan target depth, serta jalur partial-copy dan full-barrier. Bandingkan frame dump yang tepat dan catat kotak pembatas yang dihitung; hasil secara visual benar dengan salinan yang terlalu besar masih dapat menyembunyikan regresi kinerja."
+    },
+    {
+      "type": "callout",
+      "text": "Wilayah keselamatan harus menjelaskan alamat yang dapat dijangkau oleh shader setelah pembungkusan, bukan hanya koordinat tekstur yang tidak dimodifikasi yang dikirim oleh tamu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14548",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

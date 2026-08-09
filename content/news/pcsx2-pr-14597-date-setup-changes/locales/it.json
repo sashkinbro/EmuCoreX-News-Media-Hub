@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 fa sì che la configurazione di DATE dipenda dalla sovrapposizione del test alfa",
+  "summary": "Una decisione mirata di GS separa i disegni complessi con test alfa che possono usare in sicurezza DATE da disegni sovrapposti che richiedono una barriera e devono evitare quel percorso.",
+  "heroAlt": "Prove visive dalla richiesta di pull PCSX2 #14597: GS/HW: modifiche alla configurazione di DATE.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "test alfa",
+    "barriera di texture",
+    "renderer GS"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW: modifiche alla configurazione di DATE."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il test alfa complesso non è sufficiente per scegliere il percorso DATE"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'emulazione del Test Alpha di Destinazione interagisce sia con il test alpha del disegno sia con il fatto che legga o scriva in una regione sovrapposta. La configurazione precedente di PCSX2 trattava la condizione di alpha complesso in modo troppo ampio. La pull request #14597 aggiunge la sovrapposizione alla decisione, perché nel caso senza sovrapposizione si può usare DATE uno senza il pericolo di ordinamento che appare quando la stessa regione partecipa al disegno."
+    },
+    {
+      "type": "heading",
+      "text": "DATE uno e la barriera DATE diventano scelte deliberatamente mutue"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il renderer hardware ora permette DATE uno quando un test alpha complesso non ha sovrapposizione. Se è presente una sovrapposizione, quella via viene soppressa e viene invece abilitata la barriera DATE. Questo non è un nuovo effetto di rendering; è una correzione di instradamento all'interno di GSRendererHW in modo che l'implementazione scelta per la regola del destination-alpha corrisponda al vero schema di dipendenza del disegno."
+    },
+    {
+      "type": "heading",
+      "text": "La modifica a un singolo file ha una superficie di regressione stretta ma visibile"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poiché la patch modifica solo la logica di configurazione, una buona revisione dovrebbe identificare quale ramo prende ogni draw interessato piuttosto che confrontare l'output del renderer non correlato. Il rischio è simmetrico: forzare il barrier su lavori innocui non sovrapposti può aumentare il costo, mentre permettere a DATE di passare attraverso un test alpha complesso sovrapposto può produrre maschere o ombre errate. Il ramo deve quindi concordare con la sovrapposizione calcolata su ogni draw."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 e Energy Airforce ancorano i controlli visivi"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sorgente fornisce confronti per le ombre di Persona 4 e Energy Airforce e un registro di esecuzione Direct3D 11 che copre ulteriori modifiche a barrier e copy. La validazione dovrebbe riprodurre quelle scene con lo stesso renderer e impostazioni, registrare il mode DATE, lo stato del complex-alpha, la sovrapposizione e la selezione del barrier, quindi ripetere su un altro backend hardware. Il risultato atteso è la stessa immagine con la decisione che cambia solo quando la sovrapposizione cambia."
+    },
+    {
+      "type": "callout",
+      "text": "La regola è condizionale, non globale: i test alfa complessi possono usare DATE uno senza sovrapposizione, ma il lavoro sovrapposto richiede il percorso del barrier."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

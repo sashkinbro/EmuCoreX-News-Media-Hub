@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14386-a-debug-blend-settings",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 adds a deterministic blend mode for graphics-dump comparisons",
+  "summary": "A debug-only switch forces software blending and bypasses several optimizations so pixel-diff tools compare renderer changes against one consistent blend path.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14386: GS/HW: Add a debug blend settings.",
+  "searchKeywords": [
+    "PCSX2",
+    "debug blend",
+    "software blending",
+    "GS dump",
+    "pixel comparison"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Tooling",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14386": "GS/HW: Add a debug blend settings."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Visually identical blend paths can produce enormous pixel diffs"
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2 may still choose hardware blending for accumulation work even at a high blend-accuracy setting, particularly when that choice avoids a barrier. Hardware and shader-based software blending can differ by tiny rounding amounts. A person may see the same frame, while an image-comparison tool marks most of the blended region as changed. That noise makes it harder to notice the pixels affected by the code under review."
+    },
+    {
+      "type": "heading",
+      "text": "UseDebugBlend deliberately removes fast-path variability"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14386 adds an advanced debug setting that forces software blending and disables many blend optimizations. It is available through the graphics UI and the UseDebugBlend configuration key. The purpose is not to recommend a gameplay setting or claim that software blending is universally superior; it creates a controlled reference path for developers running the same GS dump in two builds."
+    },
+    {
+      "type": "heading",
+      "text": "The Naruto dump shows why the mode exists"
+    },
+    {
+      "type": "paragraph",
+      "text": "The attached Naruto Shippuden: Ultimate Ninja 5 dump produces master and test images that appear identical at normal viewing size. WinMerge nevertheless highlights widespread small differences between maximum blend and the forced reference path. That is exactly the failure mode the option targets: large diff area caused by minute blend arithmetic changes, rather than a large visible rendering regression."
+    },
+    {
+      "type": "heading",
+      "text": "Determinism testing must separate reference mode from production paths"
+    },
+    {
+      "type": "paragraph",
+      "text": "A regression workflow should run the dump with UseDebugBlend enabled in both builds, compare lossless frames, and verify that repeated runs are stable. The same scene must then be checked with normal blend settings so the debug path does not conceal a production-only fault. Tests should include accumulation blends, barrier-heavy draws, and multiple backends; the option reduces one source of noise but does not make all GPU output universally bit-identical."
+    },
+    {
+      "type": "callout",
+      "text": "This is a diagnostic control: it sacrifices normal blend-path selection to make pixel comparisons explain renderer changes instead of rounding noise."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14386",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

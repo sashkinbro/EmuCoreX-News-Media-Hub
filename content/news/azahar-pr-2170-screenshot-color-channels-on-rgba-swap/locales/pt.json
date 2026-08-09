@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2170-screenshot-color-channels-on-rgba-swap",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar faz com que os screenshots do Vulkan sigam a ordem real dos canais do swapchain",
+  "summary": "QImage espera bytes BGRA, mas alguns drivers do Vulkan apresentam RGBA; passar o formato de superfície escolhido em ambos os caminhos de screenshot permite uma troca barata de vermelho e azul apenas onde necessário.",
+  "heroAlt": "Evidência de origem do pull request #2170 do Azahar: renderer_vulkan: Corrigir canais de cores do screenshot em formatos de swapchain RGBA",
+  "searchKeywords": [
+    "Azahar",
+    "Screenshot Vulkan",
+    "RGBA",
+    "BGRA",
+    "QImage"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "azahar-pr-2170": "renderer_vulkan: Corrigir canais de cores do screenshot em formatos de swapchain RGBA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O frame exibido pode estar correto enquanto a imagem salva não está"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan seleciona um formato de swapchain a partir das opções suportadas pelo driver. Algumas plataformas preferem BGRA e outras RGBA. Os shaders de apresentação do Azahar lidaram com o formato escolhido, mas a memória da captura de tela foi passada para QImage::Format_RGB32, que espera a ordem de bytes BGRA. Em uma swapchain RGBA, vermelho e azul, portanto, foram trocados apenas no arquivo capturado, fazendo com que o renderizador parecesse incorreto fora da janela ao vivo."
+    },
+    {
+      "type": "heading",
+      "text": "PresentWindow expõe o formato negociado ao código de captura"
+    },
+    {
+      "type": "paragraph",
+      "text": "A pull request #2170 adiciona GetSurfaceFormat às implementações de present-window do Vulkan e verifica isso em ambas as rotas de captura de tela: cópia de staging e captura em memória hospedeira. Quando o formato é eR8G8B8A8Unorm, Azahar percorre largura vezes altura em pixels e troca os bytes zero e dois. Uma swapchain BGRA usa os bytes existentes sem alteração, evitando uma conversão em plataformas que já correspondem ao QImage."
+    },
+    {
+      "type": "heading",
+      "text": "o remapeamento de bytes é mais barato do que alterar o contrato de imagem do frontend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alterar o formato QImage exigiria passar informações sobre a ordem dos canais mais adiante no frontend e garantir que todos os consumidores compreendam isso. O swizzle local mantém o contrato estabelecido de RGB32 e custa uma troca vermelho-azul por pixel no momento da captura de tela, não por quadro exibido. O autor forçou RGBA em um Mac que prefere BGRA para testar, enquanto o Linux Mesa foi identificado como uma plataforma provavelmente afetada naturalmente que precisa de confirmação."
+    },
+    {
+      "type": "heading",
+      "text": "Tanto as rotas de captura quanto o alfa precisam de fixadores de cor exata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderize um padrão de teste contendo vermelho, azul, verde, preto, branco puros e alfa não trivial, depois capture através das rotas de staging e memória do host em swapchains nativos RGBA e BGRA. Compare os bytes salvos e a saída exibida. Repita em dimensões ímpares, layouts escalonados e após a recriação do swapchain. Um usuário Linux afetado deve confirmar a rota de formato natural. O swizzle deve ocorrer exatamente uma vez; a conversão dupla pode fazer um backend parecer corrigido enquanto outro regride."
+    },
+    {
+      "type": "callout",
+      "text": "O código de captura de tela agora converte do formato Vulkan realmente negociado, em vez de assumir que todo driver apresenta os pixels na ordem preferida do QImage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2170",
+      "label": "Leia a discussão de engenharia Azahar e as mudanças na fonte"
+    }
+  ]
+}

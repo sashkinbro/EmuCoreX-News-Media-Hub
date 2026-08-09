@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar initializes PlayStation button maps before enabling motion",
+  "summary": "Reordering and deduplicating SDL motion activation removes a launch-time threading hazard specific to DualShock 4 and DualSense HIDAPI controller setup.",
+  "heroAlt": "Source evidence from Azahar pull request #2345: Bugfix for ps4/ps5 controller hang at launch",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "motion input"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Input",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Bugfix for ps4/ps5 controller hang at launch"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Motion startup was entering SDL before controller mapping was ready"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar enables gyroscope and accelerometer input through SDL's controller path. For PS4 and PS5 devices using HIDAPI, calling EnableMotion before button maps existed could trigger a threading issue and occasionally hang the emulator during launch. The older Joystick API did not take this path, which explains why the problem appeared only after controller initialization moved to the modern API."
+    },
+    {
+      "type": "heading",
+      "text": "Initialization now creates mapping before one motion call"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2345 removes duplicate EnableMotion invocations from SDLState and CreateControllerButtonMap and keeps activation in SDLJoystick after construction state is established. The important change is order and uniqueness, not a delay: button mapping finishes, then motion support is enabled once. That prevents callbacks or HIDAPI work from observing a half-initialized controller object."
+    },
+    {
+      "type": "heading",
+      "text": "Duplicate calls made the race harder to reason about"
+    },
+    {
+      "type": "paragraph",
+      "text": "Motion activation from several layers can appear harmless if SDL treats it as idempotent, but each call may enter device code, allocate sensors, or take locks. Removing redundant entry points makes ownership clear and reduces the number of schedules that can deadlock. Standard buttons and analog input still initialize normally, and controllers without motion should pass through the same sequence without inventing a sensor."
+    },
+    {
+      "type": "heading",
+      "text": "Launch loops must include hot-plug and motion-disabled cases"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cold-start Azahar repeatedly with DualShock 4 and DualSense connected over USB and Bluetooth, with motion enabled and disabled. Add hot-plug during startup, reconnect after emulation begins, and initialize multiple controllers. Log map completion and the sole motion activation. Test a legacy Joystick device as a negative control. The fix must remove hangs without losing gyro data, button labels, or mappings, and shutdown must close HIDAPI threads cleanly."
+    },
+    {
+      "type": "callout",
+      "text": "Controller setup now has one owner and one order: map inputs first, then let SDL start motion hardware."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

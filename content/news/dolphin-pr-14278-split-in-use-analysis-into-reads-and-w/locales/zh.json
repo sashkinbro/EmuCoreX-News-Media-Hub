@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 教 JIT 一个寄存器是将被读取还是被覆盖",
+  "summary": "分开的未来读取和未来写入掩码让 x64 和 ARM64 缓存能够比单个使用中标志更安全、更精确地做出预加载和刷新决策。",
+  "heroAlt": "来自 Dolphin 拉取请求 #14278 的源证据：PPCAnalyst：将“使用中”分析分为读取和写入",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "寄存器缓存",
+    "活跃性分析",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "CPU",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst：将“使用中”分析分为读取和写入"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "活跃状态并不说明下一条指令将执行什么"
+    },
+    {
+      "type": "paragraph",
+      "text": "访客寄存器可能与剩余块相关，因为将来的指令会读取它当前的值，或者因为将来的指令会覆盖它，或者两者兼而有之。Dolphin 的旧使用掩码合并了这些情况。然后，JIT 寄存器缓存决定是否预加载访客值、写回脏主机值、丢弃映射或通过回退边界保留映射时，信息有限。"
+    },
+    {
+      "type": "heading",
+      "text": "两个未来使用集使数据流明确化"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #14278 传播 gprWillBeRead 和 gprWillBeWritten，同时为浮点和条件寄存器提供等效掩码。预加载会考虑将参与任一方向操作的寄存器，同时仍排除可丢弃的输入。完全刷新针对后续操作不再使用的值。不会在以后写入的输出会受到单独处理，以便其当前脏值在缓存将其标记为干净之前到达访客状态。"
+    },
+    {
+      "type": "heading",
+      "text": "Undirty 在提交其值之后保留有用的映射"
+    },
+    {
+      "type": "paragraph",
+      "text": "重构准确地命名了刷新行为。Full 会写入脏数据并移除映射。MaintainState 在需要时保留现有状态。新的 Undirty 模式会写入脏值，但保留主机寄存器关联为干净状态。当输出在边界处必须对外一致，但之后仍可能被读取时，这很有用。x64 和 ARM64 路径都采纳了这种术语，包括慢速内存访问和解释器回退位置。"
+    },
+    {
+      "type": "heading",
+      "text": "差分块测试必须关注尴尬的控制流"
+    },
+    {
+      "type": "paragraph",
+      "text": "在生成的块中比较解释器、JIT64 和 JITARM64，涵盖只读、只写、先读后写、先写后读、丢弃、立即数、浮点和条件寄存器模式。在每个位置添加异常、内存故障、收集流水线检查、分支、回退指令和块退出。对主机溢出和客户写回进行插装，以验证优化确实减少了工作量而不改变状态。随机差分执行应在每次强制边界后比较所有架构寄存器。"
+    },
+    {
+      "type": "callout",
+      "text": "只有当 JIT 知道未来是需要今天的值还是仅仅需要寄存器名称以便以后重写时，寄存器的活跃状态才变得可操作。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "阅读 Dolphin 的工程讨论和源代码更改"
+    }
+  ]
+}

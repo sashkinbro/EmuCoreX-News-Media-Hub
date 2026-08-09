@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-5174-some-error-handling-status-ready-flag",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 daje nieprawidłowe żądania CDVD z zdefiniowanym wyjściem stanu napędu",
+  "summary": "Odczyty o zerowej długości, ujemne i poza końcem teraz aktualizują stan gotowości, status, błąd i przerwanie spójnie, wraz z poprawionymi przejściami CdStop i tacy.",
+  "heroAlt": "Dowody źródłowe z pull requestu PCSX2 #5174: CDVD: Obsługa niektórych błędów, zmiany flagi Status+Ready i naprawa CdStop",
+  "searchKeywords": [
+    "PCSX2",
+    "CDVD",
+    "liczba sektorów",
+    "status napędu",
+    "CdStop"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "storage": "Pamięć masowa",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-5174": "CDVD: Obsługa niektórych błędów, zmiany flagi Status+Ready i naprawa CdStop"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kilka gier wysyła polecenia dysku, które są niezgrabne, ale obserwowalne"
+    },
+    {
+      "type": "paragraph",
+      "text": "Armored Core 3, Spyro: Enter the Dragonfly, próba księżniczki Aberanbou, wersja demonstracyjna Evergrace i ćwiczenia w sektorze Animation Battle liczą lub adresują elementy, które starszy przepływ CDVD PCSX2 nie zakończył poprawnie. Zero lub wartość ujemna mogły utrzymywać ścieżkę odczytu aktywną, podczas gdy adres poza płytą nie miał jednej spójnej przejściowej wartości błędu. W rezultacie występowało zachowanie nieprawidłowego LSN, brak trafień TLB, nieudane uruchomienie systemu lub późniejsze zawieszenie filmu."
+    },
+    {
+      "type": "heading",
+      "text": "Gotowe i Stan stają się wyraźnymi przypisaniami stanu napędu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Request pull #5174 rozróżnia bity ready, busy, data-ready, device-connected i error zamiast wielokrotnego używania ORing lub czyszczenia jednego flagu w miejscu. cdvdUpdateStatus rejestruje bieżący i utrwalony status, podczas gdy zakończenie polecenia korzysta ze wspólnej ścieżki IRQ. Otwieranie i zamykanie tacy, wyszukiwanie, odczyt, pauza, stop, przerwanie i wywołania zwrotne przy nowej płycie publikują zatem spójną parę wartości statusu i gotowości, zamiast pozostawiać bity z poprzedniej operacji."
+    },
+    {
+      "type": "heading",
+      "text": "Nieprawidłowe liczniki i granice dysku teraz kończą polecenie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dysk rejestruje MaxSector z zamontowanej płyty i sprawdza odczyt przed kontynuowaniem poza nim. Żądanie wykraczające poza zakres ustawia błąd najdalszego toru, wraca do pauzy, kasuje oczekiwanie DMA i wywołuje przerwanie polecenia. Liczba sektorów równa lub poniżej zera również kończy operację i wraca do stanu gotowości, zamiast planować kolejny transfer. CdStop i SCMD skutkujące prowadzeniem księgowości wyników są korygowane w ramach tego samego sprzątania maszyny stanów."
+    },
+    {
+      "type": "heading",
+      "text": "Testy save-state i multi-game muszą sprawdzać flagi, a nie tylko uruchamianie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana układu stanów wymagała podniesienia wersji savestate, więc obsługa starych i nowych stanów wymaga wyraźnego pokrycia. Odtwórz wymienione gry i zarejestruj polecenie, LSN, liczbę, Ready, Status, Error, IRQ i stan DMA. Testuj zmiany tacy, zatrzymanie, przerwanie, prawidłowe odczyty końca płyty i celowo nieprawidłowe żądania. Niektóre przypadki źródłowe nadal wymagały osobnych poprawek do gier lub miały późniejsze zawieszenia FMV; te ograniczenia muszą pozostać udokumentowane, zamiast przypisywać je temu sprzątaniu stanów."
+    },
+    {
+      "type": "callout",
+      "text": "Ulepszenie to pełna ścieżka wyjścia: nawet niepoprawne żądanie dysku musi opuścić napęd, silnik DMA i kontroler przerwań, zgadzając się co do tego, co się wydarzyło."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/5174",
+      "label": "Przeczytaj dyskusję inżynieryjną PCSX2 i zmiany w źródłach"
+    }
+  ]
+}

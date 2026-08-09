@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "correct-half-screen-or-offset-post-processing",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Corregir un pase de postprocesamiento PS2 de media pantalla o desplazado",
+  "summary": "Verificar que el efecto de resplandor (bloom), desenfoque (blur), profundidad de campo o gradación de color (color grading) esté alineado a la resolución nativa, identificar el multiplicador exacto de escalado que lo desplaza y aplicar únicamente una corrección documentada de coordenadas o de sprite al título afectado.",
+  "heroAlt": "Diagrama de escalado PCSX2 mostrando coordenadas de textura que pueden muestrear fuera del área fuente prevista",
+  "searchKeywords": [
+    "Efecto de media pantalla PS2",
+    "Resplandor (bloom) desplazado EmuCoreX",
+    "Postprocesamiento de escalado",
+    "Desplazamiento de media píxel",
+    "Corrección de coordenadas de textura"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "upscaling": "Ampliación"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 explicación de coordenadas y muestreo",
+    "pcsx2-performance": "PCSX2 indicadores de configuración gráfica"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Encuentra el límite de resolución donde pasa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Muchos post-procesados PS2 dibujan un framebuffer anterior de nuevo sobre sprites del tamaño de la pantalla. En la salida nativa, el muestreo de la consola puede ocultar pequeños huecos de coordenadas. Una mayor resolución interna puede exponer un rectángulo de origen desplazado, una franja descubierta o un efecto aplicado solo a una parte del cuadro. Confirma que el contenido sea correcto de otra manera a resolución nativa antes de considerarlo un problema de alineación."
+    },
+    {
+      "type": "callout",
+      "text": "Los valores de omisión de dibujo copiados de un foro pueden eliminar la pasada rota y hacer que la captura de pantalla se vea más limpia, pero también pueden eliminar iluminación, profundidad de campo, niebla o efectos posteriores. La eliminación no es corrección."
+    },
+    {
+      "type": "heading",
+      "text": "Elige un punto de control de post-procesado que llene el cuadro"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una escena donde el efecto cubre una porción conocida de la imagen.",
+        "Capturas nativas y mejoradas tomadas en el mismo momento de cámara y animación.",
+        "El número de serie del título y la revisión registrados para coincidir con el parche o GameDB.",
+        "Renderizador predeterminado y todas las correcciones manuales GS restablecidas.",
+        "Una exportación de perfil por juego limpia para revertir."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Desplazamiento del mapa antes de seleccionar una corrección"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Arranque en frío a la resolución interna nativa y captura del límite completo del post-proceso.",
+        "2. Aumente la resolución por un multiplicador y repita sin cambiar la relación de aspecto ni aplicar filtros.",
+        "3. Continúe un paso a la vez hasta que la pasada se desplace, se divida o deje un borde sin cubrir.",
+        "4. Vuelva al primer multiplicador que falla y compare con la otra API de hardware con configuraciones idénticas.",
+        "5. Utilice renderizado por software solo a la salida nativa para confirmar la composición deseada si la línea base de hardware es ambigua.",
+        "6. Consulte la documentación específica del título y del número de serie para una corrección de media píxel, alineación de sprites, escalado nativo o desplazamiento de texturas.",
+        "7. Aplica un control documentado, repite tanto los multiplicadores fallidos como los deseados, e inspecciona las superposiciones 2D.",
+        "8. Visita una segunda área con muchos efectos y un FMV antes de confirmar la configuración por juego."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Una corrección cambia cómo las coordenadas de sprites o texturas emuladas se mapean al objetivo anfitrión más grande. Debido a que los juegos construyen efectos de pantalla completa de manera diferente, el valor correcto para un ejecutable puede desplazar fuentes o romper otro. Registrar el primer multiplicador fallido y el número de serie hace que la elección sea falsificable en lugar de convertir el perfil de gráficos en una colección de hacks heredados."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación de alineación de fotogramas"
+    },
+    {
+      "type": "paragraph",
+      "text": "La corrección seleccionada debe cubrir el fotograma previsto sin mover capas no relacionadas."
+    },
+    {
+      "type": "list",
+      "items": [
+        "El bloom, desenfoque o corrección de color comienza y termina en los mismos límites que la salida nativa.",
+        "No queda ninguna franja negra, borde duplicado o mitad sin tratar durante el movimiento de cámara.",
+        "Los elementos del HUD, subtítulos y menús se mantienen alineados.",
+        "FMV no se recorta ni desplaza con la corrección del juego.",
+        "El efecto sigue siendo correcto en el multiplicador elegido después de un arranque en frío."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Rechazar correcciones amplias o desajustadas"
+    },
+    {
+      "type": "list",
+      "items": [
+        "El efecto desaparece por completo: elimina skip-draw o desactiva los controles.",
+        "El texto se desplaza mientras el post-proceso mejora: la corrección de coordenadas es demasiado amplia para este título.",
+        "Solo una región diferente falla: separa los perfiles por número de serie y verifica la revisión objetivo.",
+        "La salida nativa ya está desplazada: investiga la corrección del renderizador o la imagen del juego antes de escalar."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Elimina las anulaciones de coordenadas en orden inverso"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desactiva la corrección única probada, restaura la última resolución interna limpia y vuelve a importar el perfil guardado por juego si otros valores cambiaron. Reinicia en frío los puntos de control nativos y de destino para que tanto la línea base correcta como el límite de fallo conocido estén documentados."
+    },
+    {
+      "type": "heading",
+      "text": "La relación de aspecto puede imitar una falla de coordenadas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Estirar la salida 4:3 a un área de visualización más amplia puede hacer que un efecto válido aparezca desplazado respecto al arte del HUD. Establece la relación de aspecto original del juego y desactiva los parches de pantalla ancha antes de diagnosticar la alineación de coordenadas de textura."
+    },
+    {
+      "type": "link",
+      "text": "Lee por qué el escalado aumenta las brechas de muestreo de PS2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "I gate PCSX2 Vulkan layout di feedback della profondità sulla capacità che lo legalizza",
+  "summary": "Il campionamento in sola lettura della profondità ora ricade sul layout GENERALE quando le barriere di texture sono disabilitate, evitando un layout di loop di feedback selezionato senza i bit di funzionalità Vulkan richiesti.",
+  "heroAlt": "Prove sorgenti dalla pull request PCSX2 #14817: GS:VK: Usa il layout del loop di feedback per la profondità solo se le barriere di texture sono supportate.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "layout del loop di feedback",
+    "barriera di texture",
+    "layer di validazione"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Usa il layout del loop di feedback per la profondità solo se le barriere di texture sono supportate."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un layout di immagine è valido solo quando il suo contratto di funzionalità è abilitato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il layout a ciclo di retroazione degli allegati di Vulkan descrive un'immagine utilizzata tramite una relazione di retroazione. PCSX2 aggiunge il corrispondente bit di capacità solo quando il supporto per barriere di texture o per il feedback di profondità è attivo. Tuttavia, il percorso di campionamento in sola lettura della profondità potrebbe comunque scegliere quel layout dopo che le barriere erano state forzate off, creando una contraddizione: la registrazione dei comandi dichiarava una funzione che la configurazione del dispositivo aveva deliberatamente deciso di non abilitare."
+    },
+    {
+      "type": "heading",
+      "text": "Il feedback di profondità non supportato ora utilizza il layout GENERALE"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il pull request #14817 rende la selezione del layout condizionale allo stesso test di supporto che controlla i bit di capacità. I percorsi supportati mantengono il layout specializzato a ciclo di retroazione. Quando la funzione non è disponibile o è forzata disattivata, il campionamento della profondità utilizza GENERALE, una soluzione di fallback legale con requisiti di sincronizzazione più ampi. La modifica mantiene lo stato dell'immagine e le funzionalità del dispositivo derivanti da una sola decisione invece di controlli ottimistici indipendenti."
+    },
+    {
+      "type": "heading",
+      "text": "Gli errori di convalida espongono un vero difetto di portabilità prima che i pixel falliscano"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un driver può accettare una combinazione di layout illegale senza un artefatto visivo immediato, specialmente al di fuori della modalità debug. I layer di validazione Vulkan segnalano la discrepanza in modo deterministico, rendendoli la prova giusta per questa patch. Evitare l'avviso non è una pulizia log cosmetica: assicura che lo stream dei comandi rimanga entro il contratto richiesto tra i fornitori e le versioni del driver piuttosto che fare affidamento su comportamenti permissivi."
+    },
+    {
+      "type": "heading",
+      "text": "Il dump di origine testa esattamente il percorso senza capacità."
+    },
+    {
+      "type": "paragraph",
+      "text": "Esegui il dump allegato di Time Crisis 3 GunCon su Vulkan con Barriere di Texture Override impostate su Forza Disattivato e Usa Dispositivo di Debug abilitato. Il percorso corretto non dovrebbe generare errori di convalida del layout a ciclo di feedback e dovrebbe preservare il frame. Ripeti con le barriere supportate per verificare che il layout specializzato appaia ancora, poi testa sola lettura della profondità, feedback del colore, reset del backend e diversi GPUs. Cattura le transizioni delle immagini in modo che un avviso mancante non possa nascondere l'uso della sincronizzazione GENERAL sbagliata."
+    },
+    {
+      "type": "callout",
+      "text": "Layout e funzionalità sono un unico contratto: se PCSX2 non abilita il supporto al feedback della profondità, non deve pubblicizzare quel supporto attraverso il layout dell'immagine."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Leggi la discussione ingegneristica e le modifiche del codice sorgente di PCSX2"
+    }
+  ]
+}

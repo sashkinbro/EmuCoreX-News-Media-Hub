@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Najděte duplikátní obrázky PS2 s SHA-256 před smazáním čehokoli",
+  "summary": "Vytvořte pouze pro čtení inventář hashů na Windows, Linuxu nebo macOS; seskupte osobní diskové obrazy, které jsou identické po bytech; rozlišujte aktivní kopie od offline záloh; a odstraňujte pouze ověřené duplicity ze skenovaných složek.",
+  "heroAlt": "Microsoft Learn Get-FileHash reference zobrazující syntaxi příkazu PowerShell SHA-256",
+  "searchKeywords": [
+    "duplikát PS2 ISO",
+    "Get-FileHash SHA-256",
+    "audit knihovny sha256sum",
+    "EmuCoreX duplikátní hry",
+    "ověřit identické soubory"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Knihovna",
+    "integrity": "Integrita"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Reference Microsoft Get-FileHash",
+    "gnu-sha2": "Reference utility GNU SHA-256"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inventarizujte prohledávané kořeny v režimu pouze pro čtení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dva soubory jsou duplicitní pouze tehdy, když se shodují jejich bajty, nikoli když se podobají názvy nebo názvy souborů. Regionální edice, revize, demo disky, bonusové disky, skladby na CD a opravené pracovní kopie mohou mít stejné jméno, ale obsahovat odlišná data. Začněte seznamem každého kořene knihovny EmuCoreX a nepřesouvejte žádné soubory. Audit by měl číst obrazy, zapisovat svou zprávu někam mimo tyto kořeny a vyloučit paměťové karty a data emulátoru z rozsahu."
+    },
+    {
+      "type": "callout",
+      "text": "Shodný SHA-256 dokazuje identitu bytů mezi soubory, které jste změřili. Nedokazuje však, že původní výpis byl přesný, že má licenci pro redistribuci nebo že je bezpečné jej odstranit ze všech záloh. Uchovávejte jeden ověřený hlavní zachovaný soubor mimo aktivní knihovnu."
+    },
+    {
+      "type": "heading",
+      "text": "Vytvořte zprávu o hashích ve Windows PowerShell"
+    },
+    {
+      "type": "paragraph",
+      "text": "Připojte úložiště k důvěryhodnému počítači s Windows nebo pracujte přímo ve složce, která je tam již k dispozici. Nahraďte D:\\PS2 doslovnou cestou ke kořenovému adresáři, který prohledáváte. Get-FileHash používá výchozí SHA-256, ale určení algoritmu činí zprávu samovysvětlující. Export do CSV zachovává úplné cesty a zabraňuje zkracování v konzoli."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Otevřete PowerShell bez práv administrátora; hashování běžných knihovních souborů nevyžaduje zvýšení oprávnění.",
+        "2. Spusťte: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. Počkejte, až se zobrazí výzva. Velké obrazové soubory DVD vyžadují čtení každého bajtu, takže odnímatelná média mohou trvat dlouho.",
+        "4. Otevřete CSV a seskupte po sobě jdoucí řádky se stejnou hodnotou Hash. Potvrďte, že hlášené hodnoty Path ukazují na různé soubory, nikoli na stejný soubor uvedený přes dvě zkratky.",
+        "5. Opakujte příkaz pro každý nepřekrývající se kořen a uchovávejte zprávy spolu s datem auditu, identitou disku a případnými chybami čtení."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Použijte sha256sum nebo shasum na systémech podobných Unixu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Na Linuxu poskytuje GNU sha256sum ekvivalentní digest. Sestavte seznam souborů pomocí find s nulovými oddělovači, aby mezery a neobvyklé znaky zůstaly nedotčené, a potom přesměrujte výstup mimo skenovaný adresář. Na macOS je obvykle dostupný shasum -a 256. Nepřekopírujte nezkontrolované internetové příkazy, které automaticky maže soubory; tento postup úmyslně odděluje detekci od čištění."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Příklad pro Linux: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "Příklad pro macOS: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "Pokud příkaz hlásí chybu vstupu/výstupu, zastavte čištění a prozkoumejte zdrojové zařízení. Digest vytvořený po nestabilním čtení není zdravým základem pro migraci.",
+        "U cue/bin CD obrazů považujte cue sheet a každý odkazovaný stop za jednu sadu; hashování pouze největšího BIN může přehlédnout chybějící audio stopy."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Než provedete čištění, klasifikujte každou odpovídající skupinu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Uchovejte kopii uvnitř určeného skenovaného kořene, pokud se další identická kopie nachází ve složce ke stažení nebo dočasného importu.",
+        "Uchovejte hlavní archivní verzi, pokud je odpovídající aktivní kopie přejmenovaný pracovní soubor; hlavní verze patří mimo každý skenovací kořen EmuCoreX.",
+        "Uchovejte obě fyzické kopie, pokud je jedna jedinou offline zálohou na jiném zařízení. Duplicitní bajty v různých úrovních zálohy jsou záměrná redundance, nikoli nepořádek v knihovně.",
+        "Nesměrujte soubory s odlišnými hashi jen proto, že jejich zobrazený název odpovídá. Nejprve zaznamenejte sériové číslo, region, revizi, číslo disku a stav záplaty.",
+        "U her na více disků potvrďte, že Disc 1 a Disc 2 jsou úmyslně odlišné; samotné názvy souborů nestačí k pozdější rekonstrukci sady."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Místo mazání při prvním průchodu použijte karanténu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvořte karanténní složku mimo všechny vybrané kořeny knihoven. Přesuňte jednu redundantní pracovní kopii z každé potvrzené skupiny do ní, jednou aktualizujte EmuCoreX a ověřte, že zbývající položka se otevře ve očekávané oblasti. Uchovávejte karanténu alespoň během jednoho restartu aplikace a jednoho spuštění každého ovlivněného titulu. Teprve potom smažte redundantní pracovní kopie, a to pouze pokud máte pod kontrolou jinou ověřenou zálohovanou nebo zachovanou kopii."
+    },
+    {
+      "type": "heading",
+      "text": "Ověřte deduplikovanou knihovnu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Počet záznamů EmuCoreX odpovídá plánovanému počtu hratelných kopií, včetně vícediskových sad.",
+        "Každý postižený titul se odkazuje na cestu zvolenou jako kanonickou a spouští se z této cesty.",
+        "Zachovaný soubor SHA-256 zůstává stejný jako digest zaznamenaný před karanténou.",
+        "Oblíbené položky a profily pro jednotlivé hry stále ukazují na zamýšlené sériové číslo a region.",
+        "Offline kopie pro zachování a její auditní zpráva nejsou uvnitř složky, kterou skenuje EmuCoreX."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Obnovit z chybné klasifikace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud se titul ztratí nebo otevře nesprávnou revizi, zavřete EmuCoreX a přesuňte soubor z karantény zpět na jeho původní doslovnou cestu. Aktualizujte jednou, porovnejte sériová čísla a obnovte předchozí název souboru, pokud byl změněn. Nevyrovnávejte kopírováním ukládání mezi regionálními položkami; nejprve vyřešte identitu obrazu. Pokud zdrojový disk způsobil chyby čtení, zachovejte obě kopie a jejich zprávy, dokud nový výpis z vlastněného disku nevytvoří důvěryhodný master."
+    },
+    {
+      "type": "link",
+      "text": "Zkontrolujte syntaxi Microsoft Learn pro Get-FileHash",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

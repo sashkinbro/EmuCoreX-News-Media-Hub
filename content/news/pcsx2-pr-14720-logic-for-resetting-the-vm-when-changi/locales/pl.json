@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14720-logic-for-resetting-the-vm-when-changi",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 nakazuje reset przełącznika dysku zanim Qt będzie mógł wznowić VM",
+  "summary": "Stan odroczonego resetu był nadpisywany przez zdarzenie wznawiania VMLock; przeniesienie przejścia widoku emulacji po opublikowaniu resetu zachowuje zamierzony cykl życia VM.",
+  "heroAlt": "Dowód źródłowy z pull request #14720 PCSX2: Qt: Popraw logikę resetowania VM przy zmianie dysków",
+  "searchKeywords": [
+    "PCSX2",
+    "przełączanie dysku",
+    "reset VM",
+    "VMLock",
+    "oddzielne okno"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "core": "Rdzeń",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14720": "Qt: Popraw logikę resetowania VM przy zmianie dysków"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zmiana dysku z listy gier przekracza cykle życia UI i VM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Po włączeniu opcji Renderuj w oddzielnym oknie, Qt może przełączać widoki, blokować maszynę wirtualną, wysyłać zdarzenia i żądać resetu w jednej akcji użytkownika. Sam reset został odroczony. MainWindow przesunął się w kierunku widoku emulacji, gdy zakres blokady się zakończył, a destruktor VMLock wysłał zdarzenie wznawiające. To późniejsze zdarzenie mogło zastąpić VMState::Resetting, zanim handler resetu faktycznie się wykonał."
+    },
+    {
+      "type": "heading",
+      "text": "Wyścig dotyczy kolejności zdarzeń, a nie brakującej synchronizacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "VM miał prawidłowy stan resetowania i blokadę mającą chronić przejście. Problem polegał na tym, że dwie odroczone zmiany stanu zostały umieszczone w kolejce w niewłaściwej kolejności. Opóźnione wstrzymanie z czyszczenia UI zostało pozwolone na wykonanie, jakby reset został zakończony. To wyjaśnia, dlaczego zmiana płyt z określonej ścieżki frontendowej nie powiodła się, mimo że bezpośredni reset oraz zwykłe wstrzymanie/wznawianie działały."
+    },
+    {
+      "type": "heading",
+      "text": "switchToEmulationView teraz podąża za wysłanym resetem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14720 przenosi MainWindow::switchToEmulationView po opublikowaniu wydarzenia resetu. VM nie działa, podczas gdy żądanie resetu jest ustanawiane, a przejście widoku nie może już powodować, że VMLock zakłóca Resetowanie poprzez wczesne wznawianie. Źródło zauważa, że możliwy jest szerszy redesign stanu VM, ale ta zmiana naprawia znany błąd kolejności bez rozszerzania zakresu."
+    },
+    {
+      "type": "heading",
+      "text": "Zmiany w oddzielnym oknie dysków muszą być powtarzane w każdym stanie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Włącz Renderowanie w Oddzielnym Oknie, uruchom tytuł na wielu płytach i wybierz inną płytę z listy gier podczas działania, wstrzymania oraz przy otwartym modalnym UI. Dziennik odnotował zdarzenia resetu i wznowienia i potwierdza, że Resetowanie przetrwa do momentu zakończenia resetu. Powtórz po zawieszeniu, wczytaniu stanu i szybkich kolejnych wyborach płyt. Standardowe zmiany w tym samym oknie i ręczne resetowanie są kontrolami negatywnymi; poprawka kolejności nie może pozostawić VM trwale wstrzymanego ani przełączać widoków zbyt późno."
+    },
+    {
+      "type": "callout",
+      "text": "Reset VM został już zgłoszony; poprawka zapewnia, że żadne zdarzenie czyszczenia UI nie może wznowić wykonywania przed wejściem w życie tego żądania."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14720",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

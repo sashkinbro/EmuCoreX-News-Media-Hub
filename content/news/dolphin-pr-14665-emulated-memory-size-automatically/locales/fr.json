@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin déduit la taille de la mémoire GameCube à partir du disque qui la demande",
+  "summary": "Le champ simulated-memory de bi2.bin sélectionne désormais MEM1 dans les limites matérielles, tandis que les contournements manuels restent disponibles pour des expériences délibérées.",
+  "heroAlt": "Preuve source provenant de la pull request #14665 de Dolphin : Core : Ajuster automatiquement la taille de la mémoire émulée.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "Kit de développement GameCube",
+    "taille de la mémoire"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Core : Ajuster automatiquement la taille de la mémoire émulée."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'en-tête du disque portait déjà un contrat de développement de mémoire"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le fichier GameCube bi2.bin inclut une taille de mémoire simulée à l'offset 0x04. Sur le matériel de développement avec plus de RAM, l'Apploader utilisait cette valeur pour imiter une machine cible plus petite pendant les tests. Dolphin exposait auparavant la taille de la mémoire principalement comme une surcharge manuelle avec un avertissement sérieux, car des valeurs arbitraires cassent de nombreux jeux. Cela laissait les images de disque conçues autour de leur propre en-tête incapables de demander automatiquement la capacité appropriée."
+    },
+    {
+      "type": "heading",
+      "text": "Les métadonnées voyagent maintenant du VolumeDisc vers le MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14665 lit le champ comme un entier 32 bits échangé depuis la partition du jeu, le stocke avec les métadonnées du jeu en cours, le copie dans Core::System lors de l'initialisation et l'expose au mappage de mémoire. Le résultat automatique est limité à au moins la taille MEM1 de 24 MiB en version commerciale et au maximum 64 MiB, la capacité maximale prise en charge par le contrôleur de mémoire de Flipper. Les sources WAD et autres non-disc signalent zéro."
+    },
+    {
+      "type": "heading",
+      "text": "Les surcharges explicites l'emportent toujours, mais les utilisateurs ordinaires n'ont pas besoin de deviner"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque le remplacement manuel de la RAM est activé, ses valeurs configurées continuent de contrôler la carte. Sinon, un en-tête au-dessus de la capacité commerciale peut étendre MEM1 et les comportements d'enregistrement FIFO associés qui enregistrent ce fait. Une valeur inférieure à la valeur commerciale ne réduit pas la console en dessous de ce que le logiciel publié attend. La description des paramètres explique maintenant que Dolphin détermine normalement la valeur à partir des informations du jeu, séparant le comportement légitime basé sur les métadonnées de l’expérimentation manuelle risquée."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests nécessitent de vrais en-têtes, des valeurs malformées et des consommateurs de sous-systèmes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construisez des supports de disque avec zéro, 24 MiB, intermédiaire, 48 MiB, 64 MiB et des valeurs au-delà de la limite du contrôleur. Vérifiez le décodage endian, le comportement de blocage, les plages d’adresses MEM1, le comportement de libération IOS, les analyses et les enregistrements FIFO. Changez de jeu sans redémarrer pour garantir que les métadonnées ne puissent pas se propager entre les systèmes. Confirmez que les remplacements manuels ont la priorité et que le démarrage WAD reste de taille commerciale. Enfin, exécutez des images de développement qui utilisent réellement de la mémoire supplémentaire et des jeux commerciaux dont les en-têtes contiennent des valeurs inhabituelles."
+    },
+    {
+      "type": "callout",
+      "text": "La valeur par défaut sûre n'est plus un nombre universel ; c'est le niveau de vente au détail plus une demande limitée tirée des métadonnées de développement du disque lui-même."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Lisez la discussion d'ingénierie Dolphin et les modifications de la source"
+    }
+  ]
+}

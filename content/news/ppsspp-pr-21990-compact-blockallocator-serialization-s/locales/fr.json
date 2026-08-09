@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP donne aux cartes mémoire du noyau un format savestate plus léger",
+  "summary": "BlockAllocator écrit maintenant un enregistrement compact par bloc et garantit que les étiquettes sont remplies de zéros lorsqu'elles sont créées, réduisant le travail structurel des grandes cartes mémoire.",
+  "heroAlt": "Preuves sources de la demande de tirage PPSSPP #21990 : Savestate : sérialisation compacte BlockAllocator (section v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "mémoire du noyau",
+    "sérialisation",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate : sérialisation compacte BlockAllocator (section v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mille blocs multipliés par de petits coûts de sérialisation"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP sérialise les listes de blocs liés pour la mémoire utilisateur, noyau et volatile. Un jeu en cours peut maintenir environ mille blocs actifs. La disposition précédente ouvrait une section de sérialisation nommée pour chaque bloc, ajoutant à plusieurs reprises du travail d'en-tête et de charge utile. Elle appelait également strlen et memset à chaque sauvegarde pour effacer les octets inutilisés dans un tampon de balises de taille fixe, car l'assistant qui copiait une balise n'initialisait pas le remplissage restant."
+    },
+    {
+      "type": "heading",
+      "text": "Le nouvel enregistrement ne contient que les champs qui définissent un bloc"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21990 ajoute la section BlockAllocator v2. Sa branche compacte écrit directement le début, la taille, le pris et le tableau de balises de taille fixe complet, sans section de bloc imbriquée. La lecture effectue la même séquence de champs. Il s'agit délibérément d'un choix au niveau BlockAllocator plutôt que d'un changement silencieux de l'ancienne méthode de bloc, car les formats sérialisés nécessitent une frontière explicite chaque fois que la disposition des octets diffère."
+    },
+    {
+      "type": "heading",
+      "text": "L'hygiène des balises est déplacée au point de mutation"
+    },
+    {
+      "type": "paragraph",
+      "text": "La construction de blocs et SetAllocated effacent désormais tout le tampon de tags avant d'y copier du texte. Cela rend le remplissage déterministe tout au long de la durée de vie de l'objet et supprime le travail répété de strlen plus memset du chemin critique de sauvegarde. Cela empêche également la mémoire de processus non initialisée d'atteindre un fichier d'état. La version un reste disponible pour charger les anciens états, tandis que les nouveaux états compacts suivent la règle normale d'incompatibilité ascendante pour une augmentation de section."
+    },
+    {
+      "type": "heading",
+      "text": "La topologie de l'allocation est plus importante que la taille du fichier seule"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construisez des états avec des listes vides, un bloc, des milliers de blocs alternés libres et pris, des tags de longueur maximale, des blocs réutilisés, de la mémoire volatile, et à la fois des allocations de haut en bas et de bas en haut. Chargez les anciens fixtures v1 et les nouveaux fixtures v2, comparez l'ordre des listes et chaque limite, puis allouez et libérez après la restauration pour révéler les liens brisés. Inspectez la sortie pour un remplissage déterministe des tags et aucune octet non initialisé. Effectuez les tests de performance sur la taille et le temps de sérialisation uniquement après avoir passé l'équivalence structurelle et la gestion de la corruption."
+    },
+    {
+      "type": "callout",
+      "text": "La sérialisation compacte est la plus sûre lorsque l'état déterministe de l'objet est établi au moment de la mutation, et non réparé chaque fois qu'une sauvegarde est écrite."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Lisez la discussion technique PPSSPP et les modifications du code source"
+    }
+  ]
+}

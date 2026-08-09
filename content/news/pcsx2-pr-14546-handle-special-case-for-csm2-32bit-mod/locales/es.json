@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14546-handle-special-case-for-csm2-32bit-mod",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 aísla la carga de la paleta CSM2 del orden entrelazado de CSM1",
+  "summary": "Un cambio de modo de almacenamiento en Breath of Fire reveló por qué los datos secuenciales de CSM2 no pueden reutilizar de manera segura un búfer temporal CLUT poblado bajo las reglas de entrelazado de CSM1.",
+  "heroAlt": "Evidencia visual del pull request PCSX2 #14546: GS/CLUT: Manejar caso especial para el cambio de modo de 32 bits de CSM2",
+  "searchKeywords": [
+    "PCSX2",
+    "CLUT",
+    "CSM2",
+    "paleta",
+    "Breath of Fire"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14546": "GS/CLUT: Manejar caso especial para el cambio de modo de 32 bits de CSM2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una paleta sobrevive al cambio de modo, pero su ordenamiento no"
+    },
+    {
+      "type": "paragraph",
+      "text": "Breath of Fire: Dragon Quarter recarga su tabla de colores en el Modo de Almacenamiento CLUT 1 y luego cambia al Modo de Almacenamiento 2. CSM1 aplica un arreglo mezclado, mientras que CSM2 accede a las entradas de la paleta de manera secuencial. Reutilizar los datos temporales preparados para el primer modo, por lo tanto, proporciona al segundo modo colores válidos en posiciones incorrectas. El texto del menú luego muestra agujeros negros donde debería aparecer el color principal previsto."
+    },
+    {
+      "type": "heading",
+      "text": "CSM2 ahora lee la paleta autorizada desde la memoria local GS"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14546 cambia GSClut para que el modo de almacenamiento 2 siempre cargue la CLUT desde la memoria local en lugar del búfer temporal orientado a CSM1. El enfoque también explica el comportamiento más lento de CSM2: trata la memoria GS como la fuente en el momento de carga del caché de texturas. Al elegir la fuente según el modo de almacenamiento activo, PCSX2 evita inventar una conversión entre dos disposiciones que el juego en sí nunca solicitó."
+    },
+    {
+      "type": "heading",
+      "text": "La fuente presenta una teoría de hardware, no una certeza fabricada"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación se basa en el comportamiento del juego, una ejecución limpia del volcado GS y el hecho de que ninguna otra regla de reutilización produjo una paleta CSM2 coherente. El autor señala explícitamente que se planeaba realizar pruebas de hardware para confirmar el modelo. Ese límite es importante para un artículo de ingeniería: la corrección de software tiene un fuerte reproductor, pero la razón interna precisa por la cual el GS original se comporta de esta manera sigue siendo una hipótesis hasta que los rastros de la consola lo corroboren."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas deben emparejar el reproductor del menú con la evidencia de la consola"
+    },
+    {
+      "type": "paragraph",
+      "text": "La verificación inmediata de regresión es Breath of Fire: Dragon Quarter en el menú afectado, comparando las entradas de la paleta antes y después del cambio de CSM1 a CSM2. Un rastreo útil registra el modo de almacenamiento, la dirección de origen de CLUT, el orden de las entradas y el color utilizado por el texto dañado. Otros juegos que alternen los dos modos de almacenamiento deberían confirmar que forzar la carga en memoria local no altera las paletas que funcionaban previamente. Los resultados de hardware deben documentarse por separado de la inferencia del emulador."
+    },
+    {
+      "type": "callout",
+      "text": "PCSX2 corrige la corrupción observada de la paleta mientras mantiene la explicación del hardware honesta: el comportamiento de memoria local directa de CSM2 tiene respaldo de evidencia pero aún espera una confirmación más sólida de la consola."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14546",
+      "label": "Lea la discusión de ingeniería PCSX2 y los cambios de código fuente"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP convoglia l'input della piattaforma attraverso il ciclo degli eventi UI",
+  "summary": "I callback di tocco, tasto e asse ora inseriscono i dati in coda per una distribuzione ordinata sul thread UI, rimuovendo i metodi dello schermo non sincronizzati e un ampio lock ricorsivo.",
+  "heroAlt": "Prove a supporto dalla pull request #21857 di PPSSPP: Rielaborazione della coda di input per l'UI, rimozione degli eventi Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "coda di input",
+    "ScreenManager",
+    "tocco",
+    "controller"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Input",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Rielaborazione della coda di input per l'UI, rimozione degli eventi Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I callback di input e la mutazione dello schermo condividevano un confine fragile"
+    },
+    {
+      "type": "paragraph",
+      "text": "I backend desktop e mobile possono segnalare eventi di tocco, tastiera e controller da contesti che non possiedono lo stack attuale dello schermo di PPSSPP. Il design precedente mescolava un blocco di input ricorsivo con i punti di ingresso UnsyncTouch, UnsyncKey e UnsyncAxis che potevano attraversare le viste direttamente. Pertanto, i cambiamenti di schermata, gli overlay e la distribuzione degli eventi dipendevano da un grande blocco e dalla conoscenza da parte dei chiamanti di quale metodo non sincronizzato fosse sicuro."
+    },
+    {
+      "type": "heading",
+      "text": "Ora i callback eseguono solo un'operazione breve di coda"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21857 definisce eventi in coda tipizzati per input di tocco, tasto e asse. I callback di ScreenManager copiano l'evento e lo aggiungono mentre detengono eventQueueLock. Durante l'aggiornamento, il thread UI sposta l'intero deque in una variabile locale, rilascia il mutex e distribuisce gli eventi in ordine. La sezione critica non esegue codice della vista, quindi i gestori non possono aumentare la latenza del callback della piattaforma o acquisire ricorsivamente il blocco della coda."
+    },
+    {
+      "type": "heading",
+      "text": "Le regole di consegna speciali rimangono esplicite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gli eventi touch di rilascio continuano a raggiungere tutti i livelli dello schermo e gli eventi di rilascio dei tasti si propagano ancora in modo che un livello di sfondo non possa mantenere un tasto bloccato dopo modifiche allo stack. L'input ordinario va allo schermo in primo piano, mentre un overlay riceve prima il touch-down in modo da potersi chiudere e consumare l'evento. La conversione della navigazione con il focus diventa un normale helper KeyEventToFocusMoves, e molti metodi Unsync scompaiono perché l'invio ora avviene sul thread proprietario."
+    },
+    {
+      "type": "heading",
+      "text": "Ordinamento e transizioni dello schermo sono i test difficili"
+    },
+    {
+      "type": "paragraph",
+      "text": "Genera eventi touch, key e axis intrecciati mentre si aprono e chiudono popup, si cambiano schermate, si ruota il dispositivo, si ricollegano i controller e si tengono premuti i pulsanti durante una transizione. Conferma l'ordine FIFO e che gli eventi di rilascio cancellino ogni stato premuto. Stressa i produttori da più thread e usa ThreadSanitizer attorno alla coda e all'accesso allo stack dello schermo. Definisci il comportamento quando uno schermo cambia dopo che un evento è stato messo in coda ma prima dell'aggiornamento; l'implementazione prende intenzionalmente di mira lo stack corrente al momento dell'invio, quindi i test devono vincolare quel contratto."
+    },
+    {
+      "type": "callout",
+      "text": "I callback della piattaforma ora segnalano l'input; il thread UI decide dove appartiene quando elabora la coda ordinata."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Leggi la discussione tecnica di ingegneria PPSSPP e le modifiche del codice sorgente"
+    }
+  ]
+}

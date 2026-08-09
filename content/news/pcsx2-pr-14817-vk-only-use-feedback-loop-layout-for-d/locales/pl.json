@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14817-vk-only-use-feedback-loop-layout-for-d",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Bramki PCSX2 układ sprzężenia zwrotnego głębokości Vulkan na podstawie możliwości, która go legalizuje",
+  "summary": "Tryb odczytu głębokości tylko do odczytu teraz przechodzi na układ GENERAL, gdy bariery tekstury są wyłączone, unikając wyboru układu pętli sprzężenia zwrotnego bez wymaganych bitów funkcji Vulkan.",
+  "heroAlt": "Dowody źródłowe z pull request PCSX2 #14817: GS:VK: Używaj układu sprzężenia zwrotnego dla głębokości tylko wtedy, gdy obsługiwana jest bariera tekstur.",
+  "searchKeywords": [
+    "PCSX2",
+    "Vulkan",
+    "układ sprzężenia zwrotnego",
+    "bariera tekstur",
+    "warstwa walidacji"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14817": "GS:VK: Używaj układu sprzężenia zwrotnego dla głębokości tylko wtedy, gdy obsługiwana jest bariera tekstur."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Układ obrazu jest ważny tylko wtedy, gdy jego kontrakt funkcji jest włączony"
+    },
+    {
+      "type": "paragraph",
+      "text": "Układ sprzężenia zwrotnego załącznika Vulkan opisuje obraz używany w relacji sprzężenia zwrotnego. PCSX2 dodaje odpowiadający bit możliwości tylko wtedy, gdy aktywne jest wsparcie dla bariery tekstury lub sprzężenia zwrotnego głębokości. Ścieżka tylko do odczytu próbkowania głębokości mogłaby jednak wybrać ten układ po wymuszeniu wyłączenia barier, tworząc sprzeczność: nagrywanie poleceń deklarowało funkcję, którą konfiguracja urządzenia celowo nie włączyła."
+    },
+    {
+      "type": "heading",
+      "text": "Nieobsługiwane sprzężenie zwrotne głębokości teraz używa układu GENERAL"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14817 sprawia, że wybór układu zależy od tego samego testu wsparcia, który kontroluje bity możliwości. Obsługiwane ścieżki zachowują specjalny układ sprzężenia zwrotnego. Gdy funkcja jest niedostępna lub wymuszenie wyłączone, próbkowanie głębokości używa GENERAL, legalnego rozwiązania awaryjnego o szerszych wymaganiach synchronizacji. Zmiana utrzymuje stan obrazu i funkcje urządzenia wyprowadzone z jednej decyzji zamiast niezależnych, optymistycznych sprawdzeń."
+    },
+    {
+      "type": "heading",
+      "text": "Błędy walidacji ujawniają rzeczywistą wadę przenośności zanim piksele zawiodą"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sterownik może zaakceptować nielegalną kombinację układu bez natychmiastowego artefaktu wizualnego, zwłaszcza poza trybem debugowania. Warstwy walidacji Vulkan wykrywają niezgodność deterministycznie, czyniąc je odpowiednim dowodem dla tej poprawki. Unikanie ostrzeżenia nie jest kosmetycznym czyszczeniem logów: zapewnia, że strumień poleceń pozostaje w ramach kontraktu wymaganego przez różnych dostawców i wersje sterowników, zamiast polegać na dopuszczalnym zachowaniu."
+    },
+    {
+      "type": "heading",
+      "text": "Zrzut źródłowy testuje dokładną trasę z wyłączoną funkcją."
+    },
+    {
+      "type": "paragraph",
+      "text": "Uruchom dołączony zrzut Time Crisis 3 GunCon na Vulkan z ustawieniem Override Texture Barriers na Force Disabled i włączonym Use Debug Device. Poprawiona ścieżka nie powinna generować błędu walidacji układu pętli sprzężenia zwrotnego i powinna zachować klatkę. Powtórz z obsługą barier, aby zweryfikować, że specjalny układ nadal się pojawia, następnie przetestuj tylko do odczytu głębi, sprzężenie zwrotne koloru, reset backendu oraz kilka GPUs. Przechwyć przejścia obrazów, aby brakujące ostrzeżenie nie ukryło użycia niewłaściwej synchronizacji GENERAL."
+    },
+    {
+      "type": "callout",
+      "text": "Układ i możliwości stanowią jedną umowę: jeśli PCSX2 nie umożliwia obsługi sprzężenia zwrotnego głębokości, nie może reklamować tej obsługi poprzez układ obrazu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14817",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w źródle"
+    }
+  ]
+}

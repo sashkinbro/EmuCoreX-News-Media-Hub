@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation fixes one wrong host register in RISC-V GTE timing",
+  "summary": "EndAndLinkBlock computed the correct completion tick in RARG2 but stored RARG1, a one-instruction mismatch that could carry incorrect coprocessor readiness into the next recompiled block.",
+  "heroAlt": "Source evidence from DuckStation pull request #3702: CPU/RISCV64: Fix gte_completion_tick store in EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "recompiler",
+    "completion tick"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "Cpu",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Fix gte_completion_tick store in EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The calculation was correct until the final store"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation tracks when the PlayStation Geometry Transformation Engine completes work so following CPU instructions observe the correct dependency timing. In the RISC-V 64 recompiler's EndAndLinkBlock path, the new completion value was already computed into RARG2. The emitted store nevertheless used RARG1, writing a different argument register into global GTE timing state just before control moved to another block."
+    },
+    {
+      "type": "heading",
+      "text": "One register substitution aligns RISC-V with the other recompilers"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3702 changes the SW instruction to store RARG2 at g_state.gte_completion_tick. No timing formula or guest instruction decoder changes. The evidence is the dataflow at that exact point and the matching behavior of other architecture backends. Small patches of this kind are valuable precisely because the incorrect register can survive compilation, produce valid machine code, and fail only on one host family."
+    },
+    {
+      "type": "heading",
+      "text": "A stale completion tick changes when later instructions believe GTE is ready"
+    },
+    {
+      "type": "paragraph",
+      "text": "If the wrong value is earlier than the computed tick, guest code may consume geometry results too soon; if later, DuckStation can insert unnecessary waiting. Either direction can alter games that interleave CPU work with GTE commands even though the transformed arithmetic itself is correct. The error is carried across a block boundary, so a test confined to instructions inside one generated block may miss it."
+    },
+    {
+      "type": "heading",
+      "text": "Tests should force the completion value across EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "A targeted recompiler test should issue a GTE command, end the block while the unit remains busy, link to code that reads or depends on the result, and compare interpreter, RISC-V, and another recompiler backend. Log the computed RARG2 value and stored global tick. Cover conditional exits and different new-PC cases handled by EndAndLinkBlock. Run existing GTE timing tests repeatedly on native RISC-V hardware so register-allocation or calling-convention differences are exercised."
+    },
+    {
+      "type": "callout",
+      "text": "The patch is one operand, but the invariant is architectural: every host backend must carry the computed GTE completion tick across a block link."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Read the DuckStation engineering discussion and source changes"
+    }
+  ]
+}

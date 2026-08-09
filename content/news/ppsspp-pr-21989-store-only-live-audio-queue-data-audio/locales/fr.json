@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP réduit les savestate en stockant uniquement les échantillons audio actifs",
+  "summary": "Un format de file d'attente compact sérialise les échantillons qui peuvent encore être lus, plutôt que de copier les neuf tampons audio à capacité fixe dans chaque état.",
+  "heroAlt": "Preuve source du pull request PPSSPP #21989 : Savestate : stocker uniquement les données de la file d'attente audio actives (section AudioChannel v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "file d'attente audio",
+    "taille savestate",
+    "rembobiner",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate : stocker uniquement les données de la file d'attente audio actives (section AudioChannel v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La capacité fixe était confondue avec un état significatif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chaque canal sceAudio utilise une FixedSizeQueue avec un espace pour 32768 fois huit valeurs de 16 bits, un stockage de soutien KB de 512. Il y a neuf files d'attente de canal. L'ancien sérialiseur copiait chaque octet de ces tableaux même si seule une petite tranche logique entre le début et le compte pouvait jamais être extraite. Par conséquent, environ 4,6 MB de données principalement inutiles entraient dans les sauvegardes manuelles, les emplacements de sauvegarde, l'entrée de compression et chaque instantané périodique de rembobinage en mémoire."
+    },
+    {
+      "type": "heading",
+      "text": "La forme compacte préserve l'ordre de la file lors du retour à zéro"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #21989 introduit DoStateCompact comme format optionnel. Lorsque la région active est contiguë, elle écrit un seul tableau brut. Lorsque la tête plus le compteur dépasse la fin du stockage, elle écrit la queue et le début comme deux parties dans l'ordre de dépilement. POD DoArray écrit des octets bruts sans en-tête par appel, donc ces parties forment le même flux qu'une seule lecture linéaire consommerait. Le chargement place la séquence à l'index zéro et dérive la nouvelle queue à partir du compteur."
+    },
+    {
+      "type": "heading",
+      "text": "La version protège les anciens états et les autres appelants"
+    },
+    {
+      "type": "paragraph",
+      "text": "La section AudioChannel progresse vers un nouveau niveau de format et sélectionne uniquement la sérialisation compacte à ce niveau. Les anciens niveaux de section utilisent toujours la méthode de stockage complète d'origine, de sorte que les sauvegardes existantes restent lisibles. L'ancienne fonction de FixedSizeQueue n'est pas modifiée car son agencement des octets n'est pas interchangeable et un autre appelant peut en dépendre. Le chargeur refuse également un compte en dehors de zéro à la capacité avec SetError, empêchant un fichier endommagé de désynchroniser chaque champ suivant."
+    },
+    {
+      "type": "heading",
+      "text": "Les files d'attente enveloppées, vides et remplies sont les tests essentiels"
+    },
+    {
+      "type": "paragraph",
+      "text": "Créez des files d'attente déterministes qui sont vides, partiellement remplies, exactement pleines et enveloppées à plusieurs décalages de tête. Sauvegardez et chargez-les, puis comparez chaque échantillon extrait avec l'ordre original. Testez tous les neuf canaux pendant le jeu, les limites de sous- et dépassement audio, la reprise répétée, les ratios de compression et la compatibilité avec l'état ancien. Corrompez le compte stocké pour confirmer un échec de chargement propre. Mesurez le temps de sauvegarde et la pression mémoire séparément ; une charge utile plus petite est attendue, mais la correction reste la principale priorité."
+    },
+    {
+      "type": "callout",
+      "text": "La capacité est un détail d'implémentation ; un savestate a besoin de la séquence audio en direct et de suffisamment de métadonnées pour reconstruire une file d'attente équivalente."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

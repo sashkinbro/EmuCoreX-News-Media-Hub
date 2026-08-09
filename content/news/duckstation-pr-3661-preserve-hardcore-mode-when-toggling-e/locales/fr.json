@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3661-preserve-hardcore-mode-when-toggling-e",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation recharge les données de succès sans désactiver le mode hardcore",
+  "summary": "Les options RetroAchievements en cours de session actualisent désormais les données du jeu actuel sur le client existant, préservant l'état hardcore qu'un cycle complet d'arrêt et d'initialisation avait supprimé.",
+  "heroAlt": "Preuve visuelle de la pull request DuckStation #3661 : Succès : Préserver le mode hardcore lors du basculement des paramètres encore/spectateur/non officiels",
+  "searchKeywords": [
+    "DuckStation",
+    "RetroAchievements",
+    "mode hardcore",
+    "Mode Encore",
+    "rc_client"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Interface",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3661": "Succès : Préserver le mode hardcore lors du basculement des paramètres encore/spectateur/non officiels"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un basculement de paramètres reconstruisait plus d'état qu'il n'en possédait"
+    },
+    {
+      "type": "paragraph",
+      "text": "Changer le mode Encore, le mode Spectateur ou tester les succès non officiels alors qu'un jeu était en cours appelait auparavant Shutdown() et Initialize() pour le client RetroAchievements. Ce cycle complet appliquait l'option, mais désactivait également le mode hardcore jusqu'à ce que le jeu lui-même soit réinitialisé. Le changement de paramètre se répercutait donc dans un état d'intégrité distinct que le joueur n'avait pas choisi d'abandonner."
+    },
+    {
+      "type": "heading",
+      "text": "ClearGameInfo et BeginLoadGame préservent la frontière du client"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3661 maintient le rc_client existant actif. Elle décharge les informations de succès du jeu actuel avec ClearGameInfo(), puis appelle BeginLoadGame() pour récupérer et appliquer à nouveau les règles sélectionnées. Le rechargement est suffisant pour qu'Encore réinitialise l'état de déverrouillage et pour que les options spectateur ou non officielles prennent effet ; reconstruire le client réseau et son état hardcore n'est pas nécessaire."
+    },
+    {
+      "type": "heading",
+      "text": "Encore peut être appliqué plusieurs fois au cours d'une même session d'émulation"
+    },
+    {
+      "type": "paragraph",
+      "text": "La source note spécifiquement que le Mode Encore peut être activé plusieurs fois et que les succès se mettent toujours à jour correctement. Il s'agit d'un test de cycle de vie important car une implémentation ponctuelle pourrait sembler fixée après la première transition mais conserver des données de jeu obsolètes lors de la deuxième. Les preuves visibles avant et après montrent également que le mode hardcore reste activé après le rechargement de l'option."
+    },
+    {
+      "type": "heading",
+      "text": "La validation doit suivre séparément l'état du client et l'état des succès"
+    },
+    {
+      "type": "paragraph",
+      "text": "Démarrer une session hardcore, basculer l’option Encore, spectateur et test non officiel individuellement, et vérifier que l’ensemble de succès prévu se recharge tandis que le hardcore reste actif. Répéter chaque bascule plusieurs fois, se déconnecter et se reconnecter, et tester un titre avec des succès débloqués afin que le comportement de réinitialisation soit observable. Une défaillance réseau pendant BeginLoadGame() ne doit pas corrompre le client existant. Une action réelle de désactivation du hardcore, telle que le chemin de réinitialisation documenté de l’émulateur, doit toujours fonctionner normalement."
+    },
+    {
+      "type": "callout",
+      "text": "La correction réduit le cycle de vie : rechargez les données de succès spécifiques au jeu, mais ne détruisez pas l'état du client qui possède le mode hardcore."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3661",
+      "label": "Lisez la discussion d'ingénierie DuckStation et les modifications du code source"
+    }
+  ]
+}

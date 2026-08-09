@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Finden Sie doppelte PS2-Bilder mit SHA-256, bevor Sie irgendetwas löschen",
+  "summary": "Erstellen Sie ein schreibgeschütztes Hash-Inventar unter Windows, Linux oder macOS; gruppieren Sie byte-identische persönliche Disc-Bilder; unterscheiden Sie aktive Kopien von Offline-Backups; und entfernen Sie nur verifizierte Duplikate aus gescannten Ordnern.",
+  "heroAlt": "Microsoft Learn Get-FileHash Referenz, die die PowerShell SHA-256 Befehlsyntax zeigt",
+  "searchKeywords": [
+    "doppelte PS2 ISO",
+    "Get-FileHash SHA-256",
+    "sha256sum Bibliothek Prüfung",
+    "EmuCoreX doppelte Spiele",
+    "identische Dateien überprüfen"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Bibliothek",
+    "integrity": "Integrität"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Microsoft Get-FileHash Referenz",
+    "gnu-sha2": "GNU SHA-256 Dienstprogramm Referenz"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inventarisieren Sie die gescannten Wurzeln im nur-Lese-Modus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zwei Dateien sind nur dann Duplikate, wenn ihre Bytes übereinstimmen, nicht wenn Titel oder Dateinamen ähnlich aussehen. Regionale Ausgaben, Überarbeitungen, Demodiscs, Bonusdiscs, CD-Tracks und gepatchte Arbeitskopien können denselben Namen haben, aber unterschiedliche Daten enthalten. Beginnen Sie damit, jedes EmuCoreX-Bibliotheksstammverzeichnis aufzulisten und keine Dateien zu verschieben. Die Überprüfung sollte die Images lesen, ihren Bericht außerhalb dieser Wurzeln schreiben und Memory Cards sowie Emulator-Daten ausklammern."
+    },
+    {
+      "type": "callout",
+      "text": "Ein übereinstimmender SHA-256 beweist die Byte-Identität zwischen den von Ihnen gemessenen Dateien. Er beweist jedoch nicht, dass der ursprüngliche Dump korrekt, zur Weiterverbreitung lizenziert oder sicher ist, um von jedem Backup gelöscht zu werden. Bewahren Sie eine verifizierte Erhaltungs-Masterkopie außerhalb der aktiven Bibliothek auf."
+    },
+    {
+      "type": "heading",
+      "text": "Erstellen Sie den Windows PowerShell-Hashbericht"
+    },
+    {
+      "type": "paragraph",
+      "text": "Schließen Sie den Speicher an einen vertrauenswürdigen Windows-Computer an oder arbeiten Sie direkt in einem bereits dort verfügbaren Ordner. Ersetzen Sie D:\\PS2 durch den wörtlichen Pfad zu einer gescannten Wurzel. Get-FileHash verwendet standardmäßig SHA-256, aber die Angabe des Algorithmus macht den Bericht selbsterklärend. Der Export in CSV bewahrt vollständige Pfade und verhindert eine Kürzung in der Konsole."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Öffnen Sie PowerShell ohne Administratorrechte; das Hashen gewöhnlicher Bibliotheksdateien erfordert keine erhöhten Rechte.",
+        "2. Führen Sie aus: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. Warten Sie, bis die Eingabeaufforderung zurückkehrt. Große DVD-Images erfordern das Lesen jedes einzelnen Bytes, daher kann das Verwenden von Wechseldatenträgern lange dauern.",
+        "4. Öffnen Sie die CSV und gruppieren Sie benachbarte Zeilen mit demselben Hash-Wert. Bestätigen Sie, dass die angegebenen Pfadwerte auf separate Dateien verweisen und nicht auf dieselbe Datei, die über zwei Verknüpfungen aufgeführt ist.",
+        "5. Wiederholen Sie den Befehl für jede nicht überlappende Root und halten Sie die Berichte zusammen mit dem Prüfungsdatum, der Laufwerkskennung und eventuellen Lesefehlern bereit."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Verwenden Sie sha256sum oder shasum auf Unix-ähnlichen Systemen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Unter Linux stellt GNU sha256sum die äquivalente Prüfsumme bereit. Erstellen Sie die Dateiliste mit find unter Verwendung von Null-Delimitern, damit Leerzeichen und ungewöhnliche Zeichen intakt bleiben, und leiten Sie die Ausgabe außerhalb des gescannten Verzeichnisses um. Auf macOS ist shasum -a 256 üblicherweise verfügbar. Fügen Sie keine unüberprüften Internetbefehle ein, die Dateien automatisch löschen; dieses Verfahren trennt absichtlich die Erkennung von der Bereinigung."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Linux-Beispiel: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "macOS-Beispiel: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "Wenn ein Befehl einen Ein-/Ausgabefehler meldet, stoppen Sie die Bereinigung und untersuchen Sie das Quellgerät. Ein Digest, der nach instabilen Lesevorgängen erzeugt wird, ist keine verlässliche Migrationsgrundlage.",
+        "Bei Cue/Bin-CD-Abbildern behandeln Sie das Cue-Sheet und jede referenzierte Spur als ein Set; nur die größte BIN zu hashen, kann fehlende Audiospuren übersehen."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Klassifizieren Sie jede übereinstimmende Gruppe vor der Bereinigung"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Behalten Sie die Kopie innerhalb des beabsichtigten gescannten Root-Verzeichnisses, wenn eine weitere identische Kopie in einem Downloads- oder temporären Import-Ordner liegt.",
+        "Behalten Sie das Erhaltungs-Master, wenn die passende aktive Kopie eine umbenannte Arbeitsdatei ist; das Master gehört außerhalb jedes EmuCoreX-Scan-Root.",
+        "Behalten Sie beide physischen Kopien, wenn eine die einzige Offline-Sicherung auf einem anderen Gerät ist. Doppelte Bytes in verschiedenen Backup-Ebenen sind bewusste Redundanz, nicht Bibliothekschaos.",
+        "Führen Sie Dateien mit unterschiedlichen Hashes nicht zusammen, nur weil ihr angezeigter Titel übereinstimmt. Erfassen Sie zuerst Seriennummer, Region, Revision, Disc-Nummer und Patch-Status.",
+        "Für Multidisc-Spiele bestätigen Sie, dass Disc 1 und Disc 2 absichtlich unterschiedlich sind; nur Dateinamen reichen später nicht aus, um das Set wiederherzustellen."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Quarantäne statt Löschen beim ersten Durchgang"
+    },
+    {
+      "type": "paragraph",
+      "text": "Erstellen Sie einen Quarantäneordner außerhalb aller ausgewählten Bibliotheksstämme. Verschieben Sie eine redundante Arbeitskopie aus jeder bestätigten Gruppe hinein, aktualisieren Sie EmuCoreX einmal und überprüfen Sie, dass der verbleibende Eintrag die erwartete Region öffnet. Behalten Sie die Quarantäne mindestens durch einen App-Neustart und einen Start jedes betroffenen Titels. Löschen Sie die redundanten Arbeitskopien erst dann und nur, wenn eine andere verifizierte Sicherungs- oder Backup-Kopie unter Ihrer Kontrolle bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Überprüfen Sie die deduplizierte Bibliothek"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Die Anzahl der EmuCoreX-Einträge entspricht den beabsichtigten spielbaren Kopien, unter Berücksichtigung von Mehrfach-Disc-Sets.",
+        "Jeder betroffene Titel verweist auf den als kanonisch gewählten Pfad und startet von diesem Pfad aus.",
+        "Die behaltene Datei SHA-256 bleibt gleich dem vor der Quarantäne aufgezeichneten Digest.",
+        "Favoriten und pro Spiel erstellte Profile verweisen weiterhin auf die beabsichtigte Seriennummer und Region.",
+        "Die offline Aufbewahrungskopie und ihr Prüfbericht befinden sich nicht in einem von EmuCoreX gescannten Ordner."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Von einer fehlerhaften Klassifizierung wiederherstellen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn ein Titel verschwindet oder die falsche Version öffnet, schließen Sie EmuCoreX und verschieben Sie die in Quarantäne befindliche Datei zurück in ihren ursprünglichen physischen Pfad. Aktualisieren Sie einmal, vergleichen Sie die Seriennummern und stellen Sie den vorherigen Dateinamen wieder her, falls er geändert wurde. Kompensieren Sie nicht, indem Sie Speicherstände zwischen regionalen Einträgen kopieren; lösen Sie zuerst die Identität des Images. Wenn das Quelllaufwerk Lesefehler verursacht hat, bewahren Sie beide Kopien und deren Berichte auf, bis ein frischer Dump von der eigenen Disc einen vertrauenswürdigen Master erstellt."
+    },
+    {
+      "type": "link",
+      "text": "Überprüfen Sie die Microsoft Learn-Syntax für Get-FileHash",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

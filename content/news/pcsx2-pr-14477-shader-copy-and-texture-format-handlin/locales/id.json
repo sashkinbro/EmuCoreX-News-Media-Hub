@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 memindahkan kebijakan konversi tekstur di belakang GSDevice",
+  "summary": "StretchRectAuto, CreateCompatible, dan ShaderConvertSelector menata ulang penanganan salinan shader dan format kedalaman sehingga renderer perangkat keras dapat meminta konversi tanpa mengetahui detail pipeline tiap backend.",
+  "heroAlt": "Bukti visual dari permintaan tarik PCSX2 #14477: GS/HW: Merestruktur salinan shader dan penanganan format tekstur.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "konversi tekstur"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: Merestruktur salinan shader dan penanganan format tekstur."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache membawa keputusan yang seharusnya menjadi batas backend"
+    },
+    {
+      "type": "paragraph",
+      "text": "Salin shader di PCSX2 harus memilih konversi berdasarkan format sumber, format tujuan, bit per piksel yang diemulasikan, dan penyaringan. Sebelum pull request #14477, GSTextureCache dan GSRendererHW terlalu banyak menggunakan mekanisme itu. Refaktor memindahkan pilihan di belakang GSDevice sehingga kode rendering tingkat tinggi dapat menggambarkan salinan yang dibutuhkannya alih-alih memilih detail shader spesifik backend sendiri."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto dan CreateCompatible mengekspresikan operasi, bukan API"
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto menerima dua tekstur dan informasi format yang diemulasikan, kemudian memilih shader konversi di dalam GSDevice. CreateCompatible membuat tekstur yang sesuai dengan format tekstur yang sudah ada. ShaderConvertSelector menambahkan bit modifikasi yang dapat mewakili konversi terkait tanpa menggandakan titik masuk shader yang tidak terkait. Bersama-sama, mereka menyiapkan depth yang disimpan sebagai warna R32 dan jalur depth-integer di masa depan sambil menjaga dukungan depth-color ROV yang tidak aktif tetap berada di belakang antarmuka yang sama."
+    },
+    {
+      "type": "heading",
+      "text": "Penggantian nama membuat niat depth dan ID primitif menjadi eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini menyelaraskan shader konversi OpenGL lebih dekat dengan Vulkan, mengganti nama inisialisasi stencil-image menjadi inisialisasi primitive-ID, dan mengubah label rgba8_16bits menjadi rgb5a1_16bits. Float32 menjadi DepthColor, sementara nama selector FLOAT32, FLOAT24, dan FLOAT16 menjadi DEPTH32, DEPTH24, dan DEPTH16. Penyaringan bilinear juga berubah dari Boolean menjadi enum, memberi ruang untuk mode eksplisit alih-alih bendera yang kelebihan beban lainnya."
+    },
+    {
+      "type": "heading",
+      "text": "Refaktor murni membutuhkan pengujian identitas output pada setiap renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kontrak yang disebutkan adalah output identik dengan kode sebelumnya. Oleh karena itu, dump run harus membandingkan hasil frame di Direct3D, OpenGL, Vulkan, dan Metal dengan format tekstur yang berbeda, salinan depth, resolusi asli, dan upscaling. Metal sudah menerima pengecekan dump-run yang dilaporkan, tetapi set file yang luas berarti kompilasi shader dan pemilihan salinan juga harus diuji pada backend perangkat keras lainnya. Setiap perbedaan piksel perlu dijelaskan sebelum pekerjaan ROV selanjutnya menggunakan jalur baru."
+    },
+    {
+      "type": "callout",
+      "text": "Janji yang terlihat oleh pengguna sengaja dibuat konservatif: belum ada efek baru, tetapi batas renderer/backend yang lebih sempit yang dapat diperluas oleh format kedalaman selanjutnya tanpa menggandakan kebijakan konversi."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "Baca diskusi teknik PCSX2 dan perubahan sumber"
+    }
+  ]
+}

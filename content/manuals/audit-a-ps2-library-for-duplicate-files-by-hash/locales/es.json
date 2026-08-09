@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "id": "audit-a-ps2-library-for-duplicate-files-by-hash",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Encuentra imágenes duplicadas PS2 con SHA-256 antes de eliminar cualquier cosa",
+  "summary": "Crea un inventario de hash de solo lectura en Windows, Linux o macOS; agrupa imágenes de disco personales idénticas en bytes; distingue copias activas de copias de seguridad fuera de línea; y elimina solo la redundancia verificada de las carpetas escaneadas.",
+  "heroAlt": "Referencia de Microsoft Learn Get-FileHash mostrando la sintaxis del comando PowerShell SHA-256",
+  "searchKeywords": [
+    "duplicado PS2 ISO",
+    "Get-FileHash SHA-256",
+    "auditoría de biblioteca sha256sum",
+    "EmuCoreX juegos duplicados",
+    "verificar archivos idénticos"
+  ],
+  "categoryLabels": {
+    "ps2": "PlayStation 2",
+    "library": "Biblioteca",
+    "integrity": "Integridad"
+  },
+  "sourceLabels": {
+    "powershell-filehash": "Referencia de Microsoft Get-FileHash",
+    "gnu-sha2": "Referencia de la utilidad GNU SHA-256"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inventariar las raíces escaneadas en modo de solo lectura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dos archivos son duplicados solo cuando sus bytes coinciden, no cuando los títulos o nombres de archivo se parecen. Las ediciones regionales, revisiones, discos de demostración, discos de bonificación, pistas de CD y copias de trabajo parcheadas pueden compartir un nombre mientras contienen datos diferentes. Comience por listar cada raíz de la biblioteca EmuCoreX sin mover ningún archivo. La auditoría debe leer las imágenes, escribir su informe en algún lugar fuera de esas raíces y dejar las tarjetas de memoria y los datos del emulador fuera del alcance."
+    },
+    {
+      "type": "callout",
+      "text": "Un SHA-256 coincidente prueba la identidad de bytes entre los archivos que mediste. No prueba que la copia original fuera precisa, licenciada para redistribución o segura para eliminar de todas las copias de seguridad. Mantén un máster de preservación verificado fuera de la biblioteca activa."
+    },
+    {
+      "type": "heading",
+      "text": "Crea el informe de hash de Windows PowerShell"
+    },
+    {
+      "type": "paragraph",
+      "text": "Conecta el almacenamiento a una computadora Windows confiable o trabaja directamente en una carpeta ya disponible allí. Reemplaza D:\\PS2 con la ruta literal a una raíz escaneada. Get-FileHash usa SHA-256 por defecto, pero especificar el algoritmo hace que el informe sea autoexplicativo. Exportar a CSV preserva las rutas completas y evita la truncación en la consola."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Abra PowerShell sin derechos de administrador; realizar el hash de archivos de biblioteca comunes no requiere elevación.",
+        "2. Ejecute: Get-ChildItem -LiteralPath 'D:\\PS2' -File -Recurse | Get-FileHash -Algorithm SHA256 | Sort-Object Hash, Path | Export-Csv -NoTypeInformation -LiteralPath 'D:\\ps2-hash-audit.csv'",
+        "3. Espere a que aparezca el indicador de comando. Las imágenes grandes de DVD requieren leer cada byte, por lo que los medios extraíbles pueden tardar mucho tiempo.",
+        "4. Abra el CSV y agrupe las filas adyacentes con el mismo valor de Hash. Confirme que los valores de Path reportados apuntan a archivos separados en lugar de al mismo archivo listado a través de dos accesos directos.",
+        "5. Repita el comando para cada raíz no superpuesta y mantenga los informes junto con la fecha de auditoría, la identidad de la unidad y cualquier error de lectura."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Use sha256sum o shasum en sistemas tipo Unix"
+    },
+    {
+      "type": "paragraph",
+      "text": "En Linux, GNU sha256sum proporciona el digest equivalente. Construya la lista de archivos con find usando delimitadores nulos para que los espacios y caracteres inusuales permanezcan intactos, luego redirija la salida fuera del directorio escaneado. En macOS, shasum -a 256 está comúnmente disponible. No pegue comandos de Internet no revisados que eliminen archivos automáticamente; este procedimiento separa intencionalmente la detección de la limpieza."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ejemplo en Linux: find '/media/PS2' -type f -print0 | sort -z | xargs -0 sha256sum > '$HOME/ps2-hash-audit.txt'",
+        "Ejemplo en macOS: find '/Volumes/PS2' -type f -exec shasum -a 256 '{}' ';' > '$HOME/ps2-hash-audit.txt'",
+        "Si un comando informa error de entrada/salida, detenga la limpieza e investigue el dispositivo de origen. Un resumen producido después de lecturas inestables no es una base de migración confiable.",
+        "Para copias de CD cue/bin, trate la hoja de cue y cada pista referenciada como un solo conjunto; generar el hash solo del BIN más grande puede pasar por alto pistas de audio faltantes."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Clasifique cada grupo coincidente antes de la limpieza"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Mantenga la copia dentro de la raíz escaneada prevista cuando otra copia idéntica se encuentre en una carpeta de descargas o de importación temporal.",
+        "Conserve la copia maestra de preservación cuando la copia activa coincidente sea un archivo de trabajo renombrado; la copia maestra pertenece fuera de cualquier raíz de escaneo EmuCoreX.",
+        "Mantenga ambas copias físicas cuando una sea la única copia de seguridad sin conexión en otro dispositivo. Los bytes duplicados en diferentes niveles de respaldo son redundancia deliberada, no desorden en la biblioteca.",
+        "No fusione archivos con diferentes hashes únicamente porque su título mostrado coincida. Primero registre el número de serie, región, revisión, número de disco y estado del parche.",
+        "Para los juegos de varios discos, confirme que el Disco 1 y el Disco 2 son intencionalmente diferentes; los nombres de archivo por sí solos no son suficientes para reconstruir el conjunto más tarde."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Cuarentenar en lugar de eliminar en la primera pasada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cree una carpeta de cuarentena fuera de todas las raíces de biblioteca seleccionadas. Mueva una copia de trabajo redundante de cada grupo confirmado a ella, actualice EmuCoreX una vez y verifique que la entrada restante se abra en la región esperada. Mantenga la cuarentena al menos durante un reinicio de la aplicación y un lanzamiento de cada título afectado. Solo entonces elimine las copias de trabajo redundantes, y solo si otra copia verificada de preservación o respaldo permanece bajo su control."
+    },
+    {
+      "type": "heading",
+      "text": "Validar la biblioteca deduplicada"
+    },
+    {
+      "type": "list",
+      "items": [
+        "El número de entradas EmuCoreX coincide con las copias jugables previstas, teniendo en cuenta los conjuntos de varios discos.",
+        "Cada título afectado se resuelve en la ruta elegida como canónica y arranca en frío desde esa ruta.",
+        "El SHA-256 del archivo conservado sigue siendo igual al resumen registrado antes de la cuarentena.",
+        "Los favoritos y los perfiles por juego todavía apuntan al número de serie y región previstos.",
+        "La copia de preservación fuera de línea y su informe de auditoría no están dentro de una carpeta escaneada por EmuCoreX."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Recuperar de una clasificación errónea"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si un título desaparece o abre la revisión incorrecta, cierre EmuCoreX y mueva el archivo en cuarentena de nuevo a su ruta literal original. Actualice una vez, compare los números de serie y restaure el nombre de archivo anterior si se había cambiado. No compense copiando partidas guardadas entre entradas regionales; primero resuelva la identidad de la imagen. Si la unidad de origen produjo errores de lectura, conserve ambas copias y sus informes hasta que una nueva volcada desde el disco propiedad establezca un maestro confiable."
+    },
+    {
+      "type": "link",
+      "text": "Verifique la sintaxis de Microsoft Learn para Get-FileHash",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

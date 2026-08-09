@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin derives GameCube memory size from the disc that requests it",
+  "summary": "The bi2.bin simulated-memory field now selects MEM1 within hardware limits, while manual overrides remain available for deliberate experiments.",
+  "heroAlt": "Source evidence from Dolphin pull request #14665: Core: Adjust emulated memory size automatically.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "GameCube devkit",
+    "memory size"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Core: Adjust emulated memory size automatically."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The disc header already carried a memory-development contract"
+    },
+    {
+      "type": "paragraph",
+      "text": "GameCube bi2.bin includes a simulated memory size at offset 0x04. On development hardware with more RAM, Apploader used that value to imitate a smaller target machine during testing. Dolphin previously exposed memory sizing mainly as a manual override with a strong warning because arbitrary values break many games. That left disc images designed around their own header unable to request the appropriate capacity automatically."
+    },
+    {
+      "type": "heading",
+      "text": "Metadata now travels from VolumeDisc to MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14665 reads the field as a swapped 32-bit integer from the game partition, stores it with running-game metadata, copies it into Core::System during initialization, and exposes it to memory mapping. The automatic result is clamped to at least the retail 24 MiB MEM1 size and at most 64 MiB, the maximum supported by Flipper's memory controller. WAD and non-disc sources report zero."
+    },
+    {
+      "type": "heading",
+      "text": "Explicit overrides still win, but ordinary users need no guesswork"
+    },
+    {
+      "type": "paragraph",
+      "text": "When the manual RAM override is enabled, its configured values continue to control the map. Otherwise, a header above retail capacity can expand MEM1 and related FIFO-recording behavior records that fact. A value below retail does not shrink the console beneath what released software expects. The settings description now explains that Dolphin normally determines the value from game information, separating legitimate metadata-driven behavior from risky manual experimentation."
+    },
+    {
+      "type": "heading",
+      "text": "Tests need real headers, malformed values, and subsystem consumers"
+    },
+    {
+      "type": "paragraph",
+      "text": "Build disc fixtures with zero, 24 MiB, intermediate, 48 MiB, 64 MiB, and values above the controller limit. Verify endian decoding, clamp behavior, MEM1 address ranges, IOS release behavior, analytics, and FIFO recordings. Switch games without restarting to ensure metadata cannot leak between systems. Confirm manual overrides take precedence and WAD boot remains retail-sized. Finally, run development images that genuinely use extra memory and retail games whose headers contain unusual values."
+    },
+    {
+      "type": "callout",
+      "text": "The safe default is no longer a universal number; it is the retail floor plus a bounded request taken from the disc's own development metadata."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

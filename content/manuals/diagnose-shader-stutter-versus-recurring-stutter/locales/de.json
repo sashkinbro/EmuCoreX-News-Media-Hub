@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Unterscheiden Sie zunächst Shader-Ruckler beim ersten Durchlauf von wiederkehrenden Frame-Zeit-Aussetzern",
+  "summary": "Führen Sie eine feste Route kalt und warm aus, ohne den Cache zu löschen, markieren Sie jeden Aussetzerort und klassifizieren Sie nur Pausen beim ersten Besuch als Kompilationskandidaten, während Sie wiederkehrende I/O-, Szenen- oder Lebenszyklus-Staus für eine separate Diagnose beibehalten.",
+  "heroAlt": "Offizielles PCSX2 Shader-Optimierungsdiagramm, das Kompilations- und Renderer-Arbeitslast darstellt",
+  "searchKeywords": [
+    "EmuCoreX Shader-Ruckler",
+    "PS2 wiederkehrender Aussetzer",
+    "kalte warme Route",
+    "Shader-Cache",
+    "Frame-Zeit-Spitze"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Leistung",
+    "stutter": "Ruckeln"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan Pipeline- und Leistungsanleitung",
+    "pcsx2-vulkan": "PCSX2 Shader-Cache-Entwicklung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Markieren von Ruckelpositionen über identische kalte und warme Routen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Shader-Kompilierung erfolgt häufig, wenn ein neues Material oder ein neuer Effekt zum ersten Mal auftritt, und sollte sich verringern, sobald die entsprechende Pipeline zwischengespeichert ist. Wiederkehrendes Ruckeln wiederholt sich an derselben Übergangs-, Speicherlese-, Hintergrundereignis- oder Frame-Pacing-Grenze. Wählen Sie eine deterministische Route mit mehreren Effekten und zeichnen Sie Zeitstempel auf, anstatt sich auf das Gedächtnis zu verlassen."
+    },
+    {
+      "type": "callout",
+      "text": "Löschen Sie den Shader-Cache nicht zwischen den Cold- und Warm-Durchläufen. Andernfalls werden beide Routen in das Verhalten des ersten Besuchs gezwungen und der Vergleich wird zerstört."
+    },
+    {
+      "type": "heading",
+      "text": "Erstellen Sie eine Hitch-Timeline"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Ein normales Speichern vor einer deterministischen Zwei- bis Fünf-Minuten-Route.",
+        "System driver, ein Renderer und unverändertes Grafikprofil.",
+        "Eine Frame-Zeit-Überlagerung oder synchronisierte Bildschirmaufnahme, die in jedem Durchlauf verwendet wird.",
+        "Dokumentierter Cache-Zustand vor dem ersten Durchlauf.",
+        "Hintergrunddownloads, Aufnahme und Benachrichtigungen kontrolliert."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vergleiche ersten Besuch, sofortige Wiedergabe und App-Neustart"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Starte die App neu, ohne den Grafik-Cache zu löschen, und starte die Route im Kaltstart.",
+        "2. Markiere den Zeitstempel und die sichtbaren Inhalte für jeden Frame-Zeit-Spike.",
+        "3. Kehre zum normalen Speicherstand zurück und spiele sofort ohne Einstellungänderungen wieder ab.",
+        "4. Klassifiziere Ruckler, die beim zweiten Besuch verschwinden, als Kompilationskandidaten.",
+        "5. Markiere Staus, die an derselben Ladegrenze oder Animation erneut auftreten.",
+        "6. Schließe und öffne die App neu, ohne den Cache zu leeren, und führe dann einen dritten Durchlauf aus.",
+        "7. Starten Sie Android neu und wiederholen Sie dies nur, wenn die Lebenszykluspersistenz getestet wird.",
+        "8. Senden Sie wiederkehrende Positionen an den Speicher, CPU/GPU, oder führen Sie eine Frame-Pacing-Diagnose durch, anstatt einfach alles als Shader-Stottern zu bezeichnen."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Vergleich mit warmem Cache verwandelt Zeit in Beweise. Pausen nur beim ersten Auftreten passen zur Pipeline-Erstellung; ein Stau, der sich an jeder Tür wiederholt, kann I/O oder Synchronisation sein; ein Ruckeln in regelmäßigen Abständen kann von Hintergrundarbeit stammen. Der dritte Durchgang testet, ob der Cache einen gewöhnlichen App-Neustart überlebt."
+    },
+    {
+      "type": "heading",
+      "text": "Akzeptanz der Stotter-Klassifizierung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jedes Label muss durch sein Verhalten über die Durchgänge hinweg untermauert werden."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Erstbesuchs-bezogene Ruckler verschwinden oder verkleinern sich beim sofortigen Wiederholen.",
+        "Wiederkehrende Aussetzer behalten einen reproduzierbaren Zeitstempel oder Szenengrenze.",
+        "Einstellungen, Treiber, Cache-Richtlinie und Route bleiben unverändert.",
+        "Das Verhalten beim dritten Durchgang zeigt, ob der Cache beim Neustart der App bestehen bleibt.",
+        "Beweise der Frame-Zeit stimmen mit sichtbarem und akustischem Rhythmus überein."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zeitachsen zum Wiederholen"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zufällige Gegner oder Wetter ändern die Route: wähle einen deterministischen Checkpoint.",
+        "Videoaufzeichnung läuft nur in einem Durchgang: normalisiere den Overhead.",
+        "Android aktualisiert oder leert den Cache mitten im Test: die komplette Sequenz neu starten.",
+        "Änderungen der Gerätetemperatur wesentlich: thermischen Zustand vor dem Vergleich angleichen."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Overlay und Cache-Politik auf Normal zurücksetzen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Deaktivieren Sie das diagnostische Frame-Zeit-Overlay, bewahren Sie den gültigen Shader-Cache, stellen Sie das Verhalten von Hintergrundanwendungen wieder her und führen Sie einen Kaltstart des Titels durch. Planen Sie keine routinemäßige Cache-Löschung für Ruckler, die bereits nach der Kompilierung verschwinden."
+    },
+    {
+      "type": "heading",
+      "text": "Nicht jeder Ruckler beim ersten Besuch ist ein Shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Textur-Uploads, Laufwerkslesungen, Dekompression und Spiellogik können ebenfalls einmal pro Bereich auftreten. Behandle das Verschwinden beim ersten Durchgang als eine Kandidatenklassifizierung und benutze dann Zähler und Protokolle, um das verantwortliche Teilsystem zu bestätigen. Wiederhole die exakte Route nach einem warmen Neustart und erneut nach einer echten Cache-Löschbedingung nur dann, wenn dieser Vorgang dokumentiert und sicher ist. Wenn die Ruckler mit dem Speicherzugriff wandern oder bei jeder Runde an derselben Streaming-Grenze auftreten, bewahre Shader-Daten auf und untersuche die wiederkehrende Arbeitslast, anstatt Caches wiederholt zu löschen."
+    },
+    {
+      "type": "link",
+      "text": "Überprüfe Android Vulkan Optimierungsanleitungen",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

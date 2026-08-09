@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2098-async-filesystem-operations",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 将 3DS 文件系统的慢速请求从仿真线程中移出，而不会使 FS_USER 并发运行",
+  "summary": "专用的单工作队列允许客户线程在进行耗时存储操作时继续运行，同时保留 Azahar 的非线程安全 FS_USER 服务所需的序列化。",
+  "heroAlt": "Azahar 异步文件系统拉取请求展示了专用 FS_USER 工作设计",
+  "searchKeywords": [
+    "Azahar",
+    "FS_USER",
+    "异步文件系统",
+    "ThreadWorker",
+    "Android 存储卡顿"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "存储",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "azahar-pr-2098": "核心：添加异步文件系统操作"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "主机存储暂停不应冻结所有仿真应用线程"
+    },
+    {
+      "type": "paragraph",
+      "text": "一些 3DS 文件系统调用在主机上可能耗时较长，从而产生明显的卡顿，特别是通过 Google Play 版本使用的 Android 存储提供者时。在行内运行该操作会阻塞模拟线程，即使其他来宾工作可以继续。拉取请求 #2098 改变了该调度边界：文件系统 IPC 在主机操作在其他地方运行时可以让调用的来宾线程休眠。"
+    },
+    {
+      "type": "heading",
+      "text": "单线程工作器解决了 FS_USER 的安全限制"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar 不能简单地将每个请求发送到通用线程池，因为 FS_USER 及其归档状态不是线程安全的。该更改为服务提供了一个专用的 ThreadWorker，其中仅包含一个工作线程。请求相对于模拟是异步的，但彼此之间是串行的。这保留了服务的顺序假设，而不会强迫无关的模拟线程等待主机文件系统。"
+    },
+    {
+      "type": "heading",
+      "text": "RunOnThreadWorker 将主机工作与 IPC 回复分开"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLERequestContext 获取了一个辅助工具，它将存储操作封装在一个任务中，排入所选工作线程的队列，并保留一个用于完成的 future。客户端线程在任务运行时进入休眠状态。任务完成后，Azahar 唤醒该线程，并在模拟器端构建 IPC 结果。对于确定性异步操作模式和设置未启用的情况，仍然可以使用同步回退。"
+    },
+    {
+      "type": "heading",
+      "text": "该补丁避免了每次微小读取都需支付排队开销。"
+    },
+    {
+      "type": "paragraph",
+      "text": "实现是选择性的。归档打开、删除、重命名、目录及相关 FS_USER 路径可以使用专用工作线程。当数据尚未准备好时，缓存的文件操作遵循异步路径，而许多小的非缓存读取和写入保持同步，因为线程通信成本可能超过 I/O。文件关闭和调整大小也遵循该设置，并且 FS_USER 析构函数会在服务消失前等待排队请求完成。"
+    },
+    {
+      "type": "heading",
+      "text": "减少卡顿可能会以稍长的加载时间为代价。"
+    },
+    {
+      "type": "paragraph",
+      "text": "允许其他来宾线程运行会改变进度的可见时间，而不是主机存储设备完成的速度。因此，该来源预期文件系统相关的暂停会大幅减少，但也承认某些加载可能会略微变长。在 Android 和 Qt 存储设置中此选项默认启用，使得权衡可见且可逆，而不是埋藏在特定平台的构建中。"
+    },
+    {
+      "type": "heading",
+      "text": "正确性测试必须在操作和服务结束后继续存在。"
+    },
+    {
+      "type": "paragraph",
+      "text": "一个有用的基准测试会使用相同的存储位置记录开启和关闭该选项时的帧时间和加载持续时间。正确性覆盖应包括打开、目录读取、重命名和删除请求；在工作排队时关闭标题；并随后验证保存数据的哈希值。慢速的 Android 文档存储是主要性能案例，但桌面本地和网络支持的路径对暴露顺序性、关闭和错误传播回归非常有价值。"
+    },
+    {
+      "type": "callout",
+      "text": "关键的设计选择是序列化异步：一个 FS_USER 工作线程消除了仿真线程的停顿，而没有假装文件系统服务可以安全地进行并行访问。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2098",
+      "label": "检查 Azahar 的 FS_USER 工作线程、IPC 唤醒和存储设置实现"
+    }
+  ]
+}

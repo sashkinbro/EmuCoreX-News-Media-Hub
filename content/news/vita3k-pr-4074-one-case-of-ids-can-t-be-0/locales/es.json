@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K distingue los IDs de objetos SPIR-V de los números de carril de vectores",
+  "summary": "La construcción de vector-barajado ahora etiqueta los vectores de origen como IDs y los selectores de componentes como literales, evitando que el carril cero se convierta en un ID SPIR-V inválido.",
+  "heroAlt": "Evidencia de origen del pull request #4074 de Vita3K: shader: Corregir un caso de 'los ids no pueden ser 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "recompilador de shader",
+    "bloque uniforme"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Corregir un caso de 'los ids no pueden ser 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El mismo tipo entero puede representar dos conceptos diferentes de SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las instrucciones SPIR-V hacen referencia a objetos definidos previamente mediante ID numérico, y algunas también contienen números literales. OpVectorShuffle toma dos IDs de vectores seguidos de selectores de componentes. Un selector de cero significa la primera vía del primer vector; un ID de objeto de cero está prohibido. Pasar cada operando a través de un vector tipado únicamente como spv::Id por lo tanto pierde la distinción exactamente donde un número de vía válido comparte el valor centinela de un ID inválido."
+    },
+    {
+      "type": "heading",
+      "text": "El generador ahora recibe un tipo explícito para cada operando"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #4074 cambia las dos listas de operandos de shuffle a spv::IdImmediate. Las cargas de dest y dest_friend y el vector que se está copiando están marcados como IDs. Los índices de vía generados por bucles están marcados como valores inmediatos, ya sean cero, cuatro más i, o un desplazamiento derivado de inicio módulo cuatro. createOp puede entonces codificar cada palabra de acuerdo con la gramática de la instrucción en lugar de inferir su significado de un alias de C++."
+    },
+    {
+      "type": "heading",
+      "text": "La ruta afectada une datos uniformes a través de los límites de vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register maneja un rango que abarca el vector de destino actual y su vecino. Construye mezclas complementarias de manera que las ranuras de destino preservadas y las ranuras de origen entrantes caigan en las posiciones correctas. Comenzar alineado a un vec4 toma una ruta más simple; comienzos desalineados ejercitan la lógica de dos listas. La corrección no cambia qué fórmula de ranura se elige. Hace que los selectores ya calculados sean literales legales."
+    },
+    {
+      "type": "heading",
+      "text": "Los arreglos impulsados por el validador deberían enumerar cada ranura de inicio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Generar copias uniformes comenzando en desplazamientos cero a tres con longitudes que permanezcan dentro de un vec4 y se crucen al siguiente. Inspeccionar las palabras OpVectorShuffle emitidas, ejecutar spirv-val y ejecutar shaders con ranuras de origen coloreadas o numeradas de manera única. Incluir selectores cero, tres, cuatro, siete y cualquier centinela indefinido que el generador soporte. Probar controladores Vulkan con validación estricta y comparar la salida renderizada entre proveedores. Una prueba de regresión debería afirmar los tipos de operandos además de los píxeles finales."
+    },
+    {
+      "type": "callout",
+      "text": "En un lenguaje de sombreado binario, cero puede ser un carril perfectamente válido y un ID de objeto imposible; el creador debe saber cuál de los dos espera la instrucción."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Lea la discusión de ingeniería y los cambios de fuente Vita3K"
+    }
+  ]
+}

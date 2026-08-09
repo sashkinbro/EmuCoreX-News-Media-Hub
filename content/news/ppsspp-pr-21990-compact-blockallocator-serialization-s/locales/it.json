@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP fornisce alle mappe di memoria del kernel un formato savestate più snello",
+  "summary": "BlockAllocator ora scrive un record compatto per blocco e garantisce tag con zeri padding quando vengono creati, riducendo il lavoro strutturale delle grandi mappe di memoria.",
+  "heroAlt": "Evidenza della fonte da PPSSPP pull request #21990: Savestate: serializzazione compatta BlockAllocator (sezione v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "memoria del kernel",
+    "serializzazione",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: serializzazione compatta BlockAllocator (sezione v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mille blocchi moltiplicati per piccoli costi di serializzazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serializza elenchi di blocchi collegati per memoria utente, kernel e volatile. Un gioco in esecuzione può mantenere circa mille blocchi attivi. Il layout precedente apriva una Sezione di serializzazione nominata per ogni blocco, aggiungendo ripetutamente lavoro sull'intestazione e sul payload. Chiamava anche strlen e memset durante ogni salvataggio per cancellare i byte inutilizzati in un buffer di tag a dimensione fissa, perché l'assistente che copiava un tag non inizializzava il padding rimanente."
+    },
+    {
+      "type": "heading",
+      "text": "Il nuovo record contiene solo campi che definiscono un blocco"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21990 aggiunge la sezione BlockAllocator v2. Il suo ramo compatto scrive start, size, taken e l'intero array di tag a dimensione fissa direttamente, senza una sezione di blocchi nidificata. La lettura esegue la stessa sequenza di campi. Questa è deliberatamente una scelta a livello BlockAllocator piuttosto che un cambiamento silenzioso al metodo dei blocchi vecchio, perché i formati serializzati necessitano di un confine esplicito ogni volta che il layout dei byte differisce."
+    },
+    {
+      "type": "heading",
+      "text": "L'igiene dei tag si sposta al punto di mutazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La costruzione del blocco e SetAllocated ora cancellano l'intero buffer dei tag prima di copiarvi il testo. Ciò rende il padding deterministico durante l'intera durata dell'oggetto e rimuove il lavoro ripetuto di strlen più memset dal percorso di salvataggio caldo. Evita anche che la memoria del processo non inizializzata raggiunga un file di stato. La versione uno rimane disponibile per il caricamento di stati più vecchi, mentre i nuovi stati compatti seguono la normale regola di incompatibilità futura per un aumento della sezione."
+    },
+    {
+      "type": "heading",
+      "text": "La topologia dell'allocatore conta più del solo dimensionamento del file"
+    },
+    {
+      "type": "paragraph",
+      "text": "Costruire stati con liste vuote, un blocco, migliaia di blocchi alternati liberi e occupati, tag di lunghezza massima, blocchi riutilizzati, memoria volatile e allocazione sia dall'alto verso il basso che dal basso verso l'alto. Caricare vecchi fixture v1 e nuovi fixture v2, confrontare l'ordine delle liste e ogni confine, quindi allocare e liberare dopo il ripristino per evidenziare collegamenti interrotti. Ispezionare l'output per un padding del tag deterministico e assenza di byte non inizializzati. Eseguire benchmark di dimensione e tempo di serializzazione solo dopo il superamento dell'equivalenza strutturale e della gestione della corruzione."
+    },
+    {
+      "type": "callout",
+      "text": "La serializzazione compatta è più sicura quando lo stato deterministico dell'oggetto è stabilito al momento della mutazione, non riparato ogni volta che viene scritto un salvataggio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Leggi la discussione ingegneristica PPSSPP e le modifiche del codice sorgente"
+    }
+  ]
+}

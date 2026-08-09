@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14785-unjumble-eatan-coefficients",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 restaure l'ordre des coefficients EATAN de microVU avec des tests au niveau des bits",
+  "summary": "Une régression de nommage des coefficients dans le recompilateur d'unité vectorielle a produit des résultats plausibles mais incorrects pour l'arctangente ; des tables manuelles et ps2autotests révèlent exactement quelles constantes ont été mélangées.",
+  "heroAlt": "Preuve visuelle provenant de la pull request #14785 de PCSX2 : MicroVU : Démêler les coefficients EATAN",
+  "searchKeywords": [
+    "PCSX2",
+    "microVU",
+    "EATAN",
+    "ps2autotests",
+    "unité vectorielle"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "cpu": "Cpu",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14785": "MicroVU : Démêler les coefficients EATAN"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les constantes correctes étaient attachées aux mauvais noms EATAN"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le chemin microVU ne manquait pas des coefficients arctangents ; il les utilisait dans le mauvais ordre. Un nettoyage précédent a changé la façon dont les constantes étaient représentées et s'appuyait sur des commentaires qui ne décrivaient pas correctement la table. Les noms résultants semblaient raisonnables tout en pointant vers des valeurs mélangées. Cela fait de ce défaut de recompileur un problème particulièrement subtil : les scènes ordinaires peuvent encore produire des nombres, mais ces nombres divergent de l'unité vectorielle PlayStation 2."
+    },
+    {
+      "type": "heading",
+      "text": "La correction suit le manuel du VU plutôt que d'ajuster la sortie visible"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #14785 réordonne les constantes EATAN dans microVU_Misc.h pour correspondre à la table de coefficients documentée pour l'unité de fonctions élémentaires du VU. Elle suit également une découverte séparée selon laquelle l'interpréteur avait un coefficient incorrect, vérifiant le recompileur au lieu de supposer que les deux chemins d'exécution partageaient la même erreur. Aucun seuil spécifique au jeu ou solution visuelle n'est introduit ; les entrées mathématiques à la séquence recompilée existante sont corrigées."
+    },
+    {
+      "type": "heading",
+      "text": "EATANxy et EATANxz exposent des erreurs que EATAN seul peut cacher"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le test efu.elf fourni exerce EATAN ainsi que ses variantes xy et xz avec zéro positif et négatif, valeurs maximales, NaN, un, limites de mantisse et d'exposant, et paires de composants croissantes ou décroissantes. Les journaux avant et après montrent plusieurs résultats hexadécimaux modifiés, y compris les cas de mantisse maximale et d'angle représentatif. Ces motifs de bits sont une preuve plus solide que de juger une animation à l'œil nu."
+    },
+    {
+      "type": "heading",
+      "text": "Les comparaisons entre interpréteur et recompilateur doivent rester dans l’ensemble de régression"
+    },
+    {
+      "type": "paragraph",
+      "text": "La validation future doit exécuter les mêmes ps2autotests ELF à travers l’interpréteur et le microVU, conserver la sortie hexadécimale brute et la comparer avec le tableau attendu dans le manuel du VU. Les jeux qui dépendent fortement des fonctions élémentaires de l’unité vectorielle sont des vérifications secondaires utiles, mais ils ne peuvent pas remplacer les cas limites tels que la propagation des NaN ou le zéro signé. Une refactorisation ultérieure des coefficients devrait échouer à ce test avant d’atteindre la phase de test de compatibilité visuelle."
+    },
+    {
+      "type": "callout",
+      "text": "Ceci est un travail d'émulation numérique, pas un ajustement de performance : le critère de succès est le motif de bits attendu de l'unité vectorielle sur l'ensemble de la matrice de test EATAN."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14785",
+      "label": "Lisez la discussion d'ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

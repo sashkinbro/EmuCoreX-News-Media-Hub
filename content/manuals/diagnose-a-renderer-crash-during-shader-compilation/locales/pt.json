@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-a-renderer-crash-during-shader-compilation",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticar um travamento do renderizador durante a compilação de shaders",
+  "summary": "Distinguir o trabalho de shader da primeira execução esperado de um travamento repetível do driver comparando inicializações a frio e a quente, restaurando o driver do sistema, alterando uma API e preservando exatamente a cena e o registro que desencadeiam a compilação.",
+  "heroAlt": "PCSX2 diálogo de aviso identificando um driver gráfico desatualizado durante a solução de problemas do renderizador",
+  "searchKeywords": [
+    "EmuCoreX travamento na compilação de shader",
+    "Vulkan travamento na primeira execução",
+    "GPU driver renderizador",
+    "cache de shaders",
+    "dispositivo perdido"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "crash": "Falha"
+  },
+  "sourceLabels": {
+    "pcsx2-windows": "PCSX2 Vulkan/OpenGL causas da falha",
+    "pcsx2-vulkan": "Desenvolvimento do renderizador PCSX2 e do cache de shaders"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Separe uma primeira compilação lenta de um renderizador com falha"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um lançamento a frio pode pausar enquanto novas variantes de shader são compiladas, mas deve eventualmente concluir e lançamentos posteriores devem reutilizar o cache. Uma falha do renderizador, por outro lado, termina a sessão, relata perda de dispositivo ou falha no compilador, ou repete no mesmo desenho. Registre se o aplicativo fecha, Android o mata, a tela congela ou apenas o indicador de progresso trava."
+    },
+    {
+      "type": "callout",
+      "text": "Não exclua todos os dados do aplicativo para limpar o cache gráfico. Cartões de memória, perfis, salvamentos e referências de firmware estão fora do limite descartável do shader-cache."
+    },
+    {
+      "type": "heading",
+      "text": "Preserve o estado de inicialização com falha"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Um salvamento normal no jogo antes do efeito ou área exata que dispara a compilação.",
+        "Pacote de drivers do sistema GPU e qualquer identidade de driver personalizada registrada.",
+        "Carimbos de data e hora de inicialização a frio e a quente.",
+        "Registro do renderizador ou registro de falha Android capturado sem conteúdo de arquivos privados.",
+        "Um backup dos perfis do título e dados de salvamento do usuário."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Teste cache, driver e API como ramificações independentes"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Inicie o título a frio e espere passar por uma janela de compilação medida sem relançar repetidamente.",
+        "2. Se completar, feche normalmente e repita a mesma cena para determinar se o caminho quente é estável.",
+        "3. Quando ocorrer a falha, restaure o driver do sistema GPU antes de alterar a API do renderizador.",
+        "4. Tente a cena duas vezes no driver do sistema e registre a primeira mensagem de perda de compilador ou dispositivo.",
+        "5. Selecione a outra API de hardware suportada com resolução e precisão inalteradas.",
+        "6. Limpe apenas o cache de shader descartável documentado do emulador uma vez, e então compare a próxima execução a frio e a quente.",
+        "7. Reinicie o Android para remover o estado de processo do driver obsoleto e repita a menor reprodução.",
+        "8. Mantenha a API estável por jogo enquanto preserva o registro de falha para um relatório de driver ou emulador."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "As variantes de shader dependem do renderizador, do driver, dos comandos de desenho do jogo e das configurações gráficas. Uma reconstrução de cache deve criar uma execução mais lenta seguida de reutilização estável. Um crash que ocorre após um driver personalizado, mas desaparece no pacote do sistema, indica esse ramo; um crash específico de cena através de drivers e APIs precisa de um relatório mínimo do emulador."
+    },
+    {
+      "type": "heading",
+      "text": "Aceitação de estabilidade de compilação"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma recuperação deve passar por comportamentos frios e quentes repetidos, não em um lançamento de sorte."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Uma compilação fria termina sem a finalização do aplicativo.",
+        "Dois lançamentos quentes posteriores alcançam a mesma cena sem reconstruir tudo.",
+        "Nenhum erro de dispositivo perdido ou compilador de shaders aparece no caminho aceito.",
+        "Títulos não relacionados ainda são inicializados sob o driver e a API selecionados.",
+        "Salvamentos e perfis do usuário permanecem intactos pela manutenção do cache."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Padrões de travamento a serem preservados para escalonamento"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A mesma cena de shader trava ambas as APIs no driver do sistema: colete um relatório mínimo.",
+        "Apenas um pacote personalizado causa falha: retire-o do perfil ativo.",
+        "Cada inicialização recompila as mesmas variantes: inspecione a persistência do cache e a integridade do armazenamento.",
+        "Android mata o processo sob pressão de memória: separe a exaustão de recursos da falha do compilador."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Retorne ao driver do sistema e à política de cache retida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desative o driver personalizado, restaure a API estável anterior, pare de limpar o cache e faça uma inicialização a frio de um título conhecido como bom. Reimporte o perfil salvo por jogo somente após confirmar que ele não restaura a combinação que causa o travamento."
+    },
+    {
+      "type": "heading",
+      "text": "O sucesso em quente pode esconder um caminho quebrado em frio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um shader em cache pode permitir que execuções posteriores funcionem, enquanto uma instalação nova ou atualização de driver ainda trava. Preserve pelo menos um teste controlado de cache frio antes de declarar a configuração portátil."
+    },
+    {
+      "type": "link",
+      "text": "Revise as orientações de travamento do driver gráfico PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/windows/"
+    }
+  ]
+}

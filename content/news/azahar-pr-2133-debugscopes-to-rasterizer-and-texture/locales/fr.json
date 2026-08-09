@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Les étiquettes Azahar associent le travail OpenGL à l'opération du moteur de rendu qui l'a provoquée",
+  "summary": "Des DebugScopes nommés autour des chemins de dessin et de texture-runtime transforment les captures GPU en une hiérarchie de réinterprétation, effacement, copie, téléchargement, mise en ligne, mipmap et mise à l'échelle du travail.",
+  "heroAlt": "Preuves sources de la pull request Azahar #2133 : renderer_gl : Ajouter `DebugScopes` au rasterizer et texture-runtime",
+  "searchKeywords": [
+    "Azahar",
+    "Débogage OpenGL",
+    "DebugScope",
+    "RenderDoc",
+    "Texture runtime"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "Outils",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl : Ajouter `DebugScopes` au rasterizer et texture-runtime"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un flux de commandes GL perd la raison C++ derrière chaque appel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les débogueurs GPU peuvent montrer glBindTexture, glFramebufferTexture, les dessins et les copies, mais une capture longue n'indique pas automatiquement quelle opération Azahar les a produites. Diagnostiquer une faute de rendu nécessite alors de corréler manuellement l'ordre des API avec les traces CPU. La pull request #2133 ajoute des labels structurés aux limites du rasterizer et du runtime de texture où l'émulateur connaît encore l'opération sémantique."
+    },
+    {
+      "type": "heading",
+      "text": "Les scopes incluent des paramètres qui distinguent des opérations similaires"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le patch nomme RasterizerOpenGL::Draw et la réinterprétation de texture, le clear avec ou sans FBO, la copie, le blit, la génération de mipmaps, la copie de handle, le téléchargement, le téléchargement personnalisé, le téléchargement en bas, l'attachement, l'agrandissement et les chemins de blit-agrandissement. Les labels incluent les formats de pixels, les couleurs de clear, les comptes de copie ou les valeurs de mise à l'échelle lorsque c'est utile. Une capture peut donc différencier deux copies visuellement similaires provenant de décisions de format ou de mise à l'échelle différentes."
+    },
+    {
+      "type": "heading",
+      "text": "La profondeur du scope n'est activée que lorsque le débogage du renderer est activé"
+    },
+    {
+      "type": "paragraph",
+      "text": "La profondeur de la portée du sampler augmente conditionnellement selon Settings::values.renderer_debug. Le gameplay normal ne doit pas maintenir d'imbrication de diagnostic et cela ne sera jamais exporté. Lorsqu'elle est activée, la hiérarchie peut être utilisée par les marqueurs et les outils de capture de débogage, reliant un groupe d'appels GL à une pile d'appels C++ unique. Les portées ne changent pas la synchronisation et ne corrigent pas le rendu elles-mêmes ; elles rendent l'investigation ultérieure précise."
+    },
+    {
+      "type": "heading",
+      "text": "La validation de la capture doit couvrir l'imbrication et la surcharge désactivée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Activer le débogage du moteur de rendu, capturer les scènes qui téléchargent, réinterprètent, effacent, copient, mettent à l'échelle et téléchargent de nouveau les textures, et confirmer que chaque groupe GL possède le nom et les paramètres corrects avec une imbrication équilibrée. Déclencher un retour anticipé ou une opération échouée pour s'assurer que RAII ferme la portée. Désactiver le débogage et vérifier que les marqueurs et les incréments de profondeur disparaissent, puis mesurer la surcharge CPU. Les étiquettes doivent identifier l'opération réellement exécutée plutôt que des noms copiés-collés qui créent de fausses preuves."
+    },
+    {
+      "type": "callout",
+      "text": "Les portées de débogage ne changent pas les pixels ; elles changent la possibilité pour une capture de répondre à la question de savoir quelle opération Azahar a produit ces pixels."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "Lisez la discussion d'ingénierie Azahar et les modifications du code source"
+    }
+  ]
+}

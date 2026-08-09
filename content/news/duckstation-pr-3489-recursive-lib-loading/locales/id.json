@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3489-recursive-lib-loading",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation mengikuti pustaka PSF bersarang ke titik masuk nyata program",
+  "summary": "Perubahan rekursi dua baris membuat _lib orang tua terdalam menyediakan PC dan SP, memperbaiki loader yang menghentikan pencarian titik masuk satu tingkat terlalu dini.",
+  "heroAlt": "Bukti sumber dari permintaan tarik DuckStation #3489: PSFLoader: Perbaiki pemuatan _lib rekursif",
+  "searchKeywords": [
+    "DuckStation",
+    "Loader PSF",
+    "_lib",
+    "counter program",
+    "pointer tumpukan"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "storage": "Penyimpanan",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3489": "PSFLoader: Perbaiki pemuatan _lib rekursif"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sebuah PSF dapat mewarisi status executable melalui lebih dari satu pustaka"
+    },
+    {
+      "type": "paragraph",
+      "text": "File Portable Sound Format dapat merujuk ke induknya melalui _lib, dan induk tersebut dapat merujuk ke library pertama lainnya. Memuat data secara rekursif tidak cukup jika pemuat memilih PC dan SP dari level yang salah. Panduan format yang dikutip oleh perubahan menyatakan bahwa rantai _lib pertama harus diikuti hingga anggota terdalamnya; konteks eksekusi tersebut menginisialisasi pemutaran setelah semua bagian yang diwarisi telah disusun."
+    },
+    {
+      "type": "heading",
+      "text": "Pemeriksaan kedalaman lama mengonsumsi flag entry-point terlalu cepat"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSFLoader sebelumnya membuat lib_use_pc_sp dari depth == 0. Itu memungkinkan library induk pertama untuk mengklaim program counter dan stack pointer, lalu mencegah rekursi yang lebih dalam untuk melakukannya. Pull request #3489 justru meneruskan flag use_pc_sp pemanggil ke LoadLibraryPSF secara rekursif dan mengaturnya menjadi false hanya setelah pemanggilan library pertama itu selesai. Induk pertama terdalam menerima flag sebelum level yang lebih dangkal mengonsumsinya."
+    },
+    {
+      "type": "heading",
+      "text": "Hanya rantai library pertama yang memiliki pilihan PC dan SP"
+    },
+    {
+      "type": "paragraph",
+      "text": "Menghapus use_pc_sp selama unwind mempertahankan aturan PSF lainnya: perpustakaan yang dimuat kemudian dapat memberikan data tanpa berulang kali mengganti register awal. Patch ini tidak meratakan setiap _lib menjadi satu daftar tidak berurutan. Ini membedakan jalur parent pertama rekursif yang menetapkan eksekusi dari saudara yang dimuat setelahnya, menjaga perubahan sekecil mungkin di psf_loader.cpp daripada menulis ulang format kontainer."
+    },
+    {
+      "type": "heading",
+      "text": "Sebuah fixture regresi membutuhkan setidaknya tiga tingkat bersarang."
+    },
+    {
+      "type": "paragraph",
+      "text": "Buat PSF yang root, parent pertama, dan parent pertama terdalam masing-masing mendeklarasikan nilai PC dan SP yang berbeda, ditambah perpustakaan sekunder dengan pasangan lain. DuckStation harus memuat semua data yang diperlukan tetapi memulai dari register parent pertama terdalam; mengubah perpustakaan non-pertama tidak boleh memindahkan titik masuk. Bandingkan pemutaran dan register yang dicatat dengan Mednafen atau loader lain yang sesuai format, lalu uji referensi perpustakaan yang hilang, siklik, dan tidak dapat dibaca untuk menghasilkan kesalahan yang bersih daripada rekursi tanpa batas."
+    },
+    {
+      "type": "callout",
+      "text": "Perbaikan ini berkaitan dengan urutan rekursi: data dapat berasal dari banyak perpustakaan, tetapi PC dan SP awal milik anggota terdalam dari rantai _lib pertama."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3489",
+      "label": "Baca diskusi rekayasa DuckStation dan perubahan sumber"
+    }
+  ]
+}

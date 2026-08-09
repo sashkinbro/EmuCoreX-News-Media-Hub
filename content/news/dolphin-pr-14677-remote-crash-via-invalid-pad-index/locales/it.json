@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14677-remote-crash-via-invalid-pad-index",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin rifiuta gli indici del controller NetPlay prima che raggiungano le mappe del server",
+  "summary": "I controlli di intervallo con segno ora precedono l'accesso alle mappe del pad e del Wiimote, chiudendo una via di crash remoto pur preservando la convalida della proprietà del mittente.",
+  "heroAlt": "Prove sorgente dalla richiesta di pull Dolphin #14677: NetPlayServer: Risolto crash remoto tramite indice pad non valido",
+  "searchKeywords": [
+    "Dolphin",
+    "Sicurezza NetPlay",
+    "indice del pad",
+    "pacchetto remoto",
+    "mappa Wiimote"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Sicurezza",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14677": "NetPlayServer: Risolto crash remoto tramite indice pad non valido"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un numero di controller proveniente dalla rete è ancora un input non affidabile"
+    },
+    {
+      "type": "paragraph",
+      "text": "I pacchetti NetPlay identificano il pad o Wii Remote di cui trasportano lo stato. Il server in precedenza utilizzava map_array.at dopo aver verificato la proprietà in alcuni percorsi, ma un indice con segno non valido poteva raggiungere per primo l'accesso controllato dai limiti. std::array::at quindi genera un'eccezione, trasformando un pacchetto malformato o ostile di un peer in un malfunzionamento del processo del server invece che in un messaggio respinto. I valori negativi richiedono attenzione speciale prima della conversione in size_t."
+    },
+    {
+      "type": "heading",
+      "text": "Un helper stabilisce l'intervallo prima della proprietà"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14677 introduce IsValidPadIndex. Richiede prima che l'indice sia non negativo, poi lo converte e lo confronta con la dimensione concreta dell'array map. I dati del pad, le interrogazioni dell'host del pad e i dati del Wiimote chiamano l'helper prima di at. Solo uno slot valido mappato al giocatore che invia continua. Il server restituisce un errore di protocollo per input non valido invece di indicizzare o permettere a un client di inviare controlli per un altro partecipante."
+    },
+    {
+      "type": "heading",
+      "text": "Il comportamento di disconnessione tiene conto anche dei Wiimote mappati"
+    },
+    {
+      "type": "paragraph",
+      "text": "La stessa modifica verifica se un giocatore non host che sta per partire possiede una mappatura Wiimote mentre un gioco è attivo. In tal caso, il server interrompe la sessione e invia DisableGame, rispecchiando la necessità di evitare di continuare con un input sincronizzato mancante. Il controllo acquisisce il blocco del gioco solo quando cambia il flag di esecuzione. Questo comportamento è separato dalla convalida dei limiti ma copre un altro caso limite del ciclo di vita della mappa del controller."
+    },
+    {
+      "type": "heading",
+      "text": "Fuzzare ogni messaggio che porta un indice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Inviare il numero intero minimo, -1, zero, l’ultimo slot valido, il primo slot non valido e il numero intero massimo attraverso ogni tipo di pacchetto pad e Wiimote. Ripetere come host, client mappato, client non mappato e dopo la disconnessione o il rimappaggio. Il server dovrebbe rifiutare l’input malformato senza eccezioni, logging eccessivo o cambiamenti di stato. Aggiungere fuzzing dei pacchetti intorno ai valori troncati e ai confini dei tipi, quindi verificare che le sessioni multi-controller valide e le disconnessioni Wiimote a metà gioco seguano ancora la politica di spegnimento prevista."
+    },
+    {
+      "type": "callout",
+      "text": "I limiti e la proprietà sono questioni separate: il server deve prima dimostrare che uno slot esiste, quindi dimostrare che il mittente remoto è autorizzato a controllarlo."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14677",
+      "label": "Leggi la discussione ingegneristica e le modifiche al codice sorgente Dolphin"
+    }
+  ]
+}

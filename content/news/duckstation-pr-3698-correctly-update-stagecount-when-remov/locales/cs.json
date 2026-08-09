@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation udržuje délku řetězce post-processingu konzistentní po odstranění a vyčištění",
+  "summary": "Opravená persistence StageCount rozlišuje zkrácený řetězec, explicitně prázdný základní řetězec a prázdné per-game přepsání, které by mělo být odstraněno.",
+  "heroAlt": "Důkaz ze zdroje z pull requestu DuckStation #3698: PostProcessing: Správně aktualizovat `StageCount` při odstraňování/vymazání fází",
+  "searchKeywords": [
+    "DuckStation",
+    "post-processing",
+    "StageCount",
+    "nastavení pro hry",
+    "odstranění shaderu"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "Frontend",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "PostProcessing: Správně aktualizovat `StageCount` při odstraňování/vymazání fází"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount je zároveň délka i značka pro přepsání"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation ukládá stupně post-processing do nastavení spolu s StageCount. V základních nastaveních nula explicitně znamená žádné stupně. V per-game vrstvě může smazání pole znamenat, že hra již nepřepisuje globální řetězec. Stejné zacházení s těmito případy způsobuje zastaralé stupně nebo zabraňuje dědičnosti. Odebrání, které zanechá dva stupně, musí zapsat dva; odebrání, které nezanechá žádný, může vyžadovat vymazání per-game pole."
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage nyní maže pouze skutečně prázdný per-game přepis."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3698 vypočítává new_stage_count a drží tuto hodnotu, když stupně zůstávají. Pole je odstraněno pouze tehdy, když nastavení nejsou základní vrstvou a počet dosahuje nuly, což umožňuje, aby prázdný herně-specifický přepis zmizel. Dříve mohl větví smazat StageCount po jakémkoli per-game odebrání, což vedlo ke ztrátě deklarované délky zbytku řetězce."
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages opravuje opačnou základní vrstvovou větev."
+    },
+    {
+      "type": "paragraph",
+      "text": "Jasná cesta měla obrácený stav podmínky základna-versus-hra. Opravený kód zapisuje StageCount = 0 pro základní nastavení, kde je explicitní prázdný globální řetězec smysluplný, a odstraňuje hodnotu pro jednotlivou hru, aby se globální konfigurace mohla přenášet. Tato symetrie je jádrem opravy: zkrátit, vyčistit globálně a vymazat přepsání jsou tři odlišné operace zachování stavu."
+    },
+    {
+      "type": "heading",
+      "text": "Testy zpětného průchodu by měly pokrýt všechny vrstvy a zbylý počet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvořte třífázový globální řetězec a jiný třífázový řetězec pro jednotlivou hru. Odstraňte prostřední fázi pro jednotlivou hru, restartujte a ověřte, že dva přeživší zachovají pořadí a parametry. Odstraňte poslední dvě a potvrďte, že se globální řetězec vrátí. Poté vyčistěte základní řetězec a ověřte, že po restartu zůstane prázdný. Opakujte přes Qt a FullscreenUI, zkontrolujte StageCount po každé operaci a otestujte přidání fáze ihned po vyčištění, abyste zachytili zastaralá indexovaná pole."
+    },
+    {
+      "type": "callout",
+      "text": "Délka řetězce nula se neukládá vždy stejným způsobem: základní nastavení zaznamenávají prázdnotu, zatímco prázdná vrstva pro jednotlivé hry by neměla přepisovat základ."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "Přečtěte si inženýrskou diskusi DuckStation a změny zdrojového kódu"
+    }
+  ]
+}

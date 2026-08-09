@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2, başarısız ImGui doku tahsisini bir çökmeden önce durdurur",
+  "summary": "Oluşturma, yükleme ve yok etme yolları artık eksik BackendUserData'yı gerçek bir durum olarak ele alır, böylece bir tahsis hatasının yerel tutamak ve harita işlemlerine düşmesini önler.",
+  "heroAlt": "PCSX2 çekme isteği #14655'ten kaynak kanıtı: GS: Imgui doku oluşturma tehlikelerini daha iyi ele almak.",
+  "searchKeywords": [
+    "PCSX2",
+    "ImGui dokusu",
+    "tahsis hatası",
+    "GSTexture",
+    "çökme"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafikler",
+    "emulation": "Emülasyon"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Imgui doku oluşturma tehlikelerini daha iyi ele almak."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui, GPU bir doku sağlayamadığında bir doku isteyebilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yazı tipi atlasları ve diğer arayüz görüntüleri, WantCreate, WantUpdates ve WantDestroy durumları arasında hareket eder. Doku tahsisi, cihaz kaybı, kaynak baskısı, desteklenmeyen boyutlar veya başka bir arka uç hatası nedeniyle başarısız olabilir. Eski oluşturma dalı, hatayı rapor etti fakat ardından sanki bir GSTexture varmış gibi devam etti, onun yerel tutamacını (handle) istemiş ve yükleme koduna düşmüştür. Bu nedenle tanılama, null başvurusundan (dereference) önce gelmiştir ve onu içermez."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate yalnızca geçerli arka uç verileri ile devam eder"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14655, CreateTexture’yi başarılı-pointer dalında kapsar. Sadece gerçek bir doku, kod tam boy yüklemeye devam etmeden önce bir ImTextureID ve BackendUserData alır. Başarısızlık durumunda, PCSX2 pxFailRel yayar ve durumdan çıkar. WantUpdates, map veya satır satır Update işlemlerinden önce ayrı olarak BackendUserData’yi kontrol eder, bu nedenle önceki başarısız bir oluşturma, başlatılmış bir kaynak olarak yanlış anlaşılamaz."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy ayrıca oluşturmanın hiç tamamlanmamış olabileceğini kabul eder"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yıkım durumu artık yalnızca BackendUserData null değilse dokuyu geri dönüştürür ve geçersiz kılar. Bu, ImGui bir tahsis hatasından sonra bir atlas isteğini atladığında veya bir durum geçişi kurtarma mantığıyla yarıştığında önemlidir. Geri dönüşüm davranışı, aynı boyuttaki atlasın yeniden kullanımı da dahil olmak üzere geçerli dokular için değişmemiştir; yama, ömür grafiğinin baştan sona eksik kaynağa sahip bir dal içermesini sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "Hata enjeksiyonu, #14652 konusunu beklemekten daha güçlüdür"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bağlantılı çökme dökümünü mümkünse yeniden üretin, ardından bir sonraki ImGui CreateTexture’un null döndürmesini sağlayan kontrollü bir backend kancası ekleyin. OSD ve yazı tipi renderleme çökmeden, piksel yüklemeden veya geçersiz bir göstergenin geri dönüştürülmesini sağlamadan hata raporlamalıdır. Tahsisi geri yükleyin ve daha sonraki bir atlasın oluşturulup görüntülenebildiğini doğrulayın. Yeniden boyutlandırma, yazı tipi kaldırma, cihaz sıfırlama ve tüm donanım backendleri üzerinden kapatma sırasında hatayı tekrar edin ve geçerli güncellemeleri engellemediğinden emin olmak için normal OSD testlerini çalıştırın."
+    },
+    {
+      "type": "callout",
+      "text": "Düzeltme, doku durum makinesini tamamlar: tahsis hatası, o istek için bir uyarı ve ardından normal yükleme kodu değil, kalıcı bir dal’dır."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "PCSX2 mühendislik tartışmasını ve kaynak değişikliklerini okuyun"
+    }
+  ]
+}

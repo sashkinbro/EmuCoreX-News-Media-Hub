@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "merge-two-ps2-library-folders-without-duplicates",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Scal dwa foldery biblioteki PS2 przy użyciu tabeli konfliktów haszów",
+  "summary": "Skonsoliduj dwa grywalne źródła w nowe miejsce docelowe, klasyfikując identyczne hasze, regionalne rewizje, zestawy wielopłytowe i poprawione kopie robocze, zanim EmuCoreX zeskanuje scalony folder.",
+  "heroAlt": "Frontend ochrony mediów pokazujący pola identyfikacyjne nośników optycznych używane do rozróżniania dysków źródłowych podczas scalania",
+  "searchKeywords": [
+    "scal foldery gier PS2",
+    "deduplikuj bibliotekę EmuCoreX",
+    "warianty regionalne PS2",
+    "tabela konfliktów haszów",
+    "zestaw wielopłytowy"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "library": "Biblioteka",
+    "integrity": "Integralność"
+  },
+  "sourceLabels": {
+    "powershell-hash": "SHA-256 odniesienie do inwentarza",
+    "pcsx2-discs": "PS2 struktura zestawu płyt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Scal do trzeciego folderu, nigdy do żadnego z folderów źródłowych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bezpieczne scalanie zachowuje Folder A i Folder B, jednocześnie tworząc pusty Folder C. Ta trzecia lokalizacja sprawia, że każdą decyzję można cofnąć. Kolizja nazwy pliku to tylko pierwszy sygnał: identyczne skróty (hash) mogą mieć różne nazwy, podczas gdy pasujące nazwy mogą ukrywać różne obszary, wersje, płyty lub zewnętrznie zmodyfikowane kopie robocze. Tabela konfliktów musi więc przechowywać ścieżkę, bajty, SHA-256, numer seryjny, region i rolę w zestawie wielopłytowym."
+    },
+    {
+      "type": "callout",
+      "text": "Nie pozwól, aby menedżer plików odpowiadał Zamień, Pomiń lub Zachowaj oba dla całej operacji. Te przyciski nie wiedzą, która kopia jest zweryfikowanym egzemplarzem, która została poprawiona ani czy Płyta 2 należy obok Płyty 1."
+    },
+    {
+      "type": "heading",
+      "text": "Twórz inwentarze dla A i B"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Raporty tylko do odczytu SHA-256 dla obu źródeł.",
+        "Wystarczająca oddzielna pojemność dla całkowicie deduplikowanego miejsca docelowego.",
+        "Zrzuty logów lub zapisy seryjne dla niejednoznacznych par region/rewizja.",
+        "Konwencja nazewnictwa obejmująca numer dysku tam, gdzie jest to wymagane.",
+        "Oba źródła tymczasowo usunięte ze skanowania EmuCoreX podczas ostatecznej akceptacji."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Klasyfikuj kolizje przed kopiowaniem"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Połącz dwa inwentarze według hasza, aby zidentyfikować identyczne pliki bajt po bajcie, niezależnie od nazwy.",
+        "2. Połącz ponownie według znormalizowanej nazwy pliku, aby ujawnić konflikty o tej samej nazwie, ale z różnym hashem.",
+        "3. Dla identycznych hashów wybierz jedną kanoniczną działającą nazwę pliku i zanotuj, który źródłowy plik ją dostarczył.",
+        "4. Dla różnych hashów sprawdź numer seryjny, region, rewizję, numer dysku i status łatki; zachowaj każdą legalną wariantę pod jednoznaczną nazwą.",
+        "5. Skopiuj sklasyfikowane pliki do pustego Folderu C w grupach, a następnie oblicz nowy raport hashu dla miejsca docelowego.",
+        "6. Porównaj Folder C z tabelą konfliktów i zweryfikuj, że każdy planowany wariant i element wielodyskowy istnieje tylko raz.",
+        "7. Autoryzuj tylko Folder C w EmuCoreX, odśwież i przetestuj jeden wpis z każdej klasy konfliktu.",
+        "8. Zachowaj A i B tylko do odczytu, dopóki C nie przetrwa restartu i każda regionalna lub wieloidentyfikatorowa tożsamość nie będzie poprawna."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Załatany obraz nie powinien zastępować nietkniętego mistrza zachowawczego. Preferuj zewnętrzne poprawki tam, gdzie jest to wspierane, i trzymaj mistrza poza aktywnymi skanami. Jeśli plik cue odnosi się do ścieżek, cały zestaw otrzymuje jedną decyzję konfliktu; kopiowanie tylko pliku cue lub największego BIN tworzy mylący, ale niekompletny element biblioteki."
+    },
+    {
+      "type": "heading",
+      "text": "Zamknij każdy wiersz w tabeli konfliktów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Scalanie jest zakończone, gdy każdy plik wejściowy ma udokumentowany status, a każdy wynikowy plik ma zapis integralności."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Każda grupa o identycznym skrócie przyczynia się do jednej zamierzonej aktywnej kopii.",
+        "Kolizje o różnych skrótach mają wyraźne wyjaśnienia dotyczące numeru seryjnego, regionu, wersji lub poprawki.",
+        "Każdy zestaw wielopłytowy i cue/bin jest kompletny.",
+        "Skróty docelowe pasują do wybranych kopii wejściowych.",
+        "EmuCoreX pokazuje zaplanowane tytuły bez nakładających się źródeł."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Konflikty wymagające przerwy"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Dwa pliki mają wspólny tytuł, ale brak dowodów seryjnych: zachowaj oba poza aktywnym katalogiem, dopóki nie zostaną zidentyfikowane.",
+        "Suma kontrolna docelowego pliku nie pasuje do żadnego źródła: powtórz kopiowanie z wybranego zweryfikowanego pliku.",
+        "Podpowiedź uruchamia się bez dźwięku: jeden z odwoływanych utworów został przemianowany lub pominięty.",
+        "Ulubione są przypisane do niewłaściwego regionu: popraw tożsamość obrazu przed przeniesieniem zapisów lub profili."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Odrzuć C i wróć do mapy źródłowej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Usuń uprawnienia Folderu C, odśwież i ponownie autoryzuj A i B dokładnie tak, jak były. Ponieważ żadne źródło nie zostało zmodyfikowane, nie jest potrzebna kopia wsteczna. Zachowaj tabelę konfliktów, oznacz sporne wiersze i odbuduj C dopiero po rozwiązaniu tych tożsamości."
+    },
+    {
+      "type": "heading",
+      "text": "Dedublacja i przechowywanie kopii zapasowych to różne decyzje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jedna aktywna kopia na hash zapobiega zagraceniu biblioteki, ale druga kopia offline na innym urządzeniu fizycznym to uzasadniona odporność. Tabela hash powinna rozróżniać Master aktywny, Master do przechowywania i Backup, aby czyszczenie nigdy nie usuwało ostatniej możliwej do odzyskania kopii."
+    },
+    {
+      "type": "link",
+      "text": "Używaj oficjalnego odniesienia do poleceń SHA-256",
+      "url": "https://learn.microsoft.com/powershell/module/microsoft.powershell.utility/get-filehash"
+    }
+  ]
+}

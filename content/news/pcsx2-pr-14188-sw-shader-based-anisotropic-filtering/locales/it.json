@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 aggiunge l'anisotropia dello shader per le texture che devono rimanere filtrate a punti",
+  "summary": "Un fallback Direct3D esegue il campionamento anisotropico negli shader, evitando percorsi hardware che forzano il filtraggio lineare o rifiutano texture non mipmapped su alcuni driver AMD.",
+  "heroAlt": "Evidenza dalla fonte dalla pull request PCSX2 #14188: GS/HW: Aggiungi filtraggio anisotropico basato su shader",
+  "searchKeywords": [
+    "PCSX2",
+    "filtraggio anisotropico",
+    "filtraggio a punti",
+    "Direct3D 12",
+    "test alfa"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW: Aggiungi filtraggio anisotropico basato su shader"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'anisotropia hardware può violare la modalità di filtro richiesta dalla texture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D non fornisce la combinazione necessaria di filtraggio anisotropico con filtraggio puntiforme nel percorso di PCSX2, quindi l'abilitazione dell'AF in precedenza spingeva le texture interessate verso il campionamento lineare. L'interpolazione lineare fonde i colori vicini prima del test alpha; un texel trasparente può quindi catturare un colore che il gioco non intendeva mai mostrare. Il risultato è più visibile sulle superfici inclinate con alpha test e sui bordi delle texture."
+    },
+    {
+      "type": "heading",
+      "text": "Il percorso dello shader controlla esplicitamente i campioni direzionali"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14188 aggiunge un filtro anisotropico software basato su shader ai renderer Direct3D. Poiché PCSX2 seleziona e combina i campioni da solo, può preservare le decisioni cromatiche simili a quelle puntiformi pur coprendo l'impronta allungata creata da una superficie obliqua. L'impostazione è separata dal normale livello anisotropico, consentendo agli utenti di abilitare deliberatamente il nuovo percorso invece di sostituire silenziosamente il comportamento dell'hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Le texture AMD DX12 non mip-mappate ottengono un'alternativa coerente"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fonte riporta inoltre che il driver Direct3D 12 di AMD non applica il AF hardware alle texture senza mipmap, anche se il rendering comparabile Vulkan funziona. Il campionamento dello shader aggira quella limitazione dell'host e mira a ottenere parità con il comportamento Vulkan su AMD e NVIDIA. Viene descritto come più aggressivo rispetto all'AF hardware NVIDIA, specialmente alla risoluzione nativa, quindi non si presume che l'output sia visivamente identico."
+    },
+    {
+      "type": "heading",
+      "text": "I test necessitano di bordi alpha, texture senza mipmap e diversi fornitori"
+    },
+    {
+      "type": "paragraph",
+      "text": "Abilitare il filtro anisotropico e l'opzione dello shader, quindi confrontare la geometria testata con alpha contro l'AF hardware, il filtraggio lineare e Vulkan nella stessa scena. Includere texture senza mipmap, risoluzioni native e upscalate, angoli di visualizzazione ripidi e bordi trasparenti dal problema #14077. Registrare i campioni di texture e il tempo GPU su AMD e NVIDIA Direct3D 11 e 12. Verificare che i colori nascosti non trapelino e che l'accentuazione aggressiva non crei sfarfallio o aliasing in movimento."
+    },
+    {
+      "type": "callout",
+      "text": "L'anisotropia dello shader esiste per preservare l'intento di filtraggio dell'ospite quando le scelte hardware Direct3D o mescolano vicini proibiti o saltano completamente la texture."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

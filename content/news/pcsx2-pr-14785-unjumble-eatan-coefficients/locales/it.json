@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14785-unjumble-eatan-coefficients",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ripristina l'ordine del coefficiente EATAN di microVU con test a livello di bit",
+  "summary": "Una regressione nella denominazione dei coefficienti nel ricompilatore dell'unità vettoriale ha prodotto risultati plausibili ma errati dell'arctangente; tabelle manuali e ps2autotests rivelano esattamente quali costanti sono state scambiate.",
+  "heroAlt": "Prove visive dalla pull request #14785 di PCSX2: MicroVU: Disordinare i coefficienti EATAN",
+  "searchKeywords": [
+    "PCSX2",
+    "microVU",
+    "EATAN",
+    "ps2autotests",
+    "unità vettoriale"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "cpu": "CPU",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14785": "MicroVU: Disordinare i coefficienti EATAN"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le costanti corrette erano collegate ai nomi EATAN sbagliati"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il percorso microVU non mancava dei coefficienti arctangenti; li utilizzava nell'ordine sbagliato. Una pulizia precedente aveva cambiato il modo in cui le costanti erano rappresentate e si basava su commenti che non descrivevano correttamente la tabella. I nomi risultanti sembravano ragionevoli mentre indicavano valori mescolati. Questo rende questo un difetto del ricompilatore particolarmente sottile: le scene comuni possono ancora produrre numeri, ma quei numeri divergono dall'unità vettoriale PlayStation 2."
+    },
+    {
+      "type": "heading",
+      "text": "La correzione segue il manuale VU piuttosto che modificare l'output visibile"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14785 riordina le costanti EATAN in microVU_Misc.h per corrispondere alla tabella dei coefficienti documentata per l'unità di funzioni elementari VU. Segue anche una scoperta separata secondo cui l'interprete aveva un coefficiente errato, controllando il ricompilatore invece di presumere che entrambi i percorsi di esecuzione condividessero lo stesso errore. Non viene introdotta alcuna soglia specifica per il gioco o soluzione visiva; gli input matematici alla sequenza ricompilata esistente sono corretti."
+    },
+    {
+      "type": "heading",
+      "text": "EATANxy e EATANxz evidenziano errori che EATAN da solo può nascondere"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il test efu.elf fornito esercita EATAN così come le sue varianti xy e xz con zero positivo e negativo, valori massimi, NaN, uno, limiti di mantissa ed esponente, e coppie di componenti in aumento o diminuzione. I log prima e dopo mostrano diversi risultati in esadecimale cambiati, inclusi i casi con mantissa massima e angolo rappresentativo. Quei pattern di bit sono una prova più solida rispetto a giudicare un'animazione a occhio."
+    },
+    {
+      "type": "heading",
+      "text": "Le comparazioni tra interprete e ricompilatore dovrebbero rimanere nel set di regressione."
+    },
+    {
+      "type": "paragraph",
+      "text": "La validazione futura dovrebbe eseguire gli stessi ps2autotests ELF attraverso l'interprete e microVU, preservare l'output esadecimale grezzo e confrontarlo con la tabella prevista nel manuale VU. I giochi che si basano pesantemente sulle funzioni elementari dell'unità vettoriale sono controlli secondari utili, ma non possono sostituire casi limite come la propagazione dei NaN o lo zero con segno. Un successivo rifattorizzamento dei coefficienti dovrebbe fallire questo test prima di arrivare al test di compatibilità visiva."
+    },
+    {
+      "type": "callout",
+      "text": "Questo è un lavoro di emulazione numerica, non una modifica alle prestazioni: il criterio di successo è il pattern di bit previsto dell'unità vettoriale sull'intera matrice di test EATAN."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14785",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

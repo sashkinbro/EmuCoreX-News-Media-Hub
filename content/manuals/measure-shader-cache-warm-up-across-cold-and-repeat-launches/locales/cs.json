@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "measure-shader-cache-warm-up-across-cold-and-repeat-launches",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Měřte zahřívání shader-cache při studeném startu a opakovaných spuštěních PS2",
+  "summary": "Použijte deterministickou cestu efektů při první návštěvě, okamžitém přehrání, restartu aplikace a volitelném restartu systému, abyste zjistili, které záseky po kompilaci pipeline zmizí a zda cache zachovává údaje běžně.",
+  "heroAlt": "Vulkan 1.3 grafické znázornění chování grafické pipeline a shader-cache",
+  "searchKeywords": [
+    "PS2 zahřívání shader-cache",
+    "EmuCoreX záseky při prvním spuštění",
+    "Vulkan kompilace zásek",
+    "cache restart aplikace",
+    "opakovaná výkonnost při spuštění"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "performance": "Výkon",
+    "shaders": "Shaderové moduly"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan kontext pipeline",
+    "pcsx2-vulkan": "PCSX2 Vulkan kontext vývoje rendereru"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mapujte efekty prvního setkání přes hranice životního cyklu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Shader nebo mezipaměť pipeline by měla snížit část práce při prvním kompilování materiálů a efektů, které byly již viděny. Pro její otestování použijte trasu s pojmenovanými efektovými orientačními body a zachovejte mezipaměť mezi průchody. Porovnejte první návštěvu, okamžité opakování, běžné restartování aplikace a teprve poté volitelný restart Android. Nepokoušejte se vymazat data aplikace, pokud není chování přebudování mezipaměti explicitně samostatný experiment."
+    },
+    {
+      "type": "callout",
+      "text": "Vymazání mezipaměti mezi každým průchodem způsobí, že všechny spuštění budou studená a znemožní měření perzistence. Zálohujte konfiguraci před jakýmkoli úmyslným testem vymazání dat."
+    },
+    {
+      "type": "heading",
+      "text": "Připravte orientační bod a tabulku životního cyklu"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normální uložení před deterministickou trasou obsahující několik odlišných efektů.",
+        "Jeden vykreslovač a systémový ovladač udržovány konstantní po celou sekvenci.",
+        "Překryvný rámcový čas nebo synchronizovaný záznam se stabilní režií.",
+        "Počáteční stav cache zdokumentován před první návštěvou.",
+        "Dostatek úložného prostoru a žádný nástroj pro čištění naplánovaný během testování."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Proveďte první návštěvu, přehrání, restart aplikace a restart systému."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Zdokumentujte stav cache a proveďte studené spuštění trasy bez mazání souborů.",
+        "2. Označte každé zaseknutí časovou značkou a viditelným orientačním bodem efektu.",
+        "3. Vraťte se k té samé uložené hře a okamžitě ji přehrajte bez změn nastavení.",
+        "4. Normálně zavřete emulátor, znovu jej otevřete a spusťte třetí kolo.",
+        "5. Porovnejte, které záseky zmizí, zmenší se nebo se opakují na stejných místech.",
+        "6. Restartujte Android a opakujte pouze v případě, že záleží na přetrvávání životního cyklu systému.",
+        "7. Kontrolujte protokoly a časová razítka mezipaměti, aniž byste měnili jejich obsah.",
+        "8. Uložte tabulku se čtyřmi průchody před testováním jakéhokoli úmyslného vymazání mezipaměti."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Testy okamžitého přehrání používají znovu během relace; restart aplikace testuje, zda kompilovaná data přežijí normální životní cyklus procesu; restart systému testuje trvalost napříč širší hranicí. Zadrhnutí, které se opakuje u každých identických dveří, může být spíše způsobeno úložným nebo synchronizačním procesem, zatímco nepravidelná zadrhnutí pozdní relace mohou být důsledkem tepelné nebo pozadí aktivity."
+    },
+    {
+      "type": "heading",
+      "text": "Vzor akceptace zahřátí cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "Klasifikace musí sledovat opakovatelné chování orientačních bodů napříč definovanými fázemi životního cyklu."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zadrhnutí při první návštěvě jsou mapována na pojmenované efekty nebo lokace.",
+        "Okamžité přehrání používá stejnou trasu a nezměněný profil.",
+        "Aplikace se restartuje bez smazání mezipaměti.",
+        "Restart systému je testován samostatně a pouze pokud je to potřeba.",
+        "Logy nebo časová razítka podporují závěr o perzistenci."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Sekvence restartuje od začátku"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Android nebo čistič odstraní mezipaměť uprostřed sekvence: deaktivujte čištění a opakujte.",
+        "Řadič nebo renderer se změní mezi průchody: začněte novou tabulku.",
+        "Náhodné události mění efekty: zvolte deterministické uložení.",
+        "Druhý průchod začíná horkější: normalizujte tepelný stav."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Zachovejte osvědčenou cache a normální životní cyklus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vypněte diagnostické překryvy, udržujte platnou cache, obnovte běžnou politiku čištění na pozadí a jednou spusťte titul od studeného startu. Pokud byla později testována úmyslná smazání, povolte jednu kompletní zahřívací cestu před opětovným posuzováním každodenního výkonu."
+    },
+    {
+      "type": "heading",
+      "text": "Jednorázová práce není automaticky kompilace shaderů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nahrávání textur, dekomprese, čtení z disku a inicializace hry se také mohou při přehrávání ztratit. Použijte logy renderéru a korelaci efektů k podpoře označení shaderu a uchovávejte nejisté záškuby klasifikované jako události při první návštěvě, místo toho, abyste přeceňovali příčinu."
+    },
+    {
+      "type": "link",
+      "text": "Přezkoumejte pokyny Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 通过仅存储活动音频样本来修剪 savestate",
+  "summary": "一种紧凑的队列格式序列化仍然可以播放的样本，而不是将所有九个固定容量的音频缓冲区复制到每个状态中。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21989 的源证据：存档状态：仅存储活动音频队列数据（AudioChannel 部分 v3）",
+  "searchKeywords": [
+    "PPSSPP",
+    "音频队列",
+    "savestate 大小",
+    "倒带",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "存档状态",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "存档状态：仅存储活动音频队列数据（AudioChannel 部分 v3）"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "固定容量被误认为是有意义的状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "每个 sceAudio 通道使用一个 FixedSizeQueue，空间为 32768 乘以八个 16 位值，是一个 512 KB 的备份存储。共有九个频道队列。早期的串行器复制了这些数组的每一个字节，尽管头和计数之间只有一个小的逻辑片可以被弹出。因此，大约有4.6MB的大部分数据已失效，进入了手动保存、存档槽、压缩输入以及每次定期的内存回卷快照。"
+    },
+    {
+      "type": "heading",
+      "text": "紧致形式保留了整个包裹式的队列顺序"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #21989 引入了 DoStateCompact 作为一种选择加入格式。当活区域连续时，它写入一个原始数组。当头数加数越过存储末端时，它会将尾部和开始部分写成两个按弹出顺序的片段。POD DoArray 写入原始字节时没有每个调用的首部，因此这些部分构成了单次线性读取消耗的同一个流。加载将序列置于索引零，并从计数中推导出新的尾部。"
+    },
+    {
+      "type": "heading",
+      "text": "版本控制保护了较旧的状态和其他调用者"
+    },
+    {
+      "type": "paragraph",
+      "text": "AudioChannel 部分升级到新的格式级别，并且仅在该级别选择紧凑序列化。较旧的部分级别仍使用原始的全存储方法，因此现有存档仍然可读。FixedSizeQueue 的旧功能保持不变，因为其字节布局不可互换，且可能有其他调用者依赖它。加载器还会使用 SetError 拒绝超出零到容量范围的计数，从而防止损坏的文件使随后每个字段不同步。"
+    },
+    {
+      "type": "heading",
+      "text": "包装、空和满队列是基本测试。"
+    },
+    {
+      "type": "paragraph",
+      "text": "创建确定性的队列，这些队列为空、部分填充、完全填充，并在多个头部偏移处环绕。保存并加载它们，然后比较每个弹出的样本与原始顺序是否一致。在游戏过程中测试所有九个通道、音频下溢和上溢边界、回放扰动、压缩比以及旧状态兼容性。破坏存储的计数以确认加载失败是否干净。单独测量保存时间和内存压力；预计负载会更小，但正确性仍是主要门槛。"
+    },
+    {
+      "type": "callout",
+      "text": "容量是一个实现细节；savestate 需要实时音频序列和足够的元数据来重建一个等效的队列。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "阅读 PPSSPP 的工程讨论和源代码更改"
+    }
+  ]
+}

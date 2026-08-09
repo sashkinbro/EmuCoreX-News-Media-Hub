@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin deriva el tamaño de la memoria de GameCube del disco que lo solicita",
+  "summary": "El campo de memoria simulada bi2.bin ahora selecciona MEM1 dentro de los límites del hardware, mientras que las anulaciones manuales siguen disponibles para experimentos deliberados.",
+  "heroAlt": "Evidencia de origen de la solicitud de extracción Dolphin #14665: Núcleo: Ajustar automáticamente el tamaño de la memoria emulada.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "Kit de desarrollo de GameCube",
+    "tamaño de memoria"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Núcleo",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Núcleo: Ajustar automáticamente el tamaño de la memoria emulada."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El encabezado del disco ya contenía un contrato de desarrollo de memoria"
+    },
+    {
+      "type": "paragraph",
+      "text": "El archivo GameCube bi2.bin incluye un tamaño de memoria simulado en el desplazamiento 0x04. En el hardware de desarrollo con más RAM, Apploader utilizaba ese valor para imitar una máquina objetivo más pequeña durante las pruebas. Dolphin previamente exponía el dimensionamiento de la memoria principalmente como una anulación manual con una fuerte advertencia, porque los valores arbitrarios rompen muchos juegos. Esto dejaba a las imágenes de disco diseñadas alrededor de su propio encabezado incapaces de solicitar automáticamente la capacidad adecuada."
+    },
+    {
+      "type": "heading",
+      "text": "Los metadatos ahora viajan desde VolumeDisc a MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14665 lee el campo como un entero de 32 bits intercambiado desde la partición del juego, lo almacena con los metadatos del juego en ejecución, lo copia en Core::System durante la inicialización y lo expone al mapeo de memoria. El resultado automático se limita como mínimo al tamaño minorista de 24 MiB MEM1 y como máximo a 64 MiB, el soporte máximo del controlador de memoria de Flipper. Las fuentes WAD y que no son de disco reportan cero."
+    },
+    {
+      "type": "heading",
+      "text": "Las anulaciones explícitas aún ganan, pero los usuarios ordinarios no necesitan hacer conjeturas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando se habilita la anulación manual de RAM, sus valores configurados continúan controlando el mapa. De lo contrario, un encabezado por encima de la capacidad minorista puede expandir MEM1 y los registros de comportamiento FIFO relacionados registran ese hecho. Un valor por debajo del minorista no reduce la consola por debajo de lo que el software publicado espera. La descripción de la configuración ahora explica que Dolphin normalmente determina el valor a partir de la información del juego, separando el comportamiento legítimo impulsado por metadatos de la experimentación manual arriesgada."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas necesitan encabezados reales, valores malformados y consumidores del subsistema"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construya fijaciones de disco con cero, 24 MiB, intermedios, 48 MiB, 64 MiB y valores por encima del límite del controlador. Verifique la decodificación endian, el comportamiento de límite, los rangos de direcciones MEM1, el comportamiento de liberación de IOS, la analítica y los registros FIFO. Cambie de juegos sin reiniciar para asegurar que los metadatos no puedan filtrarse entre sistemas. Confirme que las anulaciones manuales tienen prioridad y que el arranque de WAD permanezca con tamaño minorista. Finalmente, ejecute imágenes de desarrollo que realmente usen memoria extra y juegos minoristas cuyos encabezados contengan valores inusuales."
+    },
+    {
+      "type": "callout",
+      "text": "El valor seguro por defecto ya no es un número universal; es el piso de venta al por menor más una solicitud limitada tomada de los propios metadatos de desarrollo del disco."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Lea la discusión de ingeniería Dolphin y los cambios de código fuente"
+    }
+  ]
+}

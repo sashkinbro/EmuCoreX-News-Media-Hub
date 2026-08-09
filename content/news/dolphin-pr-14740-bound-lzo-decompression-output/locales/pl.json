@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin umieszcza twarde granice wokół dekompresji zapisów NetPlay",
+  "summary": "Bezpieczne dekodowanie LZO, sprawdzona akumulacja i dokładna walidacja ostatecznego rozmiaru zapobiegają przekroczeniu pamięci przez zdalne bloki save lub niekontrolowanemu sterowaniu alokacją.",
+  "heroAlt": "Dowody źródłowe z pull request Dolphin #14740: NetPlay: ograniczenie dekompresji LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Zapis NetPlay",
+    "dekompresja",
+    "bezpieczeństwo bufora"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Bezpieczeństwo",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: ograniczenie dekompresji LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Skompresowana synchronizacja przekracza wrogą granicę rozmiaru"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay może przenosić pliki zapisu lub foldery od innego uczestnika przed rozpoczęciem gry. Każdy skompresowany blok LZO i deklarowany rozmiar końcowy pochodzą z sieci. Poprzednia ścieżka wywoływała niezabezpieczony dekoder bez ustawiania pojemności wyjściowej, więc uszkodzone dane skompresowane mogły zapisywać poza docelowym miejscem. Jedna ścieżka bufora również przydzielała pamięć bezpośrednio według rozmiaru podanego przez uczestnika, pozwalając samej roszczeniu wywoływać presję pamięci przed sprawdzeniem dekompresji."
+    },
+    {
+      "type": "heading",
+      "text": "Każdy blok teraz otrzymuje rzeczywistą pojemność docelową"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14740 przełącza na lzo1x_decompress_safe. Wyjście pliku inicjalizuje new_len na ustalony rozmiar bufora wyjściowego i sprawdza, czy zdekompresowany blok mieści się w pozostałym deklarowanym całkowitym rozmiarze przed zapisaniem. Wyjście folderu w pamięci dekoduje do ograniczonego tymczasowego bloku, sprawdza zarówno odejmowanie deklarowanego rozmiaru, jak i arytmetykę max_size wektora, a następnie dołącza tylko pomyślnie wygenerowane bajty. Zdalny całkowity rozmiar nie jest już używany jako bezpośrednie żądanie przydziału."
+    },
+    {
+      "type": "heading",
+      "text": "Ostateczny całkowity rozmiar musi być dokładny, nie tylko poniżej maksymalnej wartości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Akceptowanie mniejszej liczby bajtów niż zadeklarowano mogłoby pozostawić obciętą kopię zapasową, która analizuje się w sposób nieprzewidywalny, podczas gdy akceptowanie większej liczby przekroczyłoby deklarowany przez nadawcę limit formatu. Zarówno ścieżki plików, jak i buforów gromadzą licznik 64-bitowy i wymagają równości na końcu. Błędy dekodera, warunki przepełnienia arytmetycznego, dane wyjściowe poza deklaracją lub niezgodność wszystko powoduje niepowodzenie z kontrolowanym alertem zamiast przekazywania częściowej zawartości do późniejszego wydobycia zapisu."
+    },
+    {
+      "type": "heading",
+      "text": "Korpus dekompresji powinien testować wykorzystanie zasobów, jak również zapisy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Podawaj prawidłowe puste transfery, transfery jednoblokowe, wieloblokowe i o normalnej maksymalnej wielkości, następnie zepsute strumienie, bomby ekspansyjne, obcięte bloki, bloki końcowe, zerowe deklaracje, ogromne deklaracje i sumy tuż powyżej lub poniżej faktycznego wyjścia. Uruchamiaj pod AddressSanitizer i ograniczeniami pamięci, sprawdzając, że awaria usuwa częściowe pliki i nie pozostawia sesji w nieskończonym oczekiwaniu. Testuj wersje nadawcy i odbiorcy, katalogi zapisów z wieloma wpisami oraz przerwane sieci. Maksymalny poziom protokołu może nadal być pożądany poza granicami bezpieczeństwa pamięci."
+    },
+    {
+      "type": "callout",
+      "text": "Bezpieczna dekompresja wymaga trzech zgód: każdy blok pasuje do swojego bufora, zgromadzone bajty nie mogą przekroczyć limitu, a ukończony strumień jest równy zadeklarowanej zawartości."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Przeczytaj dyskusję inżynierską Dolphin i zmiany w źródle"
+    }
+  ]
+}

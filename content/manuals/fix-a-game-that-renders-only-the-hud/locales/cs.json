@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-a-game-that-renders-only-the-hud",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnostikujte hru PS2, která vykresluje HUD, ale nikoli svět",
+  "summary": "Použijte přežívající HUD jako důkaz, že prezentace je aktivní, ověřte obraz disku, resetujte přepínače zakazující vykreslování, porovnejte hardwarová API a krátký softwarový referenční bod, poté zachyťte nejmenší reprodukovatelnou chybu geometrie světa.",
+  "heroAlt": "Zachycení hry PCSX2 z porovnání regresí rendereru s vrstvami rozhraní a světa",
+  "searchKeywords": [
+    "Viditelný pouze HUD PS2",
+    "Černý svět EmuCoreX",
+    "Chybějící geometrie",
+    "Přeskočit reset vykreslování",
+    "Diagnostika rendereru"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "diagnostics": "Diagnostika"
+  },
+  "sourceLabels": {
+    "pcsx2-general": "PCSX2 čistá výchozí sada pro odstraňování problémů",
+    "pcsx2-performance": "PCSX2 vykreslovač a GS indikátory"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Považujte viditelný HUD za hranici vrstvy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud se stále vykreslují čítače, nabídky nebo HUD hry, výstupní povrch a alespoň část příkazového proudu GS jsou aktivní. Chybějící část může být geometrie světa, kompozice rámce nebo obecné manuální pravidlo, které zahazuje vykreslování. Před změnou přesnosti zaznamenejte, zda je svět černý, průhledný, zamrzlý na dřívější snímek nebo nahrazen jedinou plochou barvou. Tyto příznaky vedou k různým testům."
+    },
+    {
+      "type": "callout",
+      "text": "Nezvyšujte hodnoty vynechávání vykreslování, aby zmizela poškozená vrstva. Pravidlo vynechávání může odstranit celý svět a přitom ponechat 2D překryvy, čímž přesně reprodukuje tento příznak."
+    },
+    {
+      "type": "heading",
+      "text": "Zachovejte kontrolní bod od spuštění do hry"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normální uložená hra, která se dostane do postižené scény bez státního uložení emulátoru.",
+        "Ověřený sériový číslo, region, revize a osobní hash obrázku.",
+        "Snímky obrazovky aktuálních globálních a individuálních herních grafických hodnot.",
+        "Řadič systému GPU s vypnutými náhradami textur a shadery.",
+        "Krátký záznam ukazující inicializaci rendereru a přechod do hry."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Obnovit vykreslení před přidáním přesnosti"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Studeně spustit titul a potvrdit, zda nabídky, FMV a hraní selhávají na různých hranicích.",
+        "2. Resetujte skip-draw, manuální opravy hardwaru, posuny textur a dědičné opravy pro jednotlivé hry pro toto sériové číslo.",
+        "3. Otestujte znovu při nativním interním rozlišení na původním hardwarovém API.",
+        "4. Ukončete relaci, vyberte jiné podporované hardwarové API a přehrajte stejný přechod.",
+        "5. Pokud oba postupy zobrazují pouze HUD, spusťte scénu krátce v softwarovém vykreslování a zaznamenejte, zda se vrátí geometrie světa.",
+        "6. Když je softwarové vykreslování správné, vraťte se na hardware a testujte pouze dokumentovaný specifický renderer pro titul nebo GS opravu.",
+        "7. Pokud je software také prázdný, znovu ověřte obraz a otestujte čistý profil dříve, než předpokládáte chybu pouze na grafice.",
+        "8. Zachyťte záznamy a přesná nastavení z nejmenší relace, která reprodukuje chybějící svět."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "HUD a svět často používají různé cesty vykreslování. Správný softwarový snímek dokazuje, že hra vygenerovala příkazy pro svět, a zužuje selhání na překlad hardwaru nebo chování ovladače hostitele. Selhání přes čisté hardwarové a softwarové cesty ukazuje zpět na obraz, záplaty, postup hry nebo širší regresi emulátoru. Nejprve resetování ovládacích prvků, které zakazují vykreslování, zabraňuje tomu, aby se vlastnoručně vytvořený problém promíchal s tímto rozhodnutím."
+    },
+    {
+      "type": "heading",
+      "text": "Kritéria obnovy světové vrstvy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Opravený profil musí zobrazovat více než jen vhodný statický snímek."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Světová geometrie, postavy, částice a HUD se zobrazují ve svém zamýšleném pořadí.",
+        "Menu a FMV stále přecházejí do hraní bez černého držícího snímku.",
+        "Pohyb kamery neodhaluje velké chybějící sektory.",
+        "Druhá oblast se spouští znovu se stejným nastavením pro celou hru.",
+        "Oprava je připojena pouze k ověřenému sériovému číslu a revizi."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Důkazy eskalace"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Software a oba hardwarové API selhávají na ověřeném obrazu s čistým nastavením: shromážděte zprávu o regresi.",
+        "Selže jen jeden vlastní ovladač: vraťte se k systémovému ovladači a nahlaste balíček ovladače zvlášť.",
+        "Svět se vrátí, když je skip-draw nulový: ukončete kopírované přepsání.",
+        "Chyba začíná po načtení uloženého stavu: reprodukujte z uložené hry před podáním důkazů grafiky."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Přestavte profil titulu z výchozích hodnot"
+    },
+    {
+      "type": "paragraph",
+      "text": "Odstraňte experimentální profil, obnovte zaznamenaný globální renderer, vyberte systémový ovladač a spusťte studený start při nativním rozlišení. Znovu použijte pouze jednu ověřenou opravu, pokud prošla všemi kontrolami oblastí; nechte všechna ovládání discard-draw deaktivovaná, pokud to nevyžadují oficiální důkazy specifické pro titul."
+    },
+    {
+      "type": "heading",
+      "text": "Černý svět není vždy černá obrazovka"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rozsah zobrazení a úroveň černé OLED mohou zničit tmavou scénu, ale nemohou odstranit geometrii z přímého screenshotu. Před změnou televizních nebo HDR nastavení prohlédněte zachycený snímek a log rendereru."
+    },
+    {
+      "type": "link",
+      "text": "Postupujte podle obecného základu řešení problémů PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/general/"
+    }
+  ]
+}

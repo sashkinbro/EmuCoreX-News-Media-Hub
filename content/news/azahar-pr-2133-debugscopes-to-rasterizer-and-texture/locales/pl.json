@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2133-debugscopes-to-rasterizer-and-texture",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar oznacza prace OpenGL związane z operacją renderera, która je spowodowała",
+  "summary": "Nazwane DebugScopes wokół ścieżek rysowania i tekstur w czasie wykonywania zamieniają przechwycenia GPU w hierarchię operacji reinterpret, clear, copy, upload, download, mipmap i scale.",
+  "heroAlt": "Dowody źródłowe z pull request Azahar nr 2133: renderer_gl: Dodaj `DebugScopes` do rasteryzatora i tekstur w czasie wykonywania",
+  "searchKeywords": [
+    "Azahar",
+    "Debugowanie OpenGL",
+    "DebugScope",
+    "RenderDoc",
+    "czas wykonywania tekstur"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "tooling": "Narzędzia",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2133": "renderer_gl: Dodaj `DebugScopes` do rasteryzatora i tekstur w czasie wykonywania"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Strumień poleceń GL traci powód w C++ za każdym wywołaniem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Debuggery GPU mogą pokazywać glBindTexture, glFramebufferTexture, drawy i kopie, ale długa sesja przechwytywania nie mówi automatycznie, która operacja Azahar je wygenerowała. Diagnostyka błędu renderera wymaga wtedy ręcznego powiązania kolejności API ze śladami CPU. Pull request #2133 dodaje strukturalne etykiety na granicach rasteryzatora i tekstury w czasie działania, gdzie emulator nadal zna semantyczną operację."
+    },
+    {
+      "type": "heading",
+      "text": "Zakresy obejmują parametry, które rozróżniają podobne operacje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka nazywa RasterizerOpenGL::Draw oraz reinterpretację tekstury, czyszczenie z FBO lub bez, kopiowanie, blit, generowanie mipmap, kopiowanie uchwytu, przesyłanie, niestandardowe przesyłanie, pobieranie, dołączanie, skalowanie w górę i ścieżki blit-skalowanie. Etykiety zawierają formaty pikseli, kolory czyszczenia, liczbę kopii lub wartości skalowania, gdy jest to przydatne. Sesja przechwytywania może zatem rozdzielić dwie wizualnie podobne kopie, które pochodziły z różnych decyzji dotyczących formatu lub skalowania."
+    },
+    {
+      "type": "heading",
+      "text": "Głębokość zakresu jest uwzględniana tylko wtedy, gdy włączone jest debugowanie renderera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Głębia zakresu próbnika zwiększa się warunkowo w zależności od Settings::values.renderer_debug. Normalna rozgrywka nie powinna utrzymywać diagnostycznego zagnieżdżenia, ponieważ nigdy nie będzie eksportowana. Po włączeniu hierarchia może być wykorzystywana przez znaczniki debugowania i narzędzia do przechwytywania, łącząc grupę wywołań GL z jednym stosu wywołań C++. Zakresy nie zmieniają synchronizacji ani samego renderowania; pozwalają na precyzyjne późniejsze badania."
+    },
+    {
+      "type": "heading",
+      "text": "Walidacja przechwytywania powinna obejmować zagnieżdżenie i wyłączone obciążenie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Włącz debugowanie renderera, przechwyć sceny, które przesyłają, reinterpretują, czyszczą, kopiują, skalują i pobierają tekstury, i potwierdź, że każda grupa GL ma poprawną nazwę i parametry z zrównoważonym zagnieżdżeniem. Wywołaj wczesny powrót lub nieudane działanie, aby upewnić się, że RAII zamyka zakres. Wyłącz debugowanie i sprawdź, czy znaczniki i przyrosty głębokości znikają, następnie zmierz obciążenie CPU. Etykiety muszą identyfikować operację faktycznie wykonywaną, a nie kopiowane nazwy, które tworzą fałszywe dowody."
+    },
+    {
+      "type": "callout",
+      "text": "Zakresy debugowania nie zmieniają pikseli; zmieniają to, czy zrzut może odpowiedzieć, która operacja Azahar spowodowała powstanie tych pikseli."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2133",
+      "label": "Przeczytaj dyskusję inżynieryjną Azahar i zmiany w źródle"
+    }
+  ]
+}

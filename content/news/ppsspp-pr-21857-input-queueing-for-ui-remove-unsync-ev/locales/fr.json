@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21857-input-queueing-for-ui-remove-unsync-ev",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP canalise les entrées de la plateforme à travers la boucle d'événements UI",
+  "summary": "Les rappels tactiles, de touches et d'axes mettent désormais les données en file d'attente pour un envoi ordonné sur le thread de l'UI, supprimant les méthodes d'écran non synchronisées et un large verrou récursif.",
+  "heroAlt": "Preuve source provenant de la pull request PPSSPP #21857 : Refaire la mise en file d'attente des entrées pour l'UI, supprimer les événements Unsync*",
+  "searchKeywords": [
+    "PPSSPP",
+    "file d'attente d'entrée",
+    "ScreenManager",
+    "tactile",
+    "contrôleur"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "input": "Entrée",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21857": "Refaire la mise en file d'attente des entrées pour l'UI, supprimer les événements Unsync*"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les rappels d'entrée et la modification de l'écran partageaient une limite fragile"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les backends de bureau et mobiles peuvent signaler des événements tactiles, clavier et manette depuis des contextes qui ne possèdent pas la pile d'écrans actuelle de PPSSPP. Le design précédent mélangeait un verrou d'entrée récursif avec des points d'entrée UnsyncTouch, UnsyncKey et UnsyncAxis pouvant traverser directement les vues. Les changements d'écran, superpositions et la distribution des événements dépendaient donc d'un grand verrou et du fait que les appelants sachent quelle méthode non synchronisée était sûre."
+    },
+    {
+      "type": "heading",
+      "text": "Les callbacks n'effectuent désormais qu'une courte opération de mise en file"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21857 définit des événements mis en file typés pour les entrées tactiles, clavier et axe. Les callbacks de ScreenManager copient l'événement et l'ajoutent tout en maintenant eventQueueLock. Pendant la mise à jour, le thread UI déplace toute la deque vers une variable locale, libère le mutex et distribue les événements dans l'ordre. La section critique n'exécute pas de code de vue, donc les handlers ne peuvent pas allonger la latence des callbacks de plateforme ou acquérir récursivement le verrou de la file."
+    },
+    {
+      "type": "heading",
+      "text": "Les règles de livraison spéciales restent explicites"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tous les événements de relâchement tactile atteignent encore chaque couche d'écran, et les événements de relâchement de touche se propagent toujours de manière étendue, de sorte qu'une couche arrière ne peut pas conserver une touche bloquée après des changements de pile. Les entrées ordinaires vont à l'écran avant, tandis qu'une superposition reçoit d'abord le toucher, afin de pouvoir se fermer et consommer l'événement. La conversion de la navigation par focus devient un assistant KeyEventToFocusMoves normal, et de nombreuses méthodes Unsync disparaissent parce que l'envoi se fait maintenant sur le thread propriétaire."
+    },
+    {
+      "type": "heading",
+      "text": "L'ordre et les transitions d'écran sont les tests difficiles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Générez des événements tactiles, de touche et d'axe entrelacés tout en ouvrant et fermant des pop-ups, en changeant d'écran, en faisant pivoter l'appareil, en reconnectant des contrôleurs et en maintenant des boutons pendant une transition. Confirmez l'ordre FIFO et que les événements de relâchement effacent chaque état maintenu. Soumettez à des contraintes les producteurs de plusieurs threads et utilisez ThreadSanitizer autour de l'accès à la file d'attente et à la pile d'écran. Définissez le comportement lorsqu'un écran change après qu'un événement a été mis en file d'attente mais avant la mise à jour ; l'implémentation cible intentionnellement la pile courante au moment de l'envoi, donc les tests doivent verrouiller ce contrat."
+    },
+    {
+      "type": "callout",
+      "text": "Les rappels de la plateforme signalent désormais les entrées ; le thread UI décide où elles appartiennent lorsqu'il traite la file d'attente ordonnée."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21857",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

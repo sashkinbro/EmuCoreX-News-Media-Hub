@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin pone limiti rigidi attorno alla decompressione dei salvataggi di NetPlay",
+  "summary": "La decodifica sicura LZO, l'accumulo verificato e la convalida esatta delle dimensioni finali impediscono ai blocchi di salvataggio remoti di oltrepassare la memoria o di gestire l'allocazione senza controllo.",
+  "heroAlt": "Prova della fonte dal pull request Dolphin #14740: NetPlay: limitare l'output della decompressione LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Salvataggio NetPlay",
+    "decompressione",
+    "sicurezza del buffer"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Sicurezza",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay: limitare l'output della decompressione LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La sincronizzazione compressa oltrepassa un limite di dimensione ostile"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay può trasferire file di salvataggio o cartelle da un altro peer prima della partita. Ogni blocco compresso LZO e la dimensione finale dichiarata provengono dalla rete. Il percorso precedente invocava il decoder non controllato senza impostare la capacità di output, quindi i dati compressi malformati potevano scrivere oltre la destinazione. Un percorso del buffer allocava anche direttamente dalla dimensione fornita dal peer, permettendo così che la richiesta stessa causasse pressione sulla memoria prima che la decompressione dimostrasse qualcosa."
+    },
+    {
+      "type": "heading",
+      "text": "Ogni blocco ora riceve una reale capacità di destinazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14740 passa a lzo1x_decompress_safe. L'output del file inizializza new_len alla dimensione fissa del buffer di output e verifica che il blocco decodificato si adatti al totale dichiarato rimanente prima di scrivere. L'output della cartella in memoria decodifica in un blocco temporaneo limitato, controlla sia la sottrazione della dimensione dichiarata sia l'aritmetica di max_size del vettore, quindi aggiunge solo i byte prodotti con successo. Il totale remoto non è più utilizzato come richiesta immediata di allocazione."
+    },
+    {
+      "type": "heading",
+      "text": "Il totale finale deve essere esatto, non semplicemente inferiore a un limite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Accettare meno byte di quelli dichiarati potrebbe lasciare un salvataggio troncato che viene analizzato in modo imprevedibile, mentre accettarne di più supererebbe il confine del formato dichiarato dal mittente. Sia i percorsi dei file che dei buffer accumulano un conteggio a 64 bit e richiedono uguaglianza alla fine. Errori del decodificatore, condizioni di overflow aritmetico, output oltre la dichiarazione o una discrepanza restituiscono tutti un fallimento con un avviso controllato invece di consegnare contenuti parziali a un'estrazione successiva del salvataggio."
+    },
+    {
+      "type": "heading",
+      "text": "Un corpus di decompressione dovrebbe testare l'utilizzo delle risorse così come le scritture."
+    },
+    {
+      "type": "paragraph",
+      "text": "Fornire trasferimenti validi vuoti, a singolo blocco, a blocchi multipli e con il massimo normale, poi flussi corrotti, bombe di espansione, blocchi troncati, blocchi finali, dichiarazioni zero, dichiarazioni enormi e totali appena sopra o sotto l'output effettivo. Eseguire sotto AddressSanitizer e limiti di memoria, controllando che il fallimento rimuova file parziali e non lasci una sessione in attesa per sempre. Test incrociati delle versioni del mittente e del ricevente, cartelle di salvataggio con molte voci e reti interrotte. Un massimo a livello di protocollo potrebbe ancora essere desiderabile oltre i limiti di sicurezza della memoria."
+    },
+    {
+      "type": "callout",
+      "text": "La decompressione sicura richiede tre accordi: ogni blocco si adatta al suo buffer, i byte accumulati non possono traboccare e il flusso completato è uguale al payload dichiarato."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Leggi la discussione ingegneristica e le modifiche del codice sorgente di Dolphin"
+    }
+  ]
+}

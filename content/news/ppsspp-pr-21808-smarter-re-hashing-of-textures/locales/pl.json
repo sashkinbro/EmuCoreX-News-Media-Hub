@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP wiąże ponowne hashowanie tekstur z synchronizacją gościa GPU",
+  "summary": "Ważność tekstury teraz zależy od punktów, w których oprogramowanie PSP może obserwować lub przepisywać pamięć GPU, zastępując heurystykę liczby klatek wyraźnymi domenami synchronizacji.",
+  "heroAlt": "Źródło dowodu z pull request #21808 PPSSPP: Texture cache: Sprytniejsze ponowne hashowanie tekstur",
+  "searchKeywords": [
+    "PPSSPP",
+    "pamięć podręczna tekstur",
+    "ponowne hashowanie",
+    "synchronizacja GE",
+    "pamięć GPU"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafika",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Pamięć podręczna tekstur: Sprytniejsze ponowne hashowanie tekstur"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wiek klatki był tylko wskaźnikiem widoczności pamięci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pamiętana w pamięci podręcznej tekstura PSP może pozostać niezmieniona przez setki klatek lub zostać nadpisana kilka razy w jednej klatce. Poprzednia strategia cofania tekstury używała mini-skrótów, liczników klatek, wskazówek unieważnienia oraz harmonogramu wykładniczego, aby zdecydować, kiedy wykonać pełny skrót. To zmniejszało ilość pracy, ale upływające klatki nie opisują bezpośrednio, kiedy gościnne CPU i GPU zsynchronizowały się wokół pamięci, więc heurystyka mogła wykonywać niepotrzebne sprawdzenia lub utrzymywać przestarzałą zawartość."
+    },
+    {
+      "type": "heading",
+      "text": "Domeny synchronizacji oznaczają momenty, w których mogą zmienić się założenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21808 zwiększa wartość textureSyncTimeDomain podczas oczekiwań GE, zmian adresu zatrzymania, synchronizacji rysowania, kopiowania bufora ramki i odpowiednich transferów bloków. Każdy niereprezentatywny wpis tekstury zapisuje ostatnią domenę, w której był sprawdzany. Jawne flagi HASH_RECHECK i CLUT_RECHECK nadal wymuszają pracę dla znanych przypadków unieważnienia, podczas gdy wiarygodne tekstury podobne do czcionek mogą pominąć test domeny. Decyzja jest teraz powiązana z emulowanymi zdarzeniami widoczności, a nie z zegarem."
+    },
+    {
+      "type": "heading",
+      "text": "Przebudowa usuwa również księgowość, która mogłaby się rozjechać"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poprawka usuwa przełącznik backoff dostępny dla użytkownika, harmonogram mini-hash dla wpisów, flagi częstotliwości zmian oraz liczniki zmiennego rozmiaru pamięci podręcznej. Ciśnienie w pamięci podręcznej jest określane przez sumowanie bieżących wpisów podczas wykonywania redukcji, wymieniając okresowe obliczenia za stan, który nie może stać się niespójny po nietypowej ścieżce usunięcia. Tekstury wideo i warianty palet zachowują dedykowane zachowanie, ponieważ ich wzorce mutacji różnią się od zwykłych obrazów statycznych."
+    },
+    {
+      "type": "heading",
+      "text": "Poprawność wymaga gier, które przepisują tekstury w nietypowej kolejności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testuj odtwarzanie wideo, efekty renderowania na teksturę, gry, które modyfikują pamięć tekstur z CPU, wiele wariantów CLUT, kopie bufora ramki oraz długo żyjące statyczne czcionki UI. Porównuj hashe i zrzuty ekranu przed i po każdej zmianie domeny synchronizacji. Mierz pełną liczbę hashy, czas CPU, rozmiar pamięci podręcznej i zachowanie przy jej zwalnianiu podczas długich sesji. Ładowania savestate’ów, unieważnianie pamięci i przełączanie backendu muszą resetować lub przesuwać stan domeny, aby wpis nie mógł odziedziczyć fałszywego twierdzenia o świeżości."
+    },
+    {
+      "type": "callout",
+      "text": "Pytanie, które ma znaczenie, nie brzmi, ile klatek przetrwała tekstura, ale czy synchronizacja widoczna dla gościa stworzyła nową szansę na zmianę jej pamięci."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Przeczytaj dyskusję inżynieryjną PPSSPP i zmiany w źródle"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14278-split-in-use-analysis-into-reads-and-w",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin teaches its JIT whether a live register will be read or overwritten",
+  "summary": "Separate future-read and future-write masks let x64 and ARM64 caches make safer, more precise preload and flush decisions than a single in-use flag.",
+  "heroAlt": "Source evidence from Dolphin pull request #14278: PPCAnalyst: Split \"in use\" analysis into reads and writes",
+  "searchKeywords": [
+    "Dolphin",
+    "PowerPC JIT",
+    "register cache",
+    "liveness analysis",
+    "ARM64"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "cpu": "Cpu",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14278": "PPCAnalyst: Split \"in use\" analysis into reads and writes"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Being live does not say what the next instruction will do"
+    },
+    {
+      "type": "paragraph",
+      "text": "A guest register may be relevant to the remaining block because a future instruction reads its current value, because a future instruction overwrites it, or both. Dolphin's older in-use mask merged those cases. A JIT register cache then had limited information when deciding whether to preload a guest value, write a dirty host value back, discard a mapping, or keep it through a fallback boundary."
+    },
+    {
+      "type": "heading",
+      "text": "Two future-use sets make the dataflow explicit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14278 propagates gprWillBeRead and gprWillBeWritten, with equivalent masks for floating-point and condition registers. Preloading considers registers that will participate in either direction while still excluding discardable inputs. Full flushes target values no longer used by subsequent operations. Outputs that will not be written later receive a separate treatment so their current dirty value reaches guest state before the cache marks them clean."
+    },
+    {
+      "type": "heading",
+      "text": "Undirty keeps a useful mapping after committing its value"
+    },
+    {
+      "type": "paragraph",
+      "text": "The refactor names flush behavior precisely. Full writes dirty data and removes the mapping. MaintainState preserves the existing state where required. The new Undirty mode writes a dirty value but retains the host-register association as clean. That is useful when an output must be externally coherent at a boundary yet may still be read later. Both x64 and ARM64 paths adopt the vocabulary, including slow memory access and interpreter fallback sites."
+    },
+    {
+      "type": "heading",
+      "text": "Differential block tests must focus on awkward control flow"
+    },
+    {
+      "type": "paragraph",
+      "text": "Compare interpreter, JIT64, and JITARM64 across generated blocks with read-only, write-only, read-then-write, write-then-read, discarded, immediate, floating-point, and condition-register patterns. Add exceptions, memory faults, gather-pipe checks, branches, fallback instructions, and block exits at every position. Instrument host spills and guest writebacks to verify the optimization actually reduces work without changing state. Randomized differential execution should compare all architectural registers after each forced boundary."
+    },
+    {
+      "type": "callout",
+      "text": "Register liveness becomes actionable only when the JIT knows whether the future needs today's value or merely needs the register name for a later overwrite."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14278",
+      "label": "Read the Dolphin engineering discussion and source changes"
+    }
+  ]
+}

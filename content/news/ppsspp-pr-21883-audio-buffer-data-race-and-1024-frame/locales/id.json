@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21883-audio-buffer-data-race-and-1024-frame",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP menutup perlombaan cross-thread dalam pengiriman audio libretro",
+  "summary": "Setiap operasi pada buffer sampel yang telah dikonversi bersama sekarang menggunakan satu mutex, mencegah realloc atau shutdown dari membuat memori tidak valid saat thread lain menulis audio.",
+  "heroAlt": "Bukti sumber dari PPSSPP pull request #21883: libretro: memperbaiki data race buffer audio dan push sampel >1024-frame",
+  "searchKeywords": [
+    "PPSSPP",
+    "libretro",
+    "perlombaan audio",
+    "mutex",
+    "RetroArch"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "audio": "Audio",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21883": "libretro: memperbaiki data race buffer audio dan push sampel >1024-frame"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dua thread bisa memiliki pointer mentah yang sama sekaligus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Di jalur frontend libretro, System_AudioPushSamples mengonversi audio PSP dan menambahkannya ke output_audio_buffer. Dengan backend OpenGL, dorongan sampel dapat datang melalui antrean perintah GL di sisi emulasi, sementara retro_run mengosongkan buffer di thread libretro. Inisialisasi, shutdown, dan pertumbuhan kapasitas juga mengganti atau membebaskan alokasi. Tanpa satu aturan kepemilikan, realloc bisa membatalkan pointer saat thread lain sedang membaca atau menulisnya."
+    },
+    {
+      "type": "heading",
+      "text": "Sebuah mutex tunggal sekarang menentukan masa pakai buffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21883 menambahkan output_audio_buffer_mutex dan mengambilnya saat inisialisasi, penghancuran, unggah, dan System_AudioPushSamples. Bantuan kapasitas secara eksplisit didokumentasikan sebagai memerlukan pemanggil untuk memegang kunci itu, sehingga pertumbuhan terjadi di dalam bagian kritis yang sama dengan penambahan yang membutuhkannya. Unggah mempertahankan kunci melalui callback batch dan pengaturan ulang ukuran, mencegah produser mengubah payload di tengah pengiriman."
+    },
+    {
+      "type": "heading",
+      "text": "Perbaikan melindungi struktur dan sampel secara bersamaan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mengunci hanya ukuran atau kapasitas tidak akan cukup: data, ukuran, dan kapasitas membentuk satu invarian. Pointer harus merujuk ke alokasi setidaknya sepanjang elemen kapasitas, dan ukuran harus mengidentifikasi sampel yang diinisialisasi di dalamnya. Mutex membuat pembaruan pada ketiganya terlihat sebagai satu operasi. Ini sangat relevan untuk penjadwalan GL berbasis thread, tetapi inisialisasi dan penghapusan menggunakan aturan yang sama sehingga restart inti yang cepat tidak bisa bersaing dengan produser yang terlambat."
+    },
+    {
+      "type": "heading",
+      "text": "Pengujian stres harus bervariasi waktu callback dan renderer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalankan libretro dengan OpenGL, Vulkan, dan rendering perangkat lunak sambil berulang kali menjeda, memajukan cepat, mereset, mengganti konten, dan menutup inti. Gunakan callback audio yang mengonsumsi dengan cepat, lambat, dan dalam batch tidak teratur, plus dorongan sampel di atas ukuran frame biasa. ThreadSanitizer tidak boleh melihat akses tidak disinkronisasi ke tuple buffer. Dengarkan dan hash PCM yang ditangkap untuk celah atau pengurutan ulang, dan pastikan tidak ada callback yang memasuki jalur yang menunggu pada mutex non-rekursif yang sama."
+    },
+    {
+      "type": "callout",
+      "text": "Buffer audio yang dapat diperbesar adalah satu objek bersama, bukan tiga bidang independen; pointer, ukuran, dan kapasitasnya harus melewati thread di bawah kunci yang sama."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21883",
+      "label": "Baca diskusi rekayasa PPSSPP dan perubahan sumbernya"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar inicjalizuje mapy przycisków PlayStation przed włączeniem ruchu",
+  "summary": "Zmiana kolejności i usunięcie duplikatów w aktywacji ruchu SDL usuwa zagrożenie związane z wątkami przy uruchamianiu, specyficzne dla konfiguracji kontrolera DualShock 4 i DualSense HIDAPI.",
+  "heroAlt": "Dowody źródłowe z pull requesta Azahar #2345: Poprawka błędu zawieszania kontrolera ps4/ps5 przy uruchomieniu",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "wejście ruchu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Wejście",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Poprawka błędu zawieszania kontrolera ps4/ps5 przy uruchomieniu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uruchamianie ruchu wchodziło do SDL zanim mapowanie kontrolera było gotowe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar umożliwia korzystanie z wejścia żyroskopu i akcelerometru poprzez ścieżkę kontrolera SDL. W przypadku urządzeń PS4 i PS5 używających HIDAPI, wywołanie EnableMotion przed istnieniem mapowania przycisków mogło spowodować problem z wątkami, a czasami zawiesić emulator podczas uruchamiania. Starsze API Joystick nie korzystało z tej ścieżki, co tłumaczy, dlaczego problem pojawiał się dopiero po przeniesieniu inicjalizacji kontrolera do nowoczesnego API."
+    },
+    {
+      "type": "heading",
+      "text": "Inicjalizacja teraz tworzy mapowanie przed pierwszym wywołaniem ruchu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2345 usuwa zduplikowane wywołania EnableMotion w SDLState i CreateControllerButtonMap i utrzymuje aktywację w SDLJoystick po ustanowieniu stanu konstrukcji. Ważną zmianą jest kolejność i unikalność, a nie opóźnienie: mapowanie przycisków kończy się, a następnie włączane jest wsparcie ruchu tylko raz. To zapobiega, aby callbacki lub praca HIDAPI obserwowały półzainicjalizowany obiekt kontrolera."
+    },
+    {
+      "type": "heading",
+      "text": "Zduplikowane wywołania utrudniały analizę rywalizacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktywacja ruchu z kilku warstw może wydawać się nieszkodliwa, jeśli SDL traktuje ją jako idempotentną, ale każde wywołanie może wejść w kod urządzenia, przydzielić czujniki lub wziąć blokady. Usunięcie zbędnych punktów wejścia sprawia, że własność jest jasna i zmniejsza liczbę harmonogramów, które mogą prowadzić do zakleszczenia. Standardowe przyciski i wejście analogowe nadal inicjalizują się normalnie, a kontrolery bez ruchu powinny przechodzić przez tę samą sekwencję, nie wymyślając czujnika."
+    },
+    {
+      "type": "heading",
+      "text": "Pętle uruchamiania muszą uwzględniać przypadki hot-plug i wyłączonego ruchu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rozpocznij zimny start Azahar wielokrotnie z DualShock 4 i DualSense podłączonymi przez USB i Bluetooth, z ruchem włączonym i wyłączonym. Dodaj hot-plug podczas uruchamiania, ponownie połącz po rozpoczęciu emulacji i zainicjalizuj wielu kontrolerów. Zaloguj zakończenie mapy i jedyną aktywację ruchu. Przetestuj starsze urządzenie Joystick jako kontrolę negatywną. Poprawka musi usunąć zawieszenia bez utraty danych z żyroskopu, etykiet przycisków lub mapowań, a zamknięcie musi prawidłowo zamykać wątki HIDAPI."
+    },
+    {
+      "type": "callout",
+      "text": "Konfiguracja kontrolera ma teraz jednego właściciela i jedno polecenie: najpierw zmapuj wejścia, a następnie pozwól SDL uruchomić sprzęt ruchu."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Przeczytaj dyskusję inżynierską Azahar i zmiany w źródłach"
+    }
+  ]
+}

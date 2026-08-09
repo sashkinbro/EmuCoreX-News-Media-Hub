@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 limita o redimensionamento bilinear de profundidade apenas para reduções reais",
+  "summary": "Uma alteração na textura-cache com uma condição separa o caso que precisa de suavização das cópias onde a interpolação muda os valores de profundidade e produz artefatos de sombra ou superfície.",
+  "heroAlt": "Evidência visual do pull request #14685 do PCSX2: GS/TC: Redimensionar bilinearmente a profundidade apenas se houver redução",
+  "searchKeywords": [
+    "PCSX2",
+    "alvo de profundidade",
+    "redimensionamento bilinear",
+    "GSTextureCache",
+    "redimensionamento nativo"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: Redimensionar bilinearmente a profundidade apenas se houver redução"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O filtro bilinear pode inventar valores de profundidade mesmo quando o tamanho não diminui"
+    },
+    {
+      "type": "paragraph",
+      "text": "Texturas de profundidade não são imagens de cores comuns. Interpolar amostras vizinhas produz valores que nunca foram escritos pelo jogo, o que pode alterar comparações posteriores e aparecer como sombras ou bordas de geometria incorretas. PCSX2 havia habilitado a amostragem bilinear de forma ampla depois que isso ajudou casos de Native Scaling, mas essa regra também afetava cópias de profundidade do mesmo tamanho e ampliadas, onde o suavizamento era desnecessário e, às vezes, visivelmente prejudicial."
+    },
+    {
+      "type": "heading",
+      "text": "A nova decisão pergunta se o alvo de profundidade está realmente reduzido"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14685 mantém o caminho de redimensionamento no GSTextureCache, mas restringe a escolha do filtro. A amostragem mais próxima é usada a menos que um alvo de profundidade seja copiado para dimensões menores; somente essa redução usa filtragem bilinear. A distinção preserva os valores exatos da fonte quando os pixels se mapeiam diretamente ou se expandem, enquanto ainda faz a média das amostras quando um alvo interno maior precisa retornar à representação de menor resolução do convidado."
+    },
+    {
+      "type": "heading",
+      "text": "Kingdom Hearts e Xenosaga expõem lados opostos da troca"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kingdom Hearts mostrou diferenças de sombras nos pés quando a interpolação tocou uma cópia de profundidade que não precisava disso, e O Estranho Mundo de Jack expôs um artefato na superfície de pedra. Xenosaga Episódio III é a razão pela qual o downscaling de profundidade bilinear existia: seu caminho de Escala Nativa parecia ruim ao retornar para a resolução normal sem suavização. A condição corrigida é valiosa porque mantém ambos os comportamentos em vez de escolher um jogo em detrimento do outro."
+    },
+    {
+      "type": "heading",
+      "text": "As comparações nativas e ampliadas devem verificar valores assim como a aparência"
+    },
+    {
+      "type": "paragraph",
+      "text": "A fonte pede que os testadores comparem Kingdom Hearts, Xenosaga Episódio III e O Estranho Mundo de Jack em resoluções nativas e ampliadas. As capturas devem manter a cena e o renderizador constantes, inspecionando então os limites das sombras, a área de pedra relatada e a linha d'água de Xenosaga. Uma passagem de regressão também deve registrar as dimensões de origem e destino para que uma melhoria aparente possa ser atribuída ao ramo mais próximo ou bilinear esperado em vez de variação acidental da cena."
+    },
+    {
+      "type": "callout",
+      "text": "A regra é precisa: o filtro bilinear é uma ferramenta de redução para alvos de profundidade, não um padrão para toda operação de redimensionamento."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

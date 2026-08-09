@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar turns special files into a composable stack of storage layers",
+  "summary": "A new IOFileBase chain lets bounded views, compression, and encryption wrap one another, replacing inheritance that became fragile when multiple special file types had to cooperate.",
+  "heroAlt": "Source evidence from Azahar pull request #2352: core: Refactor IOFile and derived file types",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Storage",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: Refactor IOFile and derived file types"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inheritance stopped scaling when one file needed several behaviors"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar originally derived compressed and encrypted files directly from IOFile. Each special class could override basic operations, but combining them required tricks because C++ inheritance describes what an object is, not an ordered pipeline of transformations. Adding another file type for upcoming work would have multiplied those combinations and made offsets, serialization, and errors dependent on which subclass happened to sit at the top."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase delegates through an owned child layer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2352 introduces an abstract IOFileBase with the complete access contract and a unique_ptr child_file. A layer overrides only operations it transforms and otherwise delegates to its child. The bottom is IOFile or NullIOFile. A compressed CCI RomFS can therefore be SubIOFile for RomFS, another SubIOFile for NCCH inside NCSD, Z3DSReadIOFile for decompression, and IOFile for host access."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile and NullIOFile make bounds and failures explicit objects"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile exposes a fixed window and translates seek, size, read, and write operations without making every caller repeat offsets or bounds checks. NCSD and NCCH parsing already use it. NullIOFile implements the same interface but returns error values, allowing failed construction and serialization to retain a valid object graph instead of distributing nullptr checks through every layer."
+    },
+    {
+      "type": "heading",
+      "text": "Encrypted files gain identity while legacy data remains supported"
+    },
+    {
+      "type": "paragraph",
+      "text": "New CryptoIOFile output starts with an AZCR header containing version, header size, and a hash derived from key and nonce. Azahar can identify the format and reject a wrong key without guessing whether decrypted bytes look plausible. Legacy headerless files still open through compatibility logic. Tests should compose every layer order, seek across subfile limits, serialize failed objects, verify wrong keys, and reopen old encrypted assets without rewriting them."
+    },
+    {
+      "type": "callout",
+      "text": "The architectural change is composition: each file layer owns one responsibility and passes the rest downward through the same interface."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Read the Azahar engineering discussion and source changes"
+    }
+  ]
+}

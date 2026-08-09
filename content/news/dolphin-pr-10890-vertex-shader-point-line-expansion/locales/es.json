@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-10890-vertex-shader-point-line-expansion",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin reconstruye puntos y líneas anchas dentro del shader de vértices",
+  "summary": "La expansión de cuadrícula sale de la etapa de geometría, restaurando primitivos anchos en Metal y MoltenVK mientras ofrece un camino más rápido en algunos GPUs de escritorio.",
+  "heroAlt": "Evidencia de la fuente de la solicitud de extracción Dolphin #10890: VideoCommon: Agregar expansión de puntos/líneas en el shader de vértices",
+  "searchKeywords": [
+    "Dolphin",
+    "shader de vértices",
+    "Metal",
+    "MoltenVK",
+    "líneas anchas"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "graphics": "Gráficos",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "dolphin-pr-10890": "VideoCommon: Agregar expansión de puntos/líneas en el shader de vértices"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Los APIs modernos no proporcionan todos la antigua etapa de expansión del Dolphin"
+    },
+    {
+      "type": "paragraph",
+      "text": "El software de GameCube y Wii puede solicitar puntos y líneas más anchos que un píxel. Dolphin tradicionalmente expande esos primitivos con un shader de geometría, pero Metal no tiene una etapa equivalente y MoltenVK hereda esa limitación. La ruta faltante era visible en contenido como el mapa de Metroid Prime 2, donde las líneas anchas podían renderizarse incorrectamente. Los shaders de geometría también pueden ser relativamente costosos incluso en hardware que los soporta."
+    },
+    {
+      "type": "heading",
+      "text": "Los bits de índice indican al vertex shader qué esquina del cuadrilátero construir."
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #10890 representa un punto o línea expandida como un cuadrilátero. Los índices modificados reservan sus dos bits inferiores para identificar la esquina generada. El vertex shader carga el vértice o los puntos finales asociados, realiza la transformación habitual y calcula el desplazamiento en espacio de pantalla necesario para esa esquina. La arquitectura dinámica del cargador de vértices suministra los datos adicionales y las constantes de geometría a través de bindings de recursos específicos del backend."
+    },
+    {
+      "type": "heading",
+      "text": "La capacidad del backend decide si la ruta es obligatoria u opcional"
+    },
+    {
+      "type": "paragraph",
+      "text": "Metal y Vulkan a través de MoltenVK pueden usar la expansión de vértices para obtener funcionalidad que no podrían expresar con un shader de geometría. D3D12, Vulkan, OpenGL y otras rutas capaces exponen soporte, mientras que una preferencia avanzada permite a los usuarios seleccionar la expansión de vértices donde existan ambos métodos. El análisis de rendimiento en una Radeon Pro 5600M mostró una ventaja notable en el mapa de Metroid Prime 2, pero la opción sigue siendo contextual en lugar de una promesa de rendimiento universal."
+    },
+    {
+      "type": "heading",
+      "text": "La cobertura debe incluir semánticas de primitivas, no solo un mapa."
+    },
+    {
+      "type": "paragraph",
+      "text": "Compare puntos y líneas a varias anchuras, relaciones de aspecto, resoluciones internas, escalas de viewport, límites de recorte y transformaciones de perspectiva. Incluya desplazamientos de texturas, porque la discusión original los identificó como un área que necesita más cobertura de juegos. Capture la salida de Metal, MoltenVK, nativo Vulkan, D3D12 y OpenGL contra la expansión de geometría donde esté disponible. Revise vértices provocadores, profundidad, interpolación, líneas degeneradas, cambios de estado y savestate; evalúe por separado la carga de la canalización de ejecución de shaders."
+    },
+    {
+      "type": "callout",
+      "text": "La expansión de vértices es tanto un puente de compatibilidad para Metal como una alternativa medible a los sombreadores de geometría, pero las reglas de primitivas idénticas siguen siendo la prueba de aceptación."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/10890",
+      "label": "Lea la discusión de ingeniería de Dolphin y los cambios de código fuente"
+    }
+  ]
+}

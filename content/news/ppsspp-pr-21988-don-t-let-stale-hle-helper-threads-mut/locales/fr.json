@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP empêche les threads auxiliaires obsolètes de endommager un savestate restauré",
+  "summary": "Le chargeur savestate détache désormais les anciens wrappers hôtes sceUtility et PSMF avant destruction, protégeant les threads du noyau actifs et la mémoire qui pourrait réutiliser les mêmes identifiants.",
+  "heroAlt": "Preuve source provenant de la pull request PPSSPP #21988 : Savestate : ne laissez pas les threads auxiliaires HLE obsolètes muter l'état du noyau restauré",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Sauvegardes d'état",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "Savestate : ne laissez pas les threads auxiliaires HLE obsolètes muter l'état du noyau restauré"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un destructeur pourrait agir sur la mauvaise génération de l'état du noyau"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP conserve des wrappers HLEHelperThread côté hôte pour le travail asynchrone tel que l'accès aux données sauvegardées et la lecture PSMF. Lors d'un chargement, l'émulateur remplace ces wrappers par des objets provenant du flux sérialisé. Deux chemins détruisaient normalement le wrapper avant le chargement, permettant à son destructeur d'appeler __KernelDeleteThread et de libérer un bloc d'entrée après que le nouvel état du noyau ait déjà été installé. Le IDs à l'intérieur de l'ancien wrapper ne décrivait plus les objets qu'il était autorisé à posséder."
+    },
+    {
+      "type": "heading",
+      "text": "La réutilisation des identifiants a transformé un bruit de journal inoffensif en corruption silencieuse"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si l'état restauré ne contenait pas l'ID de thread obsolète ou l'allocation, l'erreur produisait un message concernant un thread manquant ou une libération invalide. Le cas dangereux se produisait lorsque l'état restauré avait recyclé l'une ou l'autre valeur. Le destructeur pouvait alors terminer un thread actif légitime ou libérer la mémoire utilisée par un autre objet. Charger pendant qu'un travail sur les données sauvegardées ou un lecteur PSMF était actif rendait ce bug d'ownership sensible au timing beaucoup plus facile à atteindre."
+    },
+    {
+      "type": "heading",
+      "text": "Forget sépare la durée de vie du wrapper hôte de la possession par l'invité"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21988 applique le modèle déjà utilisé par la gestion de l'état d'E/S de PPSSPP. sceUtility appelle explicitement Forget, supprime son accessThread, et efface le pointeur avant que Do ne le recrée. Lors des lectures PSMF, le chargeur parcourt la carte de lecteur existante et appelle Forget sur chaque finishThread avant que la désérialisation de la carte n'anéantisse les lecteurs. Forget n'efface pas l'état invité restauré ; il indique à l'enveloppe hôte obsolète qu'elle ne possède plus ces ressources du noyau."
+    },
+    {
+      "type": "heading",
+      "text": "La matrice de régression doit exercer IDs recyclé"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tester les sauvegardes effectuées avant, pendant et après les opérations de données enregistrées et la lecture PSMF, puis charger chacune depuis une session avec une activité différente. Instrumenter la suppression des threads et les libérations de BlockAllocator pour prouver qu'aucune enveloppe pré-chargement ne modifie la génération restaurée. Inclure des cycles de chargement répétés, rembobinage, changement de slot, états échoués et arrêt après un chargement. Un test ciblé doit recréer délibérément le même ID de thread et l'adresse de bloc, car le seul ancien cas de journal inoffensif n'exposerait pas la corruption silencieuse."
+    },
+    {
+      "type": "callout",
+      "text": "Une restauration savestate modifie les générations de propriété ; les destructeurs de l'hôte doivent oublier les poignées invitées obsolètes avant que le noyau restauré ne devienne faisant autorité."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "Lisez la discussion d'ingénierie PPSSPP et les modifications du code source"
+    }
+  ]
+}

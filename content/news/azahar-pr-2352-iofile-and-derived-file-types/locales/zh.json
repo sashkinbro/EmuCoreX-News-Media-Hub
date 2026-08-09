@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 将特殊文件转换为可组合的存储层堆栈",
+  "summary": "一个新的 IOFileBase 链让有界视图、压缩和加密可以相互包装，取代了在多种特殊文件类型需要协作时变得脆弱的继承方式。",
+  "heroAlt": "来自 Azahar pull request #2352 的来源证据：core：重构 IOFile 及其派生文件类型",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "存储",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core：重构 IOFile 及其派生文件类型"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "当一个文件需要多种行为时，继承无法继续扩展"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar 最初直接从 IOFile 派生压缩和加密的文件。每个特殊类都可以重写基本操作，但将它们组合在一起需要技巧，因为 C++ 的继承描述的是对象的属性，而不是有序的转换管道。为即将到来的工作添加另一种文件类型会使这些组合倍增，并使偏移、序列化和错误依赖于哪个子类恰好处于顶层。"
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase 通过所拥有的子层进行委托"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2352 引入了一个带有完整访问契约和 unique_ptr child_file 的抽象 IOFileBase。一个层只重写它转换的操作，其他操作则委托给它的子层。最底层是 IOFile 或 NullIOFile。因此，压缩的 CCI RomFS 可以是 RomFS 的 SubIOFile，另一个用于 NCSD 内 NCCH 的 SubIOFile，用于解压缩的 Z3DSReadIOFile，以及用于主机访问的 IOFile。"
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile 和 NullIOFile 将边界和失败显式化为对象"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile 暴露了一个固定窗口，并在不让每个调用者重复偏移量或边界检查的情况下，转换查找、大小、读取和写入操作。NCSD 和 NCCH 解析已经使用它。NullIOFile 实现了相同的接口，但返回错误值，允许在构造和序列化失败时保留有效的对象图，而不是在每一层分发 nullptr 检查。"
+    },
+    {
+      "type": "heading",
+      "text": "加密文件获得身份，同时仍然支持旧数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "新的 CryptoIOFile 输出以一个 AZCR 头开始，包含版本、头大小以及由密钥和随机数派生的哈希。Azahar 可以识别该格式，并在不猜测解密字节是否合理的情况下拒绝错误的密钥。通过兼容性逻辑，仍然可以打开没有头的旧文件。测试应组合每个层顺序，跨子文件限制进行查找，序列化失败对象，验证错误密钥，并重新打开旧的加密资源而不改写它们。"
+    },
+    {
+      "type": "callout",
+      "text": "架构上的变化是组合：每个文件层拥有一个职责，并通过相同的接口将其余部分向下传递。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "阅读 Azahar 工程讨论和源代码更改"
+    }
+  ]
+}

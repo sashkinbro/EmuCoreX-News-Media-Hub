@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguish first-run shader stutter from recurring frame-time hitches",
+  "summary": "Run a fixed route cold and warm without deleting cache, mark every hitch location, and classify only first-visit pauses as compilation candidates while preserving recurring I/O, scene, or lifecycle stalls for separate diagnosis.",
+  "heroAlt": "Official PCSX2 shader optimization chart representing compilation and renderer workload",
+  "searchKeywords": [
+    "EmuCoreX shader stutter",
+    "PS2 recurring hitch",
+    "cold warm route",
+    "shader cache",
+    "frame time spike"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Performance",
+    "stutter": "Stutter"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan pipeline and performance guidance",
+    "pcsx2-vulkan": "PCSX2 shader-cache development"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mark hitch locations across identical cold and warm routes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Shader compilation commonly occurs when a new material or effect is first encountered and should reduce once the relevant pipeline is cached. Recurring stutter repeats at the same transition, storage read, background event, or frame-pacing boundary. Choose a deterministic route containing several effects and record timestamps rather than relying on memory."
+    },
+    {
+      "type": "callout",
+      "text": "Do not clear shader cache between the cold and warm passes. Doing so forces both routes into first-visit behavior and destroys the comparison."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare a hitch timeline"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A normal save before a deterministic two-to-five-minute route.",
+        "System driver, one renderer, and unchanged graphics profile.",
+        "A frame-time overlay or synchronized screen recording used in every pass.",
+        "Documented cache state before the first run.",
+        "Background downloads, capture, and notifications controlled."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Compare first visit, immediate replay, and app restart"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Restart the app without deleting graphics cache and cold-boot the route.",
+        "2. Mark the timestamp and visible content for every frame-time spike.",
+        "3. Return to the normal save and replay immediately with no setting changes.",
+        "4. Classify hitches that disappear on the second visit as compilation candidates.",
+        "5. Mark stalls that recur at the same loading boundary or animation.",
+        "6. Close and reopen the app without clearing cache, then run a third pass.",
+        "7. Restart Android and repeat only when lifecycle persistence is under test.",
+        "8. Send recurring locations to storage, CPU/GPU, or frame-pacing diagnosis instead of calling everything shader stutter."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "A warm cache comparison turns time into evidence. First-encounter-only pauses fit pipeline creation; a stall that repeats every doorway may be I/O or synchronization; a hitch at regular intervals can come from background work. The third pass tests whether cache survives an ordinary app restart."
+    },
+    {
+      "type": "heading",
+      "text": "Stutter classification acceptance"
+    },
+    {
+      "type": "paragraph",
+      "text": "Every label must be backed by its behavior across passes."
+    },
+    {
+      "type": "list",
+      "items": [
+        "First-visit-only hitches disappear or shrink on immediate replay.",
+        "Recurring stalls retain a reproducible timestamp or scene boundary.",
+        "Settings, driver, cache policy, and route are unchanged.",
+        "Third-pass behavior reveals whether cache persists across app restart.",
+        "Frame-time evidence agrees with visible and audio cadence."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Timelines to repeat"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Random enemies or weather change the route: choose a deterministic checkpoint.",
+        "Video capture runs in only one pass: normalize overhead.",
+        "Android updates or clears cache mid-test: restart the complete sequence.",
+        "Device temperature changes materially: match thermal state before comparison."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Return overlays and cache policy to normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disable the diagnostic frame-time overlay, preserve the valid shader cache, restore background-app behavior, and cold-boot the title once. Do not schedule routine cache deletion for hitches already proven to disappear after compilation."
+    },
+    {
+      "type": "heading",
+      "text": "Not every first-visit hitch is a shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Texture uploads, disc reads, decompression, and game logic can also occur once per area. Treat first-pass disappearance as a candidate classification, then use counters and logs to confirm the responsible subsystem. Repeat the exact route after a warm restart and again after a true cache-clearing condition only when that operation is documented and safe. If the hitch moves with storage access or appears on every lap at the same streaming boundary, preserve shader data and investigate the recurring workload instead of deleting caches repeatedly."
+    },
+    {
+      "type": "link",
+      "text": "Review Android Vulkan optimization guidance",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

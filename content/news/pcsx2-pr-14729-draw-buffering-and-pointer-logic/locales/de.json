@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14729-draw-buffering-and-pointer-logic",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 entfernt die Verwaltung des Zeichenpuffers, wenn kein Stapel ihn verwenden kann",
+  "summary": "Deaktivierte oder sofort nicht puffbare Zeichnungen kopieren und stellen die GS-Umgebungen nicht mehr wieder her, während lokale Referenzen den in heißen Rendering-Pfaden hinzugefügten Zeigerverkehr ersetzen.",
+  "heroAlt": "Quellenbeleg aus dem PCSX2 Pull-Request #14729: GS: Zeichnungspufferung und Zeigerlogik optimieren",
+  "searchKeywords": [
+    "PCSX2",
+    "Zeichnungspufferung",
+    "GS-Thread",
+    "heißer Pfad",
+    "Leistung"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14729": "GS: Zeichnungspufferung und Zeigerlogik optimieren"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine deaktivierte Optimierung verursachte weiterhin ihre Einrichtungskosten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Zeichenpufferung kann kompatible Arbeiten kombinieren, aber PCSX2 kann sie global deaktivieren oder feststellen, dass der folgende Zeichenvorgang nicht gepuffert werden kann. Die Implementierung sicherte dennoch die Zeichenumgebung und stellte sie während der Flushes wieder her, obwohl kein zukünftiges Batch diesen Snapshot verwenden konnte. Bei einer GS-intensiven Arbeitslast führen wiederholte Kopien dazu, dass eine inaktive Funktion zu messbarem CPU-Overhead wird."
+    },
+    {
+      "type": "heading",
+      "text": "Umgebungskopien folgen jetzt der tatsächlichen Pufferberechtigung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #14729 beschränkt Backup- und Wiederherstellungsoperationen auf Pfade, bei denen die Zeichenpufferung die nachfolgende Arbeit behalten kann. Wenn die Pufferung deaktiviert ist oder die Kompatibilität sofort fehlschlägt, verwendet das Renderer weiterhin den aktuellen Kontext, ohne eine Wiederherstellungskopie zu erstellen. Dies bewahrt das funktionale Flush-Verhalten, während Zustandstraffic entfernt wird, dessen einziger Zweck darin bestand, ein Batch rückgängig zu machen, das nie existierte."
+    },
+    {
+      "type": "heading",
+      "text": "Lokale Referenzen ersetzen Zeigerverfolgung in den heißesten Pfaden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die frühere Pufferimplementierung führte Zeiger ein, die im gesamten Zeichenprozess verwendet wurden, damit der Code zwischen dem Live- und dem Pufferzustand wechseln konnte. Wo diese Indirektion nicht mehr erforderlich ist, verwendet der Patch lokale Referenzen. Referenzen ermöglichen es dem Compiler, häufig verwendeten Zustand näher an die Operation zu halten und wiederholte Zeigerladungen zu reduzieren, ohne die Eigentümerschaft oder Lebensdauer des zugrunde liegenden GS-Kontexts zu ändern."
+    },
+    {
+      "type": "heading",
+      "text": "Durchsatztests müssen den Pufferzustand sichtbar halten."
+    },
+    {
+      "type": "paragraph",
+      "text": "Verwenden Sie GS-lastige Spiele und Dumps, um die maximale FPS, die GS-Thread-Zeit und die Kopieranzahl der Umgebung bei aktivierter, deaktivierter und häufig abgelehnter Pufferung zu vergleichen. Schwächere CPUs sind die erwarteten Nutznießer. Ein verlustfreier Frame-Vergleich ist weiterhin erforderlich, da ein übersprungenes Backup an einer Kompatibilitätsgrenze modifizierten Zustand in die nächste Zeichnung könnten leaken. Profilen Sie repräsentative Flush-Ursachen und überprüfen Sie, dass die Verbesserung nicht nur ein künstlicher Runner-Fall ist."
+    },
+    {
+      "type": "callout",
+      "text": "Die Optimierung entfernt Arbeit von Pfaden, die von einer Pufferung nicht profitieren können; sie schwächt die für einen echten gepufferten Stapel erforderliche Zustandswiederherstellung nicht."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14729",
+      "label": "Lesen Sie die PCSX2 Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

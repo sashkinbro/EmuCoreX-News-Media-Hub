@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3774-mmpx-enhanced-advanced-clamp-to-transp",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation fornece ao MMPX uma borda transparente em vez de pixels de borda repetidos",
+  "summary": "As amostras de vizinhos fora dos limites agora contribuem com alfa e cor zero, prevenindo que a repetição de borda invente formas que confundam as regras de morfologia do escalador.",
+  "heroAlt": "Evidência da fonte do pull request #3774 do DuckStation: MMPX Mapeamento avançado/aprimorado de fora dos limites com limite transparente",
+  "searchKeywords": [
+    "DuckStation",
+    "MMPX",
+    "limitar na borda",
+    "pixels transparentes",
+    "amostragem de shader"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3774": "MMPX Mapeamento avançado/aprimorado de fora dos limites com limite transparente"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Limitar na borda fabrica vizinhos que a imagem fonte não contém"
+    },
+    {
+      "type": "paragraph",
+      "text": "MMPX decide como expandir pixels examinando formas e tendências de cores locais. Em uma borda de textura, a amostragem normal com clamping repete o último texel válido para cada coordenada fora do alcance. Esse comportamento é conveniente para filtragem comum, mas um escalador morfológico interpreta a cor repetida como estrutura adicional. Cantos e linhas próximos à borda podem, portanto, ser classificados de forma diferente de formas idênticas no meio da imagem."
+    },
+    {
+      "type": "heading",
+      "text": "Máscaras de coordenadas transformam toques inválidos em amostras transparentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #3774 altera o auxiliar srcf tanto na geração de shaders MMPX Enhanced quanto Advanced. Cada vizinho ainda chama SampleFromVRAM, mas o resultado é multiplicado por máscaras de passo horizontal e vertical que comparam a coordenada solicitada com uv_limits. Uma coordenada fora do retângulo permitido recebe um multiplicador zero, tornando a amostra efetiva transparente em vez de uma cópia do texel da borda."
+    },
+    {
+      "type": "heading",
+      "text": "A mudança é local à análise de forma, não ao endereçamento global da textura"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation não substitui o comportamento de clamp para todas as texturas do PlayStation. A máscara existe nos auxiliares de amostragem MMPX gerados porque esses algoritmos exigem um conceito de vizinhança vazia além da imagem de origem. Outros caminhos de shader podem continuar usando sua semântica de wrap ou clamp estabelecida. Esse escopo restrito impede que uma correção de escala de pixel-art altere a forma como os próprios jogos lidam com as bordas das texturas."
+    },
+    {
+      "type": "heading",
+      "text": "Os elementos de borda devem refletir exatamente as formas internas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Crie imagens de teste contendo diagonais, cantos, linhas de um pixel e interseções de quatro pixels tanto na borda da textura quanto alguns pixels para dentro. Após a escala, a forma da borda deve corresponder à forma do interior, exceto pela área externa que falta. Repita com subretângulos UV diferentes de zero, páginas de textura, transparência e dimensões ímpares. Compare as variantes Enhanced e Advanced e inspecione todos os quatro lados; um erro de sinal em uma máscara de coordenada pode corrigir a borda direita enquanto prejudica a esquerda."
+    },
+    {
+      "type": "callout",
+      "text": "Para a morfologia MMPX, o espaço fora da imagem está vazio; repetir a cor da borda não é filtragem inofensiva, mas prova de forma falsa."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3774",
+      "label": "Leia a discussão de engenharia DuckStation e as mudanças de código-fonte"
+    }
+  ]
+}

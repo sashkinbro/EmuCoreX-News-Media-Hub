@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3758-dirty-flag-to-surface-cache",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K fait en sorte que les écritures en mémoire invité invalident les surfaces Vulkan",
+  "summary": "Les plages de support protégées marquent désormais les surfaces de couleur mises en cache comme sales, empêchant les images GPU obsolètes d'être réutilisées comme textures après que CPU ait modifié leur mémoire.",
+  "heroAlt": "Preuve source provenant de la pull request Vita3K #3758 : renderer/vulkan : Ajouter le drapeau sale au cache de surface",
+  "searchKeywords": [
+    "Vita3K",
+    "Cache de surface Vulkan",
+    "drapeau sale",
+    "mprotect",
+    "mémoire invité"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Graphiques",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3758": "renderer/vulkan : Ajouter le drapeau sale au cache de surface"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une surface peut exister en mémoire GPU après que l’invité ait modifié ses octets de support"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K met en cache les surfaces de couleur Vita en tant que ressources Vulkan. Lorsqu'un jeu écrit dans la mémoire correspondante de l'invité depuis le CPU, l'image mise en cache peut ne plus représenter cette plage d'adresses. La retourner en tant que texture peut montrer une image ou un effet ancien. Certains formats linéaires nécessitent également une synchronisation GPU-vers-invité lorsque le CPU les lit, donc les fautes de lecture et d'écriture ont des significations liées mais différentes."
+    },
+    {
+      "type": "heading",
+      "text": "Les rappels de protection portent désormais l'état de synchronisation et d'altération partagé"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3758 donne à chaque ColorSurfaceCacheInfo un indicateur d'état sale partagé. protect_surface aligne l'intérieur pouvant être protégé en toute sécurité sur des pages de 4 KiB. Les surfaces linéaires capables de synchronisation utilisent MemPerm::None pour piéger les lectures et écritures et capturer need_surface_sync ; les autres surfaces utilisent ReadOnly pour piéger les écritures. Une écriture marque comme sale. Pour une surface plus petite qu'une page, le suivi de l'état sale est retenu car les données non liées sur la même page protégée créeraient de fausses invalidations."
+    },
+    {
+      "type": "heading",
+      "text": "La recherche dans le cache refuse les données GPU après une écriture CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque qu’une surface de couleur est demandée comme texture, un indicateur de modification activé ne renvoie aucun résultat mis en cache, obligeant l’appelant à s’éloigner du contenu obsolète GPU. Lorsque la même surface redevient un framebuffer, Vita3K peut réactiver la protection et effacer l’indicateur de modification après avoir établi la nouvelle utilisation autoritaire. Les protections qui se chevauchent se combinent grâce à most_restrictive_perm, de sorte qu’ajouter une plage plus faible ne peut pas rouvrir accidentellement la mémoire déjà protégée plus fortement."
+    },
+    {
+      "type": "heading",
+      "text": "Les méthodes de mappage de mémoire et le chevauchement des pages sont des tests clés"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rendre sur une surface, l’échantillonner, réécrire tout ou partie depuis l’invité CPU, puis échantillonner à nouveau pour les formats linéaires et en damier. Inclure des allocations alignées, non alignées, sous-page, chevauchantes et à page partagée ; confirmer que les petites surfaces évitent les faux indicateurs de modification sans masquer les changements réels. Tester la synchronisation de lecture indépendamment de l’invalidation à l’écriture. Répéter sur le mappage de tampon natif, le double buffering, les pilotes Linux NVIDIA et non-NVIDIA, Android, et la restauration savestate. Enregistrer les fautes de protection pour détecter les boucles ou les piégeages excessifs sur le chemin critique."
+    },
+    {
+      "type": "callout",
+      "text": "Un cache n'est correct que tant que sa preuve de propriété est à jour ; une seule écriture par un invité suffit à révoquer la revendication de la surface GPU sur cette mémoire."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3758",
+      "label": "Lisez la discussion d'ingénierie Vita3K et les modifications de source"
+    }
+  ]
+}

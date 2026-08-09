@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 zastavuje selhání alokace textury ImGui dříve, než dojde k havárii",
+  "summary": "Cesty vytváření, nahrávání a zničení nyní považují chybějící BackendUserData za skutečný stav, což zabraňuje tomu, aby chyba alokace přecházela do operací s nativním handlem a mapou.",
+  "heroAlt": "Důkaz zdroje z pull requestu PCSX2 #14655: GS: Lepší zpracování rizik při vytváření textur ImGui.",
+  "searchKeywords": [
+    "PCSX2",
+    "Textura ImGui",
+    "selhání alokace",
+    "GSTexture",
+    "havárie"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Lepší zpracování rizik při vytváření textur ImGui."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui může požadovat texturu, když GPU nemůže poskytnout žádnou"
+    },
+    {
+      "type": "paragraph",
+      "text": "Fontové atlas a další obrázky rozhraní procházejí stavy WantCreate, WantUpdates a WantDestroy. Alokace textury může selhat kvůli ztrátě zařízení, tlaku na zdroje, nepodporovaným rozměrům nebo jiné chybě backendu. Stará větev pro vytváření hlásila selhání, ale pak pokračovala, jako by GSTexture existoval, vyžadovala jeho nativní identifikátor a pokračovala kódováním nahrávání. Diagnostika tedy předcházela null dereference, místo aby ji obsahovala."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate pokračuje pouze s platnými daty backendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14655 obalil CreateTexture do větve s úspěšným ukazatelem. Pouze skutečná textura obdrží ImTextureID a BackendUserData před tím, než kód pokračuje k nahrávání plné velikosti. V případě selhání PCSX2 vyvolává pxFailRel a ukončuje stav. WantUpdates zvlášť kontroluje BackendUserData před operacemi map nebo aktualizace po řádcích, takže předchozí neúspěšné vytvoření nelze zaměnit za inicializovaný prostředek."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy také akceptuje, že vytvoření nemuselo být nikdy dokončeno"
+    },
+    {
+      "type": "paragraph",
+      "text": "Stav zničení nyní recykluje a neplatní texturu pouze tehdy, když je BackendUserData nenulový. To je důležité, když ImGui zahodí požadavek na atlas po selhání alokace nebo když přechod stavu soutěží s logikou obnovy. Samotné chování recyklace se pro platné textury nemění, včetně opakovaného použití atlasu stejné velikosti; patch zahrnuje do grafu životnosti větev pro chybějící zdroj od začátku do konce."
+    },
+    {
+      "type": "heading",
+      "text": "Vkládání selhání je silnější než čekání na problém #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud je to možné, reprodukujte přiložený výpis havárie, poté přidejte kontrolovaný backend háček, který způsobí, že příští ImGui CreateTexture vrátí null. OSD a vykreslování fontů by měly hlásit selhání bez havárie, nahrávání pixelů nebo recyklace neplatného ukazatele. Obnovte alokaci a ověřte, že pozdější atlas může být vytvořen a zobrazen. Opakujte selhání během změny velikosti, vyřazení fontu, resetu zařízení a ukončení napříč všemi hardwarovými backendy a spusťte běžné OSD testy, aby bylo zajištěno, že chráněná cesta neblokuje platné aktualizace."
+    },
+    {
+      "type": "callout",
+      "text": "Oprava dokončuje stavový stroj textury: selhání alokace je konečná větev pro tuto žádost, nikoli varování následované normálním kódem nahrávání."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

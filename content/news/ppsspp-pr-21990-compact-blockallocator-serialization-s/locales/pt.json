@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21990-compact-blockallocator-serialization-s",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP fornece aos mapas de memória do kernel um formato savestate mais enxuto",
+  "summary": "BlockAllocator agora escreve um registro compacto por bloco e garante tags preenchidas com zeros quando são criadas, reduzindo o trabalho estrutural em mapas de memória grandes.",
+  "heroAlt": "Evidência da fonte do pull request PPSSPP #21990: Savestate: serialização compacta BlockAllocator (seção v2)",
+  "searchKeywords": [
+    "PPSSPP",
+    "BlockAllocator",
+    "memória do kernel",
+    "serialização",
+    "savestate"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Savestates",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21990": "Savestate: serialização compacta BlockAllocator (seção v2)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mil blocos multiplicaram pequenos custos de serialização"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP serializa listas de blocos vinculados para memória de usuário, kernel e volátil. Um jogo em execução pode manter aproximadamente mil blocos ativos. O layout anterior abria uma Seção de serialização nomeada para cada bloco, adicionando trabalho de cabeçalho e payload repetidamente. Também chamava strlen e memset durante cada salvamento para limpar bytes não utilizados em um buffer de tag de tamanho fixo, porque o auxiliar que copiava uma tag não inicializava o preenchimento restante."
+    },
+    {
+      "type": "heading",
+      "text": "O novo registro contém apenas campos que definem um bloco"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #21990 adiciona BlockAllocator seção v2. Seu ramo compacto escreve início, tamanho, ocupado e o array de tags de tamanho fixo completo diretamente, sem seção de bloco aninhada. A leitura realiza a mesma sequência de campos. Isto é deliberadamente uma escolha de nível BlockAllocator em vez de uma mudança silenciosa no método antigo de blocos, porque formatos serializados precisam de um limite explícito sempre que o layout de bytes difere."
+    },
+    {
+      "type": "heading",
+      "text": "A higiene das tags se move para o ponto de mutação"
+    },
+    {
+      "type": "paragraph",
+      "text": "A construção de blocos e o SetAllocated agora limpam todo o buffer de tags antes de copiar o texto para ele. Isso torna o preenchimento determinístico durante toda a vida útil do objeto e elimina o trabalho repetido de strlen mais memset no caminho crítico de salvamento. Também impede que memória de processo não inicializada alcance um arquivo de estado. A versão um continua disponível para carregar estados antigos, enquanto os estados compactos novos seguem a regra normal de incompatibilidade futura para um aumento de seção."
+    },
+    {
+      "type": "heading",
+      "text": "A topologia do alocador importa mais do que apenas o tamanho do arquivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Construa estados com listas vazias, um bloco, milhares de blocos alternando entre livres e ocupados, tags no comprimento máximo, blocos reutilizados, memória volátil e alocação de cima para baixo e de baixo para cima. Carregue fixtures antigos v1 e fixtures novos v2, compare a ordem das listas e cada limite, depois aloque e libere após a restauração para expor links quebrados. Inspecione a saída para verificar preenchimento determinístico das tags e ausência de bytes não inicializados. Faça benchmark do tamanho e do tempo de serialização somente após a verificação da equivalência estrutural e do tratamento de corrupção."
+    },
+    {
+      "type": "callout",
+      "text": "A serialização compacta é mais segura quando o estado determinístico do objeto é estabelecido no momento da mutação, e não reparado toda vez que um salvamento é feito."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21990",
+      "label": "Leia a discussão de engenharia PPSSPP e as alterações de código-fonte"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22015-texturereplacer-unit-test-make-replace",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP offre à la substitution de texture un banc d'essai autonome",
+  "summary": "Un ensemble synthétique et un point d'entrée de test explicite testent les hachages, les plages, le filtrage, les mipmaps et les entrées manquantes sans démarrer le moteur de rendu de l'émulateur.",
+  "heroAlt": "Preuve source provenant de la pull request PPSSPP #22015 : Ajouter le test unitaire TextureReplacer ; rendre le remplaçant testable de manière autonome",
+  "searchKeywords": [
+    "PPSSPP",
+    "substitution de texture",
+    "test unitaire",
+    "textures.ini",
+    "mipmaps"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Outils",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22015": "Ajouter le test unitaire TextureReplacer ; rendre le remplaçant testable de manière autonome"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les packs de textures combinent plusieurs règles faciles à régresser"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un remplacement n'est pas sélectionné uniquement par le nom de fichier. PPSSPP lit textures.ini, interprète des hachages inventés ou calculés, applique des plages de hachage, choisit des niveaux de mip, respecte les directives de filtrage et gère les entrées manquantes ou ignorées. Tester uniquement en lançant un jeu rend les échecs dépendants du fait qu’un titre atteigne le bon rendu, du support du format backend, de l'état du système de fichiers et de la comparaison visuelle humaine. C’est lent et laisse de nombreux cas négatifs non couverts."
+    },
+    {
+      "type": "heading",
+      "text": "Le remplaçant peut maintenant être construit en dehors du moteur de rendu"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #22015 permet un DrawContext nul. Dans ce mode, les formats compressés GPU signalent simplement qu'ils ne sont pas pris en charge plutôt que de déréférencer un backend. LoadPackForTesting accepte un répertoire de base, active le remplacement, désactive l'enregistrement et analyse ce pack directement au lieu de consulter la configuration globale ou le ID d'un jeu en cours d'exécution. Les fonctions de recherche et de filtrage utilisent l'état replaceEnabled de l'instance, ce qui rend le comportement de l'objet isolé déterministe."
+    },
+    {
+      "type": "heading",
+      "text": "Un pack synthétique fournit des preuves lisibles et contrôlées"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le nouveau fichier de test TestTextureReplacer crée textures.ini avec des hachages inventés mais reconnaissables et de vrais fichiers PNG. Les assertions couvrent la recherche directe, les décisions de filtrage, les plages de hachage, les niveaux mip, ainsi que les enregistrements manquants et ignorés. Parce que chaque fichier est conçu spécifiquement, une assertion échouée peut indiquer la règle exacte qui a été enfreinte. Le test est intégré dans CMake et les sources de test unitaire Android, de sorte que les différences de construction de la plate-forme sont moins susceptibles de masquer le comportement du parseur."
+    },
+    {
+      "type": "heading",
+      "text": "La couverture future devrait inclure les packs malformés et sensibles à la plate-forme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Étendre les fichiers de test avec des clés dupliquées, des hachages invalides, des plages qui se chevauchent, des niveaux mip absents, des chemins en casse mixte, des noms Unicode, des séparateurs de chemins, des formats compressés non pris en charge, des données PNG mal formées et des rechargements de configuration. Exécuter sur les systèmes de fichiers de bureau et Android et s'assurer que les répertoires temporaires sont isolés. Les assertions doivent vérifier à la fois le remplacement choisi et la raison pour laquelle un candidat a été rejeté. Un DrawContext nul doit rester une capacité de test explicite, et non pas faire en sorte par accident que le code de production ignore le support du format."
+    },
+    {
+      "type": "callout",
+      "text": "Une pipeline de remplacement devient maintenable lorsque les règles de pack peuvent être prouvées avec un petit système de fichiers déterministe au lieu d’une session de jeu complète."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22015",
+      "label": "Lisez la discussion technique PPSSPP et les modifications de source"
+    }
+  ]
+}

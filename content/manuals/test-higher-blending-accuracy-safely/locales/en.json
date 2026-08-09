@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "test-higher-blending-accuracy-safely",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Test higher blending accuracy without hiding its performance cost",
+  "summary": "Choose an effects-heavy checkpoint, raise blending one tier at a time, compare against software correctness, measure warm frame time and readbacks, and retain only the lowest level that repairs the required pass.",
+  "heroAlt": "Official PCSX2 corrected graphics capture with layered transparency and framebuffer effects",
+  "searchKeywords": [
+    "EmuCoreX blending accuracy",
+    "PS2 graphics effects",
+    "accurate blending cost",
+    "framebuffer readback",
+    "transparent effect fix"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphics",
+    "blending": "Blending"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 blending and GPU-cost guidance",
+    "pcsx2-pabe": "PCSX2 software and hardware blending design"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Define the visual pass that justifies extra accuracy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Higher blending can be valuable when smoke, fog, reflections, shadows, bloom, or framebuffer feedback is wrong, but it is not a general sharpness control. Select a checkpoint where the fault is clearly bounded and can be compared with software rendering. Record automatic blending, renderer, driver, resolution, sustained speed, readbacks, uploads, and thermal state before changing the tier."
+    },
+    {
+      "type": "callout",
+      "text": "Do not jump from Automatic to Maximum. That hides the minimum requirement, can add heavy synchronization, and makes later performance regressions harder to attribute."
+    },
+    {
+      "type": "heading",
+      "text": "Prepare correctness and cost baselines"
+    },
+    {
+      "type": "list",
+      "items": [
+        "A normal save immediately before a repeatable blend-heavy effect.",
+        "A direct hardware capture of the broken or incomplete pass.",
+        "A short software-rendered correctness reference.",
+        "Warm-session frame-time and graphics-counter evidence.",
+        "A second translucent scene for regression checking."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Increase one tier and replay the same workload"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot on Automatic blending and trigger the effect at native resolution.",
+        "2. Capture the same moment in software rendering to identify intended opacity, order, and coverage.",
+        "3. Return to hardware and raise blending by exactly one supported tier.",
+        "4. Replay the checkpoint after a clean session start and compare the bounded effect.",
+        "5. Stop when the effect matches the reference; do not test higher tiers unless the current one remains incomplete.",
+        "6. Warm the device and record frame-time spikes, readbacks, and sustained speed through the full scene.",
+        "7. Inspect the second translucent effect and a normal opaque area for regressions.",
+        "8. Save the minimum accepted tier only inside the title profile."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Some PS2 blend operations cannot map directly to a host fixed-function blend unit. More accurate paths may use shaders, copies, barriers, or readbacks that preserve ordering at a cost. Measuring after warm-up catches a setting that looks fast for thirty seconds but becomes unstable during real play."
+    },
+    {
+      "type": "heading",
+      "text": "Accuracy-tier acceptance"
+    },
+    {
+      "type": "paragraph",
+      "text": "The selected level must justify every unit of added work."
+    },
+    {
+      "type": "list",
+      "items": [
+        "The target effect matches software opacity and draw order.",
+        "A second alpha or framebuffer pass remains correct.",
+        "Opaque geometry and HUD layers do not regress.",
+        "Warm sustained speed meets the title's playable target.",
+        "The result survives a cold boot without stacking another GS fix."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Reasons to return to a lower tier"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Visual output is identical across tiers: keep Automatic.",
+        "Correctness improves but frame time becomes unsustainable: document the tradeoff rather than hiding it.",
+        "Only one API needs the higher tier: compare renderer choice before accepting the cost.",
+        "The software reference also lacks the effect: verify the game state and image."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Step down to the last measured tier"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reduce blending to the previous level, close the session, and replay both checkpoints. If no lower level passed, restore Automatic and preserve the software capture as diagnostic evidence instead of treating slow software play as the permanent configuration."
+    },
+    {
+      "type": "heading",
+      "text": "Different scenes can exercise different blend paths"
+    },
+    {
+      "type": "paragraph",
+      "text": "A profile validated on one bloom effect may fail rain, menus, or later framebuffer feedback. Keep at least two distinct checkpoints and revisit the decision after emulator or driver updates."
+    },
+    {
+      "type": "link",
+      "text": "Review PCSX2 blending cost guidance",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

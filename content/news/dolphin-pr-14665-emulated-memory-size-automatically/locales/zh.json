@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 从请求它的光盘中获取 GameCube 的内存大小",
+  "summary": "bi2.bin 的模拟内存字段现在在硬件限制内选择 MEM1，同时手动覆盖仍可用于有意的实验。",
+  "heroAlt": "Dolphin 拉取请求 #14665 的源证据：核心：自动调整模拟内存大小。",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "GameCube 开发套件",
+    "内存大小"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "核心",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "核心：自动调整模拟内存大小。"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "光盘头已经包含一个内存开发合约"
+    },
+    {
+      "type": "paragraph",
+      "text": "GameCube bi2.bin 在偏移量 0x04 处包含一个模拟的内存大小。在具有更多 RAM 的开发硬件上，Apploader 使用该值来在测试期间模拟较小的目标机器。Dolphin 以前主要将内存大小暴露为手动覆盖，并附有强烈警告，因为任意值会破坏许多游戏。这导致为其自身头设计的光盘镜像无法自动请求适当的容量。"
+    },
+    {
+      "type": "heading",
+      "text": "元数据现在从 VolumeDisc 传递到 MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "提取请求 #14665 将该字段从游戏分区读取为交换的 32 位整数，将其与正在运行的游戏元数据一起存储，在初始化期间复制到 Core::System，并将其暴露给内存映射。自动结果将至少限制为零售 24 MiB MEM1 的大小，至多为 64 MiB，即 Flipper 内存控制器支持的最大值。WAD 和非光盘来源报告为零。"
+    },
+    {
+      "type": "heading",
+      "text": "显式覆盖仍然优先，但普通用户无需猜测"
+    },
+    {
+      "type": "paragraph",
+      "text": "当启用手动 RAM 覆盖时，其配置值将继续控制地图。否则，高于零售容量的头部可以扩展 MEM1 及相关 FIFO 记录行为以记录该事实。低于零售的值不会缩小游戏机低于已发布软件预期的范围。设置说明现在解释了 Dolphin 通常根据游戏信息确定值，将合法的元数据驱动行为与高风险手动实验区分开。"
+    },
+    {
+      "type": "heading",
+      "text": "测试需要真实头部、格式错误的值和子系统使用者"
+    },
+    {
+      "type": "paragraph",
+      "text": "构建光盘固定装置，使用值为零、24 MiB、中间值、48 MiB、64 MiB 以及超过控制器限制的值。验证字节序解码、夹持行为、MEM1 地址范围、IOS 发布行为、分析和 FIFO 记录。切换游戏而不重启，以确保元数据不会在系统间泄漏。确认手动覆盖优先，且 WAD 启动保持零售尺寸。最后，运行真正使用额外内存的开发版本以及头部包含异常值的零售游戏。"
+    },
+    {
+      "type": "callout",
+      "text": "安全的默认值不再是一个通用数字；它是零售库存加上从光盘自身开发元数据中获取的有界请求。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "阅读 Dolphin 的工程讨论和源代码更改"
+    }
+  ]
+}

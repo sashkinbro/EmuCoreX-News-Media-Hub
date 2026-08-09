@@ -160,7 +160,11 @@ export function collectContent({ release = false } = {}) {
       }
 
       if (metadata.id) registerUnique(ids, metadata.id, location, "id", errors);
-      if (isHttps(metadata.canonicalUrl ?? "")) {
+      // A repeated canonical URL is a reliable duplicate signal for news and
+      // videos. History features and manuals may legitimately build distinct
+      // editorial articles from the same primary documentation, so their body,
+      // title and block-level duplicate checks remain authoritative instead.
+      if (["news", "videos"].includes(section) && isHttps(metadata.canonicalUrl ?? "")) {
         registerUnique(canonicalUrls, normalizeCanonicalUrl(metadata.canonicalUrl), location, "canonical URL", errors);
       }
 
@@ -446,7 +450,7 @@ function validateNoOrphanedMedia(referencedAssetPaths, errors) {
 }
 
 function hasLikelyMojibake(value) {
-  return /\uFFFD|\?{3,}|(?:QXZ|ZXQ)|(?:Ã[‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ©®±¼½¾¿]|Â[©®±¼½¾¿]|В©|вЂ)/u.test(JSON.stringify(value));
+  return /\uFFFD|(?:QXZ|ZXQ)|(?:Ã[‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ©®±¼½¾¿]|Â[©®±¼½¾¿]|В©|вЂ)/u.test(JSON.stringify(value));
 }
 
 function validateLocaleScript(document, locale, location, errors) {

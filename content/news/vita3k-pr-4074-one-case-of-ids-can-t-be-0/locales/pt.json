@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-4074-one-case-of-ids-can-t-be-0",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K distingue os IDs de objeto SPIR-V dos números de pista de vetor",
+  "summary": "A construção de embaralhamento de vetor agora marca os vetores de origem como IDs e os seletores de componentes como literais, evitando que a pista zero se torne um ID SPIR-V inválido.",
+  "heroAlt": "Evidência de origem do pull request #4074 do Vita3K: shader: Corrigir um caso de 'ids não podem ser 0'",
+  "searchKeywords": [
+    "Vita3K",
+    "SPIR-V",
+    "OpVectorShuffle",
+    "recompilador de shader",
+    "bloco uniforme"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "graphics": "Gráficos",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "vita3k-pr-4074": "shader: Corrigir um caso de 'ids não podem ser 0'"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O mesmo tipo de inteiro pode representar dois conceitos diferentes SPIR-V"
+    },
+    {
+      "type": "paragraph",
+      "text": "As instruções SPIR-V referenciam objetos previamente definidos por ID numérico, e algumas também contêm números literais. OpVectorShuffle recebe dois IDs de vetor seguidos por seletores de componentes. Um seletor zero significa a primeira faixa do primeiro vetor; um ID de objeto zero é proibido. Passar cada operando por um vetor tipado apenas como spv::Id, portanto, perde a distinção exatamente onde um número de faixa válido compartilha o valor sentinela de um ID inválido."
+    },
+    {
+      "type": "heading",
+      "text": "O construtor agora recebe um tipo explícito para cada operando"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #4074 altera as duas listas de operandos de shuffle para spv::IdImmediate. Loads de dest e dest_friend e o vetor sendo copiado são marcados como IDs. Índices de faixa gerados em loop são marcados como valores imediatos, seja zero, quatro mais i, ou um deslocamento derivado de start módulo quatro. createOp pode então codificar cada palavra de acordo com a gramática da instrução em vez de inferir seu significado a partir de um alias C++."
+    },
+    {
+      "type": "heading",
+      "text": "O caminho afetado une dados uniformes através dos limites de vec4"
+    },
+    {
+      "type": "paragraph",
+      "text": "copy_uniform_block_to_register lida com um intervalo que abrange o vetor de destino atual e seu vizinho. Ele constrói embaralhamentos complementares para que as faixas preservadas do destino e as faixas de origem que chegam caiam nas posições corretas. Começos alinhados a um vec4 seguem um caminho mais simples; começos desalinhados testam a lógica de duas listas. A correção não altera qual fórmula de faixa é escolhida. Ela torna os seletores já calculados literais legais."
+    },
+    {
+      "type": "heading",
+      "text": "Os fixtures guiados pelo validador devem enumerar cada faixa inicial."
+    },
+    {
+      "type": "paragraph",
+      "text": "Gerar cópias uniformes começando em deslocamentos de zero a três com comprimentos que permanecem dentro de um vec4 e que se estendem para o próximo. Inspecionar as palavras OpVectorShuffle emitidas, executar spirv-val e rodar shaders com faixas de origem coloridas ou numeradas de forma única. Incluir seletores zero, três, quatro, sete, e qualquer sentinela indefinida que o construtor suporte. Testar drivers Vulkan com validação estrita e comparar a saída renderizada entre fornecedores. Um teste de regressão deve afirmar os tipos de operandos além dos pixels finais."
+    },
+    {
+      "type": "callout",
+      "text": "Em uma linguagem de shader binária, zero pode ser uma lane perfeitamente válida e um ID de objeto impossível; o construtor deve saber qual deles a instrução espera."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/4074",
+      "label": "Leia a discussão de engenharia Vita3K e as alterações de código-fonte"
+    }
+  ]
+}

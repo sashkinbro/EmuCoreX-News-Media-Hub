@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14665-emulated-memory-size-automatically",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin menentukan ukuran memori GameCube dari cakram yang memintanya",
+  "summary": "Field memori bi2.bin yang disimulasikan kini memilih MEM1 dalam batas perangkat keras, sementara override manual tetap tersedia untuk eksperimen yang disengaja.",
+  "heroAlt": "Bukti sumber dari permintaan tarik Dolphin #14665: Core: Sesuaikan ukuran memori yang diemulasikan secara otomatis.",
+  "searchKeywords": [
+    "Dolphin",
+    "MEM1",
+    "bi2.bin",
+    "Devkit GameCube",
+    "Ukuran memori"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "core": "Core",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14665": "Core: Sesuaikan ukuran memori yang diemulasikan secara otomatis."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Header cakram sudah membawa kontrak pengembangan memori"
+    },
+    {
+      "type": "paragraph",
+      "text": "File GameCube bi2.bin menyertakan ukuran memori yang disimulasikan pada offset 0x04. Pada perangkat keras pengembangan dengan RAM lebih banyak, Apploader menggunakan nilai tersebut untuk meniru mesin target yang lebih kecil selama pengujian. Dolphin sebelumnya mengekspos ukuran memori terutama sebagai pengganti manual dengan peringatan keras karena nilai sembarangan dapat merusak banyak game. Hal itu membuat citra disc yang dirancang berdasarkan header mereka sendiri tidak dapat meminta kapasitas yang sesuai secara otomatis."
+    },
+    {
+      "type": "heading",
+      "text": "Metadata sekarang berjalan dari VolumeDisc ke MemoryManager"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14665 membaca bidang tersebut sebagai bilangan bulat 32-bit yang ditukar dari partisi game, menyimpannya dengan metadata game yang berjalan, menyalinnya ke Core::System saat inisialisasi, dan mengeksposnya ke pemetaan memori. Hasil otomatis dibatasi minimal 24 MiB ukuran ritel MEM1 dan maksimal 64 MiB, maksimum yang didukung oleh pengendali memori Flipper. Sumber WAD dan non-disc melaporkan nol."
+    },
+    {
+      "type": "heading",
+      "text": "Pengganti eksplisit masih menang, tetapi pengguna biasa tidak perlu menebak-nebak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ketika override RAM manual diaktifkan, nilai yang dikonfigurasikan terus mengontrol peta. Jika tidak, header di atas kapasitas ritel dapat memperluas MEM1 dan catatan perilaku perekaman FIFO terkait yang mencatat fakta tersebut. Nilai di bawah ritel tidak mengecilkan konsol di bawah yang diharapkan oleh perangkat lunak yang dirilis. Deskripsi pengaturan sekarang menjelaskan bahwa Dolphin biasanya menentukan nilai dari informasi permainan, memisahkan perilaku yang sah yang digerakkan oleh metadata dari eksperimen manual yang berisiko."
+    },
+    {
+      "type": "heading",
+      "text": "Tes membutuhkan header nyata, nilai yang salah format, dan konsumen subsistem."
+    },
+    {
+      "type": "paragraph",
+      "text": "Bangun fixture diska dengan nilai nol, 24 MiB, nilai menengah, 48 MiB, 64 MiB, dan nilai di atas batas pengendali. Verifikasi decoding endian, perilaku clamp, rentang alamat MEM1, perilaku rilis IOS, analitik, dan perekaman FIFO. Beralih permainan tanpa memulai ulang untuk memastikan metadata tidak bocor antar sistem. Konfirmasi override manual memiliki prioritas dan boot WAD tetap berukuran ritel. Terakhir, jalankan gambar pengembangan yang benar-benar menggunakan memori tambahan dan permainan ritel yang header-nya mengandung nilai-nilai yang tidak biasa."
+    },
+    {
+      "type": "callout",
+      "text": "Default aman tidak lagi merupakan angka universal; itu adalah lantai ritel ditambah permintaan terbatas yang diambil dari metadata pengembangan disk itu sendiri."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14665",
+      "label": "Baca diskusi rekayasa Dolphin dan perubahan sumber"
+    }
+  ]
+}

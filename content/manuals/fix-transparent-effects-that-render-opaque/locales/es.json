@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Reparar efectos transparentes PS2 que se muestran como superficies sólidas",
+  "summary": "Use un vidrio repetible, agua, humo o superposición de menú para distinguir la falta de mezcla alpha de fallos de textura o de orden de dibujo, aumente la precisión paso a paso y pruebe capas translúcidas no relacionadas antes de guardar la anulación.",
+  "heroAlt": "Imagen de comparación gráfica PCSX2 mostrando un efecto de framebuffer corregido",
+  "searchKeywords": [
+    "PS2 transparencia opaca",
+    "EmuCoreX mezcla alpha",
+    "solución de humo sólido",
+    "problema del renderizador de agua",
+    "HUD transparente"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "accuracy": "Precisión"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 guía de costo de mezclado",
+    "pcsx2-performance": "PCSX2 indicador de mezcla precisa"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Clasifique la capa sólida antes de cambiar la precisión"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un efecto opaco es una evidencia útil solo cuando se conoce su apariencia prevista. Elige un objeto cuya transparencia sea evidente durante el juego normal: un panel de vidrio debería revelar la geometría detrás de él, el humo debería tener bordes suaves y en capas, y una superposición de menú debería preservar la escena debajo. Captura el resultado defectuoso a resolución nativa y observa si la capa tiene la forma y el color correctos. Geometría correcta con opacidad incorrecta apunta al mezclado; un rectángulo en blanco o una textura desordenada requiere una investigación diferente."
+    },
+    {
+      "type": "callout",
+      "text": "La máxima precisión de mezcla no es un ajuste de calidad universal. Puede agregar un trabajo sustancial GPU y puede ocultar cuál nivel inferior realmente corrige el título."
+    },
+    {
+      "type": "heading",
+      "text": "Bloquear una prueba de efecto translúcido"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un punto de control que alcanza el mismo efecto en un minuto.",
+        "Una referencia de renderizado por software, captura de hardware original o documentación confiable específica del título.",
+        "Resolución interna nativa con reemplazos de texturas y shaders desactivados.",
+        "Contadores de rendimiento o una medición de velocidad repetible.",
+        "Una copia de seguridad limpia del perfil por juego."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Encontrar el nivel mínimo de mezcla"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Reproduce el punto de control en el controlador del sistema y captura la capa opaca en el mismo momento de la animación.",
+        "2. Compare Vulkan y OpenGL con todos los demás valores sin cambios; registre si un camino ya compone el efecto correctamente.",
+        "3. Si ambos fallan, obtenga una referencia renderizada por software corta e inspeccione lo que debería permanecer visible a través de la capa.",
+        "4. Regrese a la API de hardware elegida y aumente la precisión de mezcla exactamente un nivel.",
+        "5. Reinicie el punto de control después de cada cambio; no evalúe múltiples niveles en una sesión reanudada.",
+        "6. Deténgase en el primer nivel que restaure la translucidez, luego mida la sección con efectos pesados después de que el dispositivo esté caliente.",
+        "7. Inspeccione una característica alfa separada como niebla, sombras, partículas o atenuación del menú de pausa.",
+        "8. Guarde el valor solo en el perfil de este título y documente el punto de control que lo justificó."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Los efectos PS2 pueden leer, escribir y combinarse con contenidos de framebuffer anteriores. La ruta anfitriona GPU puede aproximar esas operaciones a diferentes niveles de precisión y costo. La capa de trabajo más pequeña es valiosa porque satisface la dependencia observada sin pagar por un comportamiento no relacionado en cada dibujo. Una API de renderizado que fija la pasada en la capa base puede ser preferible a una configuración de combinación mucho más pesada en otra API."
+    },
+    {
+      "type": "heading",
+      "text": "Criterios de aprobación de transparencia"
+    },
+    {
+      "type": "paragraph",
+      "text": "La corrección debe restaurar tanto la apariencia como el orden de composición."
+    },
+    {
+      "type": "list",
+      "items": [
+        "La geometría de fondo permanece visible a través de las porciones previstas del efecto.",
+        "Los bordes de la capa son estables y no parpadean entre opaco y transparente.",
+        "Los elementos del HUD en primer plano todavía aparecen por encima del efecto.",
+        "Una segunda escena translúcida se comporta correctamente.",
+        "La velocidad durante la sesión cálida no cae por debajo del objetivo jugable del título."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Condiciones de parada durante pruebas de combinación"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La forma está corrupta en todos los niveles: investigue la salida de textura o geometría en su lugar.",
+        "Solo la resolución interna más alta rompe la opacidad: aísle un camino específico de escalado.",
+        "Los menús se vuelven transparentes con el mundo del juego: restablezca el último nivel y capture la regresión.",
+        "La corrección cuesta una velocidad insostenible: mantenga la línea base inferior y documente el renderizado por software solo como referencia."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Elimine el experimento de alfa aislado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vuelve a establecer la mezcla en Automático, restaura el renderizador anterior, cierra la sesión de emulación y verifica que el síntoma opaco original vuelva en el punto de control registrado. Esto confirma la variable modificada antes de archivar o reemplazar el perfil de prueba."
+    },
+    {
+      "type": "heading",
+      "text": "El contraste de la pantalla no es precisión alfa"
+    },
+    {
+      "type": "paragraph",
+      "text": "El nivel de negro OLED, la conversión HDR, el rango televisivo y el contraste de accesibilidad pueden hacer que una capa translúcida se vea más oscura, pero no cambian su orden de dibujo. Valida el resultado del framebuffer en una captura de pantalla antes de ajustar la cadena de pantalla externa."
+    },
+    {
+      "type": "link",
+      "text": "Revisa los requisitos de hardware PCSX2",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

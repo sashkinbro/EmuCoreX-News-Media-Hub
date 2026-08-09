@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar umožňuje přenositelnost profilů ovladače bez skrytí ovládacích prvků specifických pro zařízení",
+  "summary": "Kompletní přepracování desktopového vstupu upřednostňuje standardizovaný model ovladače SDL, zachovává náhradní joystick pro neobvyklá tlačítka a umožňuje, aby mapování cílilo jedno zařízení, jeden typ ovladače nebo všechny ovladače.",
+  "heroAlt": "Žádost o stažení horké klávesy ovladače Azahar ukazující práci na mapování vstupu a diskuzi o revizi",
+  "searchKeywords": [
+    "Azahar",
+    "profily ovladače",
+    "SDL GameController",
+    "horké klávesy ovladače",
+    "mapování vstupu"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Vstup",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Desktop: Vylepšení ovladače - čitelné popisky, horké klávesy ovladače, možnost aplikovat profily na všechny ovladače"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Surové identifikátory joysticku ztěžovaly čitelnost a znovupoužitelnost mapování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Starší desktopová cesta Azahar se silně spoléhala na Joystick API SDL. Dokázala identifikovat fyzický vstup, ale konfigurační obrazovky často zobrazovaly technické hodnoty tlačítek místo názvů tlačítek, které uživatelé znají. Profily byly také vázány na GUID zařízení a port, takže přesunutí stejného ovladače na jiný slot – nebo sdílení rozložení s odpovídajícím ovladačem – mohlo vyžadovat další namapování. Pull request #1717 považuje tyto dva problémy za jeden problém modelu vstupu spíše než za kosmetické přejmenování."
+    },
+    {
+      "type": "heading",
+      "text": "GameController nejdříve, Joystick pouze když standardizovaná mapa dojde"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sdílená vrstva SDL nyní preferuje GameController API, když SDL zná zařízení. Tato cesta poskytuje přenosné ovládání ve stylu A/B/X/Y a čitelné štítky ve stylu Xbox nebo PlayStation. Azahar si zachovává Joystick API jako záložní možnost pro ovládací prvky mimo standardní model, včetně zadních tlačítek a dalších specifických vstupů zařízení. Parametry zaznamenávají, které API vytvořilo mapování, čímž se zabraňuje tomu, aby byla později hodnota GameControlleru interpretována jako surový index joysticku."
+    },
+    {
+      "type": "heading",
+      "text": "Tři mapovací rozsahy řeší různé problémy s profily"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nový typ mapy je explicitní. „Tento ovladač“ zachovává dřívější chování GUID a portu; „tento typ ovladače“ používá GUID bez připnutí portu; a „všechny ovladače“ přijímá odpovídající ovládací prvky z jakéhokoli připojeného zařízení. Volba se vztahuje na vstupní profily a rychlé klávesy ovladače. To zachovává přesná nastavení více ovladačů a současně umožňuje přežít profil obývacího pokoje při výměně kabelu nebo náhradě ovladače stejného modelu."
+    },
+    {
+      "type": "heading",
+      "text": "Rychlé klávesy ovladače jsou sledovány samostatně od normálního herního vstupu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt získává samostatnou stránku pro klávesové zkratky ovladače, dialog pro zachytávání a HotkeyMonitor, který kontroluje přiřazené ovládací prvky v intervalu 16 ms. Zkratka může obsahovat jeden nebo dva vstupy z ovladače, včetně os a nestandardních tlačítek. Registr ukládá související QAction, aby monitor mohl vyvolat stejný příkaz jako klávesová zkratka. Normální stav ovladače je stále dostupný pro hru; pokud je jedno tlačítko úmyslně přiřazeno k oběma funkcím, provedou se obě akce místo toho, aby vrstva horkých kláves diskrétně spotřebovala herní vstup."
+    },
+    {
+      "type": "heading",
+      "text": "Automatické mapování nyní respektuje pořadí tlačítek na čelní straně ve stylu Nintendo a Xboxu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Výzva na ploše žádá fyzické pravé tlačítko na čelní straně a zobrazuje ikonu, která odpovídá záměru mobilního průběhu. Pokud SDL hlásí tento stisk jako A, Azahar jej považuje za volbu v rozložení Nintendo nebo záměrné mapování s viditelnou značkou. Ostatní stisky zachovávají známé uspořádání ve stylu XInput. Rozhodnutí je založeno na zachyceném ovládání uživatele, místo aby se předpokládalo, že každý ovladač tiskne stejná písmena na stejných místech."
+    },
+    {
+      "type": "heading",
+      "text": "Regresní testování musí zahrnovat pořadí připojení a smíšená přiřazení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdrojové záznamy kontrolují Windows, Linux a macOS, plus klobouky, analogové spouště a horké připojení ovladače po spuštění systému. Odolný následný test by měl také znovu otevřít každý rozsah mapování, znovu připojit zařízení na jiném portu a ověřit dvoutlačítkovou rychlou klávesu, zatímco obě tlačítka zůstávají přiřazena ve hře. Zprávy by měly zahrnovat název zařízení SDL, GUID, vybraný typ mapy a zda vstup prošel přes GameController nebo Joystick fallback."
+    },
+    {
+      "type": "callout",
+      "text": "Uživatelský přínos není pouze v hezčích štítcích: profily se stávají úmyslně přenosnými, zatímco neobvyklé ovládání stále má cestu úniku specifickou pro zařízení."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Přečtěte si architekturu ovladače a diskusi o testování Azahar"
+    }
+  ]
+}

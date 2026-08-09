@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-pr-14740-bound-lzo-decompression-output",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin impose des limites strictes autour de la décompression des sauvegardes NetPlay",
+  "summary": "La décodage sûr de LZO, l'accumulation vérifiée et la validation de la taille finale exacte empêchent les blocs de sauvegarde à distance de dépasser la mémoire ou de diriger l'allocation de manière incontrôlée.",
+  "heroAlt": "Preuve source du pull request #14740 de Dolphin : NetPlay : limiter la sortie de décompression de LZO",
+  "searchKeywords": [
+    "Dolphin",
+    "LZO",
+    "Sauvegarde NetPlay",
+    "décompression",
+    "sécurité des tampons"
+  ],
+  "categoryLabels": {
+    "dolphin": "Dolphin",
+    "security": "Sécurité",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "dolphin-pr-14740": "NetPlay : limiter la sortie de décompression de LZO"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La synchronisation compressée dépasse une limite de taille hostile"
+    },
+    {
+      "type": "paragraph",
+      "text": "NetPlay peut transférer des fichiers ou des dossiers sauvegardés depuis un autre pair avant de jouer. Chaque bloc compressé LZO et la taille finale déclarée proviennent du réseau. Le chemin précédent a invoqué le décodeur non vérifié sans définir la capacité de sortie, donc des données compressées malformées pouvaient être écrites au-delà de la destination. Un chemin de tampon allouait également directement à partir de la taille fournie par le pair, permettant à la réclamation elle-même de générer une pression mémoire avant que la décompression ne prouve quoi que ce soit."
+    },
+    {
+      "type": "heading",
+      "text": "Chaque bloc reçoit désormais une capacité de destination réelle"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande de tirage #14740 passe à lzo1x_decompress_safe. La sortie de fichier initialise new_len à la taille fixe du tampon de sortie et vérifie que le bloc décodé s'insère dans le total restant déclaré avant l'écriture. La sortie de dossier en mémoire décode dans un bloc temporaire limité, vérifie à la fois la soustraction de la taille déclarée et l'arithmétique du max_size du vecteur, puis n'ajoute que les octets produits avec succès. Le total distant n'est plus utilisé comme demande d'allocation immédiate."
+    },
+    {
+      "type": "heading",
+      "text": "Le total final doit être exact, pas simplement inférieur à un plafond"
+    },
+    {
+      "type": "paragraph",
+      "text": "Accepter moins d’octets que déclaré pourrait laisser une sauvegarde tronquée qui s’analyse de manière imprévisible, tandis qu’accepter plus d’octets franchirait la limite de format annoncée par l’expéditeur. Les chemins de fichiers et de tampons accumulent un compteur de 64 bits et nécessitent une égalité à la fin. Les erreurs de décodeur, les conditions de dépassement arithmétique, la sortie au-delà de la déclaration, ou un décalage entraînent tous un échec avec une alerte contrôlée au lieu de transmettre un contenu partiel à l’extraction de sauvegarde ultérieure."
+    },
+    {
+      "type": "heading",
+      "text": "Un corpus de décompression doit tester l’utilisation des ressources ainsi que les écritures"
+    },
+    {
+      "type": "paragraph",
+      "text": "Fournir des transferts valides vides, à un seul bloc, multi-blocs, et au maximum normal, puis des flux corrompus, des bombes d’expansion, des blocs tronqués, des blocs finaux, des déclarations nulles, des déclarations énormes, et des totaux légèrement au-dessus ou en dessous de la sortie réelle. Exécuter sous AddressSanitizer et limites de mémoire, en vérifiant que l’échec supprime les fichiers partiels et ne laisse pas une session en attente indéfiniment. Tester de manière croisée les versions expéditeur et récepteur, les dossiers de sauvegarde avec de nombreuses entrées, et les réseaux interrompus. Une limite au niveau du protocole peut encore être souhaitable en dehors des bornes de sécurité mémoire."
+    },
+    {
+      "type": "callout",
+      "text": "La décompression sûre nécessite trois accords : chaque bloc correspond à son tampon, les octets accumulés ne peuvent pas déborder, et le flux complet est égal à la charge utile déclarée."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/dolphin-emu/dolphin/pull/14740",
+      "label": "Lisez la discussion d'ingénierie Dolphin et les modifications du code source"
+    }
+  ]
+}

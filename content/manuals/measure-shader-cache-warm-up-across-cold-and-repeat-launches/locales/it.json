@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "measure-shader-cache-warm-up-across-cold-and-repeat-launches",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Misurare il riscaldamento della cache degli shader attraverso avvii a freddo e ripetuti di PS2",
+  "summary": "Usare un percorso d'effetto deterministico durante la prima visita, la riproduzione immediata, il riavvio dell'app e l'eventuale riavvio del sistema per capire quali scatti scompaiono dopo la compilazione della pipeline e se la cache persiste normalmente.",
+  "heroAlt": "Vulkan 1.3 grafico rappresentante il comportamento della pipeline grafica e della cache degli shader",
+  "searchKeywords": [
+    "Riscaldamento della cache degli shader PS2",
+    "Scatto al primo avvio EmuCoreX",
+    "Scatto durante la compilazione Vulkan",
+    "Riavvio dell'app con cache",
+    "Prestazioni alla ripetizione dell'avvio"
+  ],
+  "categoryLabels": {
+    "android": "Android",
+    "performance": "Prestazioni",
+    "shaders": "Shader"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan contesto della pipeline",
+    "pcsx2-vulkan": "PCSX2 Vulkan contesto di sviluppo del renderer"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mappare gli effetti incontrati per la prima volta attraverso i confini del ciclo di vita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una cache di shader o di pipeline dovrebbe ridurre parte del lavoro di compilazione al primo incontro dopo che materiali ed effetti sono stati visti. Per testarla, usa un percorso con punti di riferimento degli effetti nominati e conserva la cache tra i passaggi. Confronta una prima visita, una riproduzione immediata, un normale riavvio dell'app e solo allora un eventuale riavvio Android opzionale. Non cancellare i dati dell'applicazione a meno che il comportamento di ricostruzione della cache non sia l'esperimento separato esplicito."
+    },
+    {
+      "type": "callout",
+      "text": "Cancellare la cache tra ogni passaggio rende tutti gli avvii freddi e impedisce la misurazione della persistenza. Esegui il backup della configurazione prima di qualsiasi test deliberato di cancellazione dei dati."
+    },
+    {
+      "type": "heading",
+      "text": "Prepara una tabella dei punti di riferimento e del ciclo di vita"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio normale prima di un percorso deterministico contenente diversi effetti distinti.",
+        "Un renderer e un driver di sistema mantenuti costanti per tutta la sequenza.",
+        "Un overlay del tempo di frame o una registrazione sincronizzata con overhead stabile.",
+        "Lo stato iniziale della cache documentato prima della prima visita.",
+        "Spazio di archiviazione sufficiente e nessuna utilità di pulizia programmata durante i test."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Eseguire la prima visita, la riproduzione, il riavvio dell'app e il riavvio del sistema"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Documentare lo stato della cache e avviare a freddo il percorso senza eliminare i file.",
+        "2. Segna ogni balbettio con il timestamp e il punto di riferimento dell'effetto visibile.",
+        "3. Torna al salvataggio stesso e ripeti immediatamente senza modificare le impostazioni.",
+        "4. Chiudi l'emulatore normalmente, riaprilo ed esegui una terza esecuzione.",
+        "5. Confronta quali balbettii scompaiono, si riducono o si ripetono negli stessi punti di riferimento.",
+        "6. Riavvia Android e ripeti solo se la persistenza del ciclo di vita del sistema è importante.",
+        "7. Ispeziona i log e i timestamp della cache senza modificarne il contenuto.",
+        "8. Memorizza la tabella delle quattro esecuzioni prima di testare qualsiasi eliminazione deliberata della cache."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "I test di replay immediato verificano il riutilizzo in-sessione; il riavvio dell'app verifica se i dati compilati sopravvivono a un normale ciclo di vita del processo; il riavvio del sistema verifica la persistenza attraverso un confine più ampio. Un intoppo che si ripete a ogni porta identica può invece essere lavoro di memorizzazione o sincronizzazione, mentre intoppi irregolari verso la fine della sessione possono essere di origine termica o dovuti ad attività in background."
+    },
+    {
+      "type": "heading",
+      "text": "Schema di accettazione del riscaldamento della cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "La classificazione deve seguire un comportamento di riferimento ripetibile attraverso le fasi di vita definite."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Gli intoppi alla prima visita vengono mappati su effetti o posizioni nominate.",
+        "Il replay immediato utilizza lo stesso percorso e un profilo invariato.",
+        "Il riavvio dell'app avviene senza cancellazione della cache.",
+        "Il riavvio del sistema viene testato separatamente e solo quando necessario.",
+        "Log o timestamp supportano la conclusione della persistenza."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Sequenze per ricominciare dall'inizio"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Android o un cleaner rimuovono la cache a metà sequenza: disabilitare la pulizia e ripetere.",
+        "Un driver o renderer cambia tra le sessioni: iniziare una nuova tabella.",
+        "Incontri casuali alterano gli effetti: scegliere un salvataggio deterministico.",
+        "La seconda sessione inizia più calda: normalizzare lo stato termico."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Preservare la cache collaudata e il ciclo di vita normale"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disabilitare le sovrapposizioni diagnostiche, mantenere la cache valida, ripristinare la politica normale di pulizia in background e avviare il titolo da freddo una volta. Se in seguito è stata testata una cancellazione intenzionale, consentire un completo percorso di riscaldamento prima di giudicare nuovamente le prestazioni quotidiane."
+    },
+    {
+      "type": "heading",
+      "text": "Il lavoro eseguito una sola volta non è automaticamente la compilazione degli shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il caricamento delle texture, la decompressione, le letture del disco e l'inizializzazione del gioco possono anche scomparire nella riproduzione. Utilizzare i log del renderer e la correlazione degli effetti per supportare un'etichetta shader e mantenere i problemi incerti classificati come eventi di prima visita anziché sovrastimare la causa."
+    },
+    {
+      "type": "link",
+      "text": "Rivedere la guida Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

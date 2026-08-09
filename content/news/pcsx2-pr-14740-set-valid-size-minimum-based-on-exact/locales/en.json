@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14740-set-valid-size-minimum-based-on-exact",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 lets uploaded image size define a preloaded target's valid area",
+  "summary": "Exact EE-to-GS upload bounds prevent later RTA Scaling from cropping a full image to the tiny region drawn afterward, while one-pixel overlaps stop relocating otherwise valid targets.",
+  "heroAlt": "Source evidence from PCSX2 pull request #14740: GS/TC: Set valid size minimum based on exact preloaded target",
+  "searchKeywords": [
+    "PCSX2",
+    "texture cache",
+    "preload",
+    "RTA Scaling",
+    "EE to GS upload"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14740": "GS/TC: Set valid size minimum based on exact preloaded target"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A tiny draw could shrink a target that already held a full upload"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some games upload an image from the Emotion Engine into GS memory, preload that image as a target, and then draw only a small region. The preload may be correct, but PCSX2's valid-size tracking could follow the later draw rather than the upload. If RTA Scaling then resized the target, it treated only those few drawn pixels as valid and chopped away the remainder of the preloaded image."
+    },
+    {
+      "type": "heading",
+      "text": "Upload coverage now provides the minimum valid height"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14740 detects the dimensions of the EE-to-GS upload that populated the preload and uses them to establish the target's valid height. Subsequent small draws can extend validity where appropriate but cannot reduce it below known uploaded content. The correction lives in GSTextureCache because this is ownership and coverage metadata, not a shader effect applied after the image has already been truncated."
+    },
+    {
+      "type": "heading",
+      "text": "One-pixel overlap no longer moves the target's identity"
+    },
+    {
+      "type": "paragraph",
+      "text": "A separate case allowed a new upload overlapping another target by a single pixel to adjust that target's start and resize it. Lookups by the original base address then failed even though the resource was still valid at that base. Preload handling now tolerates the slight block overlap without relocating the target, preserving the address identity other cache operations use to find it."
+    },
+    {
+      "type": "heading",
+      "text": "Vexx and Lucifer's Call exercise the two independent fixes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vexx is the source reproducer for a full preloaded image cropped by valid-size tracking. Shin Megami Tensei: Lucifer's Call covers the overlap behavior. Testing should log upload bounds, target base, valid height, later draw bounds, and any RTA resize. Compare native and upscaled frames, then add a negative case with a genuine larger overlap that should still alter ownership. Fixing one-pixel tolerance must not make conflicting targets coexist indefinitely."
+    },
+    {
+      "type": "callout",
+      "text": "Preloaded validity now follows evidence already in GS memory: exact upload size and stable base address take precedence over a later tiny draw or negligible overlap."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14740",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

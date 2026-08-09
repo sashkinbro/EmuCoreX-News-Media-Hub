@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Hapus efek banding warna yang diperkenalkan oleh shader pasca-pemrosesan",
+  "summary": "Tangkap satu gradasi langit atau kabut yang halus dengan pasca-pemrosesan dimatikan, aktifkan kembali tahap shader satu per satu, periksa keluaran sebelum konversi tampilan, dan pertahankan hanya preset yang presisinya tidak menghancurkan atau mem-posterisasi sumber.",
+  "heroAlt": "PCSX2 ilustrasi pemrosesan shader dari laporan kemajuan grafis resmi",
+  "searchKeywords": [
+    "PS2 banding shader",
+    "EmuCoreX posterisasi gradasi",
+    "presisi pasca pemrosesan",
+    "band langit",
+    "crush warna"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "post-processing": "Pasca-pemrosesan"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "Pengaturan PCSX2 dan menangkap bukti",
+    "android-hdr": "Konteks konversi tampilan Android"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Buktikan pita dimulai setelah frame emulator"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pita mengubah gradien yang halus menjadi langkah yang terlihat. Permainan mungkin sudah menggunakan seni dengan presisi rendah, shader dapat mengkuantisasi warna perantara, pengkodean tangkapan layar dapat mengurangi presisi, atau rantai tampilan dapat menghancurkan nilai. Pilih gradien besar yang stabil seperti langit senja, kabut, atau memudar menu. Tangkap output langsung dengan semua pasca-pemrosesan dimatikan sebelum menilai foto televisi."
+    },
+    {
+      "type": "callout",
+      "text": "Dithering dapat menyembunyikan langkah-langkah dengan menambahkan noise, tetapi tidak memulihkan nilai yang sudah terpotong oleh tahap shader sebelumnya. Temukan tahap yang kehilangan presisi sebelum memperlakukan noise sebagai solusi."
+    },
+    {
+      "type": "heading",
+      "text": "Buat set referensi gradien"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Simpan permainan yang stabil dengan gradien gerak rendah yang besar.",
+        "Tangkap langsung tanpa kehilangan atau dengan kualitas tinggi dengan shader mati dan menyala.",
+        "Preset shader disalin ke lokasi rollback.",
+        "Konversi HDR, mode malam, dan transformasi warna aksesibilitas dinonaktifkan untuk baseline.",
+        "Gradien kedua dengan kecerahan dan rona berbeda."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Identifikasi tahap pertama yang kehilangan presisi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Cold-boot dengan pemrosesan pasca dimatikan dan tangkap kedua gradien.",
+        "2. Aktifkan preset tetapi matikan setiap tahapan opsional yang ditampilkan antarmukanya.",
+        "3. Tambahkan satu tahap pada satu waktu, mulai ulang adegan ketika pipeline memerlukan inisialisasi ulang.",
+        "4. Bandingkan langkah histogram dan batas kontur yang terlihat dalam tangkapan langsung, bukan pratinjau yang dikompres ulang.",
+        "5. Ketika tahap yang bertanggung jawab ditemukan, kurangi kekuatannya atau pilih jalur presisi lebih tinggi yang didokumentasikan.",
+        "6. Uji ulang tanpa dithering emulator, lalu aktifkan hanya opsi dithering yang dimaksud jika masih ada langkah sumber yang tersisa.",
+        "7. Sambungkan kembali mode tampilan normal dan verifikasi gradasi hampir-hitam serta cerah secara terpisah.",
+        "8. Simpan preset khusus untuk judul tertentu ketika permainan lain membutuhkan pipeline tonal yang berbeda."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Rangkaian shader diurutkan: tahap awal dapat memotong, mengkuantisasi, atau memetakan ulang nilai yang tidak dapat direkonstruksi oleh tahap berikutnya. Pengambilan langsung menentukan apakah kehilangan terjadi sebelum Android atau tampilan eksternal mengubah frame. Dua rentang kecerahan mencegah koreksi untuk sorotan langit yang secara diam-diam merusak kabut gelap."
+    },
+    {
+      "type": "heading",
+      "text": "Penerimaan kualitas gradasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Preset akhir harus mempertahankan detail tonal tanpa mengubah waktu permainan atau maksud warna."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Transisi gradasi besar tanpa cincin kontur baru.",
+        "Langkah hampir-hitam tetap dapat dibedakan dan sorotan tidak terpotong.",
+        "Putih HUD dan nada kulit tidak memperoleh warna tambahan.",
+        "Gradasi kedua meningkat dengan urutan tahap yang sama.",
+        "Pengaturan frame dan beban GPU yang berkelanjutan tetap dalam toleransi dasar."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Sumber banding di luar shader"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Band muncul saat pemrosesan dinonaktifkan dalam penangkapan langsung: bandingkan output atau aset game asli.",
+        "Penangkapan langsung berjalan lancar tetapi band televisi: periksa rentang RGB, HDR, dan pemrosesan panel.",
+        "Hanya tangkapan layar bersama yang menunjukkan cincin: gunakan file lokal tanpa kehilangan sebelum mengubah preset.",
+        "Sebuah tahap memperbaiki band dengan memburamkan detail: tolak itu dan pulihkan rantai yang mempertahankan sumber."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Pulihkan frame yang diketahui tidak diproses"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nonaktifkan preset yang diedit, kembalikan file yang disimpan atau nilai defaultnya, matikan dithering eksperimental, dan tangkap gradien dasar lagi. Aktifkan kembali transformasi tampilan hanya setelah output emulator terbukti lancar."
+    },
+    {
+      "type": "heading",
+      "text": "Tangkapan layar dapat mengubah pipeline warna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Beberapa jalur tangkapan Android melakukan tone-map HDR atau menyimpan ruang warna berbeda dari frame yang ditampilkan. Catat format tangkapan dan mode tampilan; gunakan baik bukti langsung maupun pengecekan tampilan yang dikalibrasi ketika masalah hanya muncul di HDR."
+    },
+    {
+      "type": "link",
+      "text": "Baca panduan pipeline HDR Android",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

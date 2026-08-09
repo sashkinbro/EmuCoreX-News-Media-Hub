@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21988-don-t-let-stale-hle-helper-threads-mut",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 阻止过期的辅助线程破坏已恢复的 savestate",
+  "summary": "savestate 加载程序现在在销毁之前会分离旧的 sceUtility 和 PSMF 主机包装器，从而保护可能重用相同标识符的活动内核线程和内存。",
+  "heroAlt": "来自 PPSSPP 拉取请求 #21988 的来源证据：存档状态：不要让过期的 HLE 辅助线程修改已恢复的内核状态",
+  "searchKeywords": [
+    "PPSSPP",
+    "savestate",
+    "HLEHelperThread",
+    "sceUtility",
+    "PSMF"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "存档状态",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21988": "存档状态：不要让过期的 HLE 辅助线程修改已恢复的内核状态"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "析构函数可能作用于错误代的内核状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP 保留了主机端的 HLEHelperThread 包装器，用于异步操作，例如存档访问和 PSMF 播放。在加载过程中，模拟器会将这些包装器替换为来自序列化流的对象。有两条路径会正常销毁加载前的包装器，从而允许其析构函数调用 __KernelDeleteThread 并在新的内核状态已经安装后释放一个条目块。旧包装器内部的 IDs 不再描述它被允许拥有的对象。"
+    },
+    {
+      "type": "heading",
+      "text": "标识符重用将无害的日志噪声变成了无声的损坏"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果恢复的状态中不包含陈旧的线程 ID 或分配，该错误会导致关于丢失线程或无效释放的错误。而危险的情况发生在恢复状态回收了任一值时。此时，析构函数可能终止一个合法的活动线程，或释放由不同对象使用的内存。在存档数据操作或 PSMF 播放器处于活动状态时加载，使这个对时序敏感的所有权错误更容易发生。"
+    },
+    {
+      "type": "heading",
+      "text": "Forget 将主机封装器的生命周期与客户机所有权分开"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #21988 应用了 PPSSPP 的 I/O 状态处理已使用的模式。sceUtility 明确调用 Forget，删除其 accessThread，并在 Do 重新创建之前清除指针。在 PSMF 读取时，加载器会遍历现有的播放器映射，并在映射反序列化销毁播放器之前对每个 finishThread 调用 Forget。Forget 不会删除恢复的客户机状态；它告诉过时的主机包装器，它不再拥有那些内核资源。"
+    },
+    {
+      "type": "heading",
+      "text": "回归矩阵必须执行回收的 IDs"
+    },
+    {
+      "type": "paragraph",
+      "text": "在保存数据操作和 PSMF 播放期间之前、期间和之后进行测试保存，然后从具有不同活动的会话加载每个保存。对线程删除和 BlockAllocator 的释放进行检测，以证明在加载前没有包装器会修改恢复的代。包括重复的加载循环、倒带、槽切换、失败状态和加载后的关机。一个有针对性的测试应故意重新创建相同的线程 ID 和块地址，因为仅旧的无害日志案例无法暴露静默的破坏。"
+    },
+    {
+      "type": "callout",
+      "text": "savestate 恢复会改变所有权世代；在恢复的内核变得具有权威性之前，主机析构函数必须忘记过时的客户机句柄。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21988",
+      "label": "阅读 PPSSPP 工程讨论和源代码更改"
+    }
+  ]
+}

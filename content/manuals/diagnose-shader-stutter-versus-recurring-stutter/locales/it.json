@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Distinguere il rallentamento da shader alla prima esecuzione dai conseguenti scatti nei tempi dei frame",
+  "summary": "Eseguire un percorso fisso a freddo e a caldo senza cancellare la cache, contrassegnare ogni posizione con scatto e classificare solo le pause alla prima visita come candidati alla compilazione, mantenendo al contempo i blocchi ricorrenti di I/O, scena o ciclo di vita per una diagnosi separata.",
+  "heroAlt": "Grafico ufficiale di ottimizzazione degli shader PCSX2 che rappresenta il carico di compilazione e del renderer",
+  "searchKeywords": [
+    "Rallentamento shader EmuCoreX",
+    "Scatto ricorrente PS2",
+    "Percorso freddo e caldo",
+    "Cache shader",
+    "Picco del tempo dei frame"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Prestazioni",
+    "stutter": "Balbuzie"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Guida alla pipeline e alle prestazioni Vulkan",
+    "pcsx2-vulkan": "Sviluppo della shader-cache PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Segnare le posizioni dei rallentamenti lungo percorsi freddi e caldi identici"
+    },
+    {
+      "type": "paragraph",
+      "text": "La compilazione dello shader avviene comunemente quando un nuovo materiale o effetto viene incontrato per la prima volta e dovrebbe ridursi una volta che la pipeline rilevante è nella cache. La balbuzie ricorrente si ripete alla stessa transizione, lettura da storage, evento in background o al confine del frame pacing. Scegliere un percorso deterministico contenente diversi effetti e registrare i timestamp piuttosto che fare affidamento sulla memoria."
+    },
+    {
+      "type": "callout",
+      "text": "Non cancellare la cache degli shader tra le passate a freddo e a caldo. Farlo forza entrambe le rotte a comportarsi come se fosse la prima volta e rovina il confronto."
+    },
+    {
+      "type": "heading",
+      "text": "Prepara una timeline degli intoppi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio normale prima di una rotta deterministica di due-cinque minuti.",
+        "System driver, un renderer e profilo grafico invariato.",
+        "Un overlay dei tempi dei fotogrammi o una registrazione dello schermo sincronizzata usata in ogni passata.",
+        "Stato della cache documentato prima della prima esecuzione.",
+        "Download in background, acquisizione e notifiche controllati."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Confronta prima visita, replay immediato e riavvio dell'app"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Riavvia l'app senza cancellare la cache grafica e avvia il percorso a freddo.",
+        "2. Segna il timestamp e il contenuto visibile per ogni picco di tempo del frame.",
+        "3. Torna al salvataggio normale e ripeti immediatamente senza modificare le impostazioni.",
+        "4. Classifica gli inciampi che scompaiono alla seconda visita come candidati alla compilazione.",
+        "5. Segna le interruzioni che si ripetono allo stesso confine di caricamento o animazione.",
+        "6. Chiudi e riapri l'app senza cancellare la cache, quindi esegui un terzo passaggio.",
+        "7. Riavvia Android e ripeti solo quando viene testata la persistenza del ciclo di vita.",
+        "8. Invia le posizioni ricorrenti alla memoria, CPU/GPU, o alla diagnosi del frame-pacing invece di definire tutto come tremolio dello shader."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Un confronto con cache calda trasforma il tempo in evidenza. Le pause alla prima occorrenza si adattano alla creazione della pipeline; un blocco che si ripete ad ogni ingresso può essere I/O o sincronizzazione; un intoppo a intervalli regolari può derivare da lavori in background. La terza passata verifica se la cache sopravvive a un normale riavvio dell'app."
+    },
+    {
+      "type": "heading",
+      "text": "Accettazione della classificazione del tremolio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ogni etichetta deve essere supportata dal suo comportamento attraverso le passate."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Gli intoppi della prima visita scompaiono o si riducono al replay immediato.",
+        "Le interruzioni ricorrenti mantengono un timestamp o un confine di scena riproducibile.",
+        "Impostazioni, driver, politica della cache e percorso non cambiano.",
+        "Il comportamento al terzo passaggio rivela se la cache persiste dopo il riavvio dell'app.",
+        "Le evidenze dei tempi dei fotogrammi concordano con il ritmo visibile e audio."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Timeline da ripetere"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Nemici o condizioni atmosferiche casuali cambiano il percorso: scegliere un checkpoint deterministico.",
+        "La registrazione video funziona in un solo passaggio: normalizzare il sovraccarico.",
+        "Android aggiorna o cancella la cache a metà test: riavvia l'intera sequenza.",
+        "Le variazioni materiali della temperatura del dispositivo: abbina lo stato termico prima del confronto."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ripristina overlay e politica della cache alla normalità"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disabilita l'overlay diagnostico del frame-time, conserva la cache shader valida, ripristina il comportamento delle app in background e avvia il titolo con cold-boot una volta. Non pianificare la cancellazione della cache di routine per i rallentamenti già verificati che scompaiono dopo la compilazione."
+    },
+    {
+      "type": "heading",
+      "text": "Non ogni rallentamento alla prima visita è uno shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Caricamenti delle texture, letture del disco, decompressione e logica di gioco possono verificarsi anche una volta per area. Tratta la scomparsa al primo passaggio come una classificazione candidata, quindi utilizza contatori e registri per confermare il sottosistema responsabile. Ripeti lo stesso percorso dopo un riavvio a caldo e di nuovo dopo una vera condizione di svuotamento della cache solo quando quell'operazione è documentata e sicura. Se l'interruzione si sposta con l'accesso allo storage o appare in ogni giro al medesimo confine di streaming, conserva i dati dello shader e indaga sul carico di lavoro ricorrente invece di cancellare le cache ripetutamente."
+    },
+    {
+      "type": "link",
+      "text": "Rivedi le linee guida di ottimizzazione Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar inicializa los mapas de botones de PlayStation antes de habilitar el movimiento",
+  "summary": "Reordenar y eliminar duplicados en la activación de movimiento SDL elimina un riesgo de subprocesamiento en el momento del lanzamiento específico de la configuración del controlador DualShock 4 y DualSense HIDAPI.",
+  "heroAlt": "Evidencia de la fuente del pull request #2345 de Azahar: Corrección de error para el bloqueo del controlador ps4/ps5 al iniciar",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "ingreso de movimiento"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Entrada",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "Corrección de error para el bloqueo del controlador ps4/ps5 al iniciar"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El inicio de movimiento estaba entrando en SDL antes de que el mapeo del controlador estuviera listo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar permite la entrada de giroscopio y acelerómetro a través de la ruta del controlador de SDL. Para dispositivos PS4 y PS5 que usan HIDAPI, llamar a EnableMotion antes de que existieran los mapas de botones podría provocar un problema de concurrencia y, ocasionalmente, hacer que el emulador se bloquee al iniciar. La antigua API de Joystick no utilizaba esta ruta, lo que explica por qué el problema apareció solo después de que la inicialización del controlador se trasladó a la API moderna."
+    },
+    {
+      "type": "heading",
+      "text": "La inicialización ahora crea el mapeo antes de una llamada de movimiento"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción #2345 elimina las invocaciones duplicadas de EnableMotion de SDLState y CreateControllerButtonMap y mantiene la activación en SDLJoystick después de que se establece el estado de construcción. El cambio importante es el orden y la unicidad, no un retraso: el mapeo de botones se completa, luego se habilita el soporte de movimiento una vez. Eso evita que las devoluciones de llamada o el trabajo de HIDAPI observen un objeto de controlador medio inicializado."
+    },
+    {
+      "type": "heading",
+      "text": "Las llamadas duplicadas hicieron que la carrera fuera más difícil de comprender"
+    },
+    {
+      "type": "paragraph",
+      "text": "La activación por movimiento desde varias capas puede parecer inofensiva si SDL la trata como idempotente, pero cada llamada puede entrar en el código del dispositivo, asignar sensores o tomar bloqueos. Eliminar puntos de entrada redundantes hace que la propiedad sea clara y reduce el número de programación que pueden provocar bloqueos. Los botones estándar y la entrada analógica aún se inicializan normalmente, y los controladores sin movimiento deberían pasar por la misma secuencia sin inventar un sensor."
+    },
+    {
+      "type": "heading",
+      "text": "Los bucles de inicio deben incluir casos de conexión en caliente y con movimiento deshabilitado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Arrancar en frío Azahar repetidamente con DualShock 4 y DualSense conectados por USB y Bluetooth, con movimiento habilitado y deshabilitado. Añadir conexión en caliente durante el inicio, reconectar después de que comience la emulación e inicializar múltiples controladores. Registrar la finalización del mapa y la única activación por movimiento. Probar un dispositivo Joystick heredado como control negativo. La corrección debe eliminar los bloqueos sin perder datos del giroscopio, etiquetas de botones o asignaciones, y el cierre debe terminar los hilos de HIDAPI de manera limpia."
+    },
+    {
+      "type": "callout",
+      "text": "La configuración del controlador ahora tiene un propietario y un pedido: asignar primero las entradas y luego permitir que SDL inicie el hardware de movimiento."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "Leer la discusión de ingeniería y los cambios de fuente de Azahar"
+    }
+  ]
+}

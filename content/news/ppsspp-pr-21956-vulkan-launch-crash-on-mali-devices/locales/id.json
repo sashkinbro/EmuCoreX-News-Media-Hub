@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21956-vulkan-launch-crash-on-mali-devices",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP memperbaiki jebakan pembuatan perangkat Vulkan pada perangkat keras Mali",
+  "summary": "Pembungkus libretro sekarang memilih tepat satu saluran fitur Vulkan, memenuhi aturan bahwa pEnabledFeatures harus null ketika VkPhysicalDeviceFeatures2 dirangkai.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PPSSPP #21956: Libretro: memperbaiki crash peluncuran Vulkan pada perangkat Mali",
+  "searchKeywords": [
+    "PPSSPP",
+    "Vulkan",
+    "Mali",
+    "VkPhysicalDeviceFeatures2",
+    "libretro"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafis",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21956": "Libretro: memperbaiki crash peluncuran Vulkan pada perangkat Mali"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Driver toleran menyembunyikan kombinasi create-info yang tidak valid"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan menawarkan pointer legacy pEnabledFeatures dan struktur VkPhysicalDeviceFeatures2 yang dapat diperluas di pNext. Ketika Features2 hadir, spesifikasi mengharuskan pointer legacy menjadi null. Pembungkus libretro milik PPSSPP bisa mengisi keduanya sekaligus menambahkan kemampuan yang diperlukan oleh frontend. Beberapa driver menerima permintaan perangkat yang salah format, tetapi Mali mengembalikan VK_ERROR_INITIALIZATION_FAILED, sehingga inti yang dirender oleh Vulkan gagal sebelum eksekusi game dimulai."
+    },
+    {
+      "type": "heading",
+      "text": "Pembungkus sekarang menemukan jalur fitur mana yang dipilih oleh inti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan tarik #21956 menelusuri rantai pNext pembuatan perangkat dan mencatat apakah mengandung VkPhysicalDeviceFeatures2. Jika ditemukan, fitur yang diperlukan oleh frontend digabungkan ke dalam struktur itu dan newInfo.pEnabledFeatures secara eksplisit diatur menjadi null. Jika tidak ada, pembungkus mempertahankan perilaku legacy yang ada dengan menyalin atau membuat VkPhysicalDeviceFeatures dan menetapkan pointer tersebut. Kedua jalur Vulkan yang sah ini oleh karena itu bersifat saling eksklusif."
+    },
+    {
+      "type": "heading",
+      "text": "Validasi mencakup baik GPUs seluler yang ketat maupun toleran"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penulis menguji rendering perangkat keras pada Android 14 dengan perangkat Mali-G615 dan Android 13 dengan perangkat Snapdragon 865 Adreno. Keduanya berhasil diluncurkan dan berjalan. Pada sistem Mali, penerusan pembuatan perangkat mengekspos masalah kapasitas virtual-swapchain terpisah yang ditangani oleh perubahan lain; membedakan hal itu penting karena menyelesaikan satu gerbang startup seharusnya tidak membuat Hub mengklaim setiap kegagalan Vulkan berikutnya memiliki penyebab yang sama."
+    },
+    {
+      "type": "heading",
+      "text": "Tes rantai fitur harus memeriksa kepemilikan struktur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tangkap VkDeviceCreateInfo dengan lapisan validasi untuk inti lama, inti Features2, rantai dengan struktur fitur tambahan, dan fitur opsional yang tidak ada. Ulangi pada Mali, Adreno, desktop Vulkan, dan beberapa versi RetroArch. Verifikasi bit yang diperlukan tetap terjaga dan tidak tertimpa, pointer pNext tetap valid melalui vkCreateDevice, dan pEnabledFeatures hanya null dalam kasus Features2. Juga uji jalur perangkat lunak dan OpenGL untuk memastikan inisialisasi pembungkus tidak mengasumsikan Vulkan."
+    },
+    {
+      "type": "callout",
+      "text": "Negosiasi fitur Vulkan memiliki dua jalur hukum; menggabungkannya mungkin berhasil pada driver yang permisif, tetapi tetap tidak sah dan gagal pada perangkat keras yang lebih ketat."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21956",
+      "label": "Baca diskusi rekayasa PPSSPP dan perubahan sumber"
+    }
+  ]
+}

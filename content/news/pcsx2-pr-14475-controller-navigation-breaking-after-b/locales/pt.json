@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14475-controller-navigation-breaking-after-b",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 reconstrói a navegação do controlador do Big Picture após redimensionamento da janela",
+  "summary": "Retângulos de navegação ImGui desatualizados, e não o modo de tela cheia em si, causavam a parada do movimento de foco após uma mudança de tamanho significativa; agora, um redimensionamento força o estado da navegação a corresponder ao novo layout.",
+  "heroAlt": "Evidência visual do pull request PCSX2 #14475: FullscreenUI: Corrigir quebra da navegação do controlador após redimensionamento da janela do Big Picture Mode",
+  "searchKeywords": [
+    "PCSX2",
+    "Modo Big Picture",
+    "navegação do controlador",
+    "redimensionamento da janela",
+    "ImGui"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "frontend": "Frontend",
+    "emulation": "Emulação"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14475": "FullscreenUI: Corrigir quebra da navegação do controlador após redimensionamento da janela do Big Picture Mode"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O modo de tela cheia parecia culpado porque geralmente redimensionava a janela"
+    },
+    {
+      "type": "paragraph",
+      "text": "A navegação por controle no Modo Big Picture poderia parar imediatamente após alternar para tela cheia. Testes em diferentes dispositivos mostraram que o estado de tela cheia era apenas o gatilho que a maioria das pessoas percebia: a condição real era uma mudança de tamanho de janela suficientemente grande. Janelas portáteis frequentemente mudavam muito pouco para reproduzir o problema, enquanto uma janela de desktop precisava ser redimensionada para bem menor antes que a falha acontecesse de forma confiável."
+    },
+    {
+      "type": "heading",
+      "text": "NavRectRel ainda descrevia widgets nas dimensões antigas"
+    },
+    {
+      "type": "paragraph",
+      "text": "O ImGui armazena em cache retângulos de navegação relativos usados para decidir qual item recebe foco quando um controle se move para cima, baixo, esquerda ou direita. Depois que o layout era reconstruído em um novo tamanho, esses valores do NavRectRel podiam permanecer desatualizados. Os cálculos de foco então referenciavam geometria que não correspondia mais aos controles visíveis. Pressionar certas direções poderia restaurar a navegação incidentalmente, explicando por que o bug às vezes parecia se corrigir sozinho."
+    },
+    {
+      "type": "heading",
+      "text": "Um redimensionamento agora invalida o estado de navegação na fronteira da UI"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14475 altera o ImGuiManager para que qualquer redimensionamento da janela Big Picture force a reinicialização da navegação. A correção não adiciona atrasos temporais nem casos especiais para tela cheia; ela responde à mudança de estado que torna os retângulos em cache inválidos. Manter a correção no caminho de redimensionamento também cobre redimensionamentos manuais da janela, mudanças de resolução e outras transições que reconstróem o layout sem alterar o modo de tela cheia."
+    },
+    {
+      "type": "heading",
+      "text": "A sequência de regressão precisa de mudanças em dimensões grandes e pequenas"
+    },
+    {
+      "type": "paragraph",
+      "text": "No código anterior, os testadores devem reduzir substancialmente a janela Big Picture e então alternar para tela cheia para reproduzir o foco do controle travado. No caminho corrigido, a navegação deve continuar após repetidas transições de aumento, redução e tela cheia. A matriz deve incluir janelas de tamanho de desktop e portátil, interação do mouse entre movimentos do controle e cada borda de aba. A posição do foco pode ser redefinida deliberadamente, mas nunca deve apontar fora do layout reconstruído ou exigir um input de recuperação."
+    },
+    {
+      "type": "callout",
+      "text": "A correção segue o evento real de invalidação: um redimensionamento da janela reconstrói o layout, então a geometria de navegação do controlador deve ser reconstruída junto com ele."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14475",
+      "label": "Leia a discussão de engenharia PCSX2 e as alterações de código-fonte"
+    }
+  ]
+}

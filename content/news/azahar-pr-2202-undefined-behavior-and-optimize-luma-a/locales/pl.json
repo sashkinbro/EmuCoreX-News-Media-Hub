@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2202-undefined-behavior-and-optimize-luma-a",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar usuwa niejednoznaczność przepełnienia ze znakiem w aliasie pamięci Luma",
+  "summary": "Maska bitu 31 bez znaku sprawia, że wykrywanie aliasów jest zdefiniowane w C++, podczas gdy wczesne zwroty i rzadkie gałęzie MMIO nadają wspólnym ścieżkom pamięci bardziej prostoliniowy przepływ instrukcji.",
+  "heroAlt": "Dowody źródłowe z pull requestu Azahar #2202: core/memory: Napraw nieokreślone zachowanie i zoptymalizuj ścieżkę aliasu Luma",
+  "searchKeywords": [
+    "Azahar",
+    "Alias Luma",
+    "nieokreślone zachowanie",
+    "FCRAM",
+    "MMIO"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "core": "Rdzeń",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-2202": "core/memory: Napraw nieokreślone zachowanie i zoptymalizuj ścieżkę aliasu Luma"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bit 31 był tworzony za pomocą arytmetyki ze znakiem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Luma3DS ujawnia formę aliasu adresu, której wysoki bit informuje Azahar, aby pomijał normalne tabele stron dla FCRAM lub MMIO. Kod testował i czyścił ten bit przy użyciu 1 << 31. Gdy int ma 32 bity, przesunięcie znaku jedynki na pozycję znaku jest zachowaniem niezdefiniowanym, co daje kompilatorowi optymalizującemu pozwolenie na przekształcanie otaczającego kodu w sposób, który nie zachowuje zamierzonej maski."
+    },
+    {
+      "type": "heading",
+      "text": "0x80000000u sprawia, że zarówno operacje testowania, jak i czyszczenia są zdefiniowane"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #2202 deklaruje LUMA_ALIAS_BIT jako niepodpisaną wartość literalną 0x80000000u. Ścieżki odczytu i zapisu testują vaddr w odniesieniu do tej stałej i uzyskują paddr poprzez jej wyczyszczenie. Zmiana jest niewielka, ale architektoniczna: manipulacja adresem powinna używać typu niepodpisanego, który reprezentuje VAddr, a nie polegać na wyniku wybranym przez kompilator dla przepełnionego arytmetyki ze znakiem."
+    },
+    {
+      "type": "heading",
+      "text": "Wczesne zwroty oddzielają FCRAM od zimnej ścieżki MMIO"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alias FCRAM pozostaje główną użyteczną ścieżką i kończy się natychmiastowym powrotem. MMIO jest sprawdzany następnie i oznaczany jako mało prawdopodobny, podobnie jak sam wpis aliasu w stosunku do zwykłego dostępu do tablicy stron. Spłaszczenie poprzedniego łańcucha else-if pozwala Clangowi umieścić wspólny przepływ bardziej liniowo i trzyma rzadki kod niestandardowego obsługiwacza z dala od ścieżki pamięci podręcznej instrukcji używanej przez większość odczytów i zapisów."
+    },
+    {
+      "type": "heading",
+      "text": "Twierdzenia dotyczące optymalizacji wymagają pokrycia przez kompilator i alias"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uruchom odczyty i zapisy aliasów Luma dla FCRAM, prawidłowego 32-bitowego MMIO, adresu aliasu poza obiema strefami i normalnych adresów tablicy stron. Porównaj Clang i GCC na wielu poziomach optymalizacji z włączonym UBSan, weryfikując brak raportu o przesunięciu liczby ze znakiem i identyczne wyniki. Zbadaj wygenerowany kod pod kątem zamierzonych wczesnych powrotów, ale priorytetowo traktuj poprawność. Szerokości MMIO inne niż ściśle obsługiwana 32-bitowa trasa muszą nadal przepadać przez lub kończyć się błędem zgodnie z istniejącą semantyką."
+    },
+    {
+      "type": "callout",
+      "text": "Szybsza ścieżka zaczyna się od zdefiniowanego zachowania: flaga adresu musi być niepodpisaną maską bitową, zanim będzie można polegać na wskazówkach skoku lub kształcie asemblera."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2202",
+      "label": "Przeczytaj dyskusję inżynieryjną Azahar i zmiany w źródle"
+    }
+  ]
+}

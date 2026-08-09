@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21989-store-only-live-audio-queue-data-audio",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP przycina savestate, przechowując tylko aktywne próbki dźwięku",
+  "summary": "Kompaktowy format kolejki serializuje próbki, które nadal mogą być odtwarzane, zamiast kopiować wszystkie dziewięć buforów dźwięku o stałej pojemności do każdego stanu.",
+  "heroAlt": "Dowody źródłowe z pull requestu PPSSPP #21989: Savestate: przechowuj tylko dane aktywnej kolejki dźwięku (sekcja AudioChannel v3)",
+  "searchKeywords": [
+    "PPSSPP",
+    "kolejka dźwięku",
+    "rozmiar savestate",
+    "przewiń wstecz",
+    "FixedSizeQueue"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "savestates": "Stany zapisane",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21989": "Savestate: przechowuj tylko dane aktywnej kolejki dźwięku (sekcja AudioChannel v3)"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Stała pojemność była mylona z istotnym stanem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Każdy kanał sceAudio używa FixedSizeQueue z miejscem na 32768 razy osiem wartości 16-bitowych, z magazynem zapasowym o pojemności 512 KB. Istnieje dziewięć kolejek kanałów. Wcześniejszy serializer kopiował każdy bajt tych tablic, mimo że tylko niewielki logiczny fragment między head a count mógł kiedykolwiek zostać pobrany. W konsekwencji około 4,6 MB w większości niepotrzebnych danych trafiało do ręcznych zapisów, slotów zapisu, wejścia do kompresji i każdego okresowego zrzutu rewindingu w pamięci."
+    },
+    {
+      "type": "heading",
+      "text": "Kompaktowa forma zachowuje kolejność kolejki podczas owinięcia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21989 wprowadza DoStateCompact jako format opcjonalny. Gdy obszar aktywny jest ciągły, zapisuje jedną surową tablicę. Gdy head plus count przekracza koniec magazynu, zapisuje ogon i początek jako dwie części w kolejności pobierania. POD DoArray zapisuje surowe bajty bez nagłówka dla każdego wywołania, więc te części tworzą ten sam strumień, który jest odczytywany przy pojedynczym linear read. Ładowanie umieszcza sekwencję na indeksie zero i wyprowadza nowy tail z count."
+    },
+    {
+      "type": "heading",
+      "text": "Wersjonowanie chroni starsze stany i innych wywołujących"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sekcja AudioChannel przechodzi na nowy poziom formatu i wybiera tam tylko kompaktową serializację. Starsze poziomy sekcji nadal używają oryginalnej metody pełnego przechowywania, więc istniejące zapisy pozostają czytelne. Stara funkcja FixedSizeQueue pozostaje nienaruszona, ponieważ jej układ bajtów nie jest wymienny, a inny wywołujący może polegać na niej. Ładowarka odrzuca również liczby spoza zakresu od zera do pojemności za pomocą SetError, zapobiegając dezynchronizacji każdego kolejnego pola w przypadku uszkodzonego pliku."
+    },
+    {
+      "type": "heading",
+      "text": "Opakowane, puste i pełne kolejki to podstawowe testy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utwórz deterministyczne kolejki, które są puste, częściowo wypełnione, dokładnie pełne oraz owinięte przy kilku różnych przesunięciach głowy. Zapisz je i wczytaj, a następnie porównaj każdą wyrzuconą próbkę z oryginalną kolejnością. Testuj wszystkie dziewięć kanałów w trakcie gry, granice niedoboru i nadmiaru dźwięku, cofanie odtwarzania, wskaźniki kompresji i zgodność ze starym stanem. Uszkodź zapisany licznik, aby potwierdzić nieudane czyste wczytanie. Mierz czas zapisu i obciążenie pamięci oddzielnie; oczekiwany jest mniejszy ładunek, ale poprawność pozostaje głównym kryterium."
+    },
+    {
+      "type": "callout",
+      "text": "Pojemność jest szczegółem implementacyjnym; savestate potrzebuje sekwencji audio na żywo oraz wystarczającej ilości metadanych, aby odtworzyć równoważną kolejkę."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21989",
+      "label": "Przeczytaj dyskusję inżynierską PPSSPP i zmiany w źródle"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21808-smarter-re-hashing-of-textures",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP váže přehashování textur na synchronizaci hosta GPU",
+  "summary": "Platnost textury nyní sleduje body, kde může PSP software pozorovat nebo přepisovat paměť GPU, nahrazující heuristiku počtu snímků explicitními synchronizačními oblastmi.",
+  "heroAlt": "Důkaz ze zdrojů z pull requestu PPSSPP #21808: Texturová cache: Chytřejší přehašování textur",
+  "searchKeywords": [
+    "PPSSPP",
+    "texturová cache",
+    "přehašování",
+    "GE synchronizace",
+    "paměť GPU"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21808": "Texturová cache: Chytřejší přehašování textur"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Věk snímku byl jen zástupcem viditelnosti paměti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cacheovaná textura PSP může zůstat nezměněná stovky snímků nebo být přepsána několikrát během jednoho snímku. Předchozí strategie ústupu textury používala mini-hashy, čítače snímků, náznaky neplatnosti a exponenciální plán pro rozhodování, kdy provést úplný hash. To snižovalo práci, ale uplynulé snímky přímo nepopisují, kdy hostitelské CPU a GPU synchronizovaly paměť, takže heuristika mohla provádět zbytečné kontroly nebo uchovávat zastaralý obsah."
+    },
+    {
+      "type": "heading",
+      "text": "Synchronizační domény označují okamžiky, kdy se mohou změnit předpoklady"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #21808 zvyšuje hodnotu textureSyncTimeDomain při čekání GE, změnách adresy zdržení, synchronizaci vykreslování, kopírování framebufferu a relevantních přenosech bloků. Každá nespolehlivá položka textury zaznamenává poslední doménu, ve které byla kontrolována. Explicitní vlajky HASH_RECHECK a CLUT_RECHECK stále vynucují práci v známých případech neplatnosti, zatímco spolehlivé textury podobné fontům mohou test domény přeskočit. Rozhodnutí je nyní propojeno s emulovanými událostmi viditelnosti, spíše než s časovačem."
+    },
+    {
+      "type": "heading",
+      "text": "Přepracování také odstraňuje účetnictví, které by mohlo odchýlit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Záplata odstraňuje uživatelsky viditelný přepínač zpětného odkladu, plán mini-hash pro jednotlivé položky, příznaky frekvence změn a měnitelné čítače velikosti cache. Tlak na cache je odvozen součtem aktuálních položek při spuštění decimace, čímž se vybízí k občasnému výpočtu výměnou za stav, který nemůže být nekonzistentní po neobvyklé cestě mazání. Video textury a varianty palety si zachovávají speciální chování, protože jejich vzory mutace se liší od běžných statických obrázků."
+    },
+    {
+      "type": "heading",
+      "text": "Správnost vyžaduje hry, které přepisují textury v neobvyklých pořadích"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testujte přehrávání videa, efekty renderování do textury, hry, které mění paměť textur ze CPU, mnoho variant CLUT, kopie framebufferu a dlouhodobé statické fonty UI. Porovnávejte hashe a snímky obrazovky před a po každém přechodu synchronizační domény. Měřte počet plných hashů, čas CPU, velikost cache a chování vyřazování během dlouhých sezení. Načítání savestates, neplatnění paměti a přepínání backendů musí resetovat nebo posunout stav domény, aby záznam nemohl zdědit falešné tvrzení o aktuálnosti."
+    },
+    {
+      "type": "callout",
+      "text": "Užitečná otázka není, kolik snímků texturu přežila, ale zda synchronizace viditelná pro hosta vytvořila novou šanci, aby se její paměť změnila."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21808",
+      "label": "Přečtěte si inženýrskou diskusi PPSSPP a změny zdrojového kódu"
+    }
+  ]
+}

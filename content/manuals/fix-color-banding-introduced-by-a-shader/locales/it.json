@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-color-banding-introduced-by-a-shader",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Rimuovere la banda di colore introdotta da uno shader di post-elaborazione",
+  "summary": "Catturare un gradiente uniforme di cielo o nebbia con la post-elaborazione disattivata, riattivare singolarmente le fasi dello shader, ispezionare l'output prima della conversione per la visualizzazione e mantenere solo un preset la cui precisione non schiaccia o posterizza la sorgente.",
+  "heroAlt": "PCSX2 illustrazione del processo shader da un rapporto ufficiale sui progressi grafici",
+  "searchKeywords": [
+    "PS2 banding dello shader",
+    "EmuCoreX posterizzazione del gradiente",
+    "precisione della post-elaborazione",
+    "bande nel cielo",
+    "schiacciamento del colore"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafica",
+    "post-processing": "Post-elaborazione"
+  },
+  "sourceLabels": {
+    "pcsx2-performance": "Impostazioni PCSX2 e cattura delle prove",
+    "android-hdr": "Contesto di conversione del display Android"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dimostra che le bande iniziano dopo il frame dell'emulatore"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il banding trasforma un gradiente uniforme in passi visibili. Il gioco potrebbe già usare arte a bassa precisione, uno shader può quantizzare il colore intermedio, la codifica dello screenshot può ridurre la precisione o la catena di visualizzazione può comprimere i valori. Scegli un gradiente ampio e stabile come il cielo al crepuscolo, la nebbia o un menu sfumato. Cattura l'output diretto con tutta la post-elaborazione disattivata prima di giudicare una fotografia del televisore."
+    },
+    {
+      "type": "callout",
+      "text": "Il dithering può nascondere i gradini aggiungendo rumore, ma non recupera i valori già tagliati da una fase dello shader precedente. Trova la fase che perde precisione prima di considerare il rumore come rimedio."
+    },
+    {
+      "type": "heading",
+      "text": "Crea un set di riferimento del gradiente"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Un salvataggio stabile in gioco con un grande gradiente a basso movimento.",
+        "Acquisizioni dirette senza perdita o di alta qualità con shader disattivati e attivati.",
+        "Preset dello shader copiato in una posizione di rollback.",
+        "Conversione HDR, modalità notturna e trasformazioni dei colori per l'accessibilità disattivate per il baseline.",
+        "Un secondo gradiente con luminosità e tonalità differenti."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Identifica la prima fase che perde precisione"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Avvia a freddo con l'elaborazione post disabilitata e cattura entrambi i gradienti.",
+        "2. Abilita il preset ma disattiva ogni fase opzionale che la sua interfaccia espone.",
+        "3. Aggiungi una fase alla volta, riavviando la scena quando la pipeline richiede la re-inizializzazione.",
+        "4. Confronta i passaggi dell'istogramma e i contorni visibili nei cattura dirette, non in anteprime ricomprese.",
+        "5. Quando la fase responsabile è trovata, riduci la sua intensità o scegli il percorso a precisione più alta documentato.",
+        "6. Rieseguire il test senza dithering dell'emulatore, quindi abilitare solo l'opzione di dithering desiderata se rimangono gradini residui della sorgente.",
+        "7. Ricollegare la modalità di visualizzazione normale e verificare separatamente i gradienti vicino al nero e quelli luminosi.",
+        "8. Salvare un preset specifico per il titolo quando altri giochi necessitano di una pipeline tonale diversa."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Una catena di shader è ordinata: una fase iniziale può tagliare, quantizzare o rimappare valori che le fasi successive non possono ricostruire. La cattura diretta identifica se la perdita esiste prima dello Android o se il display esterno trasforma il frame. Due intervalli di luminosità impediscono che una correzione per le alte luci del cielo schiacci silenziosamente la nebbia scura."
+    },
+    {
+      "type": "heading",
+      "text": "Accettazione della qualità del gradiente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il preset finale deve preservare i dettagli tonali senza modificare il timing del gioco o l'intento del colore."
+    },
+    {
+      "type": "list",
+      "items": [
+        "I grandi gradienti devono transire senza nuovi anelli di contorno.",
+        "I passaggi vicino al nero rimangono distinguibili e le alte luci non vengono tagliate.",
+        "I bianchi dell'HUD e i toni della pelle non acquisiscono una dominante di colore.",
+        "Il secondo gradiente migliora con lo stesso ordine di fase.",
+        "Il frame pacing e il carico sostenuto GPU rimangono entro la tolleranza di riferimento."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Fonti di banding al di fuori dello shader"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Le bande esistono con l'elaborazione disabilitata nella cattura diretta: confronta l'output o le risorse originali del gioco.",
+        "La cattura diretta è fluida ma le bande del televisore: controlla la gamma RGB, HDR e l'elaborazione del pannello.",
+        "Solo gli screenshot condivisi mostrano anelli: usa un file locale senza perdita prima di cambiare il preset.",
+        "Un passaggio corregge le bande sfocando i dettagli: respingilo e ripristina la catena che preserva la sorgente."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Ripristina il frame noto non elaborato"
+    },
+    {
+      "type": "paragraph",
+      "text": "Disabilita il preset modificato, ripristina il suo file salvato o i valori predefiniti, disattiva il dithering sperimentale e cattura nuovamente la gradazione di base. Riattiva le trasformazioni del display solo dopo che l'uscita dell'emulatore si è dimostrata fluida."
+    },
+    {
+      "type": "heading",
+      "text": "Gli screenshot possono modificare le pipeline dei colori"
+    },
+    {
+      "type": "paragraph",
+      "text": "Alcuni percorsi di cattura Android mappano tonalmente l'HDR o memorizzano uno spazio colore diverso rispetto al frame visualizzato. Registra il formato di cattura e la modalità di visualizzazione; utilizza sia prove dirette sia un controllo con display calibrato quando il problema esiste solo in HDR."
+    },
+    {
+      "type": "link",
+      "text": "Leggi le linee guida del pipeline HDR Android",
+      "url": "https://pcsx2.net/docs/troubleshooting/performance/"
+    }
+  ]
+}

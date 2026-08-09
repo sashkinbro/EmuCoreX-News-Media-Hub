@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3885-taihen-plugin-framework-and-kubridge-h",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K legt die Grundlage für taiHEN-Plugins und kubridge",
+  "summary": "Per-Titel-Plugin-Laden, verschiebbare Hook-Trampoline, Injektionsverfolgung, Speicher-HLE und Gast-Abbruch-Callbacks öffnen einen sorgfältig begrenzten Pfad für die Kompatibilität von Vita-Plugins.",
+  "heroAlt": "Quellenbeleg aus dem Vita3K-Pull-Request #3885: Hinzufügen von taiHEN-Plugin-Framework und kubridge HLE-Unterstützung",
+  "searchKeywords": [
+    "Vita3K",
+    "taiHEN",
+    "kubridge",
+    "Vita-Plugins",
+    "Inline-Hooks"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Kern",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3885": "Hinzufügen von taiHEN-Plugin-Framework und kubridge HLE-Unterstützung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Vita-Plugins hängen von der Infrastruktur unter normalen Benutzermodulen ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "taiHEN-Plugins machen mehr, als nur eine Bibliothek zu importieren. Sie lokalisieren Funktionen nach Modul und NID, ersetzen Import-Stubs oder Funktionsprologe, setzen den Ablauf durch ein Trampolin fort, injizieren Bytebereiche und geben später jedes Objekt frei. kubridge stellt kernel-orientierte Speicherreservierung, -zuweisung, -schutz und Ausnahmebehandlung für Benutzer-Plugins bereit. Die ursprüngliche Low-Level-Implementierung in einem Emulator auszuführen würde das Verhalten an Firmware-Adressen und Host-Fehlerdetails binden."
+    },
+    {
+      "type": "heading",
+      "text": "Hook-Objekte behalten genügend Zustände, um jede Änderung rückgängig zu machen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #3885 fügt einen taiHEN-Zustand mit eindeutigen IDs, Hook- und Injektionskarten sowie Konfigurationsabschnitten für titel-spezifische Plugin-Pfade hinzu. Import-Hooks bewahren den ursprünglichen Stub in einem Trampolin und patchen einen Sprung zum Gast-Hook. Inline-Hooks verwenden die Unterstützung zur Instruktionsverlagerung, um einen sicheren Prolog zu kopieren, bevor sie die ARM- oder Thumb-Ausführung umleiten. Jeder Datensatz behält Ziel, gespeicherte Bytes, Trampolin, Metadaten des Gast-Hooks, Modus und Patchgröße für eine kontrollierte Freigabe."
+    },
+    {
+      "type": "heading",
+      "text": "kubridge-Speicheraufrufe bleiben unter der Verwaltung von Vita3K"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLE-Implementierungen übersetzen kubridge-Schutzflags in MemPerm, reservieren Adressraum, committen und decommitten Seiten und registrieren Ausnahme-Handler. Ein geschützter Speicherfehler protokolliert Adresse und Schreibrichtung in signal-sicheren CPU-Atomics, stoppt die Ausführung und lässt die normale Gast-Run-Schleife einen Abbruchkontext auf dem Gast-Stack aufbauen. Thread-lokale CPU-Zeiger werden durch einen Schutz gelöscht, sodass recycelte Host-Threads keinen veralteten Zustand preisgeben können."
+    },
+    {
+      "type": "heading",
+      "text": "Die Kompatibilität von Plugins darf die Isolationstests nicht überholen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Keine Plugins laden, ein Plugin, mehrere Titel- und Kernel-Sektionen, fehlende Pfade, Import-Hooks, ARM- und Thumb-Inline-Hooks, kettenartig aussehende Anfragen, Injektionen und Freigaben in ungewöhnlicher Reihenfolge. Verschiebungen ablehnen, die nicht transformiert werden können oder Bereiche außerhalb des Gast-Speichers liegen. Datenabbruch-Registrierung, geschützte Lese- und Schreibvorgänge, Thread-Beendigung, savestates, Titelwechsel und Herunterfahren ausführen. Originalbytes und Zuweisungen nach Freigabe prüfen, während nicht unterstützte Ausnahmetypen und firmware-spezifisches Verhalten ausdrücklich fehlschlagen, anstatt Erfolg vorzutäuschen."
+    },
+    {
+      "type": "callout",
+      "text": "Plugin-Unterstützung ist nur dann sicher, wenn jeder Gast-Hook, jedes Trampolin, jeder injizierte Bereich und jeder Ausnahme-Callback einen für den Emulator sichtbaren Besitzer und eine umkehrbare Lebensdauer hat."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3885",
+      "label": "Lesen Sie die Vita3K-Engineering-Diskussion und Quellcode-Änderungen"
+    }
+  ]
+}

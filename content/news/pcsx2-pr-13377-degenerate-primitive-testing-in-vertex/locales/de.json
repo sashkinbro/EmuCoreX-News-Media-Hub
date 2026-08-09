@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13377-degenerate-primitive-testing-in-vertex",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 beurteilt degenerierte Primitive nach den Pixeln, die sie tatsächlich abdecken können",
+  "summary": "Punkt- und Linienrundung sowie Kantenglättung nehmen jetzt an Null-Flächen-Tests teil, die vom Vertex Kick und dem Software-Renderer gemeinsam genutzt werden, wodurch die Grenzen mit Rasterisierungsrandfällen übereinstimmen.",
+  "heroAlt": "Quellenbeleg aus dem Pull Request PCSX2 #13377: GS: Verbesserung der Degenerate-Primitive-Tests im Vertex Kick und der Berechnung der SW-Begrenzungsbox. Weitere kleinere Korrekturen.",
+  "searchKeywords": [
+    "PCSX2",
+    "degeneriertes Primitive",
+    "Kantenglättung",
+    "Software-Renderer",
+    "Begrenzungsbox"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13377": "GS: Verbesserung der Degenerate-Primitive-Tests im Vertex Kick und der Berechnung der SW-Begrenzungsbox. Weitere kleinere Korrekturen."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine mathematische Fläche von null bedeutet nicht immer null gerasterte Pixel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine Linie oder ein Punkt kann in den Vertex-Koordinaten degeneriert erscheinen, aber trotzdem Pixel abdecken, nachdem GS Punktgröße, Linienrundung oder Antialiasing-Regeln angewendet hat. Umgekehrt kann ein Primitivelement, das einen einfachen Koordinatentest besteht, innerhalb der Schere nichts beitragen. PCSX2 verwendete Degeneriertheitsprüfungen sowohl im Vertex-Kick als auch im Software-Rendering, und Grenzfall-Abweichungen konnten sichtbare Arbeit verhindern oder leere Arbeit tiefer in die Pipeline senden."
+    },
+    {
+      "type": "heading",
+      "text": "Rundung und AA werden zu Eingaben für einen konsistenten Test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #13377 aktualisiert den Vertex-Kick-Test, um Linien- und Punktrundung sowie Antialiasing zu berücksichtigen, und wendet dann die gleiche Korrektur auf den Software-Renderer an. Das Teilen der Regel ist wichtig, weil Hardware-Vorbereitung und Software-Rasterisierung sich nicht darüber streiten sollten, ob der Gast ein darstellbares Primitivelement eingereicht hat. Der Patch vereinfacht auch Berechnungen von Begrenzungsrahmen und Schere, sodass die Abdeckungsentscheidung und die dadurch erzeugten Grenzen derselben Geometrie folgen."
+    },
+    {
+      "type": "heading",
+      "text": "Optimierungen für horizontale Linien und Bereinigungen von Assertions bleiben sekundär"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Software-Rasterizer erhält eine kleine Optimierung für horizontale Linien, und eine Assertion wird angepasst, um falsche Positive zu vermeiden. Dies sind damit zusammenhängende Bereinigungen rund um die korrigierten Grenzen und kein Hinweis auf eine umfassende Leistungsneuschreibung. Das erklärte Ziel ist Genauigkeit, wobei keine wesentliche Leistungsänderung erwartet wird. Issue #8677 ist der konkrete Randfall, während Diskussionen aus früheren Arbeiten zusätzliche Szenarien lieferten."
+    },
+    {
+      "type": "heading",
+      "text": "Regression-Bilder benötigen Subpixel-, Schere- und AA-Kombinationen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Testpunkte, horizontale, vertikale und fast null lange Linien an Bruchkoordinaten mit aktiviertem und deaktiviertem AA. Bewege sie über jede Scherenkante und vergleiche Hardware- und Software-Ausgabe bei nativer und hochskalierter Auflösung. Füge Primitive ein, die vollständig verschwinden sollten, und solche, die durch Rundung ein einzelnes überdecktes Pixel erhalten. Frame-Dumps sollten identische Akzeptanz-/Ablehnungsentscheidungen zeigen; Leistungstests müssen nur bestätigen, dass der neue Test und der schnelle horizontale Pfad keine messbaren Regressionen einführen."
+    },
+    {
+      "type": "callout",
+      "text": "Degeneration ist eine Rasterisierungsfrage, nicht nur eine Geometriefrage: Rundung und AA können ein mathematisch dünnes Primitive in tatsächliche Pixelabdeckung verwandeln."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13377",
+      "label": "Lesen Sie die PCSX2 Ingenieurdiskussion und Quellcodeänderungen"
+    }
+  ]
+}

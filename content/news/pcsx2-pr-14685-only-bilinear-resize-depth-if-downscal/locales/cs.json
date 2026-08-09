@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14685-only-bilinear-resize-depth-if-downscal",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 omezuje bilineární změnu velikosti hloubky pouze na skutečné zmenšení",
+  "summary": "Jedna podmínka změny texturovací cache odděluje případ, který vyžaduje vyhlazování, od kopií, kde interpolace mění hodnoty hloubky a vytváří stínové nebo povrchové artefakty.",
+  "heroAlt": "Vizualní důkaz z pull requestu PCSX2 #14685: GS/TC: Pouze bilineární změna velikosti hloubky při zmenšení",
+  "searchKeywords": [
+    "PCSX2",
+    "target hloubky",
+    "bilineární změna velikosti",
+    "GSTextureCache",
+    "nativní škálování"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14685": "GS/TC: Pouze bilineární změna velikosti hloubky při zmenšení"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Bilineární filtrování může vymyslet hodnoty hloubky i když se velikost nezmenšuje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hloubkové textury nejsou obyčejné barevné snímky. Interpolace sousedních vzorků produkuje hodnoty, které hra nikdy nezapsala, což může změnit pozdější porovnání a projevit se jako nesprávné stíny nebo hrany geometrie. PCSX2 povolil široké bilineární vzorkování poté, co pomohlo případům Native Scaling, ale toto pravidlo se také dotklo kopií hloubky stejné velikosti a zvětšených kopií, kde bylo vyhlazování zbytečné a někdy viditelně škodlivé."
+    },
+    {
+      "type": "heading",
+      "text": "Nové rozhodnutí se ptá, zda je cílová hloubka skutečně zmenšena."
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14685 zachovává cestu změny velikosti ve GSTextureCache, ale zužuje výběr filtru. Používá se nejbližší vzorkování, pokud není cílová hloubka kopírována na menší rozměry; pouze toto zmenšení vybírá bilineární filtrování. Tento rozlišovací faktor zachovává přesné hodnoty zdroje, když se pixely přímo mapují nebo rozšiřují, a zároveň stále průměruje vzorky, když musí větší interní cíl vrátit zpět do reprezentace hostitele s nižším rozlišením."
+    },
+    {
+      "type": "heading",
+      "text": "Kingdom Hearts a Xenosaga ukazují opačné strany kompromisu."
+    },
+    {
+      "type": "paragraph",
+      "text": "Kingdom Hearts ukázal rozdíly v odstínech stínů u nohou, když interpolace zasáhla kopii hloubky, která to nepotřebovala, a The Nightmare Before Christmas odhalil artefakt na kamenném povrchu. Xenosaga Episode III je důvod, proč existovalo bilineární zmenšení hloubky: jeho cesta Native Scaling vypadala špatně při návratu na normální rozlišení bez vyhlazování. Opravený stav je cenný, protože zachovává oba způsoby chování, místo aby si vybral jednu hru nad druhou."
+    },
+    {
+      "type": "heading",
+      "text": "Porovnání nativního a zvětšeného rozlišení musí ověřovat hodnoty stejně jako vzhled."
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdroj žádá testery, aby porovnali Kingdom Hearts, Xenosaga Episode III a The Nightmare Before Christmas v nativním i zvětšeném rozlišení. Snímky by měly držet scénu a renderer konstantně, poté zkontrolovat hranice stínů, uvedenou kamennou oblast a hladinu vody ve Xenosaze. Regresní průchod by měl také zapisovat rozměry zdroje a cíle, aby bylo možné zjevné zlepšení přiřadit k očekávané nejbližší nebo bilineární větvi, místo aby šlo jen o náhodnou změnu scény."
+    },
+    {
+      "type": "callout",
+      "text": "Pravidlo je přesné: bilineární filtrování je nástroj pro zmenšování hloubkových cílů, nikoli výchozí pro každou operaci změny velikosti."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14685",
+      "label": "Přečtěte si inženýrskou diskusi a zdrojové změny PCSX2"
+    }
+  ]
+}

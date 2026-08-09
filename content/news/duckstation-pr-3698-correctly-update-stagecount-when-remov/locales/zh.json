@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3698-correctly-update-stagecount-when-remov",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation 在移除和清除后保持后处理链长度一致",
+  "summary": "修正后的 StageCount 持久性区分了缩短的链、明确为空的基础链以及应被移除的每个游戏的空覆盖。",
+  "heroAlt": "来自 DuckStation 拉取请求 #3698 的源证据：后处理：在移除/清除阶段时正确更新 `StageCount`",
+  "searchKeywords": [
+    "DuckStation",
+    "后处理",
+    "StageCount",
+    "每个游戏的设置",
+    "着色器移除"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "frontend": "前端",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3698": "后处理：在移除/清除阶段时正确更新 `StageCount`"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "StageCount 既是长度又是覆盖标记"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation 将后处理阶段存储在设置中，并与 StageCount 一起保存。在基础设置中，零明确表示没有阶段。在每个游戏层中，删除该字段可能意味着游戏不再覆盖全局链。将这些情况一视同仁会导致过时的阶段或阻止继承。删除操作留下两个阶段时必须写入两个阶段；删除操作不留下任何阶段时可能需要删除每个游戏字段。"
+    },
+    {
+      "type": "heading",
+      "text": "RemoveStage 现在仅删除真正空的每个游戏覆盖。"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #3698 计算 new_stage_count，并在阶段存在时保留该值。仅当设置接口不是基础层且计数达到零时才删除该字段，从而允许空的游戏特定覆盖消失。之前的分支可能在任何每个游戏删除后清除 StageCount，从而丢失剩余链的声明长度。"
+    },
+    {
+      "type": "heading",
+      "text": "ClearStages 修正了相反的基础层分支"
+    },
+    {
+      "type": "paragraph",
+      "text": "清晰路径的基础与游戏条件已被颠倒。修正后的代码在基础设置中将 StageCount 写为 0，对于显式的空全局链条这是有意义的，并且移除了每个游戏的值，以便全局配置可以流通。这种对称性是修复的核心：缩短、全局清除和清除覆盖是三个不同的持久操作。"
+    },
+    {
+      "type": "heading",
+      "text": "往返测试应覆盖每一层和剩余计数"
+    },
+    {
+      "type": "paragraph",
+      "text": "创建一个三阶段全局链和一个不同的三阶段每游戏链。移除中间的每游戏阶段，重启，并验证那两个幸存阶段保持顺序和参数。移除最后两个并确认全局链恢复。然后清除基础链，并确认重启后仍为空。通过 Qt 和 FullscreenUI 重复操作，每次操作后检查 StageCount，并测试在清除后立即添加一个阶段，以捕捉陈旧的索引字段。"
+    },
+    {
+      "type": "callout",
+      "text": "链长度为零时并不总是以相同的方式存储：基础设置记录为空，而每个游戏的空层应停止覆盖基础设置。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3698",
+      "label": "阅读 DuckStation 工程讨论和源代码更改"
+    }
+  ]
+}

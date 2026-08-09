@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Przywróć uszkodzony bloom w renderowaniu sprzętowym bez przepalania sceny",
+  "summary": "Użyj sparowanych jasnych i ciemnych punktów kontrolnych, aby zidentyfikować brakujący lub źle wyrównany etap bufora ramki, porównaj z odniesieniem programowym i znajdź najtańszą korektę mieszania lub skalowania natywnego.",
+  "heroAlt": "Zrzut z God of War PCSX2 pokazujący niepoprawnie wyrenderowany jasny bloom i efekt mgły",
+  "searchKeywords": [
+    "PS2 uszkodzony bloom",
+    "EmuCoreX zbyt jasny efekt poświaty",
+    "bloom w renderowaniu sprzętowym",
+    "mieszanie bufora ramki",
+    "duchowe skalowanie natywne"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafika",
+    "accuracy": "Dokładność"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 opis mieszania, odczytów z bufora ramki i natywnego skalowania dla efektu bloom",
+    "pcsx2-july-august-2015": "PCSX2 przykłady dokładności efektu bloom i mgły przed i po"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Skategoryzuj efekt bloom jako nieobecny, przesunięty, obcięty lub nadmierny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Efekt bloom zwykle jest tworzony w więcej niż jednym przebiegu: gra wyodrębnia jasne informacje, filtruje je lub zmniejsza rozdzielczość, a następnie nakłada wynik na scenę. Renderer sprzętowy może zatem zawodzić na kilka zauważalnie różnych sposobów. Brak efektu bloom powoduje, że źródła światła mają ostre krawędzie; przesunięty bloom tworzy „ducha” odsuniętego od źródła; obcięty bloom przybiera kształt prostokąta; nadmierny bloom rozmywa pobliską geometrię. Wybierz jeden punkt kontrolny z wyraźnie wyodrębnioną lampą lub zaklęciem oraz drugi z małymi punktami świetlnymi na ciemnym tle. Zapisz numer seryjny gry, rozdzielczość wewnętrzną, renderer, sterownik GPU, dokładność mieszania, status natywnego skalowania oraz czy aktywne są ręczne poprawki bufora ramki lub pomijania rysowania."
+    },
+    {
+      "type": "callout",
+      "text": "Nie oceniaj efektu bloom na podstawie jednego prześwietlonego zdjęcia z telefonu. Automatyczna ekspozycja i mapowanie tonów HDR mogą usuwać szczegóły obecne w rzeczywistej klatce emulatora."
+    },
+    {
+      "type": "heading",
+      "text": "Przygotuj dwie sceny z efektem bloom z odniesieniami luminancji"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zapis w grze przed powtarzalnym jasnym efektem z widoczną geometrią bezpośrednio wokół niego.",
+        "Druga ciemna scena zawierająca małe świecące detale, tak aby ustawienie nie mogło zostać zaliczone jedynie przez przyciemnienie całego obrazu.",
+        "Bezpośrednie zrzuty ekranu z natywnego sprzętu oraz krótka referencja poprawności renderowanej programowo.",
+        "Shadery postprocesu, warstwy reshade, wyświetlanie konwersji HDR, zamiana tekstur i niestandardowe sterowanie kolorem wyłączone.",
+        "Próbka wydajności w ciepłej sesji z jasnej sceny oraz kopia zapasowa profilu graficznego tytułu."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Oddziel dokładność kompozycji od wyrównania upscale."
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Uruchom od zimnego startu jasny punkt kontrolny w natywnej rozdzielczości wewnętrznej z automatycznym mieszaniem i uchwyć źródło oraz otaczające szczegóły.",
+        "2. Wyrenderuj tę samą chwilę krótko w trybie oprogramowania i porównaj promień blasku, środek, okluzję oraz czy obiekty pierwszego planu prawidłowo blokują poświatę.",
+        "3. Wróć do trybu sprzętowego i porównaj obsługiwane API graficzne bez zmiany sterownika ani rozdzielczości; zachowaj ścieżkę, która najdokładniej zachowuje referencję.",
+        "4. Gdy efekt bloom nie występuje lub wchodzi w stały kształt przy natywnej rozdzielczości, podnieś dokładność mieszania o jeden stopień, uruchom ponownie scenę i zatrzymaj się na pierwszym stopniu, który przywraca kompozycję.",
+        "5. Gdy natywny sprzęt jest poprawny, ale bloom oddziela się od światła dopiero po skalowaniu, przywróć automatyczne mieszanie i przetestuj udokumentowaną korekcję natywnego skalowania emulatora.",
+        "6. Odtwórz ciemny punkt kontrolny i potwierdź, że małe podświetlenia świecą, nie podnosząc czarnych tła ani nie wybielając tekstur postaci.",
+        "7. Rozgrzej urządzenie, zmierz sekwencję obciążającą efekty i porównaj liczniki barier, render-passów lub odczytów, jeśli kompilacja je udostępnia.",
+        "8. Zapisz tylko udaną gałąź w profilu tej gry i zanotuj, czy dotyczy ona mieszania przy natywnym wyjściu, czy wyrównania po przetworzeniu podczas skalowania."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Dokładność mieszania określa, jak wiernie renderowanie sprzętowe odtwarza interakcje z wcześniejszymi zawartościami bufora klatkowego, podczas gdy skalowanie natywne odnosi się do etapów przetwarzania końcowego, które zostały zaprojektowane, aby działać w oryginalnej skali PS2. Rozwiązują objawy wyglądające podobnie na różnych etapach. Renderowanie programowe dostarcza odniesienia kompozycji, ponieważ może bezpośredniej odtworzyć zachowanie GS, ale jego szybkość nie jest celem akceptacyjnym. Test dwóch scen zapobiega fałszywemu naprawieniu problemu, gdy zmniejszenie jasności sprawia, że jedna przepalona lampa wygląda lepiej, podczas gdy usunięcie zamierzonego połysku w innym miejscu."
+    },
+    {
+      "type": "heading",
+      "text": "Akceptacja profilu bloom"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wybrany profil musi zachować kształt efektu, relację głębokości, zakres tonalny i grywalność."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Poświata jest skoncentrowana wokół obiektu emitującego i podąża za nim podczas ruchu kamery lub postaci.",
+        "Geometria pierwszego planu zasłania rozbłyski tam, gdzie odniesienie programowe pokazuje przeszkodę.",
+        "Jasne powierzchnie zachowują szczegóły tekstur zamiast zlewać się w jednolitą białą plamę.",
+        "Ciemny punkt kontrolny zachowuje czarne obszary i nadal wyświetla swoje małe zamierzone podświetlenia.",
+        "Utrzymane tempo klatek pozostaje akceptowalne po stabilizacji termicznej i gdy żadna niepowiązana przezroczystość nie ulega regresji."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Wyniki bloom wymagają ponownego sprawdzenia"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Wyjście oprogramowania ma ten sam nieprawidłowy blask: potwierdź odniesienie sceny i usuń poprawki gry lub modyfikacje tekstur.",
+        "Tylko fizyczny wyświetlacz wykazuje bloom, podczas gdy bezpośrednie zrzuty ekranu są wyrównane: sprawdź HDR, zakres kolorów, ulepszenia panelu i ekspozycję kamery.",
+        "Wyższy poziom mieszania naprawia lampę, ale psuje cienie lub mgłę: cofnij go i zbierz raport renderowania specyficzny dla tytułu.",
+        "Efekt dryfuje tylko przy jednej nietypowej niestandardowej rozdzielczości: użyj obsługiwanego całkowitego mnożnika przed dodaniem dowolnego ręcznego przesunięcia."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Cofnij kosztowny eksperyment z buforem ramki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ustaw mieszanie na Automatyczne, wyłącz testowane natywne skalowanie lub nadpisanie przesunięcia, przywróć oryginalne API i zrestartuj aplikację. Odtwórz oba punkty kontrolne, aby potwierdzić, że poprzedni objaw jest odtwarzalny; następnie wybierz ostatni niższy poziom wydajności, który przeszedł test lub wróć do natywnej rozdzielczości, dopóki nie będzie dokładnej korekty."
+    },
+    {
+      "type": "heading",
+      "text": "Celowe odblaski mogą być wizualnie agresywne"
+    },
+    {
+      "type": "paragraph",
+      "text": "Niektóre gry PS2 celowo używają szerokiego, jasnego bloom. Celem jest wierność wiarygodnemu odniesieniu, a nie jednolicie stonowane oświetlenie. Unikaj publikowania ogólnego zalecenia na podstawie jednej gry, ponieważ formaty bufora ramki, równania mieszania i skalowanie post-process różnią się między silnikami, a nawet między scenami."
+    },
+    {
+      "type": "link",
+      "text": "Przejrzyj wyjaśnienie PCSX2 dotyczące nowoczesnego mieszania i natywnego skalowania",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

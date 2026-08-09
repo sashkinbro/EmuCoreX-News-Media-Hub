@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-a-renderer-crash-during-shader-compilation",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Diagnosticar un fallo del renderizador durante la compilación de shaders",
+  "summary": "Distinguir el trabajo de shader esperado en el primer lanzamiento de un fallo repetible del controlador comparando lanzamientos en frío y en caliente, restaurando el controlador del sistema, cambiando una API y preservando la escena exacta y el registro que desencadena la compilación.",
+  "heroAlt": "PCSX2 cuadro de diálogo de advertencia que identifica un controlador de gráficos desactualizado durante la solución de problemas del renderizador",
+  "searchKeywords": [
+    "EmuCoreX fallo de compilación de shader",
+    "Vulkan fallo en el primer lanzamiento",
+    "GPU renderizador del controlador",
+    "caché de shader",
+    "dispositivo perdido"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Gráficos",
+    "crash": "Fallo"
+  },
+  "sourceLabels": {
+    "pcsx2-windows": "Causas del fallo de PCSX2 Vulkan/OpenGL",
+    "pcsx2-vulkan": "Desarrollo del renderizador y la caché de shaders de PCSX2"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Separar una primera compilación lenta de un renderizador fallido"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un inicio en frío puede pausar mientras se compilan nuevas variantes de shaders, pero eventualmente debería completarse y los lanzamientos posteriores deberían reutilizar la caché. Un fallo del renderizador en cambio termina la sesión, informa pérdida del dispositivo o fallo del compilador, o se repite en el mismo dibujo. Registra si la aplicación se cierra, Android la mata, la pantalla se congela, o solo se detiene el indicador de progreso."
+    },
+    {
+      "type": "callout",
+      "text": "No elimine todos los datos de la aplicación para borrar una caché de gráficos. Las tarjetas de memoria, perfiles, partidas guardadas y referencias de firmware están fuera del límite de la caché de sombreado desechable."
+    },
+    {
+      "type": "heading",
+      "text": "Preserve el estado de inicialización fallido"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una partida guardada normal en el juego antes del efecto o área exacta que desencadena la compilación.",
+        "Paquete de controladores de GPU del sistema y cualquier identidad de controlador personalizada registrada.",
+        "Tiempos de lanzamiento en frío y en caliente.",
+        "Registro del renderizador o registro de fallas de Android capturado sin contenido de archivos privados.",
+        "Una copia de seguridad de los perfiles del título y datos guardados del usuario."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Probar la caché, el controlador y la API como ramas independientes"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Arrancar en frío el título y esperar durante una ventana de compilación medida sin relanzar repetidamente.",
+        "2. Si se completa, cerrar normalmente y repetir la misma escena para determinar si la ruta en caliente es estable.",
+        "3. Cuando se bloquee, restaurar el controlador del sistema GPU antes de cambiar la API del renderizador.",
+        "4. Reintentar la escena dos veces con el controlador del sistema y registrar el primer mensaje de error del compilador o de pérdida del dispositivo.",
+        "5. Seleccionar la otra API de hardware compatible sin cambiar la resolución y la precisión.",
+        "6. Limpie solo la caché de shaders desechable documentada del emulador una vez, luego compare las siguientes ejecuciones en frío y en caliente.",
+        "7. Reinicie Android para eliminar el estado del proceso del controlador obsoleto y repita la reproducción más pequeña.",
+        "8. Mantenga la API estable por juego mientras conserva el registro de fallos para un informe de controlador o emulador."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Las variantes de shaders dependen del renderizador, del controlador, de los dibujos del juego y de la configuración gráfica. Una reconstrucción de la caché debería generar una ejecución más lenta seguida de un uso estable. Un fallo que ocurre con un controlador personalizado pero desaparece con el paquete del sistema implica esa rama; un fallo específico de una escena en varios controladores y APIs necesita un informe mínimo del emulador."
+    },
+    {
+      "type": "heading",
+      "text": "Aceptación de estabilidad de compilación"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una recuperación debe pasar por comportamientos repetidos en frío y en caliente, no por un lanzamiento afortunado."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Una compilación en frío termina sin la terminación de la aplicación.",
+        "Dos lanzamientos posteriores en caliente alcanzan la misma escena sin reconstruir todo.",
+        "No aparece ningún error de dispositivo perdido o del compilador de sombreadores en la ruta aceptada.",
+        "Los títulos no relacionados aún se inicializan bajo el controlador y la API seleccionados.",
+        "Los guardados y perfiles del usuario permanecen intactos por el mantenimiento de la caché."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Patrones de fallos a preservar para escalamiento"
+    },
+    {
+      "type": "list",
+      "items": [
+        "La misma escena de shader bloquea ambas API en el controlador del sistema: recopila un informe mínimo.",
+        "Solo un paquete personalizado se bloquea: retíralo del perfil activo.",
+        "Cada lanzamiento recompila las mismas variantes: inspecciona la persistencia de la caché y la salud del almacenamiento.",
+        "Android bloquea el proceso bajo presión de memoria: separa el agotamiento de recursos del fallo del compilador."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vuelve al controlador del sistema y a la política de caché retenida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Deshabilita el controlador personalizado, restaura la API estable anterior, deja de limpiar la caché y realiza un arranque en frío de un título conocido como funcional. Reimporta el perfil guardado por juego solo después de confirmar que no restaura la combinación que provoca el bloqueo."
+    },
+    {
+      "type": "heading",
+      "text": "El éxito en caliente puede ocultar un fallo en el arranque en frío"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un shader en caché puede permitir que los lanzamientos posteriores funcionen mientras que una instalación nueva o una actualización de controlador aún provoca bloqueos. Conserva al menos una prueba controlada de caché en frío antes de declarar que la configuración es portátil."
+    },
+    {
+      "type": "link",
+      "text": "Revisa la guía de fallos del controlador gráfico PCSX2",
+      "url": "https://pcsx2.net/docs/troubleshooting/windows/"
+    }
+  ]
+}

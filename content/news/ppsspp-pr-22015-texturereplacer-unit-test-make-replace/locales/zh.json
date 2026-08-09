@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-22015-texturereplacer-unit-test-make-replace",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 为纹理替换提供独立测试框架",
+  "summary": "一个合成包和显式测试入口点可以测试哈希、范围、过滤、mipmap 和缺失条目，而无需启动模拟器的渲染器。",
+  "heroAlt": "来源证据来自 PPSSPP Pull Request #22015: 添加 TextureReplacer 单元测试；使替换器可独立测试",
+  "searchKeywords": [
+    "PPSSPP",
+    "纹理替换",
+    "单元测试",
+    "textures.ini",
+    "Mipmap"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "工具",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-22015": "添加 TextureReplacer 单元测试；使替换器可独立测试"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "纹理包结合了多个容易回归的规则"
+    },
+    {
+      "type": "paragraph",
+      "text": "仅通过文件名无法选择替换项。PPSSPP 读取 textures.ini，解释发明或计算出的哈希值，应用哈希范围，选择 mip 级别，遵循过滤指令，并处理缺失或被忽略的条目。仅通过启动游戏进行测试会使失败取决于游戏是否达到正确的绘制阶段、后端格式支持情况、文件系统状态以及人工图像比较。这种方法很慢，而且会遗漏许多负面情况。"
+    },
+    {
+      "type": "heading",
+      "text": "现在可以在渲染器外部构建替换器"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #22015 允许 null DrawContext。在这种模式下，压缩的 GPU 格式仅报告不支持，而不是解引用后端。LoadPackForTesting 接受一个基础目录，启用替换，禁用保存，并直接解析该包，而不是查阅全局配置或正在运行游戏的 ID。查找和过滤功能使用实例的 replaceEnabled 状态，这使得孤立对象的行为是确定性的。"
+    },
+    {
+      "type": "heading",
+      "text": "合成包提供可读取的、受控的证据"
+    },
+    {
+      "type": "paragraph",
+      "text": "新的 TestTextureReplacer 测试夹具会创建带有可识别的虚构哈希和真实 PNG 文件的 textures.ini。断言覆盖直接查找、过滤决策、哈希范围、mip 级别，以及缺失和被忽略的记录。由于每个文件都是特定用途创建的，断言失败可以明确指出导致失败的规则。此测试已集成到 CMake 和 Android 单元测试源中，因此平台构建差异不太可能隐藏解析器行为。"
+    },
+    {
+      "type": "heading",
+      "text": "未来的测试覆盖应包括格式错误和平台敏感的包。"
+    },
+    {
+      "type": "paragraph",
+      "text": "扩展测试夹具，加入重复键、无效哈希、重叠范围、缺失的 mip 级别、混合大小写路径、Unicode 名称、路径分隔符、不支持的压缩格式、格式错误的 PNG 数据以及配置重载。在桌面和 Android 文件系统上运行，并确保临时目录是隔离的。断言应验证选择的替代项以及候选项被拒绝的原因。空的 DrawContext 必须保持为明确的测试能力，而不是无意中让生产代码忽略格式支持。"
+    },
+    {
+      "type": "callout",
+      "text": "当包规则可以通过一个小型确定性文件系统而不是完整游戏会话来验证时，替换管线就可以维护了。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/22015",
+      "label": "阅读 PPSSPP 工程讨论和源代码更改"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3885-taihen-plugin-framework-and-kubridge-h",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K pose les bases pour les plugins taiHEN et kubridge",
+  "summary": "Chargement de plugins par titre, trampolines de hook relocalisables, suivi d'injection, mémoire HLE et rappels d'interruption invités ouvrent une voie soigneusement délimitée pour la compatibilité des plugins Vita.",
+  "heroAlt": "Preuve source de la pull request Vita3K #3885 : Ajouter le framework de plugin taiHEN et le support kubridge HLE",
+  "searchKeywords": [
+    "Vita3K",
+    "taiHEN",
+    "kubridge",
+    "Plugins Vita",
+    "hooks inline"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Noyau",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3885": "Ajouter le framework de plugin taiHEN et le support kubridge HLE"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les plugins Vita dépendent de l'infrastructure ci-dessous des modules utilisateur ordinaires"
+    },
+    {
+      "type": "paragraph",
+      "text": "taiHEN plugins font plus qu’importer une bibliothèque. Ils localisent les fonctions par module et NID, remplacent les stubs d’importation ou prologues de fonctions, continuent à travers un trampoline, injectent des plages d’octets, puis libèrent chaque objet. kubridge expose la réservation, l’engagement, la protection et la gestion des exceptions de mémoire orientée noyau aux plugins utilisateurs. Faire tourner l’implémentation bas-niveau d’origine dans un émulateur lierait le comportement aux adresses du firmware et aux détails des défauts de l’hôte."
+    },
+    {
+      "type": "heading",
+      "text": "Les objets crochet conservent suffisamment d’état pour annuler chaque modification"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #3885 ajoute un état taiHEN avec des IDs, des cartes de hook et d'injection uniques, ainsi que des sections de configuration pour les chemins de plugins spécifiques au titre. Les hooks d'importation conservent le stub original dans un trampoline et patchent un saut vers le hook invité. Les hooks en ligne utilisent le support de relocation d'instructions pour copier un prologue sûr avant de rediriger l'exécution ARM ou Thumb. Chaque enregistrement conserve la cible, les octets sauvegardés, le trampoline, les métadonnées du hook invité, le mode et la taille du patch pour une libération contrôlée."
+    },
+    {
+      "type": "heading",
+      "text": "kubridge appels de mémoire restent sous Vita3K propriété"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les implémentations HLE traduisent les drapeaux de protection kubridge en MemPerm, réservent un espace d'adressage, engagent et désengagent des pages, et enregistrent des gestionnaires d'exceptions. Une faute de mémoire protégée enregistre l'adresse et la direction de l'écriture dans des atomiques CPU sûrs pour les signaux, arrête l'exécution et laisse la boucle normale de l'invité construire un contexte d'abandon dans la pile de l'invité. Les pointeurs CPU locaux au thread sont effacés par un garde afin que les threads hôtes recyclés ne puissent pas exposer un état obsolète."
+    },
+    {
+      "type": "heading",
+      "text": "La compatibilité des plugins ne doit pas dépasser les tests d'isolation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Charger aucun plugin, un plugin, plusieurs sections de titre et du noyau, chemins manquants, hooks d'importation, hooks ARM et en ligne Thumb, requêtes semblant enchaînées, injections, et libération dans un ordre inhabituel. Rejeter les relocations qui ne peuvent pas être transformées ou les plages en dehors de la mémoire de l'invité. Tester l'enregistrement des interruptions de données, les lectures et écritures protégées, la sortie des threads, les savestate, le changement de titre, et l'arrêt. Vérifier que les octets originaux et les allocations reviennent après la libération, tandis que les types d'exceptions non pris en charge et le comportement spécifique au firmware échouent explicitement plutôt que de prétendre au succès."
+    },
+    {
+      "type": "callout",
+      "text": "Le support des plugins n'est sûr que lorsque chaque hook invité, trampoline, plage injectée et rappel d'exception a un propriétaire visible par l'émulateur et une durée de vie réversible."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3885",
+      "label": "Lisez la discussion technique Vita3K et les modifications de source"
+    }
+  ]
+}

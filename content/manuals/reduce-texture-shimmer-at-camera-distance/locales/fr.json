@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "reduce-texture-shimmer-at-camera-distance",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Réduire le scintillement des textures lointaines sans flouter l'image PS2",
+  "summary": "Construire un parcours de caméra répétable à travers les routes, les clôtures ou le terrain, tester le mipmapping avant le filtrage anisotrope, comparer la résolution native et la résolution cible, et accepter uniquement un réglage qui stabilise les détails en mouvement.",
+  "heroAlt": "Diagramme d'échantillonnage en résolution native PCSX2 utilisé pour expliquer le comportement des textures lors de l'agrandissement",
+  "searchKeywords": [
+    "Scintillement de la texture PS2",
+    "Textures lointaines EmuCoreX",
+    "Mipmapping",
+    "Filtrage anisotrope",
+    "Scintillement du mouvement de la caméra"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Graphiques",
+    "sampling": "Échantillonnage"
+  },
+  "sourceLabels": {
+    "pcsx2-upscaling": "PCSX2 explication de l'échantillonnage de texture",
+    "pcsx2-performance": "PCSX2 indicateurs de mipmapping et de filtrage"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Utilisez le mouvement pour révéler les détails de texture instables"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le scintillement est un problème temporel : les motifs de texture fins changent rapidement lorsque la caméra bouge parce que les texels distants sont échantillonnés de manière incohérente. Une image fixe peut sembler nette tandis que le parcours scintille en jeu. Choisissez une route droite, un sol carrelé, une clôture en fil de fer ou une pente de terrain avec une vitesse de caméra contrôlable. Le parcours doit être assez long pour voir les transitions de distance et assez court pour pouvoir être répété avec les mêmes entrées."
+    },
+    {
+      "type": "callout",
+      "text": "Ne commencez pas par combiner le niveau anisotrope le plus élevé et un shader d'accentuation en même temps. L'un ou l'autre peut modifier le détail apparent sans prouver que les niveaux de mip du jeu sont sélectionnés correctement."
+    },
+    {
+      "type": "heading",
+      "text": "Créez un itinéraire de stabilité des textures"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Une sauvegarde en jeu avant un mouvement de caméra de dix à vingt secondes.",
+        "Enregistrements à résolution native et à résolution cible de l'itinéraire inchangé.",
+        "Filtrage des textures par défaut et mipmapping matériel automatique enregistrés.",
+        "Accentuation post-traitement, remplacement de textures et amélioration de l'affichage désactivés.",
+        "Un élément UI au premier plan dans la vue pour détecter le flou global indésirable."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Tester la sélection des mipmaps avant le filtrage oblique"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Exécutez le parcours à la résolution native et notez où les détails lointains commencent à scintiller.",
+        "2. Répétez à l’échelle de multiplication souhaitée sans changer le filtrage ni le moteur de rendu.",
+        "3. Si le scintillement augmente avec la résolution, revenez à la résolution native et testez le niveau de précision de mipmapping supporté suivant.",
+        "4. Enregistrez le même parcours et comparez les transitions plutôt que les images nettes individuelles.",
+        "5. Une fois que les transitions de mipmap sont stables, testez le filtrage anisotrope modéré sur les surfaces vues à un angle prononcé.",
+        "6. Inspectez les polices, les sprites et les bords de l'atlas de textures pour détecter des halos, des coutures ou un adoucissement inattendu.",
+        "7. Revenez à la résolution cible et répétez après que l'appareil ait atteint sa température de fonctionnement normale.",
+        "8. Stockez le mipmapping et le filtrage uniquement dans le profil de titre affecté si un second jeu régresse."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Les mipmaps fournissent des niveaux de texture préfiltrés plus petits pour les surfaces lointaines, tandis que le filtrage anisotrope améliore les échantillons vus sous des angles obliques. Ils résolvent des problèmes d'échantillonnage liés mais différents. L'agrandissement peut révéler des lacunes et des hypothèses de l'atlas qui étaient cachées au taux d'échantillonnage de PS2, donc une sortie plus nette n'est pas automatiquement plus stable ou plus fidèle."
+    },
+    {
+      "type": "heading",
+      "text": "Passage de stabilité de texture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Évaluez le trajet complet à vitesse de lecture normale puis inspectez les images représentatives."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Les motifs lointains changent de manière fluide au lieu de scintiller entre les images.",
+        "Les routes et les sols restent détaillés sous des angles obliques sans bords glissants.",
+        "Le texte HUD et les sprites 2D conservent leur netteté prévue.",
+        "Les bordures de l'atlas de textures ne débordent pas sur les œuvres adjacentes.",
+        "La combinaison choisie n’entraîne aucune pénalité thermique ou de temps de trame soutenue."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Modifications de l’échantillonnage pour rejeter"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Le scintillement diminue uniquement parce que l’ensemble de la trame est flou : restaurez le filtre précédent.",
+        "De nouvelles coutures colorées apparaissent autour des sprites : supprimez le filtrage forcé et testez à nouveau l’atlas.",
+        "Un seul multiplicateur de mise à l'échelle échoue : conserver la dernière résolution stable au lieu d'empiler les corrections.",
+        "Le scintillement de la surface persiste dans le logiciel à la sortie native : confirmer si le jeu original se comporte de la même manière."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Restaurer les contrôles d'échantillonnage aux valeurs sûres pour le jeu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Restaurer le mipmapping automatique, le filtrage des textures contrôlé par le jeu et la résolution interne précédente. Désactiver toute étape d'accentuation introduite lors de la comparaison, redémarrer la route sauvegardée, et confirmer le motif de scintillement de référence avant de tenter une correction documentée spécifique au titre."
+    },
+    {
+      "type": "heading",
+      "text": "La compression vidéo masque et invente le scintillement"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les enregistrements à faible débit peuvent transformer les détails fins en blocs ou lisser le déplacement temporel. Conservez des captures locales de haute qualité pour l'analyse et considérez les versions diffusées uniquement comme des aides à la navigation, et non comme des preuves finales."
+    },
+    {
+      "type": "link",
+      "text": "Étudiez l'explication de l'échantillonnage PCSX2",
+      "url": "https://pcsx2.net/blog/2015/explanation-hacks-needed-for-upscaling-glitches/"
+    }
+  ]
+}

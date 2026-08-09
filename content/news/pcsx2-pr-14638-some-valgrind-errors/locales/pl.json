@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14638-some-valgrind-errors",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 usuwa dwa źródła decyzji w stanie niezainicjalizowanym wykryte przez Valgrind",
+  "summary": "Geometria tabeli debuggera zaczyna się od zera, a ustawienia audio porównują pola zamiast surowych bajtów struktury, eliminując gałęzie zależne od pamięci nigdy nie zapisanej i wypełnienia.",
+  "heroAlt": "Dowody źródłowe z pull requestu PCSX2 #14638: Różne: Popraw niektóre błędy valgrind",
+  "searchKeywords": [
+    "PCSX2",
+    "Valgrind",
+    "odczyt niezainicjalizowany",
+    "MemoryView",
+    "AudioStreamParameters"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "tooling": "Narzędzia",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14638": "Różne: Popraw niektóre błędy valgrind"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Debugger rysował za pomocą członków, którzy nie mieli zdefiniowanej pierwszej wartości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Valgrind śledził warunkowe rozgałęzienie w MemoryViewTable::DrawTable do liczby wierszy, pozycji, stanu zaznaczenia i członków adresu, które zostały zadeklarowane bez inicjalizacji. Normalne ścieżki zmiany rozmiaru lub konfiguracji często przypisywały im wartości przed malowaniem, co sprawiało, że defekt był przerywany. Jednak zdarzenie malowania przychodzące wcześniej mogło nadal odczytywać nieokreślone liczby całkowite i wybierać zachowanie układu na podstawie przypadkowych bitów zajmujących obiekt."
+    },
+    {
+      "type": "heading",
+      "text": "Zerowe inicjalizatory dają pierwszemu malowaniu prawidłową pustą tabelę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14638 inicjalizuje rowCount, rowVisible, rowHeight, value i text axes, pozycję pierwszego wiersza, start i zaznaczone adresy oraz selectedIndex podczas deklaracji. Zero reprezentuje bezpieczny stan przed układem, dopóki nie nadejdą rzeczywiste wymiary. Zmiana nie zgaduje domyślnego adresu ani zaznaczenia; zapewnia, że wczesne zdarzenia widzą celowo pusty model zamiast niezdefiniowanych danych."
+    },
+    {
+      "type": "heading",
+      "text": "memcmp porównywał pola audio i niewidzialne wypełnienie razem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Parametry AudioStreamParameters implementowały porównanie równości przez porównanie surowych bajtów sizeof(struct). Wypełnienie C++ między członkami nie jest polem i może przechowywać nieokreślone wartości, więc dwie logicznie identyczne konfiguracje mogłyby porównać się jako różne. To dotyczyło kontroli konfiguracji SPU2 podczas zmian ustawień i ładowania savestate. Łata zastępuje niestandardowe == i != domyślnym porównaniem trzystronnym, które porównuje zadeklarowane człony zgodnie z ich typami i nigdy nie traktuje wypełnienia jako konfiguracji."
+    },
+    {
+      "type": "heading",
+      "text": "Testy Valgrind i testy behawioralne powinny obejmować kolejność zdarzeń i ładowanie stanu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uruchom debugger pod Valgrind podczas otwierania, zmiany rozmiaru, malowania, wybierania i zamykania widoków pamięci przed i po uruchomieniu VM. Następnie załaduj savestate i wielokrotnie stosuj identyczne ustawienia audio, potwierdzając brak fałszywego restartu i brak raportu o nieinicjalizowanym porównaniu. Zmień jedno prawdziwe pole audio, aby upewnić się, że nierówność nadal działa. Kompilacje kompilatora i narzędzia do analizy pamięci z różnym wypełnieniem struktury są wartościowe, ponieważ czysty wynik w jednej aranżacji nie dowodzi, że usunięty memcmp był bezpieczny w innym miejscu."
+    },
+    {
+      "type": "callout",
+      "text": "Oba poprawki zastępują przypadkowe zawartości pamięci stanem na poziomie języka: zainicjalizowane pola dla układu UI oraz równość pól dla konfiguracji audio."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14638",
+      "label": "Przeczytaj dyskusję inżynierską PCSX2 i zmiany w kodzie źródłowym"
+    }
+  ]
+}

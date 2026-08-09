@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-1717-controller-improvements-readable-label",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar sprawia, że profile kontrolerów są przenośne bez ukrywania specyficznych dla urządzenia kontrolerów",
+  "summary": "Przebudowa wejścia na komputerze stacjonarnym preferuje ustandaryzowany model kontrolera SDL, zachowuje fallback joysticka dla nietypowych przycisków i pozwala mapowaniom docierać do jednego urządzenia, jednego typu kontrolera lub wszystkich kontrolerów.",
+  "heroAlt": "Pull request skrótów klawiszowych kontrolera Azahar pokazujący pracę nad mapowaniem wejścia i dyskusję przeglądową",
+  "searchKeywords": [
+    "Azahar",
+    "profile kontrolerów",
+    "SDL GameController",
+    "skróty klawiszowe kontrolera",
+    "mapowanie wejścia"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "Wejście",
+    "emulation": "Emulacja"
+  },
+  "sourceLabels": {
+    "azahar-pr-1717": "Komputer stacjonarny: Ulepszenia kontrolera — czytelne etykiety, skróty klawiszowe kontrolera, opcja zastosowania profili do wszystkich kontrolerów"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Surowe identyfikatory joysticka utrudniały czytanie i ponowne użycie przydatnych mapowań"
+    },
+    {
+      "type": "paragraph",
+      "text": "Starsza ścieżka na komputerach stacjonarnych Azahar w dużej mierze opierała się na API joysticka SDL. Mogła rozpoznać fizyczne wejście, ale ekrany konfiguracji często pokazywały techniczne wartości przycisków zamiast nazw przycisków, które użytkownicy rozpoznają. Profile były również powiązane zarówno z GUID urządzenia, jak i z portem, więc przeniesienie tego samego kontrolera na inne gniazdo — lub udostępnienie układu pasującemu kontrolerowi — mogło wymagać innego mapowania. Pull request #1717 traktuje te dwa problemy jako jeden problem modelu wejścia, a nie jedynie kosmetyczną zmianę nazwy."
+    },
+    {
+      "type": "heading",
+      "text": "GameController najpierw, joystick tylko wtedy, gdy standardowa mapa się kończy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wspólna warstwa SDL teraz preferuje API GameController, gdy SDL rozpoznaje urządzenie. Ta ścieżka zapewnia przenośne sterowanie w stylu A/B/X/Y i czytelne etykiety w stylu Xbox lub PlayStation. Azahar zachowuje API joysticka jako opcję awaryjną dla kontrolerów spoza standardowego modelu, w tym przycisków wstecz i innych specyficznych dla urządzenia wejść. Parametry zapisują, które API wygenerowało mapowanie, zapobiegając późniejszemu interpretowaniu przechowywanej wartości GameController jako surowego indeksu joysticka."
+    },
+    {
+      "type": "heading",
+      "text": "Trzy zakresy mapowania rozwiązują różne problemy profilu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nowy typ mapy jest jawny. „Ten kontroler” zachowuje wcześniejsze zachowanie GUID i portu; „ten typ kontrolera” używa GUID bez przypisywania portu; a „wszystkie kontrolery” akceptuje pasujące sterowanie z dowolnego podłączonego urządzenia. Wybór ten dotyczy profili wejściowych i skrótów kontrolera. Pozwala to na precyzyjne ustawienia wielokontrolerowe, jednocześnie umożliwiając przetrwanie profilu do salonu przy wymianie kabli lub padów tego samego modelu."
+    },
+    {
+      "type": "heading",
+      "text": "Skróty kontrolera są monitorowane osobno od normalnego wejścia w grze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Qt zyskuje dedykowaną stronę skrótów dla kontrolera, okno przechwytywania oraz HotkeyMonitor, który sprawdza przypisane kontrolki co 16 ms. Skrót może zawierać jedno lub dwa wejścia z kontrolera, w tym osie i niestandardowe przyciski. Rejestr przechowuje powiązaną akcję QAction, aby monitor mógł wywołać tę samą komendę co skrót klawiaturowy. Normalny stan kontrolera jest nadal dostępny dla gry; jeśli jeden przycisk jest celowo przypisany do obu ról, obie akcje odbywają się zamiast tego, aby warstwa skrótów nie pochłaniała cicho wejścia z gry."
+    },
+    {
+      "type": "heading",
+      "text": "Automatyczne mapowanie teraz respektuje kolejność przycisków twarzy w stylu Nintendo i Xbox"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pojawia się monit na pulpicie z prośbą o fizyczny prawy przycisk twarzy i wyświetla ikonę, odpowiadającą zamysłowi flow mobilnego. Jeśli SDL zgłasza to wciśnięcie jako A, Azahar traktuje je jako wybór układu Nintendo lub celowe mapowanie widocznej etykiety. Inne naciśnięcia zachowują znajomy układ w stylu XInput. Decyzja opiera się na przechwyconym przez użytkownika kontrolerze, a nie zakłada, że każdy kontroler drukuje te same litery w tych samych pozycjach."
+    },
+    {
+      "type": "heading",
+      "text": "Testy regresyjne muszą obejmować kolejność podłączania i mieszane powiązania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Źródła rejestrują kontrole na Windows, Linux i macOS, a także czapki, analogowe wyzwalacze i gorące podłączanie kontrolera po uruchomieniu. Trwały test uzupełniający powinien również ponownie otworzyć każdy zakres mapowania, ponownie podłączyć urządzenie na innym porcie i zweryfikować skrót klawiszowy z dwoma przyciskami, podczas gdy oba przyciski pozostają przypisane w grze. Raporty powinny zawierać nazwę urządzenia SDL, GUID, wybrany typ mapy oraz informację, czy wejście pochodziło przez GameController czy Joystick awaryjny."
+    },
+    {
+      "type": "callout",
+      "text": "Korzyść dla użytkownika to nie tylko ładniejsze etykiety: profile stają się celowo przenośne, podczas gdy nietypowe kontrolery nadal mają specyficzną ścieżkę ucieczki dla urządzenia."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/1717",
+      "label": "Przeczytaj architekturę kontrolera Azahar i dyskusję testową"
+    }
+  ]
+}

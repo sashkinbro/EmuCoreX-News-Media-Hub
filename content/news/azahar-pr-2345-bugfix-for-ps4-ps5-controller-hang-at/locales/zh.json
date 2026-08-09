@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2345-bugfix-for-ps4-ps5-controller-hang-at",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar 在启用动作之前初始化 PlayStation 按钮映射",
+  "summary": "重新排序和去重 SDL 动作激活可消除特定于 DualShock 4 和 DualSense HIDAPI 控制器设置的启动时线程风险。",
+  "heroAlt": "来自 Azahar 拉取请求 #2345 的源证据：修复 ps4/ps5 控制器启动时挂起的错误",
+  "searchKeywords": [
+    "Azahar",
+    "DualSense",
+    "DualShock 4",
+    "SDL HIDAPI",
+    "动作输入"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "input": "输入",
+    "emulation": "模拟"
+  },
+  "sourceLabels": {
+    "azahar-pr-2345": "修复 ps4/ps5 控制器启动时挂起的错误"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "动作启动在控制器映射准备好之前进入了 SDL"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar 通过 SDL 的控制器路径启用陀螺仪和加速度计输入。对于使用 HIDAPI 的 PS4 和 PS5 设备，在按钮映射存在之前调用 EnableMotion 可能会触发线程问题，并且有时会在启动时导致模拟器挂起。旧的游戏手柄 API 不会走这条路径，这也就解释了为什么只有在控制器初始化移动到现代 API 后才出现这个问题。"
+    },
+    {
+      "type": "heading",
+      "text": "初始化现在会在进行一次动作调用之前创建映射"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #2345 从 SDLState 和 CreateControllerButtonMap 中移除了重复的 EnableMotion 调用，并在建立完构建状态后将激活保留在 SDLJoystick 中。重要的变化是顺序和唯一性，而不是延迟：按钮映射完成后，动作支持只启用一次。这能防止回调或 HIDAPI 的工作观察到半初始化的控制器对象。"
+    },
+    {
+      "type": "heading",
+      "text": "重复调用使竞态问题更难理解"
+    },
+    {
+      "type": "paragraph",
+      "text": "来自多个层的运动激活如果 SDL 将其视为幂等的，可能看起来无害，但每次调用都可能进入设备代码、分配传感器或获取锁。删除冗余的入口点可以明确所有权，并减少可能发生死锁的调度次数。标准按钮和模拟输入仍然会正常初始化，没有运动的控制器应通过相同的序列，而不需要发明传感器。"
+    },
+    {
+      "type": "heading",
+      "text": "启动循环必须包括热插拔和禁用运动的情况"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 USB 和蓝牙连接 DualShock 4 和 DualSense 的情况下，反复冷启动 Azahar，并启用与禁用运动。在启动期间添加热插拔，在仿真开始后重新连接，并初始化多个控制器。记录映射完成情况和唯一的运动激活。将传统操纵杆设备作为负对照进行测试。修复必须在不丢失陀螺仪数据、按钮标签或映射的情况下消除挂起，并且关机必须干净地关闭 HIDAPI 线程。"
+    },
+    {
+      "type": "callout",
+      "text": "控制器设置现在有一个所有者和一个顺序：先映射输入，然后让 SDL 启动运动硬件。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2345",
+      "label": "阅读 Azahar 工程讨论和源代码更改"
+    }
+  ]
+}

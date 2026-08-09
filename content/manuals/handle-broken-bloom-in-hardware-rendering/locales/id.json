@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "handle-broken-bloom-in-hardware-rendering",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Pulihkan bloom yang rusak dalam rendering perangkat keras tanpa mengekspos terlalu terang adegan",
+  "summary": "Gunakan checkpoint terang dan gelap berpasangan untuk mengidentifikasi pass framebuffer yang hilang atau tidak sejajar, bandingkan dengan referensi perangkat lunak, dan temukan koreksi blending atau skala-native yang paling murah.",
+  "heroAlt": "God of War PCSX2 menampilkan tangkapan layar bloom terang dan pass kabut yang dirender salah",
+  "searchKeywords": [
+    "PS2 bloom rusak",
+    "EmuCoreX cahaya terlalu terang",
+    "bloom rendering perangkat keras",
+    "blending framebuffer",
+    "ghosting skala-native"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "accuracy": "Akurasi"
+  },
+  "sourceLabels": {
+    "pcsx2-2-release": "PCSX2 deskripsi tentang pencampuran, pembacaan framebuffer, dan penskalaan asli untuk bloom",
+    "pcsx2-july-august-2015": "PCSX2 contoh akurasi bloom dan kabut sebelum dan sesudah"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Klasifikasikan bloom sebagai tidak ada, berpindah, terpotong, atau berlebihan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bloom biasanya dirakit dari lebih dari satu tahap: game memisahkan informasi terang, menyaring atau menurunkan sampel, dan menggabungkan hasilnya ke atas adegan. Oleh karena itu, renderer perangkat keras dapat gagal dengan beberapa cara yang terlihat berbeda. Bloom yang hilang membuat sumber cahaya bertepi tajam; bloom yang bergeser menghasilkan bayangan hantu yang bergeser dari sumber; bloom yang terpotong menjadi persegi; bloom yang berlebihan membuat geometri di sekitarnya menjadi pudar. Pilih satu checkpoint dengan lampu atau mantra yang terisolasi dengan kuat dan satu lagi dengan sorotan kecil di latar belakang gelap. Catat nomor seri game, resolusi internal, renderer, driver GPU, akurasi pencampuran, status skala asli, dan apakah perbaikan framebuffer manual atau skip-draw aktif."
+    },
+    {
+      "type": "callout",
+      "text": "Jangan menilai bloom dari satu foto ponsel yang terlalu terang. Auto-exposure dan pemetaan nada HDR dapat menghapus detail yang sebenarnya ada di frame emulator."
+    },
+    {
+      "type": "heading",
+      "text": "Siapkan dua adegan bloom dengan referensi luminansi"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Satu simpanan dalam game sebelum efek terang yang dapat diulang dengan geometri yang terlihat tepat di sekitarnya.",
+        "Adegan gelap kedua yang mengandung detail emisif kecil, sehingga sebuah pengaturan tidak bisa lolos hanya dengan meredupkan seluruh output.",
+        "Tangkapan layar langsung dari output perangkat keras asli dan referensi singkat mengenai ketepatan yang dirender perangkat lunak.",
+        "Shader pasca, lapisan reshade, tampilan konversi HDR, penggantian tekstur, dan kontrol warna kustom dinonaktifkan.",
+        "Sampel performa sesi hangat dari adegan terang dan cadangan profil grafis judul."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Pisahkan akurasi komposisi dari penyelarasan upscale"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Mulai dingin titik pemeriksaan terang pada resolusi internal asli dengan penyatuan otomatis dan tangkap sumber beserta detail sekitarnya.",
+        "2. Render momen yang sama sebentar dalam mode perangkat lunak dan bandingkan radius bloom, pusat, occlusion, dan apakah objek latar depan benar-benar memblokir cahaya.",
+        "3. Kembali ke mode perangkat keras dan bandingkan API grafis yang didukung tanpa mengubah driver atau resolusi; pertahankan jalur yang paling mendekati referensi.",
+        "4. Ketika bloom hilang atau menempel ke bentuk padat pada resolusi asli, tingkatkan akurasi pencampuran satu tingkat, mulai ulang adegan, dan hentikan pada tingkat pertama yang mengembalikan komposisi.",
+        "5. Ketika perangkat keras asli benar tetapi bloom terpisah dari cahayanya hanya setelah peningkatan skala, pulihkan pencampuran otomatis dan uji koreksi skala-asli yang didokumentasikan oleh emulator.",
+        "6. Putar ulang titik pemeriksaan gelap dan konfirmasi bahwa sorotan kecil menyala tanpa mengangkat latar belakang hitam atau memutihkan tekstur karakter.",
+        "7. Panaskan perangkat, ukur urutan dampak-berat, dan bandingkan penghalang, lintasan-render, atau penghitung baca-kembali jika build menampilkannya.",
+        "8. Simpan hanya cabang yang berhasil di profil permainan ini dan beri anotasi apakah itu menangani pencampuran pada keluaran asli atau penyesuaian pasca-proses saat ditingkatkan."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Akurasi pencampuran mengatur seberapa setianya rendering perangkat keras mereproduksi interaksi dengan konten framebuffer sebelumnya, sementara penskalaan asli menargetkan tahapan pasca-proses yang dibuat untuk beroperasi pada skala asli PS2. Mereka menyelesaikan gejala yang tampak serupa pada tahap yang berbeda. Rendering perangkat lunak menyediakan referensi komposisi karena dapat mereproduksi perilaku GS lebih langsung, tetapi kecepatannya bukan target penerimaan. Tes dua-pemandangan mencegah perbaikan palsu di mana mengurangi kecerahan membuat satu lampu yang terlalu terang terlihat lebih baik sementara menghapus cahaya yang dimaksud di tempat lain."
+    },
+    {
+      "type": "heading",
+      "text": "Penerimaan profil bloom"
+    },
+    {
+      "type": "paragraph",
+      "text": "Profil yang dipilih harus mempertahankan bentuk efek, hubungan kedalaman, rentang tonal, dan kemainannya."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Cahaya menyala berada di tengah objek pemancar dan mengikutinya selama pergerakan kamera atau karakter.",
+        "Geometri latar depan menghalangi bloom di mana referensi perangkat lunak menunjukkan adanya hambatan.",
+        "Permukaan terang mempertahankan detail tekstur alih-alih berubah menjadi bercak putih yang seragam.",
+        "Titik pemeriksaan gelap mempertahankan area hitam dan masih menampilkan sorotan kecil yang dimaksudkan.",
+        "Pacing frame yang berkelanjutan tetap dapat diterima setelah stabilisasi termal dan tidak ada transparansi yang tidak terkait yang menurun."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Hasil bloom yang memerlukan investigasi lebih lanjut"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Output perangkat lunak memiliki cahaya abnormal yang sama: konfirmasi referensi adegan dan hapus patch game atau modifikasi tekstur.",
+        "Hanya tampilan fisik yang mengalami bloom sementara tangkapan layar langsung seimbang: audit HDR, rentang warna, peningkatan panel, dan eksposur kamera.",
+        "Tingkat penggabungan yang lebih tinggi memperbaiki lampu tetapi merusak bayangan atau kabut: kembalikan dan kumpulkan laporan rendering khusus judul.",
+        "Efek hanya mengapung pada satu resolusi kustom yang tidak biasa: gunakan pengali bilangan bulat yang didukung sebelum menambahkan offset manual apa pun."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Batalkan eksperimen framebuffer yang mahal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Atur pencampuran ke Otomatis, nonaktifkan skala bawaan atau override offset yang diuji, pulihkan API asli, dan mulai ulang aplikasi. Putar ulang kedua checkpoint untuk memastikan gejala sebelumnya dapat direproduksi; kemudian pilih tingkat lebih rendah terakhir yang lulus kinerja atau kembali ke resolusi asli hingga koreksi yang tepat ada."
+    },
+    {
+      "type": "heading",
+      "text": "Silau yang disengaja dapat terlihat agresif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Beberapa permainan PS2 sengaja menggunakan bloom yang luas dan terang. Tujuannya adalah kesetiaan pada referensi yang dapat dipercaya, bukan pencahayaan yang seragam dan redup. Hindari mempublikasikan rekomendasi global dari satu judul, karena format framebuffer, persamaan blend, dan skala pasca-proses berbeda antara mesin dan bahkan antar adegan."
+    },
+    {
+      "type": "link",
+      "text": "Tinjau penjelasan PCSX2 tentang pencampuran modern dan skala asli",
+      "url": "https://pcsx2.net/blog/2024/pcsx2-2-release/"
+    }
+  ]
+}

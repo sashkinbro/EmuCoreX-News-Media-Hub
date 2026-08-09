@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-13377-degenerate-primitive-testing-in-vertex",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 judges degenerate primitives by the pixels they can actually cover",
+  "summary": "Point and line rounding plus antialiasing now participate in zero-area tests shared by vertex kick and the software renderer, aligning bounds with rasterization edge cases.",
+  "heroAlt": "Source evidence from PCSX2 pull request #13377: GS: Improve degenerate primitive testing in vertex kick and SW bounding box calculation. Other minor fixes.",
+  "searchKeywords": [
+    "PCSX2",
+    "degenerate primitive",
+    "antialiasing",
+    "software renderer",
+    "bounding box"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-13377": "GS: Improve degenerate primitive testing in vertex kick and SW bounding box calculation. Other minor fixes."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zero mathematical area does not always mean zero rasterized pixels"
+    },
+    {
+      "type": "paragraph",
+      "text": "A line or point can appear degenerate in vertex coordinates yet still cover pixels after the GS applies point size, line rounding, or antialiasing rules. Conversely, a primitive that passes a simple coordinate test may contribute nothing inside the scissor. PCSX2 used degenerate checks in both vertex kick and software rendering, and edge-case disagreement could drop visible work or send empty work deeper into the pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "Rounding and AA become inputs to one consistent test"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #13377 updates the vertex-kick test to account for line and point rounding and antialiasing, then applies the same correction to the software renderer. Sharing the rule matters because hardware preparation and software rasterization should not disagree about whether the guest submitted a drawable primitive. The patch also simplifies bounding-box and scissor calculations so the coverage decision and the bounds it produces follow the same geometry."
+    },
+    {
+      "type": "heading",
+      "text": "Horizontal-line optimization and assertion cleanup stay secondary"
+    },
+    {
+      "type": "paragraph",
+      "text": "The software rasterizer gains a small optimization for horizontal lines, and an assertion is adjusted to avoid false positives. These are related cleanup around the corrected bounds, not evidence of a broad performance rewrite. The stated goal is accuracy, with little expected performance change. Issue #8677 is the concrete edge case, while discussion from earlier work supplied additional scenarios."
+    },
+    {
+      "type": "heading",
+      "text": "Regression images need subpixel, scissor, and AA combinations"
+    },
+    {
+      "type": "paragraph",
+      "text": "Test points, horizontal, vertical, and near-zero-length lines at fractional coordinates with AA enabled and disabled. Move them across every scissor edge and compare hardware and software output at native and upscaled resolutions. Include primitives that should disappear completely and ones that gain a single covered pixel through rounding. Frame dumps should show identical accept/reject decisions; performance checks only need to confirm the new test and horizontal fast path do not introduce measurable regressions."
+    },
+    {
+      "type": "callout",
+      "text": "Degeneracy is a rasterization question, not only a geometry question: rounding and AA can turn a mathematically thin primitive into real pixel coverage."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/13377",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

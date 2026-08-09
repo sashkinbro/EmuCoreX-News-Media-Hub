@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "fix-transparent-effects-that-render-opaque",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Perbaiki efek PS2 transparan yang terlihat sebagai permukaan solid",
+  "summary": "Gunakan overlay kaca, air, asap, atau menu yang dapat diulang untuk membedakan alpha blending yang hilang dari kesalahan tekstur atau urutan gambar, tingkatkan akurasi satu langkah pada satu waktu, dan uji lapisan translusen yang tidak terkait sebelum menyimpan penggantian.",
+  "heroAlt": "Gambar perbandingan grafis PCSX2 yang menunjukkan efek framebuffer yang telah diperbaiki",
+  "searchKeywords": [
+    "Kehilangan transparansi PS2",
+    "Alpha blending EmuCoreX",
+    "Perbaikan asap padat",
+    "Masalah perenderan air",
+    "HUD transparan"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "graphics": "Grafik",
+    "accuracy": "Akurasi"
+  },
+  "sourceLabels": {
+    "pcsx2-requirements": "PCSX2 panduan biaya pencampuran",
+    "pcsx2-performance": "PCSX2 indikator pencampuran yang akurat"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Klasifikasikan lapisan padat sebelum mengubah akurasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Efek buram hanya menjadi bukti yang berguna ketika penampilan yang dimaksud sudah diketahui. Pilih satu objek yang transparansinya jelas saat permainan normal: panel kaca harus menampilkan geometri di belakangnya, asap harus memiliki tepi berlapis yang lembut, dan overlay menu harus mempertahankan tampilan di bawahnya. Tangkap output yang rusak pada resolusi asli dan catat apakah lapisannya memiliki bentuk dan warna yang benar. Geometri yang benar dengan opasitas yang salah mengarah pada masalah pencampuran; sebuah persegi panjang kosong atau tekstur yang berantakan memerlukan penyelidikan yang berbeda."
+    },
+    {
+      "type": "callout",
+      "text": "Akurasi pencampuran maksimum bukanlah preset kualitas universal. Ini dapat menambahkan pekerjaan GPU yang substansial dan dapat menyembunyikan tingkat bawah mana yang sebenarnya memperbaiki judul."
+    },
+    {
+      "type": "heading",
+      "text": "Kunci uji efek tembus cahaya"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Sebuah titik pemeriksaan yang mencapai efek yang sama dalam satu menit.",
+        "Referensi dari rendering perangkat lunak, tangkapan perangkat keras asli, atau dokumentasi spesifik judul yang dapat dipercaya.",
+        "Resolusi internal asli dengan penggantian tekstur dan shader dinonaktifkan.",
+        "Penghitung kinerja atau pengukuran kecepatan yang dapat diulang.",
+        "Cadangan profil per-game yang bersih."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Temukan tingkat pencampuran minimum"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Putar ulang titik pemeriksaan pada driver sistem dan tangkap lapisan buram pada momen animasi yang sama.",
+        "2. Bandingkan Vulkan dan OpenGL dengan semua nilai lainnya tetap; catat jika salah satu jalur sudah menggabungkan efek dengan benar.",
+        "3. Jika keduanya gagal, dapatkan referensi yang dirender secara perangkat lunak dan periksa apa yang seharusnya tetap terlihat melalui lapisan.",
+        "4. Kembali ke API perangkat keras yang dipilih dan tingkatkan akurasi penggabungan tepat satu level.",
+        "5. Mulai ulang checkpoint setelah setiap perubahan; jangan evaluasi beberapa tingkat dalam satu sesi yang dilanjutkan.",
+        "6. Berhenti pada tingkat pertama yang mengembalikan translucensi, lalu ukur bagian yang banyak efek setelah perangkat hangat.",
+        "7. Periksa fitur alpha terpisah seperti kabut, bayangan, partikel, atau redup menu berhenti.",
+        "8. Simpan nilai hanya di profil judul ini dan dokumentasikan checkpoint yang membenarkannya."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "PS2 efek dapat membaca dari, menulis ke, dan memadukan dengan konten framebuffer sebelumnya. Jalur GPU host dapat mendekati operasi tersebut pada tingkat akurasi dan biaya yang berbeda-beda. Tier terkecil yang berfungsi adalah berharga karena memenuhi ketergantungan yang diamati tanpa membayar untuk perilaku yang tidak terkait pada setiap gambar. API renderer yang memperbaiki pass di tier dasar bisa lebih disukai daripada pengaturan pemadatan yang jauh lebih berat pada API lain."
+    },
+    {
+      "type": "heading",
+      "text": "Kriteria lolos transparansi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Koreksi harus mengembalikan baik tampilan maupun urutan komposisi."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Geometri latar tetap terlihat melalui bagian efek yang dimaksud.",
+        "Tepi lapisan stabil dan tidak berkedip antara buram dan transparan.",
+        "Elemen HUD di latar depan tetap muncul di atas efek.",
+        "Adegan tembus kedua berperilaku dengan benar.",
+        "Kecepatan sesi hangat tidak boleh turun di bawah target yang dapat dimainkan dari judul."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Kondisi berhenti selama pengujian pencampuran"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Bentuknya rusak pada setiap tingkat: periksa keluaran tekstur atau geometri sebagai gantinya.",
+        "Hanya resolusi internal yang lebih tinggi yang merusak opasitas: isolasi jalur khusus peningkatan skala.",
+        "Menu menjadi transparan dengan dunia permainan: setel ulang tingkat terakhir dan tangkap regresinya.",
+        "Kebenaran mengorbankan kecepatan yang tidak berkelanjutan: pertahankan baseline yang lebih rendah dan dokumentasikan rendering perangkat lunak hanya sebagai referensi."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Hapus eksperimen alpha yang terisolasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mengembalikan pencampuran ke Otomatis, memulihkan renderer sebelumnya, menutup sesi emulasi, dan memverifikasi bahwa gejala buram asli kembali pada titik pemeriksaan yang direkam. Ini mengonfirmasi variabel yang diubah sebelum Anda mengarsipkan atau mengganti profil uji."
+    },
+    {
+      "type": "heading",
+      "text": "Kontras tampilan bukanlah akurasi alpha"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tingkat hitam OLED, konversi HDR, rentang televisi, dan kontras aksesibilitas dapat membuat lapisan tembus cahaya terlihat lebih gelap, tetapi tidak mengubah urutan gambarannya. Validasi hasil framebuffer dalam tangkapan layar sebelum menyesuaikan rantai tampilan eksternal."
+    },
+    {
+      "type": "link",
+      "text": "Tinjau persyaratan perangkat keras PCSX2",
+      "url": "https://pcsx2.net/docs/setup/requirements/"
+    }
+  ]
+}

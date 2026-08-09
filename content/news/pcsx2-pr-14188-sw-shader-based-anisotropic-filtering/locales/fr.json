@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14188-sw-shader-based-anisotropic-filtering",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 ajoute de l'anisotropie de shader pour les textures qui doivent rester filtrées par points",
+  "summary": "Un repli Direct3D effectue un échantillonnage anisotrope dans les shaders, évitant les chemins matériels qui forcent le filtrage linéaire ou refusent les textures non mipmapées sur certains pilotes AMD.",
+  "heroAlt": "Preuve source du pull request PCSX2 #14188 : GS/HW : Ajouter un filtrage anisotrope basé sur le shader",
+  "searchKeywords": [
+    "PCSX2",
+    "filtrage anisotrope",
+    "filtrage par points",
+    "Direct3D 12",
+    "test alpha"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14188": "GS/HW : Ajouter un filtrage anisotrope basé sur le shader"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'anisotropie matérielle peut violer le mode de filtrage requis de la texture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Direct3D ne fournit pas la combinaison nécessaire de filtrage anisotrope avec filtrage ponctuel dans le chemin de PCSX2, donc activer AF auparavant poussait les textures affectées vers un échantillonnage linéaire. L'interpolation linéaire mélange les couleurs voisines avant le test alpha ; un texel transparent peut donc tirer une couleur que le jeu n'avait jamais l'intention d'afficher. Le résultat est le plus visible sur les surfaces inclinées testées par alpha et les bords de texture."
+    },
+    {
+      "type": "heading",
+      "text": "Le chemin du shader contrôle explicitement les échantillons directionnels"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14188 ajoute un filtre anisotrope logiciel, basé sur les shaders, aux renderers Direct3D. Parce que PCSX2 sélectionne et combine les échantillons lui-même, il peut préserver les décisions de couleur de type ponctuel tout en couvrant l'empreinte allongée créée par une surface oblique. Le réglage est séparé du niveau anisotrope normal, permettant aux utilisateurs d'activer la nouvelle voie délibérément au lieu de remplacer silencieusement le comportement matériel."
+    },
+    {
+      "type": "heading",
+      "text": "Les textures AMD DX12 non mipmappées gagnent une alternative cohérente"
+    },
+    {
+      "type": "paragraph",
+      "text": "La source rapporte également que le pilote AMD Direct3D 12 n'applique pas de filtrage anisotrope matériel (AF) aux textures sans mipmaps, même si le rendu comparable Vulkan fonctionne. L'échantillonnage par shader contourne cette limitation de l'hôte et vise à obtenir une parité avec le comportement Vulkan sur AMD et NVIDIA. Il est décrit comme plus agressif que le filtrage anisotrope matériel de NVIDIA, notamment à la résolution native, donc on ne suppose pas que la sortie soit visuellement identique."
+    },
+    {
+      "type": "heading",
+      "text": "Les tests nécessitent des bords alpha, des textures sans mipmaps et plusieurs fournisseurs."
+    },
+    {
+      "type": "paragraph",
+      "text": "Activez le filtrage anisotrope et l'option de shader, puis comparez la géométrie testée par alpha avec le matériel AF, le filtrage linéaire et Vulkan sur la même scène. Incluez des textures sans mipmaps, des résolutions natives et agrandies, des angles de vue prononcés et des bordures transparentes issues du problème n°14077. Enregistrez les échantillons de textures et le temps GPU sur AMD et NVIDIA Direct3D 11 et 12. Vérifiez que les couleurs cachées ne se diffusent pas et que le renforcement agressif ne crée pas de scintillement ni d'aliasing en mouvement."
+    },
+    {
+      "type": "callout",
+      "text": "L’anisotropie des shaders existe pour préserver l’intention de filtrage de l’invité lorsque les choix matériels Direct3D mélangent soit des voisins interdits, soit ignorent entièrement la texture."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14188",
+      "label": "Lisez la discussion d’ingénierie PCSX2 et les modifications du code source"
+    }
+  ]
+}

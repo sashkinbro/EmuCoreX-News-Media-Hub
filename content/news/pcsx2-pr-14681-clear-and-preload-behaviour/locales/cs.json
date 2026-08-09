@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 zachovává nedotčená data render-targetu při částečných vymazáních",
+  "summary": "Sledování vymazání a přednačtení nyní rozlišuje mezi plným překrytím a operací na polovině cíle, čímž zabraňuje tomu, aby byly platné řádky vyřazeny a zpětně zkopírovány jako poškozená data.",
+  "heroAlt": "Vizualní důkaz z pull requestu PCSX2 č. 14681: GS/TC: Zlepšit chování vymazání a přednačtení",
+  "searchKeywords": [
+    "PCSX2",
+    "texturová cache",
+    "částečné vymazání",
+    "přednačtení",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafika",
+    "emulation": "Emulace"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC: Zlepšit chování vymazání a přednačtení"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Vymazání poloviny cíle neplatilo rámec, který mu předcházel"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 může vymazat pouze druhou polovinu renderovacího cíle, zatímco prvních 256 řádků již obsahuje data potřebná pro další snímek. PCSX2 dříve označil širší cíl jako neplatný, a později přednačítal z rozsahu, který již prohlásil za nepoužitelný. Kopie byla interně konzistentní s nesprávnou mapou platnosti, což způsobovalo blikání, i když hra nikdy nevymazala zachovanou polovinu."
+    },
+    {
+      "type": "heading",
+      "text": "Vymazání platnosti nyní vyžaduje odpovídající cíl nebo úplné překrytí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14681 mění, kdy RGB a alfa kanály ztrácí svůj platný stav. Vymazání může zahodit sledovaný obsah pouze tehdy, když cíl odpovídá nebo zcela pokrývá relevantní rozsah. Částečné překrytí ponechává nedotčenou část aktivní. Renderer také zpracovává párované poloviční vymazání pečlivěji a přeskočí běžný vykreslovací příkaz vymazání, pokud jeden cíl vyřeší na nulu, čímž se vyhne práci, která nemůže přispět pixely."
+    },
+    {
+      "type": "heading",
+      "text": "Přednačítání sleduje přeživší pokrytí místo starého označení cíle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změny předběžného načítání doprovodu jsou důležité, protože platnost a obnova jsou dvě strany stejného rozhodnutí kešování. Když je znovu použito překrývající se cílové místo, PCSX2 musí kopírovat pouze data, o kterých je známo, že přežijí; jinak může být po správném vyčištění stále následovat zastaralé nebo nedefinované předběžné načtení. Práce ve GSRendererHW a GSTextureCache tyto kroky sjednocuje, přičemž GS pomocné registry poskytují informace o pokrytí použité při rozhodování."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 a X-Men Origins pokrývají různé vzory čištění"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zdroj identifikuje blikání ve hře Gran Turismo 4 jako hlavní reproduktor a zahrnuje snímky před a po pro Time Crisis 3 a X-Men Origins. Testování by mělo navštívit stejné snímky při přepínání mezi nativním a zvětšeným (upscalovaným) vykreslováním a potom sledovat několik následujících snímků kvůli zpožděné korupci. Osvětlení ve hře Need for Speed je další požadovaná kontrola. Užitečný záznam sleduje hranice cíle, platnost kanálů a hranice předběžného načtení pro každé překrývající se čištění."
+    },
+    {
+      "type": "callout",
+      "text": "Klíčová oprava je časová: částečné vymazání nesmí smazat znalosti mezipaměti o pixelech, které host úmyslně ponechal pro pozdější rámec."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Přečtěte si inženýrskou diskusi a změny zdrojového kódu PCSX2"
+    }
+  ]
+}

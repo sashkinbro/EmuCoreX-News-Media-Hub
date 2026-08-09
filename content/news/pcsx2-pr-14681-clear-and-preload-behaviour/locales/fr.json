@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14681-clear-and-preload-behaviour",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 préserve les données de la cible de rendu intactes lors des effacements partiels",
+  "summary": "Le suivi de l'effacement et du préchargement distingue désormais un chevauchement total d'une opération sur moitié de cible, empêchant les lignes valides d'être supprimées puis recopiées comme des données corrompues.",
+  "heroAlt": "Preuve visuelle provenant de la pull request PCSX2 #14681 : GS/TC : Améliorer le comportement de l'effacement et du préchargement",
+  "searchKeywords": [
+    "PCSX2",
+    "cache de textures",
+    "effacement partiel",
+    "préchargement",
+    "Gran Turismo 4"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphismes",
+    "emulation": "Émulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14681": "GS/TC : Améliorer le comportement de l'effacement et du préchargement"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un effacement sur moitié de cible invalidait la trame qui le précédait"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gran Turismo 4 ne peut effacer que la seconde moitié d'une cible de rendu alors que les 256 premières lignes contiennent déjà des données nécessaires pour la frame suivante. PCSX2 avait précédemment marqué la cible plus large comme invalide, puis a ensuite préchargé à partir d'une plage qu'il avait déjà déclarée inutilisable. La copie était en interne consistante avec la mauvaise carte de validité, produisant un clignotement même si le jeu n'avait jamais effacé la moitié conservée."
+    },
+    {
+      "type": "heading",
+      "text": "L'effacement de la validité nécessite désormais une cible correspondante ou un chevauchement complet"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14681 modifie le moment où les canaux RGB et alpha perdent leur statut valide. Un effacement peut ne supprimer le contenu suivi que lorsque la cible correspond ou couvre complètement la plage concernée. Le chevauchement partiel maintient la portion intacte en vie. Le moteur de rendu gère également les effacements par paires plus délibérément et saute un dessin d'effacement normal lorsqu'une cible se résout à zéro, évitant un travail qui ne peut pas contribuer aux pixels."
+    },
+    {
+      "type": "heading",
+      "text": "Le préchargement suit la couverture survivante plutôt que l'ancien label de la cible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les modifications de préchargement du compagnon sont importantes car la validité et la restauration sont deux côtés de la même décision de cache. Lorsqu'une cible chevauchante est réutilisée, PCSX2 doit copier uniquement les données dont on sait qu'elles survivent ; sinon, un effacement correct peut toujours être suivi par un préchargement obsolète ou indéfini. Le travail dans GSRendererHW et GSTextureCache aligne ces étapes, avec les aides de registre GS fournissant les informations de couverture utilisées par la décision."
+    },
+    {
+      "type": "heading",
+      "text": "Gran Turismo 4, Time Crisis 3 et X-Men Origins couvrent différents modèles d'effacement"
+    },
+    {
+      "type": "paragraph",
+      "text": "La source identifie le scintillement de Gran Turismo 4 comme le principal reproducteur et inclut des captures avant et après pour Time Crisis 3 et X-Men Origins. Les tests devraient revisiter les mêmes images tout en alternant rendu natif et rendu suréchelonné, puis observer plusieurs images suivantes pour détecter une corruption retardée. L’éclairage de Need for Speed est un autre contrôle demandé. Une trace utile enregistre les limites de la cible, la validité des canaux et les limites de préchargement pour chaque effacement chevauchant."
+    },
+    {
+      "type": "callout",
+      "text": "La correction clé est temporelle : un effacement partiel ne doit pas effacer les connaissances en cache sur les pixels que l'invité a délibérément laissés pour une image ultérieure."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14681",
+      "label": "Lisez la discussion technique PCSX2 et les modifications de source"
+    }
+  ]
+}

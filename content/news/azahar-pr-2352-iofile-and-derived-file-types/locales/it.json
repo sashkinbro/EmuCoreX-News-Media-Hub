@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2352-iofile-and-derived-file-types",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar trasforma i file speciali in una pila componibile di livelli di archiviazione",
+  "summary": "Una nuova catena IOFileBase permette a viste limitate, compressione e crittografia di avvolgersi l'un l'altra, sostituendo l'ereditarietà che era diventata fragile quando più tipi di file speciali dovevano cooperare.",
+  "heroAlt": "Prova sorgente dal pull request #2352 di Azahar: core: Rifattorizzare IOFile e tipi di file derivati",
+  "searchKeywords": [
+    "Azahar",
+    "IOFileBase",
+    "SubIOFile",
+    "CryptoIOFile",
+    "Z3DS"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "storage": "Archiviazione",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "azahar-pr-2352": "core: Rifattorizzare IOFile e tipi di file derivati"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "L'ereditarietà ha smesso di scalare quando un file necessitava di diversi comportamenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar derivava originariamente file compressi e criptati direttamente da IOFile. Ogni classe speciale poteva sovrascrivere operazioni di base, ma combinarle richiedeva trucchi perché l’ereditarietà in C++ descrive cosa è un oggetto, non una pipeline ordinata di trasformazioni. Aggiungere un altro tipo di file per il lavoro futuro avrebbe moltiplicato quelle combinazioni e reso gli offset, la serializzazione e gli errori dipendenti da quale sottoclasse si trovasse in cima."
+    },
+    {
+      "type": "heading",
+      "text": "IOFileBase delega tramite un layer figli proprietario"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #2352 introduce un IOFileBase astratto con l’intero contratto di accesso e un child_file di tipo unique_ptr. Un layer sovrascrive solo le operazioni che trasforma e altrimenti delega al suo figlio. Il fondo è IOFile o NullIOFile. Un RomFS CCI compresso può quindi essere un SubIOFile per RomFS, un altro SubIOFile per NCCH dentro NCSD, Z3DSReadIOFile per la decompressione e IOFile per l’accesso host."
+    },
+    {
+      "type": "heading",
+      "text": "SubIOFile e NullIOFile rendono espliciti oggetti i limiti e i fallimenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "SubIOFile espone una finestra fissa e traduce le operazioni seek, size, read e write senza far ripetere a ogni chiamante controlli di offset o limiti. Il parsing di NCSD e NCCH lo utilizza già. NullIOFile implementa la stessa interfaccia ma restituisce valori di errore, permettendo alla costruzione e serializzazione fallite di mantenere un grafico di oggetti valido invece di distribuire controlli su nullptr in ogni livello."
+    },
+    {
+      "type": "heading",
+      "text": "I file criptati acquisiscono identità mentre i dati legacy rimangono supportati"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'output di CryptoIOFile nuovo inizia con un header AZCR contenente versione, dimensione dell'header e un hash derivato da chiave e nonce. Azahar può identificare il formato e rifiutare una chiave errata senza indovinare se i byte decriptati sembrano plausibili. I file legacy senza header si aprono ancora tramite la logica di compatibilità. I test dovrebbero comporre ogni ordine di layer, effettuare seek attraverso i limiti dei subfile, serializzare oggetti falliti, verificare chiavi errate e riaprire vecchi asset criptati senza riscriverli."
+    },
+    {
+      "type": "callout",
+      "text": "Il cambiamento architettonico è la composizione: ogni livello di file possiede una responsabilità e passa il resto verso il basso attraverso la stessa interfaccia."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2352",
+      "label": "Leggi la discussione ingegneristica Azahar e le modifiche al codice sorgente"
+    }
+  ]
+}

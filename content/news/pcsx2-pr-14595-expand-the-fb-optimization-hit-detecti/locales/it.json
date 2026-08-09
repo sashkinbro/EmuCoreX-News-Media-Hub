@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14595-expand-the-fb-optimization-hit-detecti",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Il backend Direct3D 12 di PCSX2 ricorda i colpi del framebuffer oltre la transizione corrente",
+  "summary": "Le modifiche allo stato del colore o della profondità possono ora espandere il rilevamento dei colpi per i disegni futuri, riducendo poi i cambiamenti nel render pass invece di scartare copertura utile perché la transizione presente era inevitabile.",
+  "heroAlt": "Prova sorgente dal pull request #14595 di PCSX2: GS/DX12: Espandere il backport del rilevamento ottimizzazione fb da GL/DX11.",
+  "searchKeywords": [
+    "PCSX2",
+    "Direct3D 12",
+    "ottimizzazione framebuffer",
+    "render pass",
+    "rilevamento hit"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafica",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14595": "GS/DX12: Espandere il backport del rilevamento ottimizzazione fb da GL/DX11."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una transizione inevitabile può ancora rivelare copertura utile futura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le ottimizzazioni del frame-buffer tracciano quando un disegno successivo può rimanere all'interno dello stato di render-pass compatibile. Il percorso Direct3D 12 in precedenza trattava un cambiamento dello stato del colore o della profondità come un motivo per non espandere il rilevamento dei colpi. Questo era troppo miope: la transizione attuale può essere necessaria, ma la regione interessata indica ancora a PCSX2 che i cambiamenti di stato successivi possono essere evitati."
+    },
+    {
+      "type": "heading",
+      "text": "Sia il colore che la profondità possono estendere la finestra di ottimizzazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14595 riporta un comportamento più ampio già esplorato in OpenGL e Direct3D 11. In GSDevice12, un colpo da una qualsiasi delle due attachment può espandere la condizione tracciata anche quando una di esse innesca ora una transizione. L'ottimizzazione non cancella la barriera corrente richiesta o il cambiamento del render-pass; mantiene informazioni che rendono l'operazione compatibile successiva più economica."
+    },
+    {
+      "type": "heading",
+      "text": "La patch dipende da una corretta gestione dello stato del render-pass"
+    },
+    {
+      "type": "paragraph",
+      "text": "La fonte nota che le modifiche corrette al render-pass derivanti da lavori correlati fanno parte della base testata. Tale dipendenza è importante perché un numero inferiore di passaggi è vantaggioso solo se le regole di caricamento, memorizzazione e transizione degli attachment rimangono valide. Un colpo troppo ampio può preservare dati che avrebbero dovuto essere risolti o cancellati. L'effetto riportato è una riduzione da una a due cifre dei render pass per gli stessi giochi utilizzati dai lavori di ottimizzazione precedenti."
+    },
+    {
+      "type": "heading",
+      "text": "La validazione delle prestazioni deve includere un confronto frame per frame esatto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Riprodurre il set di dump referenziato su Direct3D 12, raccogliere contatori di render-pass, barrier, copy e GPU-time, e confrontare i frame con il percorso non ottimizzato. Costruire casi in cui cambia solo il colore, cambia solo la profondità, e cambiano entrambi, seguiti da draw che dovrebbero o non dovrebbero riutilizzare lo stato. Una diminuzione del conteggio dei pass senza identità dei pixel è una regressione. I test necessitano inoltre di diversi fornitori GPU perché il comportamento del render-pass del driver e il costo delle transizioni possono differire."
+    },
+    {
+      "type": "callout",
+      "text": "L'ottimizzazione ricorda un colpo per ciò che verrà dopo; non usa mai risparmi futuri per saltare una transizione richiesta dall'applicazione corrente."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14595",
+      "label": "Leggi la discussione ingegneristica PCSX2 e le modifiche al codice sorgente"
+    }
+  ]
+}

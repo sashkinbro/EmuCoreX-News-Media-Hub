@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "id": "diagnose-shader-stutter-versus-recurring-stutter",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Rozlišujte mezi zásekem shaderu při prvním spuštění a opakujícími se zpožděními snímků",
+  "summary": "Proveďte pevnou trasu za studena a za tepla bez mazání cache, označte každé místo záseku a klasifikujte pouze pauzy při první návštěvě jako kandidáty na kompilaci, přičemž opakující se I/O, scénické nebo životní prodlevy ponechte pro samostatnou diagnostiku.",
+  "heroAlt": "Oficiální PCSX2 graf optimalizace shaderů znázorňující kompilaci a zátěž rendereru",
+  "searchKeywords": [
+    "EmuCoreX zásek shaderu",
+    "PS2 opakující se zásek",
+    "trasa za studena a za tepla",
+    "shader cache",
+    "nárůst doby snímku"
+  ],
+  "categoryLabels": {
+    "emucorex": "EmuCoreX",
+    "performance": "Výkon",
+    "stutter": "Zadrhávání"
+  },
+  "sourceLabels": {
+    "android-vulkan": "Android Vulkan vedení ohledně pipeline a výkonu",
+    "pcsx2-vulkan": "PCSX2 vývoj shader-cache"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Označte místa zadrhávání na identických studených a zahřátých trasách"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kompilace shaderů se běžně děje, když se poprvé narazí na nový materiál nebo efekt a měla by se snížit, jakmile je relevantní pipeline uložena do cache. Opakující se zadrhávání se opakuje na stejné přechodové, čtecí, pozadí nebo snímkové hranici. Vyberte deterministickou trasu obsahující několik efektů a zaznamenejte časová razítka místo spoléhání se na paměť."
+    },
+    {
+      "type": "callout",
+      "text": "Neodstraňujte mezipaměť shaderu mezi studeným a teplým průchodem. Pokud to uděláte, donutíte oba průchody chovat se jako při prvním spuštění a zničí se srovnání."
+    },
+    {
+      "type": "heading",
+      "text": "Připravte časovou osu záseků"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Normální uložení před deterministickou dvou- až pěti-minutovou trasou.",
+        "System driver, jeden renderer a nezměněný grafický profil.",
+        "Overlay času snímku nebo synchronizované nahrávání obrazovky používané v každém průchodu.",
+        "Zdokumentovaný stav mezipaměti před prvním spuštěním.",
+        "Pozadí stahování, zachycování a upozornění jsou kontrolovány."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Porovnejte první návštěvu, okamžité přehrání a restart aplikace"
+    },
+    {
+      "type": "list",
+      "items": [
+        "1. Restartujte aplikaci bez mazání cache grafiky a proveďte studený start trasy.",
+        "2. Označte časovou značku a viditelný obsah pro každý nárůst délky snímku.",
+        "3. Vraťte se k normálnímu uloženému stavu a ihned přehrajte bez změny nastavení.",
+        "4. Klasifikujte záseky, které zmizí při druhé návštěvě, jako kandidáty pro kompilaci.",
+        "5. Označte zablokování, která se opakují na stejné hranici načítání nebo animace.",
+        "6. Zavřete a znovu otevřete aplikaci bez vymazání cache a poté proveďte třetí průchod.",
+        "7. Restartujte Android a opakujte pouze, když je testována životnost v průběhu cyklu.",
+        "8. Posílejte opakující se lokace do úložiště, CPU/GPU, nebo k diagnostice zarážek snímkové frekvence místo toho, abyste vše označovali jako zásek shaderu."
+      ]
+    },
+    {
+      "type": "paragraph",
+      "text": "Porovnání teplé cache proměňuje čas v důkaz. Pauzy pouze při prvním setkání odpovídají vytváření pipeline; zdržení, které se opakuje u každých dveří, může být I/O nebo synchronizace; zásek v pravidelných intervalech může pocházet z práce na pozadí. Třetí průchod testuje, zda cache přežije běžné restartování aplikace."
+    },
+    {
+      "type": "heading",
+      "text": "Přijetí klasifikace záseků"
+    },
+    {
+      "type": "paragraph",
+      "text": "Každý štítek musí být podložen jeho chováním napříč průchody."
+    },
+    {
+      "type": "list",
+      "items": [
+        "Zadrhnutí pouze při první návštěvě zmizí nebo se zmenší při okamžitém přehrání.",
+        "Opakující se zaseknutí si uchovávají reprodukovatelný časový údaj nebo hranici scény.",
+        "Nastavení, ovladač, politika cache a trasa zůstávají nezměněny.",
+        "Chování při třetím průchodu ukazuje, zda cache přetrvává po restartu aplikace.",
+        "Důkazy z času snímku souhlasí s viditelným a zvukovým rytmem."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Časové osy k opakování"
+    },
+    {
+      "type": "list",
+      "items": [
+        "Náhodní nepřátelé nebo počasí mění trasu: zvolte deterministický kontrolní bod.",
+        "Záznam videa probíhá jen jedním průchodem: normalizujte režii.",
+        "Aktualizace nebo vymazání mezipaměti u Android během testu: restartujte celý sled.",
+        "Pokud se teplota zařízení podstatně změní: před porovnáním dolaďte tepelný stav."
+      ]
+    },
+    {
+      "type": "heading",
+      "text": "Vraťte překryvy a politiku mezipaměti do normálu."
+    },
+    {
+      "type": "paragraph",
+      "text": "Zakázat diagnostický překryv rámcových časů, zachovat platnou mezipaměť shaderů, obnovit chování pozadí aplikací a jednou spustit titul za studena. Neplánujte rutinní mazání mezipaměti kvůli zásekům, u kterých se již prokázalo, že po kompilaci zmizí."
+    },
+    {
+      "type": "heading",
+      "text": "Ne každý zásek při první návštěvě je shader."
+    },
+    {
+      "type": "paragraph",
+      "text": "Nahrávání textur, čtení z disku, dekomprese a herní logika mohou také probíhat jednou na oblast. Považujte zmizení při prvním průchodu za kandidátní klasifikaci a poté použijte čítače a záznamy k potvrzení zodpovědného subsystému. Opakujte přesnou trasu po teplém restartu a znovu po skutečném vyprázdnění mezipaměti jen tehdy, když je tato operace zdokumentována a bezpečná. Pokud se zásek přesune se přístupem ke skladování nebo se objeví na každém kole při stejné hranici streamování, uchovejte data shaderu a prozkoumejte opakující se zátěž místo opakovaného mazání mezipamětí."
+    },
+    {
+      "type": "link",
+      "text": "Prohlédněte si pokyny k optimalizaci Android Vulkan",
+      "url": "https://developer.android.com/games/develop/vulkan/overview"
+    }
+  ]
+}

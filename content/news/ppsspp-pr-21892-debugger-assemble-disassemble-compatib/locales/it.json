@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-pr-21892-debugger-assemble-disassemble-compatib",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP permette a VFPU di eseguire il ciclo di smontaggio e rimontaggio tramite il suo assemblatore",
+  "summary": "I nomi delle istruzioni, la notazione della saturazione, gli operandi condizionali e le larghezze dei vettori ora corrispondono alla sintassi accettata dall'assemblatore, supportata da un controllo completo del ciclo di andata e ritorno sul testo del gioco.",
+  "heroAlt": "Prove di origine dal pull request #21892 di PPSSPP: Migliorare la compatibilità di assemblaggio/smontaggio del debugger",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "armips",
+    "smontatore",
+    "MIPS debugger"
+  ],
+  "categoryLabels": {
+    "ppsspp": "PPSSPP",
+    "tooling": "Strumenti",
+    "emulation": "Emulazione"
+  },
+  "sourceLabels": {
+    "ppsspp-pr-21892": "Migliorare la compatibilità di assemblaggio/smontaggio del debugger"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il testo leggibile non è sufficiente quando un debugger può modificare il codice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un disassemblatore può stampare un mnemonico comprensibile che tuttavia non può essere interpretato di nuovo nello stesso word macchina. Il debugger di PPSSPP espone le operazioni di assemblaggio e disassemblaggio attraverso la sua interfaccia WebSocket, quindi le differenze di sintassi diventano bug funzionali. Un'operazione VFPU rinominata, priva del suffisso .s, con larghezza di destinazione errata o con parentesi decorative può causare il fallimento dell'assemblaggio o selezionare silenziosamente una codifica diversa."
+    },
+    {
+      "type": "heading",
+      "text": "Le modifiche seguono prove di round-trip attraverso un eseguibile di un gioco"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #21892 è stata sviluppata con uno script che ha disassemblato ogni istruzione nella sezione .text di un gioco, ha assemblato il testo risultante, ha disassemblato di nuovo e ha confrontato gli output. PPSSPP aggiorna anche la sua dipendenza armips per le modifiche di parsing di VFPU. La patch rimuove le parentesi dai parametri sorgente vpfx dove inappropriato, aggiunge intervalli di saturazione espliciti per vpfxd e utilizza nomi di confronto FPU scalari compatibili con l'assemblatore come c.eq.s."
+    },
+    {
+      "type": "heading",
+      "text": "Le conversioni vettoriali necessitano di dimensioni di destinazione derivate dal opcode"
+    },
+    {
+      "type": "paragraph",
+      "text": "I mnemonici di conversione VFPU non preservano sempre la larghezza della sorgente. Nuovi helper sicuri per vettori di dimensioni quarti, metà, doppi e quadrupli consentono al disassemblatore di stampare la forma effettiva della destinazione per le famiglie vuc2ifs, vc2i, vi2uc, vi2c, vi2us e vi2s. Le forme di spostamento e salto condizionali stampano direttamente l'indice della condizione immediata anziché un token di visualizzazione CC[imm3]. Questi dettagli decidono se il testo può essere mappato indietro ai campi di bit originali."
+    },
+    {
+      "type": "heading",
+      "text": "Un corpus più ampio dovrebbe distinguere la sintassi stabile dagli alias."
+    },
+    {
+      "type": "paragraph",
+      "text": "Ripeti il viaggio di andata e ritorno tra eseguibili commerciali, homebrew, copertura generata per ogni codifica VFPU, codifiche non valide e dimensioni dei vettori di confine. Verifica l'output tramite UI e WebSocket APIs, quindi assembla con la revisione armips esatta inclusa. Confronta le parole macchina, non solo le stringhe normalizzate, consentendo al contempo alias canonici documentati. Includi modalità di saturazione, NaN nei dati letterali, target di branch e istruzioni la cui forma di destinazione è non valida in modo che il debugger segnali un errore piuttosto che inventare un registro."
+    },
+    {
+      "type": "callout",
+      "text": "Il disassemblaggio del debugger diventa affidabile quando ogni operando stampato è una descrizione reversibile dei bit dell'istruzione, non semplicemente un'etichetta familiare."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/hrydgard/ppsspp/pull/21892",
+      "label": "Leggi la discussione ingegneristica PPSSPP e le modifiche al codice sorgente"
+    }
+  ]
+}

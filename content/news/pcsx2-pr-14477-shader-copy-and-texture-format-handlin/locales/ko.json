@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14477-shader-copy-and-texture-format-handlin",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2는 GSDevice 뒤로 텍스처 변환 정책을 이동합니다.",
+  "summary": "StretchRectAuto, CreateCompatible, ShaderConvertSelector는 셰이더 복사 및 깊이 형식 처리를 재구성하여 하드웨어 렌더러가 각 백엔드의 파이프라인 세부 사항을 알지 않고도 변환을 요청할 수 있도록 합니다.",
+  "heroAlt": "PCSX2의 풀 리퀘스트 #14477에서 시각적 증거: GS/HW: 셰이더 복사 및 텍스처 형식 처리 리팩토링.",
+  "searchKeywords": [
+    "PCSX2",
+    "GSDevice",
+    "StretchRectAuto",
+    "ShaderConvertSelector",
+    "텍스처 변환"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "그래픽스",
+    "emulation": "에뮬레이션"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14477": "GS/HW: 셰이더 복사 및 텍스처 형식 처리 리팩토링."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "TextureCache는 백엔드 경계에 속하는 결정을 가지고 있었습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "PCSX2의 셰이더 복사는 소스 포맷, 대상 포맷, 에뮬레이션된 비트당 픽셀, 필터링을 기준으로 변환을 선택해야 합니다. 풀 리퀘스트 #14477 이전에는 GSTextureCache와 GSRendererHW가 그 과정에 너무 많이 관여했습니다. 리팩토링은 선택을 GSDevice 뒤로 이동시켜 상위 수준의 렌더링 코드가 백엔드 특정 셰이더 세부 사항을 직접 선택하는 대신 필요한 복사를 설명하도록 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "StretchRectAuto와 CreateCompatible은 API가 아닌 작업을 표현합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "StretchRectAuto는 두 텍스처와 에뮬레이션 포맷 정보를 수락한 후 GSDevice 내부에서 변환 셰이더를 선택합니다. CreateCompatible은 기존 텍스처의 포맷과 일치하는 텍스처를 생성합니다. ShaderConvertSelector는 관련 변환을 나타낼 수 있는 수정자 비트를 추가하여 관련 없는 셰이더 진입점을 곱하지 않도록 합니다. 이들은 함께 R32 색상으로 저장된 깊이와 향후 정수 깊이 경로를 준비하면서, 비활성 ROV 깊이-색상 지원을 같은 인터페이스 뒤에 유지합니다."
+    },
+    {
+      "type": "heading",
+      "text": "이름 변경을 통해 깊이와 프리미티브-ID 의도를 명시적으로 만듭니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "이 패치는 OpenGL 변환 셰이더를 Vulkan과 더 밀접하게 맞추고, 스텐실 이미지 초기화를 프리미티브 ID 초기화로 이름을 변경하며, rgba8_16bits 레이블을 rgb5a1_16bits로 변경합니다. Float32는 DepthColor가 되고, FLOAT32, FLOAT24, FLOAT16 선택기 이름은 각각 DEPTH32, DEPTH24, DEPTH16이 됩니다. 또한 양선형 필터링은 불리언에서 열거형으로 변경되어 다른 오버로드된 플래그 대신 명시적 모드를 위해 공간을 남깁니다."
+    },
+    {
+      "type": "heading",
+      "text": "순수 리팩토링은 모든 렌더러에서 출력 동일성 테스트를 필요로 합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "명시된 계약은 이전 코드와 동일한 출력을 요구합니다. 따라서 덤프 실행은 서로 다른 텍스처 포맷, 깊이 복사, 네이티브 해상도, 업스케일링과 함께 Direct3D, OpenGL, Vulkan, Metal의 프레임 결과를 비교해야 합니다. Metal는 이미 보고된 덤프 실행 검사를 받았지만, 광범위한 파일 세트로 인해 다른 하드웨어 백엔드에서도 셰이더 컴파일 및 복사 선택이 수행되어야 합니다. 이후 ROV 작업에서 새로운 경로를 사용하기 전에 모든 픽셀 차이는 설명이 필요합니다."
+    },
+    {
+      "type": "callout",
+      "text": "사용자에게 보이는 약속은 의도적으로 보수적입니다: 아직 새로운 효과는 없지만, 이후 깊이 형식들이 변환 정책을 중복하지 않고 확장할 수 있는 더 좁은 렌더러/백엔드 경계가 있습니다."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14477",
+      "label": "PCSX2 엔지니어링 토론과 소스 변경 사항을 읽으세요"
+    }
+  ]
+}

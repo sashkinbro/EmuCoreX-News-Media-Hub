@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14655-better-handle-imgui-texture-creation-h",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 menghentikan kegagalan alokasi tekstur ImGui sebelum menjadi crash",
+  "summary": "Jalur pembuatan, unggah, dan penghancuran sekarang memperlakukan BackendUserData yang hilang sebagai status nyata, mencegah kegagalan alokasi masuk ke operasi handle-native dan map.",
+  "heroAlt": "Bukti sumber dari permintaan tarik PCSX2 #14655: GS: Menangani risiko pembuatan tekstur imgui dengan lebih baik.",
+  "searchKeywords": [
+    "PCSX2",
+    "Tekstur ImGui",
+    "kegagalan alokasi",
+    "GSTexture",
+    "crash"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Grafik",
+    "emulation": "Emulasi"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14655": "GS: Menangani risiko pembuatan tekstur imgui dengan lebih baik."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ImGui dapat meminta tekstur ketika GPU tidak dapat menyediakannya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Atlas font dan gambar antarmuka lainnya bergerak melalui status WantCreate, WantUpdates, dan WantDestroy. Alokasi tekstur dapat gagal karena kerusakan perangkat, tekanan sumber daya, dimensi yang tidak didukung, atau kesalahan backend lainnya. Cabang pembuatan lama melaporkan kegagalan tetapi kemudian melanjutkan seolah-olah GSTexture ada, meminta handle asli-nya dan melanjutkan ke kode unggah. Oleh karena itu diagnostik mendahului dereferensi null alih-alih menanganinya."
+    },
+    {
+      "type": "heading",
+      "text": "WantCreate hanya melanjutkan dengan data backend yang valid"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14655 membungkus CreateTexture dalam cabang pointer yang berhasil. Hanya tekstur nyata yang menerima ImTextureID dan BackendUserData sebelum kode melanjutkan ke unggah ukuran penuh. Jika gagal, PCSX2 menghasilkan pxFailRel dan keluar dari status. WantUpdates memeriksa BackendUserData secara terpisah sebelum operasi map atau Update baris demi baris, jadi kegagalan pembuatan sebelumnya tidak dapat dikira sebagai sumber daya yang telah diinisialisasi."
+    },
+    {
+      "type": "heading",
+      "text": "Destroy juga menerima bahwa pembuatan mungkin tidak pernah selesai"
+    },
+    {
+      "type": "paragraph",
+      "text": "Status penghancuran sekarang hanya mendaur ulang dan membatalkan tekstur ketika BackendUserData tidak null. Hal ini penting ketika ImGui membuang permintaan atlas setelah kegagalan alokasi atau ketika transisi status bersaing dengan logika pemulihan. Perilaku daur ulang itu sendiri tidak berubah untuk tekstur yang valid, termasuk penggunaan ulang atlas dengan ukuran yang sama; patch ini membuat grafik masa hidup mencakup cabang sumber daya yang hilang dari awal hingga akhir."
+    },
+    {
+      "type": "heading",
+      "text": "Injeksi kegagalan lebih kuat daripada menunggu isu #14652"
+    },
+    {
+      "type": "paragraph",
+      "text": "Reproduksi dump crash yang ditautkan jika memungkinkan, lalu tambahkan hook backend terkontrol yang membuat CreateTexture ImGui berikutnya mengembalikan null. OSD dan rendering font seharusnya melaporkan kegagalan tanpa crash, mengunggah piksel, atau mendaur ulang pointer yang tidak valid. Pulihkan alokasi dan pastikan atlas berikutnya dapat dibuat dan ditampilkan. Ulangi kegagalan selama resize, penghapusan font, reset perangkat, dan shutdown di semua backend perangkat keras, dan jalankan tes OSD normal untuk memastikan jalur yang dijaga tidak memblokir pembaruan yang valid."
+    },
+    {
+      "type": "callout",
+      "text": "Perbaikan ini menyelesaikan mesin status tekstur: kegagalan alokasi adalah cabang terminal untuk permintaan tersebut, bukan peringatan yang diikuti oleh kode unggah normal."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14655",
+      "label": "Baca diskusi rekayasa PCSX2 dan perubahan sumber"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-pr-14597-date-setup-changes",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 makes DATE setup depend on alpha-test overlap",
+  "summary": "A focused GS decision separates complex alpha-tested draws that can safely use DATE one from overlapping draws that require a barrier and must avoid that path.",
+  "heroAlt": "Visual evidence from PCSX2 pull request #14597: GS/HW: DATE setup changes.",
+  "searchKeywords": [
+    "PCSX2",
+    "DATE",
+    "alpha test",
+    "texture barrier",
+    "GS renderer"
+  ],
+  "categoryLabels": {
+    "pcsx2": "PCSX2",
+    "graphics": "Graphics",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "pcsx2-pr-14597": "GS/HW: DATE setup changes."
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Complex alpha testing is not enough to choose the DATE path"
+    },
+    {
+      "type": "paragraph",
+      "text": "Destination Alpha Test Emulation interacts with both the draw's alpha test and whether it reads or writes an overlapping region. PCSX2's earlier setup treated the complex-alpha condition too broadly. Pull request #14597 adds overlap to the decision, because the non-overlapping case can use DATE one without the ordering hazard that appears when the same region participates in the draw."
+    },
+    {
+      "type": "heading",
+      "text": "DATE one and the DATE barrier become mutually deliberate choices"
+    },
+    {
+      "type": "paragraph",
+      "text": "The hardware renderer now permits DATE one when a complex alpha test has no overlap. If overlap is present, that path is suppressed and the DATE barrier is enabled instead. This is not a new rendering effect; it is a routing correction inside GSRendererHW so the implementation chosen for the destination-alpha rule matches the draw's actual dependency pattern."
+    },
+    {
+      "type": "heading",
+      "text": "The single-file change has a narrow but visible regression surface"
+    },
+    {
+      "type": "paragraph",
+      "text": "Because the patch changes only setup logic, a good review should identify which branch every affected draw takes rather than compare unrelated renderer output. The risk is symmetrical: forcing the barrier on harmless non-overlapping work can add cost, while allowing DATE one through an overlapping complex alpha test can produce incorrect masks or shadows. The branch must therefore agree with the calculated overlap on each draw."
+    },
+    {
+      "type": "heading",
+      "text": "Persona 4 and Energy Airforce anchor the visual checks"
+    },
+    {
+      "type": "paragraph",
+      "text": "The source provides comparisons for Persona 4 and Energy Airforce shadows and a Direct3D 11 run log covering additional barrier and copy changes. Validation should replay those scenes with the same renderer and settings, record DATE mode, complex-alpha status, overlap, and barrier selection, then repeat on another hardware backend. The expected result is the same image with the decision switching only when overlap changes."
+    },
+    {
+      "type": "callout",
+      "text": "The rule is conditional, not global: complex alpha testing may use DATE one without overlap, but overlapping work requires the barrier path."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/PCSX2/pcsx2/pull/14597",
+      "label": "Read the PCSX2 engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3969-ngs-audio-state-ownership-some-cleanup",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K separates four kinds of state inside its NGS audio engine",
+  "summary": "Guest-visible bytes, scratch buffers, resumable logic, and host runtime objects now have distinct owners, making voice routing and decoder lifetime easier to reason about.",
+  "heroAlt": "Source evidence from Vita3K pull request #3969: ngs: refactor ngs/audio state ownership & some cleanup",
+  "searchKeywords": [
+    "Vita3K",
+    "NGS audio",
+    "ATRAC9",
+    "voice state",
+    "audio routing"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "audio": "Audio",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3969": "ngs: refactor ngs/audio state ownership & some cleanup"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "One audio voice contains state with very different lifetimes"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Vita's NGS system exposes guest-readable module state, but an emulator also needs host-only decoder objects, resamplers, temporary PCM, loop history, and routing references. Keeping those pieces in loosely related members makes reset, voice reuse, callbacks, and destruction prone to stale pointers. A guest memory block should not accidentally own a host decoder, and a temporary buffer should not be mistaken for data required to resume logical playback."
+    },
+    {
+      "type": "heading",
+      "text": "ModuleData now names each ownership category"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3969 gives a module guest_state_data for the ABI-visible bytes and scratch_data for temporary work. A polymorphic logical_state stores information such as ADPCM history or exported ATRAC9 decoder history that must survive processing boundaries. A separate runtime_state owns host resources such as active decoders and resamplers that can be cleared or rebuilt. Module factories create each layer and initialize voice data through one interface."
+    },
+    {
+      "type": "heading",
+      "text": "Routes identify voices without keeping fragile raw endpoints"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch objects retain source and destination as rack and voice indices, then resolve them through System and emulated memory when needed. This prevents a patch from blindly following a Voice pointer after a rack changes. ATRAC9 loads saved logical decoder history into the runtime decoder before work and exports it afterward. Player modules keep ADPCM history in logical state, while output and resampling buffers use explicit runtime containers with clear and compact operations."
+    },
+    {
+      "type": "heading",
+      "text": "Lifecycle tests must interrupt audio at every phase"
+    },
+    {
+      "type": "paragraph",
+      "text": "Create, route, start, pause, resume, stop, reset, and destroy voices using PCM, ADPCM, ATRAC9, output, and resampling modules. Reuse rack slots and remove either endpoint while a patch exists. Trigger guest callbacks, loop transitions, empty buffers, and configuration changes, then compare continuous output with output across a logical-state save and runtime rebuild. Thread and address sanitizers should cover scheduler unlock/relock points, teardown, and malformed guest handles. No host pointer should be recoverable from guest-visible state bytes."
+    },
+    {
+      "type": "callout",
+      "text": "Audio correctness improves when the engine can answer which data belongs to the guest ABI, the resumable signal state, temporary work, and the host decoder runtime."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3969",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-pr-2241-vulkan-fix-crash-on-color-fill-before",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar schützt Vulkan Farbfüllung, wenn ein 3GX-Plugin vor dem Framebuffer ankommt",
+  "summary": "Eine von PokeReader aufgedeckte Startreihenfolge kann FillScreen aufrufen, bevor das Zielbild existiert; der Renderer behandelt dieses fehlende Bild nun als verzögerten Setup-Zustand, anstatt abzustürzen.",
+  "heroAlt": "Quellenbeweis aus dem Azahar Pull-Request #2241: video_core: vulkan: Absturz bei Farbfüllung vor Framebuffer-Setup beheben",
+  "searchKeywords": [
+    "Azahar",
+    "Vulkan",
+    "3GX",
+    "PokeReader",
+    "Framebuffer"
+  ],
+  "categoryLabels": {
+    "azahar": "Azahar",
+    "graphics": "Grafik",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "azahar-pr-2241": "video_core: vulkan: Absturz bei Farbfüllung vor Framebuffer-Setup beheben"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Plugin kann die Bildschirmfarbe anfordern, bevor Vulkan ein Bild besitzt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Aktivieren des 3GX-Loaders mit PokeReader verursachte auf dem AMD Vulkan-System des Melders einen konsistenten Windows-Absturz, nachdem FillScreen implementiert wurde. Protokolle und ein git-bisect setzten die Regression auf diese Implementierung zurück. Die Tastenreihenfolge ist ungewöhnlich, aber für das Frontend gültig: Der Plugin-Start erreicht die Farbfüllkonfiguration, bevor das Vulkan-Bild der Framebuffer-Textur erstellt wurde."
+    },
+    {
+      "type": "heading",
+      "text": "ConfigureFramebufferTexture prüft jetzt die Ressource, nicht die Absicht"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull Request #2241 fügt in RendererVulkan::ConfigureFramebufferTexture eine schmale Sicherheitsprüfung hinzu. Wenn texture.image fehlt, gibt die Funktion zurück, bevor der Framebuffer konfiguriert oder gefüllt wird. Ein späterer Aufruf mit einem gültigen Bild folgt dem normalen Pfad. Der Fix erstellt kein Dummy-Bild und nimmt keine Dimensionen an, wodurch eine Platzhalterressource vermieden wird, deren Layout und Lebensdauer von denen des echten Framebuffers abweichen könnten."
+    },
+    {
+      "type": "heading",
+      "text": "Das Scheitern könnte Berichte über einen einzelnen GPU hinaus erklären, aber die Beweise bleiben begrenzt."
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Quelle nennt PokeReader, Windows, Vulkan und möglicherweise AMD als die reproduzierbare Kombination und verknüpft mehrere Probleme mit möglicherweise verwandtem Verhalten. Diese Berichte sind Hinweise, keine bestätigten Lösungen. Die einzige bewiesene Konstante ist, dass keine Vulkan-Operation ein Framebuffer-Bild verwenden darf, bevor es existiert. Andere Abstürze benötigen eigene Protokolle, um festzustellen, ob sie denselben frühen FillScreen-Zustand erreichen."
+    },
+    {
+      "type": "heading",
+      "text": "Regressionsprüfungen sollten sowohl die frühe als auch die normale Füllreihenfolge erzwingen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Starten Sie mit deaktivierter und aktivierter 3GX-Unterstützung, mit ausgewähltem PokeReader, über AMD, NVIDIA und mobile Vulkan, wo verfügbar. Instrumentieren Sie die Bildgenerierung und die FillScreen-Reihenfolge, prüfen Sie, dass der frühe Aufruf ohne Validierungsfehler zurückkehrt, und bestätigen Sie, dass eine später initialisierte Füllung den Bildschirm immer noch löscht. Wiederholen Sie Plugin-Entladung, Spielneustart, Oberflächen-Neuerstellung und Backend-Wechsel. Ein fehlender Absturz ist unzureichend, wenn der Schutz einen dauerhaft nicht gefüllten oder veralteten Framebuffer hinterlässt."
+    },
+    {
+      "type": "callout",
+      "text": "Der Renderer unterscheidet jetzt zwischen einer angeforderten Füllung und einem initialisierten Ziel; die Arbeit an Vulkan beginnt erst, nachdem das Bild tatsächlich existiert."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/azahar-emu/azahar/pull/2241",
+      "label": "Lesen Sie die Azahar Ingenieursdiskussion und Quelländerungen"
+    }
+  ]
+}

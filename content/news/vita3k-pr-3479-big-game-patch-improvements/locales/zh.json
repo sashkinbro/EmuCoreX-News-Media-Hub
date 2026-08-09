@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3479-big-game-patch-improvements",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 将游戏补丁转换为更清晰的多二进制格式",
+  "summary": "命名为 ARM 的指令、共享补丁列表、二进制选择器和紧凑字节字符串使补丁更易于阅读和扩展，同时不破坏现有文件。",
+  "heroAlt": "来自 Vita3K pull request #3479 的源证据：vita3k：大规模游戏补丁改进",
+  "searchKeywords": [
+    "Vita3K",
+    "游戏补丁",
+    "VitaGrafix",
+    "Thumb MOV",
+    "patchlist.txt"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "tooling": "工具",
+    "emulation": "仿真"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3479": "vita3k：大规模游戏补丁改进"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "原始字节编辑可以工作，但它们隐藏了意图"
+    },
+    {
+      "type": "paragraph",
+      "text": "游戏补丁最终会在段偏移处替换字节，但一长串无关的十六进制值并不能说明修改为何有效。Vita3K 的初始格式也主要围绕 eboot.bin 和单独文件。复杂的游戏可能会在其他 SELF 模块中放置代码，而维护大量特定标题的文件会使分发和审核变得更困难。解析器需要更多结构，但不能使已使用的小型补丁集合失效。"
+    },
+    {
+      "type": "heading",
+      "text": "现在头信息可标识标题和目标二进制文件"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求 #3479 允许某个段选择任何已加载的二进制文件；省略名称仍然意味着 eboot.bin。共享 patchlist.txt 可以通过在每个头信息中放置标题 ID 和可选二进制文件来存放多个标题。长十六进制字符串被拆分为多个字节，因此 0xF7EE000A 不再需要每个字节之间加空格。一个单值偏移的错误也已修正，从而保留了最简单的补丁。"
+    },
+    {
+      "type": "heading",
+      "text": "命名指令揭示了所选字节的含义"
+    },
+    {
+      "type": "paragraph",
+      "text": "翻译器首先将指令编码为nop和从参数中提取的Thumb T1 mov。因此，Project Diva F的第二帧率补丁可以在其剩余的原始修改旁边声明t1_mov(0, 1)，而无需作者记住两字节编码。指令映射和解析器使额外的编码器成为一个封闭的扩展。现有的原始数值仍然有效，使格式保持向后兼容，而不是强制立即迁移。"
+    },
+    {
+      "type": "heading",
+      "text": "补丁安全性需要二进制和段边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "测试旧的按标题分组的文件、混合的补丁列表条目、默认和命名的二进制文件、一字节和长数值、大写和小写十六进制、注释、格式错误的头部、未知指令、无效寄存器以及重叠的修改。以不同顺序加载模块，并确认每个补丁仅应用于命名的二进制文件。偏移量加上数值长度必须保持在所选段内。诊断工具应标识标题、二进制文件、段和行，以便一个错误的社区补丁不会看起来像是模拟器的回归。"
+    },
+    {
+      "type": "callout",
+      "text": "一个好的补丁格式在保留字节级控制的同时，使标题、目标模块、指令意图和失败位置可见。"
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3479",
+      "label": "阅读 Vita3K 工程讨论和源代码更改"
+    }
+  ]
+}

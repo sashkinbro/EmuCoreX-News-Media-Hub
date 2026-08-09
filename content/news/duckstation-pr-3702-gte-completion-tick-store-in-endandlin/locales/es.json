@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "duckstation-pr-3702-gte-completion-tick-store-in-endandlin",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "DuckStation corrige un registro de host incorrecto en la temporización GTE de RISC-V",
+  "summary": "EndAndLinkBlock calculó la marca de finalización correcta en RARG2 pero almacenó RARG1, un desajuste de una instrucción que podría llevar una preparación de coprocesador incorrecta al siguiente bloque recompilado.",
+  "heroAlt": "Evidencia fuente del pull request #3702 de DuckStation: CPU/RISCV64: Corregir el almacenamiento de gte_completion_tick en EndAndLinkBlock",
+  "searchKeywords": [
+    "DuckStation",
+    "RISC-V 64",
+    "GTE",
+    "recompilador",
+    "marca de finalización"
+  ],
+  "categoryLabels": {
+    "duckstation": "DuckStation",
+    "cpu": "CPU",
+    "emulation": "Emulación"
+  },
+  "sourceLabels": {
+    "duckstation-pr-3702": "CPU/RISCV64: Corregir el almacenamiento de gte_completion_tick en EndAndLinkBlock"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El cálculo era correcto hasta la última instrucción de almacenamiento"
+    },
+    {
+      "type": "paragraph",
+      "text": "DuckStation rastrea cuando el Motor de Transformación Geométrica de PlayStation completa su trabajo, así que siguiendo las instrucciones de CPU se observa el tiempo de dependencia correcto. En la ruta EndAndLinkBlock del recompilador RISC-V 64, el nuevo valor de finalización ya se había calculado en RARG2. No obstante, el almacenamiento emitido utilizó RARG1, escribiendo un registro de argumento diferente en el estado de temporización GTE global justo antes de que el control pasara a otro bloque."
+    },
+    {
+      "type": "heading",
+      "text": "Una sustitución de registro alinea RISC-V con los otros recompiladores"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #3702 cambia la instrucción SW para almacenar RARG2 en g_state.gte_completion_tick. No hay cambios en la fórmula de temporización ni en el decodificador de instrucciones del invitado. La evidencia es el flujo de datos en ese punto exacto y el comportamiento coincidente de otros backends de arquitectura. Los parches pequeños de este tipo son valiosos precisamente porque el registro incorrecto puede sobrevivir a la compilación, producir código máquina válido y fallar solo en una familia de host."
+    },
+    {
+      "type": "heading",
+      "text": "Un tick de finalización obsoleto cambia cuándo las instrucciones posteriores creen que el GTE está listo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si el valor incorrecto es anterior al tick calculado, el código del invitado puede consumir los resultados de la geometría demasiado pronto; si es posterior, DuckStation puede insertar esperas innecesarias. Cualquiera de las dos direcciones puede alterar juegos que entrelazan trabajo de CPU con comandos GTE, aunque la aritmética transformada en sí sea correcta. El error se transmite a través de un límite de bloque, por lo que una prueba confinada a instrucciones dentro de un solo bloque generado puede pasarlo por alto."
+    },
+    {
+      "type": "heading",
+      "text": "Las pruebas deberían forzar el valor de finalización a través de EndAndLinkBlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una prueba de recompilador dirigida debería emitir un comando GTE, finalizar el bloque mientras la unidad sigue ocupada, enlazar al código que lee o depende del resultado y comparar el intérprete, RISC-V y otro backend de recompilador. Registrar el valor RARG2 calculado y el tick global almacenado. Cubrir salidas condicionales y diferentes casos de nueva-PC manejados por EndAndLinkBlock. Ejecutar las pruebas de temporización GTE existentes repetidamente en hardware nativo RISC-V para que se ejerciten las diferencias de asignación de registros o convenciones de llamadas."
+    },
+    {
+      "type": "callout",
+      "text": "El parche es un operando, pero el invariante es arquitectónico: cada backend del host debe llevar el tick de finalización GTE calculado a través de un enlace de bloque."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/stenzek/duckstation/pull/3702",
+      "label": "Lea la discusión de ingeniería DuckStation y los cambios de código fuente"
+    }
+  ]
+}

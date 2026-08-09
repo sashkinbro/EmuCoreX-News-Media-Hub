@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-pr-3885-taihen-plugin-framework-and-kubridge-h",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K lays the groundwork for taiHEN plugins and kubridge",
+  "summary": "Per-title plugin loading, relocatable hook trampolines, injection tracking, memory HLE, and guest abort callbacks open a carefully bounded path for Vita plugin compatibility.",
+  "heroAlt": "Source evidence from Vita3K pull request #3885: Add taiHEN plugin framework and kubridge HLE support",
+  "searchKeywords": [
+    "Vita3K",
+    "taiHEN",
+    "kubridge",
+    "Vita plugins",
+    "inline hooks"
+  ],
+  "categoryLabels": {
+    "vita3k": "Vita3K",
+    "core": "Core",
+    "emulation": "Emulation"
+  },
+  "sourceLabels": {
+    "vita3k-pr-3885": "Add taiHEN plugin framework and kubridge HLE support"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Vita plugins depend on infrastructure below ordinary user modules"
+    },
+    {
+      "type": "paragraph",
+      "text": "taiHEN plugins do more than import a library. They locate functions by module and NID, replace import stubs or function prologues, continue through a trampoline, inject byte ranges, and later release each object. kubridge exposes kernel-oriented memory reservation, commitment, protection, and exception handling to user plugins. Running the original low-level implementation inside an emulator would tie behavior to firmware addresses and host fault details."
+    },
+    {
+      "type": "heading",
+      "text": "Hook objects keep enough state to undo every modification"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #3885 adds a taiHEN state with unique IDs, hook and injection maps, and configuration sections for title-specific plugin paths. Import hooks preserve the original stub in a trampoline and patch a jump to the guest hook. Inline hooks use instruction relocation support to copy a safe prologue before redirecting ARM or Thumb execution. Each record retains target, saved bytes, trampoline, guest hook metadata, mode, and patch size for controlled release."
+    },
+    {
+      "type": "heading",
+      "text": "kubridge memory calls stay under Vita3K ownership"
+    },
+    {
+      "type": "paragraph",
+      "text": "HLE implementations translate kubridge protection flags into MemPerm, reserve address space, commit and decommit pages, and register exception handlers. A protected-memory fault records address and write direction in signal-safe CPU atomics, halts execution, and lets the normal guest run loop build an abort context on the guest stack. Thread-local CPU pointers are cleared by a guard so recycled host threads cannot expose stale state."
+    },
+    {
+      "type": "heading",
+      "text": "Plugin compatibility must not outrun isolation testing"
+    },
+    {
+      "type": "paragraph",
+      "text": "Load no plugins, one plugin, multiple title and kernel sections, missing paths, import hooks, ARM and Thumb inline hooks, chained-looking requests, injections, and release in unusual order. Reject relocations that cannot be transformed or ranges outside guest memory. Exercise data abort registration, protected reads and writes, thread exit, savestates, title switching, and shutdown. Verify original bytes and allocations return after release, while unsupported exception types and firmware-specific behavior fail explicitly rather than pretending success."
+    },
+    {
+      "type": "callout",
+      "text": "Plugin support is safe only when every guest hook, trampoline, injected range, and exception callback has an emulator-visible owner and reversible lifetime."
+    },
+    {
+      "type": "link",
+      "url": "https://github.com/Vita3K/Vita3K/pull/3885",
+      "label": "Read the Vita3K engineering discussion and source changes"
+    }
+  ]
+}
