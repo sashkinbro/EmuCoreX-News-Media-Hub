@@ -28,6 +28,8 @@ Every content directory contains one shared `metadata.json` file and a `locales`
 
 Generated files in `catalog/` must not be edited manually. They are rebuilt from `content/` by the repository scripts. The stable channel points to a catalog at an immutable Git commit and is published only after that commit passes validation.
 
+Publishing requires the original `channel-private.pem` in the repository root. This file is ignored by Git; keep a separate backup outside the project. After pushing a validated content commit, run `node scripts/publish-channel.mjs <full-content-commit-sha>` and commit and push the updated channel metadata and signature. Do not generate a replacement key for an existing channel: released applications trust the original public key.
+
 ## Finding existing content
 
 Before adding an item, search by all of the following:

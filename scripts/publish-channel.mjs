@@ -12,9 +12,16 @@ const commit = process.argv[2];
 if (!/^[0-9a-f]{40}$/.test(commit ?? "")) throw new Error("A full 40-character content commit SHA is required");
 
 const manifestPath = path.join(repositoryRoot, "catalog", "v1", "manifest.json");
-const privateKeyPath = path.join(repositoryRoot, ".workspace", "keys", "channel-private.pem");
+const privateKeyPath = path.join(repositoryRoot, "channel-private.pem");
 if (!fs.existsSync(manifestPath)) throw new Error("Build the catalog before publishing the channel");
 if (!fs.existsSync(privateKeyPath)) throw new Error("The local channel signing key is missing");
+
+const privateKey = crypto.createPrivateKey(fs.readFileSync(privateKeyPath));
+const publicKey = crypto.createPublicKey(fs.readFileSync(path.join(repositoryRoot, "channels", "channel-public.pem")));
+const keyFormat = { type: "spki", format: "der" };
+if (!crypto.createPublicKey(privateKey).export(keyFormat).equals(publicKey.export(keyFormat))) {
+  throw new Error("The signing key does not match this channel's public key");
+}
 
 const manifestReference = fileReference(manifestPath);
 const channelPath = path.join(repositoryRoot, "channels", "stable-v1.json");
@@ -35,6 +42,6 @@ writeJson(channelPath, {
 });
 
 const channelBytes = fs.readFileSync(channelPath);
-const signature = crypto.sign("sha256", channelBytes, fs.readFileSync(privateKeyPath, "utf8"));
+const signature = crypto.sign("sha256", channelBytes, privateKey);
 fs.writeFileSync(path.join(repositoryRoot, "channels", "stable-v1.sig"), `${signature.toString("base64")}\n`, "utf8");
 process.stdout.write(`Published signed channel metadata for ${commit}.\n`);
