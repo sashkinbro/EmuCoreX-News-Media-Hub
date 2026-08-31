@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-avc-decoder-memory-alignment",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corrige el tamaño de la memoria de trama de AVC y las comprobaciones de argumentos no válidos",
+  "summary": "El decodificador ahora redondea los requisitos de memoria de trama a 256 unidades KiB y verifica las llamadas no válidas antes de acceder al estado del decodificador.",
+  "heroAlt": "Diagrama de asignación de memoria original que redondea un búfer de video solicitado a un límite 256 KiB",
+  "searchKeywords": [
+    "vita3k",
+    "decodificación de vídeo",
+    "memoria",
+    "API"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "módulos/SceVideodec: Alinear resultado sceAvcdecQueryDecoderMemSize frameMemSize",
+    "implementation": "Implementación y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una aplicación pregunta cuánta memoria necesita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una aplicación Vita puede consultar la interfaz AVC antes de asignar memoria de cuadros para la decodificación de video. El resultado esperado incluye tanto el espacio requerido como las reglas de asignación de la plataforma. El cambio de Vita3K del 9 de agosto ajusta esa consulta y verifica los argumentos del decodificador no válidos. El comportamiento de consulta preciso es importante antes de que el decodificador comience a producir fotogramas de vídeo."
+    },
+    {
+      "type": "heading",
+      "text": "Redondear a un límite 256 KiB"
+    },
+    {
+      "type": "paragraph",
+      "text": "El cálculo utiliza las dimensiones de la imagen y el recuento del marco de referencia. Para este cálculo, un recuento de cero se trata como uno. El resultado frameMemSize se redondea hacia arriba a un múltiplo de 0x40000, o 256 KiB. Esto proporciona suficiente almacenamiento en las unidades de asignación esperadas. No aumenta la resolución del video."
+    },
+    {
+      "type": "heading",
+      "text": "Rechazar llamadas no válidas antes de acceder al estado del decodificador"
+    },
+    {
+      "type": "paragraph",
+      "text": "La creación de decodificadores y las consultas de memoria verifican los tipos de códecs, los punteros nulos, las dimensiones de la imagen y los límites del marco de referencia. Varias operaciones también rechazan un decodificador nulo o un identificador de cero antes de buscar el estado del decodificador. Devolver el error esperado permite que la aplicación emulada maneje el error. Es más seguro que llegar a una afirmación o acceder a una memoria del host no válida."
+    },
+    {
+      "type": "heading",
+      "text": "Mida el comportamiento que realmente cambia el parche"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche no enumera los nuevos juegos jugables ni proporciona una referencia de rendimiento. Las comprobaciones útiles compararían los tamaños y errores devueltos y luego realizarían la decodificación, el vaciado y la eliminación normales. Esas pruebas abordan directamente la interfaz modificada. Una aplicación posterior también necesita incorporar el código antes de que los usuarios puedan esperar el mismo comportamiento allí."
+    }
+  ]
+}

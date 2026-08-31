@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-avc-decoder-memory-alignment",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corrige le dimensionnement de la mémoire de trame AVC et les vérifications d'arguments non valides",
+  "summary": "Le décodeur arrondit désormais les besoins en mémoire de trame à 256 unités KiB et vérifie les appels non valides avant d'accéder à l'état du décodeur.",
+  "heroAlt": "Diagramme d'allocation de mémoire original arrondissant un tampon vidéo demandé à une limite de 256 KiB",
+  "searchKeywords": [
+    "vita3k",
+    "décodage vidéo",
+    "mémoire",
+    "API"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "modules/SceVideodec : aligner le résultat sceAvcdecQueryDecoderMemSize frameMemSize",
+    "implementation": "Mise en œuvre et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une application demande de quelle quantité de mémoire elle a besoin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une application Vita peut interroger l'interface AVC avant d'allouer de la mémoire d'image pour le décodage vidéo. Le résultat attendu inclut à la fois l’espace requis et les règles d’allocation de la plateforme. La modification du 9 août apportée par Vita3K ajuste cette requête et vérifie les arguments de décodeur non valides. Un comportement de requête précis est important avant que le décodeur ne commence à produire des images vidéo."
+    },
+    {
+      "type": "heading",
+      "text": "Arrondir à une limite de 256 KiB"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le calcul utilise les dimensions de l'image et le nombre de trames de référence. Pour ce calcul, un compte de zéro est traité comme un. Le frameMemSize résultant est arrondi à un multiple de 0x40000, soit 256 KiB. Cela fournit suffisamment de stockage dans les unités d’allocation attendues. Cela n’augmente pas la résolution de la vidéo."
+    },
+    {
+      "type": "heading",
+      "text": "Rejeter les appels invalides avant d'accéder à l'état du décodeur"
+    },
+    {
+      "type": "paragraph",
+      "text": "La création du décodeur et les requêtes de mémoire vérifient les types de codecs, les pointeurs nuls, les dimensions de l'image et les limites du cadre de référence. Plusieurs opérations rejettent également un décodeur nul ou un handle zéro avant de rechercher l’état du décodeur. Le renvoi de l'erreur attendue permet à l'application émulée de gérer l'échec. C'est plus sûr que d'atteindre une assertion ou d'accéder à une mémoire hôte non valide."
+    },
+    {
+      "type": "heading",
+      "text": "Mesurer le comportement que le patch change réellement"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif ne répertorie pas les jeux nouvellement jouables et ne fournit pas de référence de performances. Des vérifications utiles compareraient les tailles et les erreurs renvoyées, puis effectueraient un décodage, un vidage et une suppression normaux. Ces tests concernent directement l'interface modifiée. Une application en aval doit également incorporer le code avant que les utilisateurs puissent s'attendre au même comportement."
+    }
+  ]
+}

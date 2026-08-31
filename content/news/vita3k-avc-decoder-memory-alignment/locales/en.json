@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-avc-decoder-memory-alignment",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corrects AVC frame-memory sizing and argument checks",
+  "summary": "Frame-memory requests are rounded up to multiples of 256 KiB. Invalid calls are checked before decoder state is accessed.",
+  "heroAlt": "Original memory-allocation diagram rounding a requested video buffer to a 256 KiB boundary",
+  "searchKeywords": [
+    "vita3k",
+    "video decoding",
+    "memory",
+    "api"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "modules/SceVideodec: Align sceAvcdecQueryDecoderMemSize frameMemSize result",
+    "implementation": "Implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "An application asks how much memory it needs"
+    },
+    {
+      "type": "paragraph",
+      "text": "A Vita application can query the AVC interface before allocating frame memory for video decoding. The expected result includes both the required space and the platform’s allocation rules. Vita3K’s August 9 change adjusts that query and checks invalid decoder arguments. Accurate query behavior matters before the decoder starts producing video frames."
+    },
+    {
+      "type": "heading",
+      "text": "Round up to a 256 KiB boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "The calculation uses picture dimensions and the reference-frame count. If the reference-frame count is zero, this calculation uses one instead. The resulting frameMemSize is rounded upward to a multiple of 0x40000, or 256 KiB. This provides enough storage in the expected allocation units. It does not increase the video’s resolution."
+    },
+    {
+      "type": "heading",
+      "text": "Reject invalid calls before accessing decoder state"
+    },
+    {
+      "type": "paragraph",
+      "text": "Decoder creation and memory queries check codec types, null pointers, picture dimensions and reference-frame limits. Several operations also reject a null decoder or zero handle before looking up decoder state. Returning the expected error lets the emulated application handle the failure. It is safer than triggering an assertion failure or accessing invalid host memory."
+    },
+    {
+      "type": "heading",
+      "text": "Measure the behavior the patch actually changes"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch does not list newly playable games or provide a performance benchmark. Useful checks would compare returned sizes and errors, then exercise normal decoding, flushing and deletion. Those tests address the changed interface directly. An application based on Vita3K also needs to incorporate the code before users can expect the same behavior there."
+    }
+  ]
+}

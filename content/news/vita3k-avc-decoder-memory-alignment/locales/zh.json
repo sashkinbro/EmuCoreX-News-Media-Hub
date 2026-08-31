@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-avc-decoder-memory-alignment",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 更正了 AVC 帧内存大小和无效参数检查",
+  "summary": "解码器现在将帧存储器要求舍入为 256 个 KiB 单元，并在访问解码器状态之前检查无效调用。",
+  "heroAlt": "将请求的视频缓冲区舍入到 256 KiB 边界的原始内存分配图",
+  "searchKeywords": [
+    "维塔3k",
+    "视频解码",
+    "记忆",
+    "应用程序编程接口"
+  ],
+  "categoryLabels": {
+    "development": "发展"
+  },
+  "sourceLabels": {
+    "change": "模块/SceVideodec：对齐 sceAvcdecQueryDecoderMemSize frameMemSize 结果",
+    "implementation": "实施和审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "应用程序询问它需要多少内存"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita应用可以在分配帧存储器用于视频解码之前查询AVC接口。预期结果包括所需的空间和平台的分配规则。 Vita3K 8 月 9 日的更改调整了该查询并检查无效的解码器参数。在解码器开始生成视频帧之前，准确的查询行为很重要。"
+    },
+    {
+      "type": "heading",
+      "text": "舍入为 256 KiB 边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "计算所需空间时，代码同时使用图像尺寸与参考帧数量。如果参考帧数量为零，这一步计算按一个参考帧处理。得到的 frameMemSize 会向上取整到 0x40000 的整数倍；0x40000 字节等于 256 KiB，也就是按 256 KiB 为单位向上对齐。这里的“向上”保证分配结果不会小于计算出的需求，并符合接口预期的分配单位。改变的是视频解码帧缓冲区的内存需求，不是把视频提升到更高分辨率。"
+    },
+    {
+      "type": "heading",
+      "text": "在访问解码器状态之前拒绝无效调用"
+    },
+    {
+      "type": "paragraph",
+      "text": "创建解码器和查询内存时，代码会检查编解码类型、空指针、图像尺寸以及参考帧数量的限制。若干操作还会在查找解码器状态之前拒绝空解码器或值为零的句柄。返回接口预期的错误码，让被模拟的应用程序能够执行自己的错误处理，比触发断言失败或访问主机上的无效内存更安全。"
+    },
+    {
+      "type": "heading",
+      "text": "测量补丁实际改变的行为"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁没有列出新的可玩游戏或提供性能基准。有用的检查将比较返回的大小和错误，然后执行正常的解码、刷新和删除。这些测试直接解决更改后的接口。下游应用程序还需要合并代码，然后用户才能期望那里的相同行为。"
+    }
+  ]
+}

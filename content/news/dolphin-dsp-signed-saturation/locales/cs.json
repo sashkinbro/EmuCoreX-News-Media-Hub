@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin obnovuje chybějící negativní koncový bod v saturaci zvuku DSP",
+  "summary": "Jednořádková korekce DSP rozlišuje −32768 od −32767. V dekodéru, který znovu používá předchozí vzorky, je správné nastavení hranice součástí reprodukce hardwaru.",
+  "heroAlt": "Původní diagram rozsahu podepsaného zvuku zobrazující asymetrické koncové body 16bitového vzorku",
+  "searchKeywords": [
+    "delfín",
+    "dsp",
+    "zvuk",
+    "přesnost"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "DSP: Oprava chyby upínání `Off-by-one`",
+    "implementation": "Realizace a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Záporné a kladné limity se liší"
+    },
+    {
+      "type": "paragraph",
+      "text": "Podepsané 16bitové zvukové vzorky se pohybují od -32768 do 32767. Akcelerátor DSP Dolphin dříve omezoval vypočítaný vzorek na -32767 na negativním konci. To vyloučilo jednu platnou hodnotu. Oprava, sloučená 14. srpna, používá celý rozsah podepsaných znaků. Toto je malá aritmetická změna uvnitř emulovaného zvukového hardwaru."
+    },
+    {
+      "type": "heading",
+      "text": "Použijte stávajícího pomocníka saturace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementace nahrazuje ručně napsanou kontrolu rozsahu za SaturatingCast<s16>. Saturace znamená omezení výsledku na minimum nebo maximum typu cíle, když výpočet překročí tento rozsah. Sdílená pomocná funkce přímo vyjadřuje zamýšlenou operaci. Také se vyhne opakování ručně zapsaného limitu, který lze snadno zmýlit pro asymetrický rozsah se znaménkem."
+    },
+    {
+      "type": "heading",
+      "text": "Předchozí vzorky ovlivňují pozdější dekódování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Akcelerátor uchovává předchozí hodnoty vzorku pro pozdější výpočty. Nesprávná hranice proto může ovlivnit data znovu použitá dekodérem. Díky tomu je chování přesného celého čísla relevantní, i když je rozdíl pouze jedna vzorová jednotka. Patch stanoví číselnou korekci; nevykazuje slyšitelné zlepšení v každé hře nebo na každém zvukovém systému."
+    },
+    {
+      "type": "heading",
+      "text": "Otestujte limity i běžné hodnoty"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cílená kontrola by měla pokrývat hodnoty pod -32768, a to jak platné koncové body, běžné hodnoty, tak výsledky nad 32767. Vývojáři pak mohou porovnat dekódované sekvence vzorků v příslušných testech. Pouze kontrola, zda hra vydává zvuk, by vynechala mnoho aritmetických chyb. Tento příklad ukazuje, jak reprodukované chování hardwaru závisí na přesných hraničních hodnotách, nejen na přesvědčivém výstupu."
+    }
+  ]
+}

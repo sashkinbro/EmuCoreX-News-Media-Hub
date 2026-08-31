@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-savestate-mount-order",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP preserves filesystem order in older save states",
+  "summary": "The loader accounts for known filesystem additions when restoring an older save state. A test-runner correction also ensures that requested loads actually execute.",
+  "heroAlt": "A silver PSP-3000 photographed by Evan-Amos; hardware context for the PPSSPP save-state article",
+  "searchKeywords": [
+    "ppsspp",
+    "save states",
+    "filesystem",
+    "testing"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "Fix savestate breakage related to file system mounts",
+    "implementation": "Implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A save state includes virtual filesystems"
+    },
+    {
+      "type": "paragraph",
+      "text": "PPSSPP’s August 31 correction concerns virtual filesystems stored inside a save state. The loader reads these sections in the order in which the filesystems were mounted. Each section lacks a separate length for skipping unknown content. The complete startup sequence matters because launching a disc image can register filesystem mountpoints before other initialization finishes."
+    },
+    {
+      "type": "heading",
+      "text": "Keep the older sections in order"
+    },
+    {
+      "type": "paragraph",
+      "text": "A newer emulator build can have filesystems that an older save state does not contain. Reading a section into the wrong filesystem would misinterpret subsequent data. The change records known additions in newest-first order, including flash1: and pfat0:. It skips the missing additions while retaining the order of older mounted filesystems. Unexpected count differences produce an error."
+    },
+    {
+      "type": "heading",
+      "text": "Make sure the test actually loads the state"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change also makes the test program without a graphical interface process pending save-state operations. Previously, requesting a load did not ensure that the queued operation ran. The test program now detects a failed load and reports it. This prevents a successful process exit from being mistaken for evidence that an old snapshot loaded correctly."
+    },
+    {
+      "type": "heading",
+      "text": "Known additions have a limited solution"
+    },
+    {
+      "type": "paragraph",
+      "text": "The compatibility list handles these known added filesystem mountpoints. It cannot safely handle arbitrary renaming, removal or reordering of filesystems. Those changes require a more descriptive format. When changing emulator builds, keep normal in-game saves and an untouched copy of important save states. A snapshot’s compatibility depends on the emulator’s stored state as well as the game data."
+    }
+  ]
+}

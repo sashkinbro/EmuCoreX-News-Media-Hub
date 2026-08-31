@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin ripristina l'endpoint negativo mancante nella saturazione audio DSP",
+  "summary": "Una correzione DSP su una riga distingue −32768 da −32767. In un decodificatore che riutilizza campioni precedenti, ottenere il confine corretto fa parte della riproduzione dell'hardware.",
+  "heroAlt": "Diagramma originale dell'intervallo audio con segno che mostra i punti finali asimmetrici di un campione a 16 bit",
+  "searchKeywords": [
+    "delfino",
+    "sp",
+    "audio",
+    "precisione"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "DSP: corretto errore di bloccaggio `Off-by-one`",
+    "implementation": "Attuazione e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "I limiti negativi e positivi differiscono"
+    },
+    {
+      "type": "paragraph",
+      "text": "I campioni audio a 16 bit con segno vanno da −32768 a 32767. L'acceleratore DSP di Dolphin precedentemente limitava un campione calcolato a −32767 all'estremità negativa. Ciò escludeva un valore valido. La correzione, fusa il 14 agosto, utilizza l'intero intervallo dei segni. Si tratta di una piccola modifica aritmetica all'interno dell'hardware audio emulato."
+    },
+    {
+      "type": "heading",
+      "text": "Utilizzare l'assistente per la saturazione esistente"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implementazione sostituisce una morsa manuale con SaturatingCast<s16>. Saturazione significa limitare un risultato al minimo o al massimo del tipo di destinazione quando il calcolo supera tale intervallo. Una funzione ausiliaria condivisa esprime direttamente l'operazione prevista. Evita inoltre di ripetere un limite scritto manualmente che è facile da sbagliare per un intervallo con segno asimmetrico."
+    },
+    {
+      "type": "heading",
+      "text": "I campioni precedenti influiscono sulla decodifica successiva"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'acceleratore conserva i valori dei campioni precedenti per calcoli successivi. Un confine errato può quindi influenzare i dati riutilizzati dal decoder. Ciò rende rilevante il comportamento intero esatto anche quando la differenza è solo di un’unità campionaria. La patch stabilisce la correzione numerica; non dimostra un miglioramento udibile in ogni gioco o su ogni sistema audio."
+    },
+    {
+      "type": "heading",
+      "text": "Testare i limiti e i valori ordinari"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un controllo mirato dovrebbe coprire valori inferiori a -32768, sia endpoint validi, valori ordinari e risultati superiori a 32767. Gli sviluppatori possono quindi confrontare le sequenze di campioni decodificate nei test pertinenti. Controllare solo se un gioco produce suoni perderebbe molti errori aritmetici. Questo esempio mostra come la riproduzione del comportamento dell'hardware dipenda da valori limite esatti, non solo da un output convincente."
+    }
+  ]
+}

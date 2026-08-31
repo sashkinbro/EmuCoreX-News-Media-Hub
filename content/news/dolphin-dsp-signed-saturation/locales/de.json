@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin stellt den fehlenden negativen Endpunkt in der Audiosättigung DSP wieder her",
+  "summary": "Eine einzeilige DSP-Korrektur unterscheidet −32768 von −32767. Bei einem Decoder, der frühere Samples wiederverwendet, gehört die richtige Festlegung der Grenze zur Reproduktion der Hardware.",
+  "heroAlt": "Ursprüngliches Signed-Audio-Bereichsdiagramm, das die asymmetrischen Endpunkte eines 16-Bit-Samples zeigt",
+  "searchKeywords": [
+    "Delphin",
+    "dsp",
+    "Audio",
+    "Genauigkeit"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "DSP: `Off-by-one`-Klemmfehler behoben",
+    "implementation": "Implementierung und Überprüfung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die negativen und positiven Grenzen unterscheiden sich"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vorzeichenbehaftete 16-Bit-Audio-Samples reichen von −32768 bis 32767. Der DSP-Beschleuniger von Dolphin begrenzte zuvor ein berechnetes Sample auf −32767 am negativen Ende. Dadurch wurde ein gültiger Wert ausgeschlossen. Die am 14. August zusammengeführte Korrektur nutzt den gesamten Vorzeichenbereich. Dies ist eine kleine arithmetische Änderung innerhalb der emulierten Audio-Hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Verwenden Sie den vorhandenen Sättigungshelfer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Implementierung ersetzt eine manuell geschriebene Bereichsprüfung durch SaturatingCast<s16>. Sättigung bedeutet, ein Ergebnis auf das Minimum oder Maximum des Zieltyps zu beschränken, wenn die Berechnung diesen Bereich überschreitet. Ein gemeinsam genutzter Helfer drückt den beabsichtigten Vorgang direkt aus. Außerdem wird vermieden, dass ein manuell geschriebener Grenzwert wiederholt wird, der bei einem asymmetrischen vorzeichenbehafteten Bereich leicht falsch sein kann."
+    },
+    {
+      "type": "heading",
+      "text": "Frühere Samples wirken sich auf die spätere Decodierung aus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Beschleuniger behält frühere Abtastwerte für spätere Berechnungen bei. Eine falsche Grenze kann sich daher auf die vom Decoder wiederverwendeten Daten auswirken. Dadurch ist das exakte ganzzahlige Verhalten auch dann relevant, wenn die Differenz nur eine Stichprobeneinheit beträgt. Der Patch legt die numerische Korrektur fest; es zeigt nicht in jedem Spiel oder auf jedem Soundsystem eine hörbare Verbesserung."
+    },
+    {
+      "type": "heading",
+      "text": "Testen Sie sowohl die Grenzwerte als auch die Normalwerte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine gezielte Prüfung sollte Werte unter −32768 abdecken, sowohl gültige Endpunkte als auch normale Werte und Ergebnisse über 32767. Entwickler können dann dekodierte Beispielsequenzen in relevanten Tests vergleichen. Würde man nur prüfen, ob ein Spiel Sound erzeugt, würden viele Rechenfehler übersehen. Dieses Beispiel zeigt, dass die Reproduktion des Hardwareverhaltens von genauen Grenzwerten abhängt und nicht nur von einer überzeugenden Ausgabe."
+    }
+  ]
+}

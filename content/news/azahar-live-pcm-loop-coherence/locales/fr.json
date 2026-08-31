@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-live-pcm-loop-coherence",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar actualise l'audio en boucle de PCM lorsque les jeux réécrivent le tampon",
+  "summary": "La correction audio lit les échantillons PCM modifiés et compte les échantillons d'entrée réellement consommés. Le contributeur rapporte une réduction des crépitements dans Inazuma Eleven 3.",
+  "heroAlt": "Diagramme de tampon audio circulaire original avec un curseur de lecture avançant et une région inscriptible séparée",
+  "searchKeywords": [
+    "azahar",
+    "PCM",
+    "audio",
+    "synchronisation"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "audio_core : correction de la lecture en boucle en direct PCM",
+    "implementation": "Mise en œuvre et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les jeux peuvent réécrire un tampon audio en cours de lecture"
+    },
+    {
+      "type": "paragraph",
+      "text": "Certains jeux 3DS modifient un tampon PCM16 en boucle pendant que la lecture audio l'utilise. L'implémentation audio HLE du Azahar a conservé une copie décodée pendant que le jeu écrivait de nouveaux échantillons dans la mémoire d'origine. La relecture de l'ancienne copie pourrait produire un son incorrect. La correction du 25 août oblige la lecture à lire les données modifiées."
+    },
+    {
+      "type": "heading",
+      "text": "Actualiser les échantillons qui n'ont pas encore été lus"
+    },
+    {
+      "type": "paragraph",
+      "text": "L’implémentation enregistre l’adresse, la longueur, la disposition du canal, le format et l’état de la boucle du tampon actif. Pour les tampons PCM en boucle concernés, il actualise la partie non consommée de la mémoire émulée avant de générer davantage d'audio. Les autres formats et tampons sans boucle suivent leur propre comportement. La correction ne nécessite pas de supprimer chaque tampon audio décodé sur chaque image."
+    },
+    {
+      "type": "heading",
+      "text": "Compter les échantillons d'entrée réellement consommés"
+    },
+    {
+      "type": "paragraph",
+      "text": "Auparavant, la position de la source était estimée à partir de la progression de la sortie multipliée par un facteur de vitesse de lecture. La conversion de cette estimation en un nombre entier pourrait accumuler des erreurs. Le nouveau code vérifie la taille du tampon avant et après l'interpolation, puis avance la position de lecture source exactement du nombre d'échantillons d'entrée consommés. L'interpolateur suit déjà sa propre phase fractionnaire et son historique."
+    },
+    {
+      "type": "heading",
+      "text": "Séparer les résultats signalés des autres problèmes audio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le contributeur rapporte que les cinématiques et les voix des personnages de Inazuma Eleven 3 ont cessé de crépiter avec l'audio de HLE, et rapporte également des contrôles de régression dans d'autres jeux. Il s'agit de résultats de tests en amont et non de tests effectués par ce Hub. La latence Bluetooth, le routage audio Android et la vitesse d'émulation insuffisante restent des causes possibles distinctes de problèmes de son."
+    }
+  ]
+}

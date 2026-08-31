@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin przywraca brakujący ujemny punkt końcowy w nasyceniu dźwięku DSP",
+  "summary": "Jednoliniowa korekta DSP odróżnia -32768 od -32767. W dekoderze, który ponownie wykorzystuje poprzednie próbki, ustalenie właściwej granicy jest częścią odtwarzania sprzętu.",
+  "heroAlt": "Oryginalny diagram zakresu sygnału audio ze znakiem przedstawiający asymetryczne punkty końcowe 16-bitowej próbki",
+  "searchKeywords": [
+    "delfin",
+    "dsp",
+    "dźwięk",
+    "dokładność"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "DSP: Napraw błąd mocowania `Off-by-one`",
+    "implementation": "Wdrożenie i przegląd"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Granice ujemne i dodatnie różnią się"
+    },
+    {
+      "type": "paragraph",
+      "text": "Podpisane 16-bitowe próbki audio mieszczą się w zakresie od -32768 do 32767. Akcelerator DSP w Dolphin wcześniej ograniczał obliczoną próbkę do -32767 na końcu ujemnym. To wykluczyło jedną prawidłową wartość. Korekta, scalona 14 sierpnia, wykorzystuje pełny zakres podpisu. Jest to niewielka zmiana arytmetyczna w emulowanym sprzęcie audio."
+    },
+    {
+      "type": "heading",
+      "text": "Użyj istniejącego pomocnika nasycenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementacja zastępuje ręczną kontrolę zakresu funkcją SaturatingCast<s16>. Nasycenie oznacza ograniczenie wyniku do minimum lub maksimum dla typu docelowego, gdy obliczenie przekracza ten zakres. Wspólna funkcja pomocnicza bezpośrednio wyraża zamierzoną operację. Pozwala także uniknąć powtarzania ręcznie zapisanego limitu, który łatwo jest pomylić w przypadku asymetrycznego zakresu ze znakiem."
+    },
+    {
+      "type": "heading",
+      "text": "Poprzednie próbki wpływają na późniejsze dekodowanie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Akcelerator zachowuje poprzednie wartości próbek do późniejszych obliczeń. Nieprawidłowa granica może zatem mieć wpływ na dane ponownie wykorzystywane przez dekoder. To sprawia, że dokładne zachowanie liczby całkowitej jest istotne, nawet jeśli różnica wynosi tylko jedną jednostkę próbki. Poprawka wprowadza korektę numeryczną; nie wykazuje słyszalnej poprawy w każdej grze lub w każdym systemie dźwiękowym."
+    },
+    {
+      "type": "heading",
+      "text": "Sprawdź granice i zwykłe wartości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Skoncentrowana kontrola powinna obejmować wartości poniżej -32768, zarówno prawidłowe punkty końcowe, zwykłe wartości, jak i wyniki powyżej 32767. Twórcy mogą następnie porównać zdekodowane sekwencje próbek w odpowiednich testach. Sprawdzanie jedynie, czy gra generuje dźwięk, spowodowałoby pominięcie wielu błędów arytmetycznych. Ten przykład pokazuje, jak odtworzenie zachowania sprzętu zależy od dokładnych wartości granicznych, a nie tylko od przekonujących wyników."
+    }
+  ]
+}

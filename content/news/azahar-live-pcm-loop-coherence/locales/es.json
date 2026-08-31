@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-live-pcm-loop-coherence",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar actualiza el audio PCM en bucle cuando los juegos reescriben el búfer",
+  "summary": "La corrección de audio lee las muestras PCM modificadas y cuenta las muestras de entrada realmente consumidas. El colaborador informa que se redujeron los crujidos en Inazuma Eleven 3.",
+  "heroAlt": "Diagrama de búfer de audio circular original con un cursor de lectura que avanza y una región de escritura separada",
+  "searchKeywords": [
+    "azahar",
+    "pcm",
+    "sonido",
+    "sincronización"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "audio_core: Se corrigió la reproducción en bucle en vivo de PCM",
+    "implementation": "Implementación y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Los juegos pueden reescribir un buffer de audio en reproducción"
+    },
+    {
+      "type": "paragraph",
+      "text": "Algunos juegos 3DS modifican un búfer PCM16 en bucle mientras lo utiliza la reproducción de audio. La implementación de audio HLE de Azahar retuvo una copia decodificada mientras el juego escribía nuevas muestras en la memoria original. Reproducir la copia anterior podría producir un audio incorrecto. La corrección del 25 de agosto hace que la reproducción lea los datos modificados."
+    },
+    {
+      "type": "heading",
+      "text": "Actualizar muestras que aún no se han reproducido"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación registra la dirección, la longitud, el diseño del canal, el formato y el estado del bucle del búfer activo. Para los buffers PCM en bucle afectados, actualiza la parte no consumida de la memoria emulada antes de generar más audio. Otros formatos y buffers sin bucle siguen su propio comportamiento. La corrección no requiere descartar cada búfer de audio decodificado en cada cuadro."
+    },
+    {
+      "type": "heading",
+      "text": "Cuente las muestras de entrada realmente consumidas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Anteriormente, la posición de la fuente se estimaba a partir del progreso de la salida multiplicado por un factor de velocidad de reproducción. Convertir esa estimación a un número entero podría acumular errores. El nuevo código verifica el tamaño del búfer antes y después de la interpolación, luego mueve la posición de reproducción de la fuente hacia adelante exactamente la cantidad de muestras de entrada consumidas. El interpolador ya rastrea su propia fase e historial fraccionarios."
+    },
+    {
+      "type": "heading",
+      "text": "Separe los resultados informados de otros problemas de audio"
+    },
+    {
+      "type": "paragraph",
+      "text": "El colaborador informa que las escenas y las voces de los personajes en Inazuma Eleven 3 dejaron de chisporrotear con el audio de HLE, y también informa comprobaciones de regresión en otros juegos. Estos son resultados de pruebas ascendentes, no pruebas realizadas por este Hub. La latencia de Bluetooth, el enrutamiento de audio Android y la velocidad de emulación insuficiente siguen siendo causas posibles separadas de problemas de sonido."
+    }
+  ]
+}

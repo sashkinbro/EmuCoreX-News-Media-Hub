@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-metal-depth-invariance",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 corrects depth precision on Apple GPUs with Metal",
+  "summary": "Different depth calculations can make surfaces disappear. A targeted change to the Metal renderer makes the relevant comparisons more consistent on Apple GPUs.",
+  "heroAlt": "Original diagram of two depth paths converging on one shader-controlled comparison",
+  "searchKeywords": [
+    "pcsx2",
+    "metal",
+    "depth",
+    "precision"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "GS:MTL: Add workaround for Apple GPU hardware bug",
+    "implementation": "Implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "When equal depth values disagree"
+    },
+    {
+      "type": "paragraph",
+      "text": "A renderer uses depth values to decide which surface is visible. On Apple GPUs, PCSX2 developers found a difference between depth calculated by fixed-function hardware and depth supplied to a shader. A comparison that should accept an equal value could reject it. In a game, that small numerical difference can make graphics disappear."
+    },
+    {
+      "type": "heading",
+      "text": "Use a consistent depth calculation"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Metal renderer change was merged on August 30. It identifies affected Apple GPUs with a capability flag. For the relevant depth comparisons and depth writes, it forces depth calculation through the pixel shader. The vertex shader adds a small offset, and the fragment shader subtracts it. The change addresses a specific precision boundary."
+    },
+    {
+      "type": "heading",
+      "text": "Replay the same graphics commands"
+    },
+    {
+      "type": "paragraph",
+      "text": "The author provides a separate reproduction of the hardware problem and suggests God of War II and SSX 3 graphics dumps for testing. These dumps let developers replay the same graphics commands. They can compare missing surfaces and effects, then check whether the correction causes other rendering differences. The proposal does not establish results for every Apple device."
+    },
+    {
+      "type": "heading",
+      "text": "Keep the platform distinction clear"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation belongs to PCSX2’s Metal renderer. Android Vulkan renderers use different code, and another emulator would need its own investigation. The change demonstrates why testing on actual hardware matters: two calculations can represent the same mathematical operation yet differ at a precision boundary. A reproducible scene helps developers investigate that difference without changing depth behavior for every GPU."
+    }
+  ]
+}

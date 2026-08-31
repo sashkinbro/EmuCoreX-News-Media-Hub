@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin restaura o ponto final negativo ausente na saturação de áudio DSP",
+  "summary": "Uma correção DSP de uma linha distingue −32768 de −32767. Em um decodificador que reutiliza amostras anteriores, acertar o limite faz parte da reprodução do hardware.",
+  "heroAlt": "Diagrama original de faixa de áudio assinado mostrando os pontos finais assimétricos de uma amostra de 16 bits",
+  "searchKeywords": [
+    "golfinho",
+    "dsp",
+    "áudio",
+    "precisão"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "DSP: Corrigir erro de fixação `Off-by-one`",
+    "implementation": "Implementação e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Os limites negativos e positivos diferem"
+    },
+    {
+      "type": "paragraph",
+      "text": "As amostras de áudio assinadas de 16 bits variam de -32768 a 32767. O acelerador DSP do Dolphin limitava anteriormente uma amostra calculada a -32767 na extremidade negativa. Isso excluiu um valor válido. A correção, mesclada em 14 de agosto, utiliza todo o intervalo assinado. Esta é uma pequena mudança aritmética dentro do hardware de áudio emulado."
+    },
+    {
+      "type": "heading",
+      "text": "Use o auxiliar de saturação existente"
+    },
+    {
+      "type": "paragraph",
+      "text": "A implementação substitui uma verificação manual de intervalo por SaturatingCast<s16>. Saturação significa limitar um resultado ao mínimo ou máximo do tipo de destino quando o cálculo excede esse intervalo. Uma função auxiliar compartilhada expressa diretamente a operação pretendida. Também evita a repetição de um limite escrito manualmente que é fácil de errar para um intervalo assinado assimétrico."
+    },
+    {
+      "type": "heading",
+      "text": "Amostras anteriores afetam a decodificação posterior"
+    },
+    {
+      "type": "paragraph",
+      "text": "O acelerador mantém valores de amostra anteriores para cálculos posteriores. Um limite incorreto pode, portanto, afetar os dados reutilizados pelo decodificador. Isso torna o comportamento inteiro exato relevante mesmo quando a diferença é de apenas uma unidade amostral. O patch estabelece a correção numérica; não demonstra uma melhoria audível em todos os jogos ou em todos os sistemas de som."
+    },
+    {
+      "type": "heading",
+      "text": "Teste os limites, bem como os valores ordinários"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma verificação focada deve cobrir valores abaixo de -32768, ambos os pontos finais válidos, valores comuns e resultados acima de 32767. Os desenvolvedores podem então comparar sequências de amostras decodificadas em testes relevantes. Verificar apenas se um jogo produz som deixaria passar muitos erros aritméticos. Este exemplo mostra como a reprodução do comportamento do hardware depende de valores limite exatos, e não apenas de resultados convincentes."
+    }
+  ]
+}

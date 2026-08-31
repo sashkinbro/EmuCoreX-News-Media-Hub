@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-avc-decoder-memory-alignment",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K opravuje AVC velikost paměti snímků a kontroly neplatných argumentů",
+  "summary": "Dekodér nyní zaokrouhluje požadavky na rámcovou paměť na 256 jednotek KiB a před přístupem do stavu dekodéru kontroluje neplatná volání.",
+  "heroAlt": "Původní diagram alokace paměti zaokrouhlující požadovanou vyrovnávací paměť videa na hranici 256 KiB",
+  "searchKeywords": [
+    "vita3k",
+    "dekódování videa",
+    "paměť",
+    "api"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "modules/SceVideodec: Zarovnat výsledek sceAvcdecQueryDecoderMemSize frameMemSize",
+    "implementation": "Realizace a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Aplikace se ptá, kolik paměti potřebuje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aplikace Vita se může dotazovat rozhraní AVC před přidělením paměti snímků pro dekódování videa. Očekávaný výsledek zahrnuje jak požadovaný prostor, tak alokační pravidla platformy. Změna Vita3K z 9. srpna upravuje tento dotaz a kontroluje neplatné argumenty dekodéru. Než dekodér začne produkovat snímky videa, záleží na přesném chování dotazu."
+    },
+    {
+      "type": "heading",
+      "text": "Zaokrouhlete nahoru na hranici 256 KiB"
+    },
+    {
+      "type": "paragraph",
+      "text": "Výpočet používá rozměry obrazu a počet referenčních snímků. Pro tento výpočet se počet nula považuje za jedničku. Výsledný frameMemSize se zaokrouhlí nahoru na násobek 0x40000 nebo 256 KiB. To poskytuje dostatek úložiště v očekávaných alokačních jednotkách. Nezvyšuje rozlišení videa."
+    },
+    {
+      "type": "heading",
+      "text": "Odmítněte neplatná volání před přístupem do stavu dekodéru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vytvoření dekodéru a paměťové dotazy kontrolují typy kodeků, nulové ukazatele, rozměry obrázků a limity referenčních snímků. Několik operací také odmítne nulový dekodér nebo nulový ovladač před vyhledáním stavu dekodéru. Vrácení očekávané chyby umožní emulované aplikaci zvládnout selhání. Je to bezpečnější než dosažení aserce nebo přístup k neplatné paměti hostitele."
+    },
+    {
+      "type": "heading",
+      "text": "Změřte chování, které patch skutečně změní"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch neuvádí seznam nově hratelných her ani neposkytuje měřítko výkonu. Užitečné kontroly by porovnaly vrácené velikosti a chyby a poté provedly normální dekódování, vyprázdnění a odstranění. Tyto testy řeší přímo změněné rozhraní. Následná aplikace také musí začlenit kód, než tam uživatelé mohou očekávat stejné chování."
+    }
+  ]
+}

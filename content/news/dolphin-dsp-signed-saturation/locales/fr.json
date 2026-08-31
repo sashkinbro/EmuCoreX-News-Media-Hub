@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin restaure le point final négatif manquant dans la saturation audio DSP",
+  "summary": "Une correction DSP sur une ligne distingue −32768 de −32767. Dans un décodeur qui réutilise les échantillons précédents, obtenir la bonne limite fait partie de la reproduction du matériel.",
+  "heroAlt": "Diagramme de plage audio signé original montrant les extrémités asymétriques d'un échantillon de 16 bits",
+  "searchKeywords": [
+    "dauphin",
+    "dsp",
+    "audio",
+    "précision"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "DSP : Correction de l'erreur de serrage `Off-by-one`",
+    "implementation": "Mise en œuvre et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les limites négatives et positives diffèrent"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les échantillons audio signés de 16 bits vont de -32 768 à 32 767. L'accélérateur DSP du Dolphin limitait auparavant un échantillon calculé à -32 767 à l'extrémité négative. Cela excluait une valeur valide. La correction, fusionnée le 14 août, utilise toute la plage signée. Il s’agit d’un petit changement arithmétique à l’intérieur du matériel audio émulé."
+    },
+    {
+      "type": "heading",
+      "text": "Utiliser l'assistant de saturation existant"
+    },
+    {
+      "type": "paragraph",
+      "text": "La mise en œuvre remplace une vérification manuelle des bornes par SaturatingCast<s16>. La saturation signifie limiter un résultat au minimum ou au maximum du type de destination lorsque le calcul dépasse cette plage. Une assistante partagée exprime directement l’opération prévue. Cela évite également de répéter une limite écrite manuellement qui est facile à se tromper pour une plage signée asymétrique."
+    },
+    {
+      "type": "heading",
+      "text": "Les échantillons précédents affectent le décodage ultérieur"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'accélérateur conserve les valeurs d'échantillon précédentes pour des calculs ultérieurs. Une frontière incorrecte peut donc affecter les données réutilisées par le décodeur. Cela rend le comportement exact de l’entier pertinent même lorsque la différence n’est que d’une unité d’échantillonnage. Le patch établit la correction numérique ; il ne démontre pas d'amélioration audible dans chaque jeu ou sur chaque système audio."
+    },
+    {
+      "type": "heading",
+      "text": "Tester les limites ainsi que les valeurs ordinaires"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une vérification ciblée doit couvrir les valeurs inférieures à −32 768, à la fois les paramètres valides, les valeurs ordinaires et les résultats supérieurs à 32 767. Les développeurs peuvent ensuite comparer les séquences d'échantillons décodées dans les tests pertinents. Vérifier uniquement si un jeu produit du son manquerait de nombreuses erreurs arithmétiques. Cet exemple montre comment la reproduction du comportement du matériel dépend de valeurs limites exactes, et pas seulement d'une sortie convaincante."
+    }
+  ]
+}

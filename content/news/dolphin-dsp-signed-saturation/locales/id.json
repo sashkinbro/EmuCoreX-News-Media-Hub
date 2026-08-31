@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin memulihkan titik akhir negatif yang hilang dalam saturasi audio DSP",
+  "summary": "Koreksi satu baris DSP membedakan −32768 dari −32767. Dalam decoder yang menggunakan kembali sampel sebelumnya, mendapatkan batas yang tepat adalah bagian dari mereproduksi perangkat keras.",
+  "heroAlt": "Diagram rentang audio bertanda asli yang menunjukkan titik akhir asimetris dari sampel 16-bit",
+  "searchKeywords": [
+    "lumba-lumba",
+    "dsp",
+    "audio",
+    "akurasi"
+  ],
+  "categoryLabels": {
+    "development": "Pembangunan"
+  },
+  "sourceLabels": {
+    "change": "DSP: Memperbaiki kesalahan penjepitan `Off-by-one`",
+    "implementation": "Implementasi dan peninjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Batas negatif dan positifnya berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sampel audio 16-bit yang ditandatangani berkisar dari −32768 hingga 32767. Akselerator DSP Dolphin sebelumnya membatasi sampel terhitung hingga −32767 di ujung negatif. Itu mengecualikan satu nilai yang valid. Koreksinya, yang digabungkan pada 14 Agustus, menggunakan rentang bertanda penuh. Ini adalah perubahan aritmatika kecil di dalam perangkat keras audio yang ditiru."
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan penolong saturasi yang ada"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementasinya menggantikan pemeriksaan rentang manual dengan SaturatingCast<s16>. Saturasi berarti membatasi hasil ke minimum atau maksimum jenis tujuan ketika penghitungan melebihi rentang tersebut. Fungsi pembantu bersama mengungkapkan operasi yang dimaksudkan secara langsung. Hal ini juga menghindari pengulangan batas yang ditulis secara manual yang mudah salah untuk rentang bertanda asimetris."
+    },
+    {
+      "type": "heading",
+      "text": "Sampel sebelumnya mempengaruhi decoding selanjutnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Akselerator menyimpan nilai sampel sebelumnya untuk penghitungan selanjutnya. Oleh karena itu, batas yang salah dapat memengaruhi data yang digunakan kembali oleh decoder. Hal ini membuat perilaku bilangan bulat yang tepat menjadi relevan meskipun perbedaannya hanya satu unit sampel. Tambalan tersebut menetapkan koreksi numerik; itu tidak menunjukkan peningkatan yang terlihat di setiap game atau di setiap sistem suara."
+    },
+    {
+      "type": "heading",
+      "text": "Uji batas serta nilai biasa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pemeriksaan terfokus harus mencakup nilai di bawah −32768, baik titik akhir yang valid, nilai biasa, maupun hasil di atas 32767. Pengembang kemudian dapat membandingkan urutan sampel yang didekodekan dalam pengujian yang relevan. Hanya memeriksa apakah permainan menghasilkan suara akan menghilangkan banyak kesalahan aritmatika. Contoh ini menunjukkan bagaimana mereproduksi perilaku perangkat keras bergantung pada nilai batas yang tepat, bukan hanya keluaran yang meyakinkan."
+    }
+  ]
+}

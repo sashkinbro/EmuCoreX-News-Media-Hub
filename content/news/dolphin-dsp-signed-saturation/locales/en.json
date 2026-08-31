@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-dsp-signed-saturation",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin restores the full signed 16-bit range in DSP audio",
+  "summary": "The audio correction restores −32768 as a valid minimum sample value. Exact saturation limits matter when a decoder reuses previous samples.",
+  "heroAlt": "Original signed-audio range diagram showing the asymmetric endpoints of a 16-bit sample",
+  "searchKeywords": [
+    "dolphin",
+    "dsp",
+    "audio",
+    "accuracy"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "DSP: Fix `Off-by-one` clamping error",
+    "implementation": "Implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The negative and positive limits differ"
+    },
+    {
+      "type": "paragraph",
+      "text": "Signed 16-bit audio samples range from −32768 to 32767. Dolphin’s DSP accelerator previously limited a calculated sample to −32767 at the negative end. That excluded one valid value. The correction, merged on August 14, uses the full signed range. This is a small arithmetic change inside emulated audio hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Use the existing saturation function"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation replaces a manual range check with SaturatingCast<s16>. Saturation means limiting a result to the destination type’s minimum or maximum when the calculation exceeds that range. A shared helper function expresses the intended operation directly. It also avoids repeating a manually written limit that is easy to get wrong for an asymmetric signed range."
+    },
+    {
+      "type": "heading",
+      "text": "Previous samples affect later decoding"
+    },
+    {
+      "type": "paragraph",
+      "text": "The accelerator keeps previous sample values for later calculations. An incorrect boundary can therefore affect data reused by the decoder. That makes the exact integer behavior relevant even when the difference is only one sample unit. The patch establishes the numerical correction; it does not demonstrate an audible improvement in every game or on every sound system."
+    },
+    {
+      "type": "heading",
+      "text": "Test the limits as well as ordinary values"
+    },
+    {
+      "type": "paragraph",
+      "text": "A focused check should cover values below −32768, both valid endpoints, ordinary values and results above 32767. Developers can then compare decoded sample sequences in relevant tests. Checking only whether a game produces sound would miss many arithmetic errors. This example shows how reproducing hardware behavior depends on exact boundary values, not just convincing output."
+    }
+  ]
+}

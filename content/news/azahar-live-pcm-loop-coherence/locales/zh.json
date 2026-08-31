@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-live-pcm-loop-coherence",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "当游戏重写缓冲区时，Azahar 刷新循环 PCM 音频",
+  "summary": "音频校正读取改变的PCM样本并计算实际消耗的输入样本。贡献者报告 Inazuma Eleven 3 中的爆裂声减少。",
+  "heroAlt": "原始圆形音频缓冲区图，具有前进的读取光标和单独的可写区域",
+  "searchKeywords": [
+    "阿扎哈尔",
+    "PCM",
+    "声音的",
+    "同步"
+  ],
+  "categoryLabels": {
+    "development": "发展"
+  },
+  "sourceLabels": {
+    "change": "audio_core：修复实时循环 PCM 播放",
+    "implementation": "实施和审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "游戏可以重写正在播放的音频缓冲区"
+    },
+    {
+      "type": "paragraph",
+      "text": "某些 3DS 游戏在音频播放使用循环 PCM16 缓冲区时会修改该缓冲区。 Azahar 的 HLE 音频实现保留了解码的副本，同时游戏将新样本写入原始内存。重播旧副本可能会产生不正确的音频。 8月25日的更正使回放读取更改的数据。"
+    },
+    {
+      "type": "heading",
+      "text": "刷新尚未播放的样本"
+    },
+    {
+      "type": "paragraph",
+      "text": "该实现记录活动缓冲区的地址、长度、通道布局、格式和循环状态。对于受影响的循环 PCM 缓冲区，它会在生成更多音频之前刷新模拟内存中未使用的部分。其他格式和非循环缓冲区遵循其自己的行为。校正不需要丢弃每帧上的每个解码音频缓冲区。"
+    },
+    {
+      "type": "heading",
+      "text": "统计实际消耗的输入样本"
+    },
+    {
+      "type": "paragraph",
+      "text": "此前，代码用输出进度乘以播放速率系数来估算输入源的位置。把这个估算值转换为整数时可能丢失精度，误差也可能随着播放累积。新代码比较插值前后的缓冲区大小，得出实际消耗的输入采样数，然后让源播放位置准确向前移动相同数量。插值器本来就维护着自己的小数相位和历史数据，因此不必再用另一个近似值重复估算同一段播放进度。"
+    },
+    {
+      "type": "heading",
+      "text": "将报告的结果与其他音频问题分开"
+    },
+    {
+      "type": "paragraph",
+      "text": "贡献者报告，在使用 HLE 音频时，Inazuma Eleven 3 的过场动画和角色语音不再出现爆音，并且还对其他游戏进行了回归检查。这是 Azahar 开发者报告的测试结果，并非本 Hub 独立完成的实测。蓝牙延迟、Android 音频路由以及设备无法维持足够的模拟速度，仍可能分别造成其他声音问题，不能用这一处修改概括。"
+    }
+  ]
+}

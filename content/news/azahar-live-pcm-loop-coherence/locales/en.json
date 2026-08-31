@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-live-pcm-loop-coherence",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar refreshes looping PCM audio when games rewrite the buffer",
+  "summary": "The correction reads changed audio samples and tracks playback progress accurately. The contributor reports less crackling in Inazuma Eleven 3.",
+  "heroAlt": "Original circular audio-buffer diagram with an advancing read cursor and a separate writable region",
+  "searchKeywords": [
+    "azahar",
+    "pcm",
+    "audio",
+    "synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "audio_core: Fix live looping PCM playback",
+    "implementation": "Implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Games can rewrite a playing audio buffer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Some 3DS games modify a looping PCM16 buffer while audio playback is using it. Azahar’s HLE audio implementation retained a decoded copy while the game wrote new samples into the original memory. Replaying the old copy could produce incorrect audio. The August 25 correction makes playback read the changed data."
+    },
+    {
+      "type": "heading",
+      "text": "Refresh samples that have not played yet"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation records the active buffer’s address, length, channel layout, format and loop state. For the affected looping PCM buffers, it refreshes the unconsumed part from emulated memory before generating more audio. Other formats and non-looping buffers follow their own behavior. The correction does not require discarding every decoded audio buffer on every frame."
+    },
+    {
+      "type": "heading",
+      "text": "Count the input samples actually consumed"
+    },
+    {
+      "type": "paragraph",
+      "text": "Previously, the source position was estimated from output progress multiplied by a playback-rate factor. Converting that estimate to an integer could accumulate error. The new code checks buffer size before and after interpolation, then moves the source playback position forward by exactly the number of input samples consumed. The interpolator already tracks its own fractional phase and history."
+    },
+    {
+      "type": "heading",
+      "text": "Separate reported results from other audio problems"
+    },
+    {
+      "type": "paragraph",
+      "text": "The contributor reports that cutscenes and character voices in Inazuma Eleven 3 stopped crackling with HLE audio, and also reports regression checks in other games. These are upstream test results, not tests performed by this Hub. Bluetooth latency, Android audio routing and insufficient emulation speed remain separate possible causes of sound problems."
+    }
+  ]
+}

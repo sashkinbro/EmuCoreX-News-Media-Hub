@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-avc-decoder-memory-alignment",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corregge il dimensionamento della memoria frame AVC e i controlli degli argomenti non validi",
+  "summary": "Il decodificatore ora arrotonda i requisiti di memoria del frame a 256 unità KiB e controlla le chiamate non valide prima di accedere allo stato del decodificatore.",
+  "heroAlt": "Diagramma originale di allocazione della memoria che arrotonda un buffer video richiesto al limite di 256 KiB",
+  "searchKeywords": [
+    "vita3k",
+    "decodifica video",
+    "memoria",
+    "API"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "moduli/SceVideodec: Allinea risultato sceAvcdecQueryDecoderMemSize frameMemSize",
+    "implementation": "Attuazione e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un'applicazione chiede quanta memoria ha bisogno"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un'applicazione Vita può interrogare l'interfaccia AVC prima di allocare la memoria del frame per la decodifica video. Il risultato atteso include sia lo spazio richiesto che le regole di allocazione della piattaforma. La modifica del 9 agosto di Vita3K regola tale query e controlla gli argomenti del decodificatore non validi. Il comportamento accurato delle query è importante prima che il decodificatore inizi a produrre fotogrammi video."
+    },
+    {
+      "type": "heading",
+      "text": "Arrotondare per eccesso al limite di 256 KiB"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il calcolo utilizza le dimensioni dell'immagine e il conteggio del fotogramma di riferimento. Per questo calcolo, un conteggio pari a zero viene considerato come uno. Il risultato frameMemSize viene arrotondato per eccesso a un multiplo di 0x40000, ovvero 256 KiB. Ciò fornisce spazio di archiviazione sufficiente nelle unità di allocazione previste. Non aumenta la risoluzione del video."
+    },
+    {
+      "type": "heading",
+      "text": "Rifiuta le chiamate non valide prima di accedere allo stato del decoder"
+    },
+    {
+      "type": "paragraph",
+      "text": "La creazione del decodificatore e le interrogazioni sulla memoria controllano i tipi di codec, i puntatori nulli, le dimensioni dell'immagine e i limiti del quadro di riferimento. Diverse operazioni rifiutano anche un decodificatore nullo o un handle zero prima di cercare lo stato del decodificatore. La restituzione dell'errore previsto consente all'applicazione emulata di gestire l'errore. È più sicuro che raggiungere un'asserzione o accedere alla memoria dell'host non valida."
+    },
+    {
+      "type": "heading",
+      "text": "Misurare il comportamento effettivamente modificato dalla patch"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch non elenca i nuovi giochi giocabili né fornisce un benchmark delle prestazioni. Controlli utili confronterebbero le dimensioni e gli errori restituiti, quindi eserciterebbero la normale decodifica, svuotamento ed eliminazione. Questi test riguardano direttamente l'interfaccia modificata. Anche un'applicazione downstream deve incorporare il codice prima che gli utenti possano aspettarsi lo stesso comportamento."
+    }
+  ]
+}
