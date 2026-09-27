@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu zachowuje ostre powierzchnie Xbox 2D podczas skalowania w Vulkan",
+  "summary": "Kiedy procesor zapisuje powierzchnię Xbox w pamięci VRAM, xemu przesyła ją i może skalować w celu uzyskania wyższej rozdzielczości wewnętrznej. Ścieżka Vulkana wykorzystuje teraz blit najbliższego sąsiada zarówno do zwiększania rozmiaru wysyłania, jak i zmniejszania pobierania, dopasowując replikację pikseli zamiast dodawania liniowego rozmycia.",
+  "heroAlt": "Widok z tyłu oryginalnej konsoli Xbox, pokazujący jej złącza.",
+  "searchKeywords": [
+    "xemu",
+    "xemu zachowuje ostre powierzchnie Xbox 2D podczas skalowania w Vulkan",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "xemu — prośba o scalenie #2874",
+    "implementation": "Połączona implementacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zapisy procesora mogą ominąć wywołanie rysowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Moduł renderujący NV2A śledzi powierzchnie w pamięci wideo Xbox. Kiedy emulowany procesor zapisuje bezpośrednio do jednego, xemu wywołuje `pgraph_vk_upload_surface_data()` w celu zsynchronizowania tych bajtów z obrazem Vulkan, tak aby później renderowanie zobaczyło aktualizację. Powyżej 1× rozdzielczości wewnętrznej przesyłanie wykorzystuje `vkCmdBlitImage` w celu powiększenia powierzchni. Jest to ścieżka odmienna od rysowania normalnej sceny 3D, ponieważ piksele źródłowe zostały zapisane przez procesor."
+    },
+    {
+      "type": "heading",
+      "text": "Filtrowanie liniowe złagodziło grafikę o twardych krawędziach"
+    },
+    {
+      "type": "paragraph",
+      "text": "Blit przesyłania Vulkan użył `VK_FILTER_LINEAR` do kolorowych powierzchni. Filtrowanie liniowe łączy sąsiednie teksele podczas powiększania obrazu, co może złagodzić krawędzie pikseli w menu i innych warstwach 2D. Autor żądania ściągnięcia podał pulpit nawigacyjny Xbox jako oczywisty przykład i zauważył, że renderowanie czystego 3D nie korzysta z tej ścieżki. Moduł renderujący OpenGL już rozszerzył piksele powierzchniowe poprzez replikację, co dało projektowi przydatne porównanie behawioralne."
+    },
+    {
+      "type": "heading",
+      "text": "Użyj najbliższego próbkowania w obu kierunkach"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona zmiana przełącza blit upscale'owania przesyłania na `VK_FILTER_NEAREST` i dokonuje tego samego wyboru dla ścieżki downscale pobierania powierzchniowego. Filtrowanie najbliższe wybiera teksel źródłowy zamiast uśredniać jego sąsiadów, zachowując dyskretne wartości na przenoszonej powierzchni. Zastosowanie reguły w obu kierunkach zapewnia spójność semantyki kopiowania, gdy procesor i procesor graficzny wymieniają skalowaną powierzchnię kolorów."
+    },
+    {
+      "type": "heading",
+      "text": "Zmiana dotyczy semantyki transferu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta poprawka wpływa na synchronizację powierzchni CPU-GPU i GPU-CPU w rendererze Vulkan; nie zmienia to oryginalnej rozdzielczości gry ani ustawień filtrowania 3D. Oczekiwanym rezultatem jest ostrzejsza skalowana zawartość 2D w przypadku użycia tych blitów, z walidacją skupioną zarówno na kierunkach przenoszenia, jak i granicach powierzchni kolorów. W żądaniu ściągnięcia zauważono ograniczony zasięg odtwarzania poza pulpitem nawigacyjnym, więc dodatkowe menu i aplikacje renderowane przez procesor są przydatnymi kontrolami."
+    }
+  ]
+}

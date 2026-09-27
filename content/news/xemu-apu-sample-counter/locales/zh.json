@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu 将 MCPX 音频计数器与处理后的样本联系起来",
+  "summary": "Xbox 音频寄存器 NV_PAPU_XGSCNT 报告经过的虚拟时间，就好像它是样本计数一样。 xemu 现在从其模拟的帧划分器和每帧样本中获取值，解决了 Innocent Tears 中报告的语音不同步问题。",
+  "heroAlt": "原始 Xbox 控制台的底视图。",
+  "searchKeywords": [
+    "xemu",
+    "xemu 将 MCPX 音频计数器与处理后的样本联系起来",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "xemu — 合并请求 #2945",
+    "implementation": "合并实施"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "登记册必须报告预期的单位游戏"
+    },
+    {
+      "type": "paragraph",
+      "text": "MCPX 音频处理器公开 NV_PAPU_XGSCNT 作为语音处理期间使用的计数。 旧的 xemu 实现返回虚拟时钟纳秒除以 100，这是一个时间推导的估计，其与每个模拟帧处理的样本的关系尚未建立。 由于来宾读取此寄存器来跟踪 APU 进度，因此基于时钟的值可能会偏离设备的实际示例工作。"
+    },
+    {
+      "type": "heading",
+      "text": "直接使用音频帧计数器"
+    },
+    {
+      "type": "paragraph",
+      "text": "合并的单行校正从 `ep_frame_div * NUM_SAMPLES_PER_FRAME` 计算寄存器。 这两个值都来自 APU 自己的帧处理模型，因此返回的数字跟踪实际经过该模型的样本，而不是转换类似挂钟的虚拟时间。 这将报告的计数与模拟帧进度联系起来，即使主机播放调度和来宾执行不以相同的增量进行也是如此。"
+    },
+    {
+      "type": "heading",
+      "text": "为什么会听到不正确的计数"
+    },
+    {
+      "type": "paragraph",
+      "text": "音频语音使用计数来协调其播放进度。 如果来宾和模拟器对于已处理的样本数量存在分歧，则语音定时可能会发生漂移，并且部分音频可能会不同步。 拉取请求将 Innocent Tears 命名为观察到问题的标题； 其报告称，大部分音频不同步，无法完全播放。 相关音频报告已在讨论中链接，但并未全部声明经过此更改的测试。"
+    },
+    {
+      "type": "heading",
+      "text": "将修复视为时间修正"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求的作者表示，尽管这一更改引用了几份报告，但当时的测试仅限于“Innocent Tears”。 该代码建立了预期的计数器单元； 更广泛的验证应该比较跨帧边界和其他标题的寄存器读取、语音进度和音频时序。 狭窄的范围对于诊断很有用：如果现在计数遵循已处理的样本，但标题仍然漂移，则调查可以转移到音频管道的后续部分。"
+    }
+  ]
+}

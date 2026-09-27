@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA před načtením obrazových dat nainstaluje vlastní obslužné programy PNG pro uložení",
+  "summary": "Stavy uložení PNG mohou nést části `gbAs` a `gbAx` mGBA před daty IDAT obrázku. Zavaděč nyní registruje svůj vlastní obslužný program bloku před čtením záhlaví PNG, takže libpng rozpozná tyto bloky bez ohledu na jejich pozici.",
+  "heroAlt": "Zadní strana základní desky Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA před načtením obrazových dat nainstaluje vlastní obslužné programy PNG pro uložení",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "mGBA — požadavek na sloučení #3803",
+    "implementation": "Změna zavaděče sloučené serializace"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG povoluje doplňková data kolem obrazových dat"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA může uložit stav uložení do PNG vedle snímku obrazovky. Jeho části `gbAs` a `gbAx` specifické pro emulátor nesou informace o stavu, zatímco IDAT obsahuje komprimované obrazové pixely. Čtečky PNG zpracovávají bloky v pořadí souborů, takže aplikace musí nainstalovat svůj ovladač, než analyzátor dosáhne jednoho ze svých vlastních bloků."
+    },
+    {
+      "type": "heading",
+      "text": "Změna zavaděče způsobila selhání prvních bloků"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změna ve vývoji přesunula registraci vlastního bloku až po přečtení hlavičky PNG. To bylo příliš pozdě pro soubory, jejichž stavové bloky se objevily před IDAT: libpng narazil na neznámý blok, zatímco obsluha mGBA nebyla aktivní a soubor odmítla. Zpráva pochází z vlastního nástroje, který vygeneroval toto řazení; nebylo to známé rozložení vytvořené samotnou mGBA."
+    },
+    {
+      "type": "heading",
+      "text": "Před čtením záhlaví zaregistrujte handler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučená oprava nejprve alokuje stavovou vyrovnávací paměť a kontext svazku, poté nainstaluje obslužnou rutinu `gbAs` a `gbAx` před voláním `PNGReadHeader`. Uvolňuje také vyrovnávací paměť mapovaného stavu při selhání hlavičky a při odmítnutí příliš velkých obrázků. Tím se spojí dřívější registrační bod s vyčištěním pro nové cesty pro předčasný návrat."
+    },
+    {
+      "type": "heading",
+      "text": "Kompatibilita zahrnuje soubory z externích nástrojů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Díky podpoře těchto bloků před IDAT bude zavaděč tolerantní k platnému pořadí, které projekt normálně nezapsal. Vyhýbá se požadavku na uživatele, aby přepsali jinak použitelné stavy uložení pouze za účelem přesunutí metadat. Regresní kontroly by měly načíst soubory s vlastními bloky na obou stranách IDAT a ověřit, že jsou obnoveny pixely snímků obrazovky a stav serializovaného počítače."
+    }
+  ]
+}

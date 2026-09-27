@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 usuwa nieaktualne opóźnienie PPU podczas uruchamiania wątku",
+  "summary": "Korekta harmonogramu PPU resetuje opóźnienie uśpienia po oczekiwaniu i sprawdza bieżącą funkcję przed zastosowaniem heurystyki rozpoczęcia wątku.",
+  "heroAlt": "Montaż porównujący kilka modeli konsoli PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 usuwa nieaktualne opóźnienie PPU podczas uruchamiania wątku",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — prośba o scalenie #19580",
+    "implementation": "Łatka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Opóźnienie może przetrwać czas oczekiwania, który je spowodował"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 wykorzystuje heurystykę planowania hosta do przyspieszania emulowanych wątków PPU. Żądanie ściągnięcia nr 19580 dostosowuje logikę uśpienia i uruchomienia, tak aby zarejestrowane sprzętowe opóźnienie uśpienia zostało usunięte po ukończeniu przez procesor ścieżki uśpienia lub oczekiwania. Bez tego czyszczenia późniejsza decyzja dotycząca planowania może odziedziczyć stan synchronizacji z wcześniejszego oczekiwania, nawet jeśli wątek został przeniesiony."
+    },
+    {
+      "type": "heading",
+      "text": "Strzeż specjalnego przypadku rozpoczynającego wątek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka zawęża także heurystykę opóźnienia: unika stosowania specjalnego przypadku, gdy oceniany procesor nie jest bieżącym PPU i sprawdza bieżącą funkcję przed poleganiem na oczekiwanej wartości w rejestrze ogólnego przeznaczenia 11 dla `sys_ppu_thread_start`. Te kontrole uniemożliwiają heurystyce specyficznej dla funkcji działanie na niepowiązany stan wykonania."
+    },
+    {
+      "type": "heading",
+      "text": "Zachowaj zwykłe zachowanie związane z planowaniem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jest to ukierunkowana korekta w księgowaniu harmonogramu, a nie nowy model synchronizacji. Ścieżka początku wątku nadal korzysta z istniejącej heurystyki, jeśli jej warunki wstępne są zgodne; nowe osłony zapobiegają przedostawaniu się tej logiki do innego PPU lub niepowiązanej funkcji. Wyczyszczenie opóźnienia na granicy oczekiwania sprawia, że ​​zmiana stanu jest wyraźna i łatwiejsza do rozważenia podczas planowania."
+    },
+    {
+      "type": "heading",
+      "text": "Poprawki czasowe wymagają dowodów regresji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Czas trwania wątku może się różnić w zależności od obciążenia hosta, zachowania gry i wzorców synchronizacji. Łatka precyzuje zamierzone warunki, ale sama w sobie nie wprowadza uniwersalnej zmiany wydajności lub kompatybilności. Przydatne testy powinny obejmować uruchamianie wątku po uśpieniu, wywołania z nieaktualnych kontekstów PPU, niepowiązane funkcje z podobną zawartością rejestrów i normalne sekwencje oczekiwania/wznowienia."
+    }
+  ]
+}

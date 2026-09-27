@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA reescala las compensaciones de DMA almacenadas en caché cuando el audio GBA fuerza transferencias FIFO de 32 bits",
+  "summary": "Se puede programar un FIFO DMA con un ancho de 16 bits y luego convertirlo en transferencias de 32 bits mediante la ruta de audio GBA. mGBA ahora reescala el paso de origen almacenado en caché a más o menos cuatro bytes, preservando la dirección y evitando lecturas de muestra duplicadas o desalineadas.",
+  "heroAlt": "Primer plano del circuito de audio de Game Boy Advance en su placa base.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA reescala las compensaciones de DMA almacenadas en caché cuando el audio GBA fuerza transferencias FIFO de 32 bits",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitud de cambios #3850",
+    "implementation": "Corrección de audio fusionado DMA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El ancho DMA del juego se almacena en caché desde temprano"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA registra las compensaciones de origen y destino cuando el GBA escribe el registro de control DMA. Un juego puede configurar ese canal para transferencias de 16 bits, lo que le da al paso de la fuente almacenada en caché un paso de dos bytes. Posteriormente, el audio FIFO utiliza el mismo mecanismo DMA pero impone su propio ancho de transferencia, por lo que la configuración anterior debe conciliarse con el nuevo uso."
+    },
+    {
+      "type": "heading",
+      "text": "El audio FIFO cambia el ancho de transferencia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando mGBA programa FIFO DMA, fuerza el canal a un ancho de 32 bits y un destino fijo. Antes de esta corrección, borraba el desplazamiento de destino pero conservaba el desplazamiento de origen almacenado en caché de la configuración original de 16 bits. Luego, el motor avanzó dos bytes mientras consumía palabras de audio de cuatro bytes, duplicando y desalineando partes del flujo de muestra."
+    },
+    {
+      "type": "heading",
+      "text": "Cambie la escala del paso de origen y mantenga su signo."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solución fusionada normaliza un desplazamiento de origen positivo a `4` y un desplazamiento negativo a `-4` después de que el ancho se fuerza a 32 bits. Cero sigue siendo cero. Preservar el signo mantiene intacta la dirección de control de fuente mientras se alinean las lecturas posteriores con el ancho que ahora usa la transferencia FIFO. El destino sigue utilizando la dirección FIFO fija."
+    },
+    {
+      "type": "heading",
+      "text": "La regresión se aisló por bisección."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción documenta una bisección utilizando la serie Classic NES: The Legend of Zelda y un oráculo de salto duro repetible. Identificó la refactorización de compensación en caché anterior como el límite de regresión. Esto brinda a los desarrolladores un caso de reproducción concreto para verificar que las muestras FIFO ya no combinen bytes duplicados o desalineados en solicitudes DMA repetidas."
+    }
+  ]
+}

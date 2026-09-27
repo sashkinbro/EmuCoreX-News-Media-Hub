@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 parallelisiert die Vulkan-Boot-Shader-Kompilierung",
+  "summary": "RPCS3 kann Host-Threads für den ersten Vulkan-Pipe-Compiler verwenden und dann die Größe des Pools nach dem Laden des Shader-Cache ändern, um die konfigurierte Laufzeiteinstellung zu berücksichtigen.",
+  "heroAlt": "Foto eines PlayStation 3-Entwicklungskits.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 parallelisiert die Vulkan-Boot-Shader-Kompilierung",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — Änderungsantrag #19578",
+    "implementation": "Patchen und überprüfen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Kaltstart hat Arbeit, bevor das Spiel läuft"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Vulkan-Renderer muss Grafikpipelines vorbereiten, bevor er sie zeichnen kann. Bei einem Kaltstart muss RPCS3 möglicherweise Shader kompilieren, während sein Grafik-Backend erstellt wird, sodass der Start einige Zeit mit der Kompilierung verbringen kann, noch bevor die übliche Laufzeitarbeitslast beginnt. Die Pull-Anfrage Nr. 19578 ändert die Thread-Pool-Einrichtung in dieser ersten Startphase, anstatt die Shader-Ausgabe oder das Cache-Format auf der Festplatte zu ändern."
+    },
+    {
+      "type": "heading",
+      "text": "Verwenden Sie verfügbare Kerne für die Erstkompilierung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn die automatische Thread-Einstellung Null ist, startet der anfängliche Pipe-Compiler jetzt mit den verfügbaren Host-Threads. Wenn der Benutzer eine explizite Thread-Anzahl angegeben hat, wird stattdessen dieser Wert berücksichtigt. Dies macht die automatische Konfiguration während der anfänglichen Shader-Vorbereitung nützlich, bei der die Arbeit auf unabhängige Kompilierungsaufgaben aufgeteilt werden kann."
+    },
+    {
+      "type": "heading",
+      "text": "Stellen Sie den konfigurierten Pool nach dem Laden des Caches wieder her"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nachdem das Laden des Shader-Cache im Initialisierungsthread abgeschlossen ist, passt RPCS3 die Größe des Compiler-Pools an, um es dem konfigurierten Laufzeitverhalten anzupassen. Die beiden Phasen verfolgen unterschiedliche Ziele: Beim ersten Start kann die Host-Parallelität genutzt werden, während bei späteren Arbeiten die vom Benutzer gewählte Einstellung berücksichtigt wird. Durch die Beibehaltung der Größenänderung beim Übergang wird vermieden, dass eine reine Startentscheidung als dauerhafte Überschreibung behandelt wird."
+    },
+    {
+      "type": "heading",
+      "text": "Kalt- und Warmstart erfordern getrennte Messungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch ändert die Planungsrichtlinie, sein Wert hängt jedoch vom Cache-Inhalt, der CPU-Topologie und davon ab, wie viel Kompilierung tatsächlich aussteht. Eine nützliche Auswertung vergleicht den Kaltstart mit einem gefüllten Cache, automatische und explizite Thread-Zählungen und die Gesamtstartzeit sowie CPU-Konflikte. Die Änderung verspricht keine feste systemübergreifende Verbesserung; Dadurch entsteht eine parallelere Anfangsphase, während der konfigurierte Pool anschließend erhalten bleibt."
+    }
+  ]
+}

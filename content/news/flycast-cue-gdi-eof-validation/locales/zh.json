@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast 拒绝带有未完成的引用文件名的光盘描述符",
+  "summary": "在结束引用之前结束的 CUE 或 GDI FILE 行可能会让 Flycast 的解析器无限期地读取。 现在，读取器会检查每个字符提取，并在文件末尾引发无效描述符错误，从而防止格式错误的文本文件挂起光盘加载。",
+  "heroAlt": "两台打开的 Sega Dreamcast 控制台显示其磁盘驱动器。",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast 拒绝带有未完成的引用文件名的光盘描述符",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "Flycast — 合并请求 #2413",
+    "implementation": "合并 CUE 和 GDI 解析器更改"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "缺少引用会使解析变成无休止的阅读"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast 接受 CUE 和 GDI 文本描述符，这些描述符对构成光盘映像的文件进行命名。 在带引号的 FILE 文件名中，解析器搜索下一个引号，而不检查提取是否已到达文件末尾。 因此，未终止的字符串可能会继续附加无效数据而不是停止，从而在打开格式错误的描述符时导致挂起或无限的内存增长。"
+    },
+    {
+      "type": "heading",
+      "text": "检查每次提取时的流"
+    },
+    {
+      "type": "paragraph",
+      "text": "合并的修复程序会检查输入流，同时跳过文件名之前的空格以及在带引号的文件名中读取的每个字符。 如果提取失败，解析器会立即抛出现有的无效 CUE 或无效 GDI 异常，而不是在耗尽的流上循环。 有效引用的文件名将继续被读取，直到其结束引用为止。"
+    },
+    {
+      "type": "heading",
+      "text": "安全地处理字符分类"
+    },
+    {
+      "type": "paragraph",
+      "text": "同样的更改将提取的字节转换为 `unsigned char`，然后再将其传递给 `isspace`。 C 字符分类函数接受 EOF 或可表示为 unsigned char 的值； 否则传递负符号字节是未定义的行为。 这使得空白扫描对于包含基本 ASCII 之外的字节的文件名得到了明确的定义。"
+    },
+    {
+      "type": "heading",
+      "text": "在消耗资源之前拒绝不良输入"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁将一种格式错误的输入情况转变为正常的解析错误； 它不会验证每个可能的 CUE 或 GDI 字段。 回归检查应涵盖缺失的引号、空名称、名称前的空格、非 ASCII 字节以及有效的带引号的路径。 实际的改进是，截断的描述符会立即失败，而不是将光盘加载器陷入读取循环中。"
+    }
+  ]
+}

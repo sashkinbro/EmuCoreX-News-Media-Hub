@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA redimensionne les décalages DMA mis en cache lorsque l'audio GBA force les transferts FIFO 32 bits",
+  "summary": "Un FIFO DMA peut être programmé avec une largeur de 16 bits, puis converti en transferts 32 bits par le chemin audio GBA. mGBA redimensionne désormais l'étape source mise en cache à plus ou moins quatre octets, préservant la direction et empêchant les lectures d'échantillons doublées ou mal alignées.",
+  "heroAlt": "Gros plan sur les circuits audio de la Game Boy Advance sur sa carte mère.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA redimensionne les décalages DMA mis en cache lorsque l'audio GBA force les transferts FIFO 32 bits",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "mGBA — demande de fusion #3850",
+    "implementation": "Correction audio fusionnée DMA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La largeur DMA du jeu est mise en cache précocement"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA enregistre les décalages de source et de destination lorsque le GBA écrit le registre de contrôle DMA. Un jeu peut configurer ce canal pour des transferts 16 bits, ce qui donne à l'étape source mise en cache un pas de deux octets. Le FIFO audio utilise ultérieurement le même mécanisme DMA mais impose sa propre largeur de transfert, le réglage antérieur doit donc être concilié avec la nouvelle utilisation."
+    },
+    {
+      "type": "heading",
+      "text": "L'audio FIFO modifie la largeur de transfert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque mGBA planifie FIFO DMA, il force le canal à une largeur de 32 bits et une destination fixe. Avant cette correction, il effaçait le décalage de destination mais conservait le décalage source mis en cache par rapport au paramètre 16 bits d'origine. Le moteur a ensuite avancé de deux octets tout en consommant des mots audio de quatre octets, dupliquant et désalignant des parties du flux d'échantillons."
+    },
+    {
+      "type": "heading",
+      "text": "Redimensionner l'étape source et conserver son signe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif fusionné normalise un décalage source positif à `4` et un décalage négatif à `-4` une fois que la largeur est forcée à 32 bits. Zéro reste zéro. La préservation du signe maintient intacte la direction du contrôle de la source tout en alignant les lectures ultérieures sur la largeur que le transfert FIFO utilise désormais. La destination continue d'utiliser l'adresse FIFO fixe."
+    },
+    {
+      "type": "heading",
+      "text": "La régression a été isolée par bissection"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande d'extraction documente une moitié utilisant la série Classic NES : The Legend of Zelda et un oracle de saut dur répétable. Il a identifié le refactor de décalage mis en cache précédent comme limite de régression. Cela donne aux développeurs un cas de lecture concret pour vérifier que les échantillons FIFO ne combinent plus d'octets doublés ou mal alignés lors de requêtes DMA répétées."
+    }
+  ]
+}

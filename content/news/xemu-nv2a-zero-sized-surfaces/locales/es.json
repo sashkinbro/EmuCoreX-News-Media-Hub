@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu endurece el manejo de superficies NV2A para regiones de renderizado vacías",
+  "summary": "Un juego de Xbox puede dejar la GPU emulada con una superficie cuya región de clip tiene cero ancho o alto. xemu ahora omite las transferencias y el seguimiento del acceso a la CPU para esas superficies y, al mismo tiempo, proporciona a las API de gráficos del host marcadores de posición seguros de un píxel.",
+  "heroAlt": "Captura de pantalla del tablero de Xbox original ejecutándose en el emulador xemu.",
+  "searchKeywords": [
+    "xemu",
+    "xemu endurece el manejo de superficies NV2A para regiones de renderizado vacías",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitud de cambios #2517",
+    "implementation": "Implementación fusionada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una superficie puede estar válidamente vacía"
+    },
+    {
+      "type": "paragraph",
+      "text": "El procesador de gráficos Xbox NV2A expone superficies de color y profundidad respaldadas por memoria de video. Un invitado puede programar recortes o dimensiones que produzcan una superficie con ancho o alto cero. Ese estado es incómodo para una API de gráficos host, que espera extensiones de imagen positivas y regiones de transferencia significativas."
+    },
+    {
+      "type": "heading",
+      "text": "Protege cada punto donde se mueven los píxeles"
+    },
+    {
+      "type": "paragraph",
+      "text": "El cambio combinado de xemu agrega comprobaciones de dimensión cero tanto en la ruta OpenGL como en la Vulkan. La búsqueda de pantalla, el registro de devolución de llamadas de acceso a la CPU, la carga y la descarga ahora evitan tratar una superficie vacía como datos de píxeles. Los guardias cubren los puntos donde una extensión no válida podría llegar a una operación gráfica."
+    },
+    {
+      "type": "heading",
+      "text": "Mantenga la sincronización y la contabilidad consistentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "La ruta de carga de Vulkan marca una superficie vacía inicializada antes de regresar. El cambio también hace que la eliminación de la devolución de llamada tolere una devolución de llamada nula, coincidiendo con la decisión de no registrar una para una imagen vacía. Estos detalles mantienen coherente el estado de limpieza y renderizado cuando el invitado crea una superficie que no tiene píxeles."
+    },
+    {
+      "type": "heading",
+      "text": "Asignar un marcador de posición de host inofensivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando un objeto de imagen todavía necesita una extensión, el renderizador sustituye una dimensión cero por una. Esa asignación de un píxel es un marcador de posición del lado del host; no inventa píxeles visibles para los huéspedes ni convierte la superficie vacía en una región dibujable. El PR vincula a los guardias con varios informes, aunque señala que un informe no era reproducible de manera confiable."
+    }
+  ]
+}

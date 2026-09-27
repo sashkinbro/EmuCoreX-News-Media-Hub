@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast wprowadza sortowanie według pikseli do OpenGL ES 3.1",
+  "summary": "Ścieżka libretro OpenGL ES może teraz żądać kontekstu GLES 3.1 i weryfikować atomy obrazu, bloki pamięci cieniującej, liczniki, powiązania i limity buforów wymagane przez niezależny od kolejności renderer przezroczystości Flycast.",
+  "heroAlt": "Konsola Sega Dreamcast obok pakietu procesora graficznego.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast wprowadza sortowanie według pikseli do OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "Flycast — prośba o scalenie #2451",
+    "implementation": "Połączona implementacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dlaczego przezroczystość wymaga porządku fragmentów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konwencjonalny bufor głębi utrzymuje najbliższą nieprzezroczystą powierzchnię, ale nakładające się półprzezroczyste wielokąty mogą wymagać zmieszania kilku fragmentów w kolejności głębokości. Moduł renderujący OIT Flycast wykorzystuje podejście oparte na listach połączonych per piksel, dzięki czemu fragmenty można zbierać i rozdzielać po losowaniu, zamiast polegać na jednej stałej warstwie. Każdy piksel zapisuje wskaźnik nagłówka we współdzielonym buforze fragmentów, podczas gdy atomy bezpiecznie przydzielają węzły w ramach równoległych wywołań fragmentów."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 udostępnia wymagane elementy składowe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona zmiana wymaga od frontendów libretro jawnego kontekstu OpenGL ES 3.1, gdy wybrany jest moduł renderujący OIT. Dodaje obsługę atomizacji obrazu i pamięci cieniującej używaną przez moduł renderujący, bezpośrednio żąda wersji kontekstowej i wykorzystuje odpowiednie bariery pamięci bufora pamięci do rozwiązywania problemów. Pozwala to uniknąć polegania na interfejsie użytkownika, który po cichu zwróci nowszy kontekst niż ten, o podanie którego został poproszony."
+    },
+    {
+      "type": "heading",
+      "text": "Sprawdź rzeczywiste limity zamiast ufać ciągowi wersji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nominalna wersja API nie gwarantuje wystarczających zasobów dla tego modułu renderującego. Flycast sprawdza teraz bloki pamięci Fragment Shader, jednostki obrazu, liczniki atomowe i powiązania, połączone wyjścia modułu cieniującego oraz rozmiary buforów pamięci. Obsługuje również wymagania dotyczące atomowego rozszerzenia obrazu GLES przed ogłoszeniem obsługi sortowania według pikseli. Jeśli jakikolwiek zasób jest niewystarczający, moduł renderujący rejestruje, która funkcja się nie powiodła, zamiast próbować na ślepo znaleźć ścieżkę."
+    },
+    {
+      "type": "heading",
+      "text": "Wykorzystuj ponownie alokacje w ramach ramek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka zachowuje również bufory odczytu bufora ramki, zamiast przydzielać nową pamięć dla każdej klatki. Ta zmiana ogranicza powtarzającą się alokację w tej samej ścieżce renderowania. Funkcja ta zależy zatem zarówno od prawidłowego wykrycia możliwości procesora graficznego, jak i dokładnej synchronizacji między zapisami fragmentów a późniejszym przebiegiem kompozycji. Testowanie powinno obejmować implementacje GLES w minimalnej obsługiwanej wersji i weryfikować zarówno przejrzyste zamawianie, jak i zachowanie awaryjne w przypadku nieobsługiwanych urządzeń."
+    }
+  ]
+}

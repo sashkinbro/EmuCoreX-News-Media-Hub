@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA reemplaza su interpolador de audio sinc con un kernel de búsqueda en ventana",
+  "summary": "La antigua ruta sinc manejó mal su singularidad extraíble en cero y almacenó tablas sinc y de ventana separadas. mGBA ahora crea una búsqueda de sincronización con ventana plana estilo Lanczos modificada y suma una vecindad fija de 16 muestras, lo que reduce la memoria de la tabla y el trabajo de interpolación.",
+  "heroAlt": "Vista frontal de una computadora de mano Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA reemplaza su interpolador de audio sinc con un kernel de búsqueda en ventana",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitud de cambios #3844",
+    "implementation": "Implementación de interpolación fusionada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un remuestreador estima muestras entre puntos almacenados"
+    },
+    {
+      "type": "paragraph",
+      "text": "El interpolador sinc de mGBA reconstruye una muestra de salida a partir de muestras de entrada vecinas cuando la velocidad de audio del host no llega exactamente a las posiciones de la muestra de origen. La implementación anterior utilizó una formulación de Whittaker-Shannon con tablas de búsqueda separadas para la respuesta sinc y su ventana. Su tabla asignó cero en el centro, aunque el límite extraíble de sinc en cero es uno."
+    },
+    {
+      "type": "heading",
+      "text": "Precalcular una respuesta en ventana combinada"
+    },
+    {
+      "type": "paragraph",
+      "text": "El reemplazo evalúa `sin(t) / t` con un caso explícito `t == 0`, lo multiplica por una ventana de coseno plano de cuarto orden y almacena la respuesta combinada en una tabla de búsqueda. Los coeficientes están documentados en la implementación como los utilizados por MATLAB. Las contribuciones fuera del ancho de ventana configurado devuelven cero y la respuesta se trata simétricamente alrededor del centro."
+    },
+    {
+      "type": "heading",
+      "text": "Utilice una vecindad fija para cada muestra de salida"
+    },
+    {
+      "type": "paragraph",
+      "text": "La rutina de interpolación ahora suma muestras de entrada en los desplazamientos −7 a 8, aplicando un peso en ventana buscado a cada una. La posición de muestra fraccionaria selecciona un índice de tabla; las compensaciones negativas se reflejan en lugar de requerir una segunda mitad del núcleo. La nueva rutina ya no almacena una tabla de ventana separada ni divide por una suma del núcleo por muestra."
+    },
+    {
+      "type": "heading",
+      "text": "Trate los beneficios de velocidad y sonido como hipótesis."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción dice que la ventana modificada estilo Lanczos debería ejecutarse más rápido y usar menos memoria, y puede sonar mejor. Esas son expectativas de diseño, no resultados de referencias publicados o de estudios de escucha. Una evaluación significativa debe comparar las respuestas de impulso y frecuencia, la atenuación de alta frecuencia, el comportamiento de los límites y la salida en varias tasas de host antes de afirmar una mejora universal."
+    }
+  ]
+}

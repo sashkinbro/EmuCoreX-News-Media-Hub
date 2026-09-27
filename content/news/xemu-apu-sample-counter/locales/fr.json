@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu lie le compteur audio MCPX aux échantillons traités",
+  "summary": "Le registre audio Xbox NV_PAPU_XGSCNT rapportait le temps virtuel écoulé comme s'il s'agissait d'un décompte d'échantillons. xemu dérive désormais la valeur de son diviseur de trame émulé et de ses échantillons par trame, traitant de la désynchronisation vocale signalée dans Innocent Tears.",
+  "heroAlt": "Vue de dessous d'une console Xbox originale.",
+  "searchKeywords": [
+    "xemu",
+    "xemu lie le compteur audio MCPX aux échantillons traités",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "xemu — demande de fusion #2945",
+    "implementation": "Implémentation fusionnée"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un registre doit rapporter les jeux unitaires attendus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le processeur audio MCPX expose NV_PAPU_XGSCNT comme décompte utilisé lors du traitement vocal. L'ancienne implémentation de xemu renvoyait des nanosecondes d'horloge virtuelle divisées par 100, une estimation dérivée du temps dont la relation avec les échantillons traités par trame émulée n'était pas établie. Étant donné qu'un invité lit ce registre pour suivre la progression de l'APU, une valeur basée sur l'horloge peut s'écarter de l'échantillon de travail réel de l'appareil."
+    },
+    {
+      "type": "heading",
+      "text": "Utilisez directement le compteur de trames audio"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correction fusionnée sur une ligne calcule le registre à partir de `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Les deux valeurs proviennent du modèle de traitement d'image de l'APU, de sorte que le nombre renvoyé suit les échantillons qui se sont réellement écoulés dans ce modèle au lieu de convertir le temps virtuel de type horloge murale. Cela lie le nombre signalé à la progression des images émulées, même lorsque la planification de la lecture de l'hôte et l'exécution de l'invité n'avancent pas par incréments identiques."
+    },
+    {
+      "type": "heading",
+      "text": "Pourquoi un décompte incorrect devient audible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les voix audio utilisent le décompte pour coordonner leur progression de lecture. Si l'invité et l'émulateur ne sont pas d'accord sur le nombre d'échantillons traités, la synchronisation de la voix peut dériver et des parties de l'audio peuvent être désynchronisées. La demande d'extraction nomme Innocent Tears comme titre dans lequel le problème a été observé ; son rapport indique que la plupart des fichiers audio sont désynchronisés et n'ont pas été complètement lus. Les rapports audio associés sont liés dans la discussion, mais ils ne sont pas tous revendiqués comme testés par ce changement."
+    },
+    {
+      "type": "heading",
+      "text": "Traitez le correctif comme une correction de timing"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'auteur de la pull request a déclaré que les tests avaient été limités à Innocent Tears à ce stade, même si le changement fait référence à plusieurs rapports. Le code établit l'unité de compteur prévue ; une vérification plus large devrait comparer les lectures de registre, la progression de la voix et la synchronisation audio à travers les limites des images et d'autres titres. La portée étroite est utile pour le diagnostic : si le décompte suit désormais les échantillons traités mais qu'un titre dérive toujours, l'enquête peut passer à des parties ultérieures du pipeline audio."
+    }
+  ]
+}

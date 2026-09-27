@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu wzmacnia obsługę powierzchni NV2A dla pustych obszarów renderowania",
+  "summary": "Gra na konsolę Xbox może pozostawić emulowany procesor graficzny z powierzchnią, której obszar przycinania ma zerową szerokość i wysokość. xemu pomija teraz transfery i śledzenie dostępu procesora dla tych powierzchni, jednocześnie zapewniając interfejsom API grafiki hosta bezpieczne jednopikselowe elementy zastępcze.",
+  "heroAlt": "Zrzut ekranu oryginalnego pulpitu nawigacyjnego Xbox działającego w emulatorze xemu.",
+  "searchKeywords": [
+    "xemu",
+    "xemu wzmacnia obsługę powierzchni NV2A dla pustych obszarów renderowania",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "xemu — prośba o scalenie #2517",
+    "implementation": "Połączona implementacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Powierzchnia może być prawidłowo pusta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Procesor graficzny Xbox NV2A eksponuje powierzchnie kolorów i głębi wsparte pamięcią wideo. Gość może zaprogramować przycinanie lub wymiary, które utworzą powierzchnię o zerowej szerokości i wysokości. Ten stan jest niewygodny dla interfejsu API grafiki hosta, który oczekuje pozytywnych zakresów obrazu i znaczących obszarów transferu."
+    },
+    {
+      "type": "heading",
+      "text": "Strzeż każdego punktu, w którym poruszają się piksele"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona zmiana xemu dodaje kontrole o zerowym wymiarze zarówno w ścieżkach OpenGL, jak i Vulkan. Wyszukiwanie wyświetlacza, rejestracja wywołania zwrotnego dostępu do procesora, przesyłanie i pobieranie pozwalają teraz uniknąć traktowania pustej powierzchni jako danych pikselowych. Osłony zakrywają punkty, w których nieprawidłowy zakres mógłby w przeciwnym razie dotrzeć do operacji graficznej."
+    },
+    {
+      "type": "heading",
+      "text": "Zachowaj spójność synchronizacji i księgowości"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ścieżka przesyłania Vulkan oznacza pustą powierzchnię zainicjowaną przed powrotem. Zmiana sprawia również, że usuwanie wywołań zwrotnych toleruje wywołanie zwrotne zerowe, co odpowiada decyzji o niezarejestrowaniu go dla pustego obrazu. Te szczegóły zapewniają spójność stanu czyszczenia i renderowania, gdy gość tworzy powierzchnię pozbawioną pikseli."
+    },
+    {
+      "type": "heading",
+      "text": "Przydziel nieszkodliwy symbol zastępczy hosta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tam, gdzie obiekt obrazu nadal wymaga zasięgu, moduł renderujący zastępuje jeden wymiar zerowym. Ta alokacja jednego piksela jest symbolem zastępczym po stronie hosta; nie tworzy pikseli widocznych dla gości ani nie zamienia pustej powierzchni w obszar do rysowania. PR łączy strażników z kilkoma raportami, zauważając jednocześnie, że jednego z raportów nie można było wiarygodnie odtworzyć."
+    }
+  ]
+}

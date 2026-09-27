@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA mengubah skala offset DMA yang di-cache ketika audio GBA memaksa transfer FIFO 32-bit",
+  "summary": "FIFO DMA dapat diprogram pada lebar 16-bit, kemudian diubah menjadi transfer 32-bit melalui jalur audio GBA. mGBA sekarang mengubah skala langkah sumber yang di-cache menjadi plus atau minus empat byte, menjaga arah dan mencegah pembacaan sampel menjadi dua kali lipat atau tidak selaras.",
+  "heroAlt": "Tampilan jarak dekat dari sirkuit audio Game Boy Advance pada motherboardnya.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA mengubah skala offset DMA yang di-cache ketika audio GBA memaksa transfer FIFO 32-bit",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "mGBA — permintaan penggabungan #3850",
+    "implementation": "Koreksi audio DMA yang digabungkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Lebar DMA game di-cache lebih awal"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA mencatat offset sumber dan tujuan ketika GBA menulis register kontrol DMA. Sebuah game dapat mengonfigurasi saluran tersebut untuk transfer 16-bit, yang memberikan langkah sumber yang di-cache sebagai langkah dua byte. FIFO audio nantinya menggunakan mekanisme DMA yang sama tetapi menerapkan lebar transfernya sendiri, sehingga pengaturan sebelumnya harus disesuaikan dengan penggunaan baru."
+    },
+    {
+      "type": "heading",
+      "text": "Audio FIFO mengubah lebar transfer"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ketika mGBA menjadwalkan FIFO DMA, itu memaksa saluran ke lebar 32-bit dan tujuan tetap. Sebelum koreksi ini, offset tujuan dihapus tetapi tetap mempertahankan offset sumber yang di-cache dari pengaturan 16-bit asli. Mesin kemudian memajukan dua byte sambil menggunakan kata-kata audio empat byte, menduplikasi dan membuat bagian aliran sampel tidak selaras."
+    },
+    {
+      "type": "heading",
+      "text": "Ubah skala langkah sumber dan pertahankan tandanya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan gabungan menormalkan offset sumber positif ke `4` dan offset negatif ke `-4` setelah lebar dipaksa menjadi 32-bit. Nol tetaplah nol. Mempertahankan tanda akan menjaga arah kendali sumber tetap utuh sambil menyelaraskan pembacaan selanjutnya dengan lebar yang sekarang digunakan transfer FIFO. Tujuan tetap menggunakan alamat FIFO tetap."
+    },
+    {
+      "type": "heading",
+      "text": "Regresi diisolasi dengan membagi dua"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan penarikan mendokumentasikan dua bagian menggunakan Seri NES Klasik: Legenda Zelda dan ramalan lompat keras yang dapat diulang. Ini mengidentifikasi refactor cache-offset sebelumnya sebagai batas regresi. Hal ini memberikan pengembang kasus pemutaran yang konkret untuk memeriksa bahwa sampel FIFO tidak lagi menggabungkan byte yang berlipat ganda atau tidak selaras di seluruh permintaan DMA yang berulang."
+    }
+  ]
+}

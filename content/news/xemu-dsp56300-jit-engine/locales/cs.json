@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu přidává přepínatelný JIT engine pro Xbox audio DSP",
+  "summary": "Nový backend DSP56300 poskytuje xemu alternativu k interpretaci každé instrukce hosta. Vrstva sdíleného stavu udržuje stávající interpret k dispozici a propojuje oba motory ke zpracování stavu uložení.",
+  "heroAlt": "Původní konzole Xbox vedle ovladače Duke na bílém pozadí.",
+  "searchKeywords": [
+    "xemu",
+    "xemu přidává přepínatelný JIT engine pro Xbox audio DSP",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "xemu — požadavek na sloučení #2801",
+    "implementation": "Sloučená implementace a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Jeden zvukový procesor, dvě cesty provedení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zvukový procesor Xbox MCPX obsahuje procesor digitálního signálu Motorola DSP56300. xemu již mělo C interpretr pro tento hostovaný procesor; pull request #2801 přidal druhý backend, který používá kompilaci just-in-time. Změna se týká toho, jak instrukce DSP běží uvnitř emulátoru, spíše než zavádění nového zvukového formátu nebo patche specifického pro hru."
+    },
+    {
+      "type": "heading",
+      "text": "Přeložte práci instrukce před jejím provedením"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tlumočník dekóduje a odešle pokyny hostů, jakmile jsou dosaženy. JIT může přeložit sekvenci do instrukcí hostitele a znovu použít vygenerovaný kód, což umožňuje méně opakované odesílání. Změna xemu přidává JIT založený na Rustu vedle interpretu C. Jeho přínos závisí na tom, kolik času titul stráví v kódu DSP a na hostitelském CPU; projekt si nežádal jedno univerzální zrychlení."
+    },
+    {
+      "type": "heading",
+      "text": "Udržujte oba motory za sdílenou státní hranicí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch zavádí operační rozhraní DSP a společnou reprezentaci stavu jádra. Tato hranice umožňuje xemu vybrat nebo přepnout spouštěcí motory, aniž by zbytek zvukového procesoru závisel na jedné implementaci. Poskytuje také kód pro ukládání a načítání společný stav pro serializaci, což je nezbytné, když je uložená relace znovu otevřena s jiným vybraným backendem."
+    },
+    {
+      "type": "heading",
+      "text": "Uchovávejte tlumočník jako užitečnou referenci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Interpret C zůstává k dispozici a nové nastavení umožňuje povolit nebo zakázat cestu JIT. Zachování obou cest pomáhá vývojářům porovnávat chování při vyšetřování nesouladu zvuku: JIT lze zkontrolovat oproti jednodušší implementaci instrukce po instrukci. Stejný refaktor také opravuje defekty nalezené ve stávajícím interpretu, takže patch není pouze doplňkem kompilátoru."
+    },
+    {
+      "type": "heading",
+      "text": "Požadavky na výkon vyžadují testování specifické pro pracovní zátěž"
+    },
+    {
+      "type": "paragraph",
+      "text": "První diskuse připojila měření z malé sady her a zaznamenala zbývající okrajové případy, včetně zvukových smyček a titulů vázaných na snímkovou frekvenci. Tyto zprávy jsou užitečnými potenciálními zákazníky, nikoli benchmarkem napříč hrami. Sloučená změna zavádí druhý motor DSP a jeho stavovou instalaci; K charakterizaci praktických přínosů jsou stále potřebné opakovatelné testy napříč hrami, hostitelskými CPU, přechody do stavu uložení a zvuk citlivý na časování."
+    }
+  ]
+}

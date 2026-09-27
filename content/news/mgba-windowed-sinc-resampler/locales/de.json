@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA ersetzt seinen Sinc-Audio-Interpolator durch einen Fenster-Lookup-Kernel",
+  "summary": "Der alte Sinc-Pfad hat seine entfernbare Singularität bei Null falsch behandelt und separate Sinc- und Fenstertabellen gespeichert. mGBA erstellt jetzt eine modifizierte Flat-Top-Fenster-Sinc-Suche im Lanczos-Stil und summiert eine feste Nachbarschaft mit 16 Stichproben, wodurch Tabellenspeicher und Interpolationsaufwand reduziert werden.",
+  "heroAlt": "Vorderansicht eines Game Boy Advance-Handhelds.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA ersetzt seinen Sinc-Audio-Interpolator durch einen Fenster-Lookup-Kernel",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "mGBA — Änderungsantrag #3844",
+    "implementation": "Implementierung der zusammengeführten Interpolation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Resampler schätzt Stichproben zwischen gespeicherten Punkten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Sinc-Interpolator von mGBA rekonstruiert ein Ausgabe-Sample aus benachbarten Eingabe-Samples, wenn die Host-Audiorate nicht genau auf den Quell-Sample-Positionen landet. Die vorherige Implementierung verwendete eine Whittaker-Shannon-Formulierung mit separaten Nachschlagetabellen für die Sinc-Antwort und ihr Fenster. Seine Tabelle weist in der Mitte Null zu, obwohl der entfernbare Sinc-Grenzwert bei Null Eins ist."
+    },
+    {
+      "type": "heading",
+      "text": "Berechnen Sie eine kombinierte Fensterantwort vorab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Ersatz wertet `sin(t) / t` mit einem expliziten `t == 0`-Fall aus, multipliziert ihn mit einem Flat-Top-Cosinus-Fenster vierter Ordnung und speichert die kombinierte Antwort in einer Nachschlagetabelle. Die Koeffizienten werden in der Implementierung so dokumentiert, wie sie von MATLAB verwendet werden. Beiträge außerhalb der konfigurierten Fensterbreite geben Null zurück und die Antwort wird symmetrisch um die Mitte herum behandelt."
+    },
+    {
+      "type": "heading",
+      "text": "Verwenden Sie für jedes Ausgabebeispiel eine feste Nachbarschaft"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Interpolationsroutine summiert nun Eingabeabtastwerte bei den Offsets –7 bis 8 und wendet auf jeden ein nachgeschlagenes Fenstergewicht an. Die Teilprobenposition wählt einen Tabellenindex aus; Negative Offsets werden reflektiert, anstatt eine zweite Hälfte des Kernels zu erfordern. Die neue Routine speichert keine separate Fenstertabelle mehr und dividiert nicht mehr durch eine Kernelsumme pro Stichprobe."
+    },
+    {
+      "type": "heading",
+      "text": "Behandeln Sie Geschwindigkeits- und Schallvorteile als Hypothesen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull-Request besagt, dass das modifizierte Fenster im Lanczos-Stil schneller laufen und weniger Speicher verbrauchen sollte und möglicherweise besser klingt. Hierbei handelt es sich um Designerwartungen, nicht um veröffentlichte Benchmark- oder Hörstudienergebnisse. Eine aussagekräftige Bewertung sollte Impuls- und Frequenzantworten, Hochfrequenzdämpfung, Grenzverhalten und Ausgabe bei mehreren Hostraten vergleichen, bevor eine allgemeine Verbesserung behauptet wird."
+    }
+  ]
+}

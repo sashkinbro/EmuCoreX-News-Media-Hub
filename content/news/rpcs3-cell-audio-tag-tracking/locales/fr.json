@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-cell-audio-tag-tracking",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 réinitialise l'état des balises CellAudio dans les configurations de ports",
+  "summary": "Un indicateur de canal avant par port indique désormais quand la gestion des balises CellAudio doit changer entre les dispositions stéréo et surround, résolvant ainsi un cas de lenteur audio signalé.",
+  "heroAlt": "Vue générale d'une console PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 réinitialise l'état des balises CellAudio dans les configurations de ports",
+    "audio tags",
+    "stereo",
+    "surround"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — demande de fusion #19550",
+    "implementation": "Patch et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les balises audio dépendent de la disposition du port"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les ports CellAudio peuvent transporter des flux stéréo ou multicanaux, et RPCS3 utilise des balises pour suivre la progression du tampon audio. La demande d'extraction n° 19550 modifie la façon dont ces balises sont marquées lorsqu'un port se déplace entre les mises en page. Le rapport associait le problème à un son lent et le correctif enregistre un état supplémentaire par port afin que la gestion puisse distinguer le comportement stéréo avant uniquement du suivi du canal surround."
+    },
+    {
+      "type": "heading",
+      "text": "Empêchez les canaux avant stéréo d'avancer les balises"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour les ports à deux canaux, la logique mise à jour évite de marquer le canal avant droit de la même manière que les autres positions de balise. Pour les ports multicanaux, il parcourt le nombre de balises de tampon de port défini. Il s'agit de cas distincts : l'utilisation de la boucle multicanal pour un flux stéréo peut amener le producteur et le consommateur émulés à ne pas être d'accord sur les données audio prêtes."
+    },
+    {
+      "type": "heading",
+      "text": "Mémoriser et réinitialiser le mode par port"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement conserve un indicateur de port avant uniquement pour chaque port et le réinitialise lorsque le port atteint la configuration de canal surround. Cette réinitialisation est importante lorsqu'un port est réutilisé ou que son nombre de canaux change ; l’état obsolète d’une configuration stéréo antérieure ne doit pas orienter les mises à jour ultérieures des balises multicanaux. L’indicateur appartient à chaque port, donc la disposition d’un flux ne détermine pas le comportement d’un autre flux."
+    },
+    {
+      "type": "heading",
+      "text": "Testez les transitions ainsi qu'une lecture stable"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande d'extraction relie l'ajustement à un cas de lenteur audio signalé et note que le problème a été résolu dans le scénario testé. C'est une preuve utile de l'échec ciblé, mais le comportement audio dépend également de la cadence du tampon et de la réutilisation des ports. La couverture de régression doit inclure la lecture stéréo, la lecture surround, les transitions entre les dispositions de canaux et plusieurs ports actifs pour vérifier que l'état de la balise reste local et synchronisé."
+    }
+  ]
+}

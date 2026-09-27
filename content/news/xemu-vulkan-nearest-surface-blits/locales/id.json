@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu mempertahankan permukaan Xbox 2D yang tajam saat melakukan penskalaan di Vulkan",
+  "summary": "Saat CPU menulis permukaan Xbox dalam VRAM, xemu mengunggahnya dan mungkin menskalakannya untuk resolusi internal yang lebih tinggi. Jalur Vulkan sekarang menggunakan blit tetangga terdekat untuk peningkatan unggahan dan penurunan skala unduhan, mencocokkan replikasi piksel alih-alih menambahkan kekaburan linier.",
+  "heroAlt": "Tampilan belakang konsol Xbox asli menunjukkan konektornya.",
+  "searchKeywords": [
+    "xemu",
+    "xemu mempertahankan permukaan Xbox 2D yang tajam saat melakukan penskalaan di Vulkan",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "xemu — permintaan penggabungan #2874",
+    "implementation": "Implementasi gabungan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Penulisan CPU dapat melewati panggilan draw"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perender NV2A melacak permukaan di memori video Xbox. Saat CPU yang ditiru menulis langsung menjadi satu, xemu memanggil `pgraph_vk_upload_surface_data()` untuk menyinkronkan byte tersebut ke gambar Vulkan sehingga rendering nanti akan melihat pembaruan. Resolusi internal di atas 1×, unggahan tersebut menggunakan `vkCmdBlitImage` untuk memperbesar permukaan. Ini adalah jalur yang berbeda dari menggambar pemandangan 3D normal, karena piksel sumber ditulis oleh CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Pemfilteran linier memperhalus karya seni yang tajam"
+    },
+    {
+      "type": "paragraph",
+      "text": "Blit unggahan Vulkan menggunakan `VK_FILTER_LINEAR` untuk permukaan berwarna. Pemfilteran linier memadukan texel yang berdekatan saat memperbesar gambar, yang dapat memperhalus tepi piksel dalam menu dan lapisan 2D lainnya. Penulis permintaan tarik melaporkan dasbor Xbox sebagai contoh nyata dan mencatat bahwa rendering 3D murni tidak menggunakan jalur ini. Perender OpenGL telah memperluas piksel permukaan melalui replikasi, sehingga memberikan proyek perbandingan perilaku yang berguna."
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan pengambilan sampel terdekat di kedua arah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan gabungan mengalihkan blit skala atas unggahan ke `VK_FILTER_NEAREST` dan membuat pilihan yang sama untuk jalur skala bawah unduhan permukaan. Pemfilteran terdekat memilih texel sumber daripada merata-ratakan tetangganya, menjaga nilai diskrit di permukaan yang ditransfer. Menerapkan aturan di kedua arah menjaga semantik salinan tetap konsisten saat CPU dan GPU bertukar permukaan warna berskala."
+    },
+    {
+      "type": "heading",
+      "text": "Perubahannya adalah tentang transfer semantik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini memengaruhi sinkronisasi permukaan CPU-ke-GPU dan GPU-ke-CPU di perender Vulkan; itu tidak mengubah resolusi asli game atau pengaturan pemfilteran 3D-nya. Hasil yang diharapkan adalah konten 2D berskala lebih tajam yang menggunakan blit tersebut, dengan validasi terfokus pada arah transfer dan batas permukaan warna. Permintaan penarikan mencatat cakupan repro terbatas di luar dasbor, sehingga menu dan aplikasi tambahan yang dirender CPU merupakan pemeriksaan yang berguna."
+    }
+  ]
+}

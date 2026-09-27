@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 efface le délai PPU obsolète lors du démarrage d'un thread",
+  "summary": "Un ajustement de planification PPU réinitialise le délai de mise en veille après une attente et vérifie la fonction actuelle avant d'appliquer l'heuristique de démarrage de thread.",
+  "heroAlt": "Montage comparant plusieurs modèles de console PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 efface le délai PPU obsolète lors du démarrage d'un thread",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — demande de fusion #19580",
+    "implementation": "Patch et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un retard peut survivre à l'attente qui l'a déclenché"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 utilise des heuristiques de planification d'hôte pour rythmer les threads PPU émulés. La demande d'extraction n° 19580 ajuste la logique de veille et de démarrage afin qu'un délai de veille matériel enregistré soit effacé une fois que le processeur a terminé son chemin de veille ou d'attente. Sans ce nettoyage, une décision de planification ultérieure peut hériter de l'état de synchronisation d'une attente antérieure, même si le thread a évolué."
+    },
+    {
+      "type": "heading",
+      "text": "Protégez le cas spécial de démarrage de thread"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif réduit également l'heuristique du délai : il évite d'appliquer le cas particulier lorsque le CPU évalué n'est pas le PPU actuel, et il vérifie la fonction actuelle avant de s'appuyer sur la valeur attendue dans le registre à usage général 11 pour `sys_ppu_thread_start`. Ces vérifications empêchent une heuristique spécifique à une fonction d'agir sur un état d'exécution sans rapport."
+    },
+    {
+      "type": "heading",
+      "text": "Préserver le comportement de planification ordinaire"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il s’agit d’une correction ciblée de la comptabilité du planificateur, et non d’un nouveau modèle de timing. Le chemin de démarrage du thread utilise toujours l'heuristique existante lorsque ses conditions préalables correspondent ; les nouveaux gardes empêchent cette logique de passer à un autre PPU ou à une fonction sans rapport. La suppression du délai à la limite d'attente rend la transition d'état explicite et plus facile à raisonner lors de la planification."
+    },
+    {
+      "type": "heading",
+      "text": "Les correctifs temporels nécessitent des preuves de régression"
+    },
+    {
+      "type": "paragraph",
+      "text": "La synchronisation des threads peut varier en fonction de la charge de l'hôte, du comportement du jeu et des modèles de synchronisation. Le correctif rend les conditions prévues plus précises, mais n'établit pas en lui-même un changement universel de performances ou de compatibilité. Les tests utiles devraient couvrir le démarrage des threads après la mise en veille, les appels provenant de contextes PPU non actuels, les fonctions non liées avec un contenu de registre similaire et les séquences d'attente/reprise normales."
+    }
+  ]
+}

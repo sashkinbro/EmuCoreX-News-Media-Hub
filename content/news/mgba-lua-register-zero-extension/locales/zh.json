@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA 在返回 8 位值之前初始化 Lua 寄存器读取",
+  "summary": "Game Boy 脚本 API 返回 `int32_t`，但其寄存器回调仅写入 8 位寄存器的低字节。 在回调之前将输出初始化为零可以防止剩余的堆栈字节在 Lua 中显示为随机高位。",
+  "heroAlt": "拆解后的 Game Boy Advance 显示其内部电路板。",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA 在返回 8 位值之前初始化 Lua 寄存器读取",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "mGBA — 合并请求 #3785",
+    "implementation": "合并脚本助手修正"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "狭窄的寄存器被放置在更宽的结果中"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game Boy Lua API 通过由 32 位整数支持的脚本值结果公开 `emu:readRegister()`。 对于 8 位 CPU 寄存器，核心回调仅通过 `uint8_t*` 写入一个字节。 本地 32 位结果中的其他字节保持不变，因此公共脚本值可能包含与请求的寄存器无关的数据。"
+    },
+    {
+      "type": "heading",
+      "text": "未初始化的字节使相同的状态看起来不同"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果寄存器 B 包含 `0x12`，Lua 可以接收 `0x12`、`0x7F12` 或其他值，具体取决于占用高字节的位。 低字节正确； 返回的整数不确定。 因此，即使模拟的 CPU 状态没有改变，比较、记录或格式化寄存器读取的脚本也可能表现不一致。"
+    },
+    {
+      "type": "heading",
+      "text": "首先将全部返回存储清零"
+    },
+    {
+      "type": "paragraph",
+      "text": "该修复在调用内核的寄存器读取回调之前将本地 `int32_t out` 初始化为零。 然后，8 位回调仅更新低字节，而未使用的高字节保持为零。 更宽的寄存器回调仍然可以通过相同的输出指针写入其完整值，因此更正保留了助手的共享接口。"
+    },
+    {
+      "type": "heading",
+      "text": "修正量小，可直接测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "该更改仅限于 Lua 读取助手，不会改变模拟的 CPU 状态。 重点回归检查可以设置一个已知的 8 位寄存器，从 Lua 中重复读取它，并验证结果始终是零扩展的，而不是依赖于先前的堆栈内容。 重要的属性是确定性宽度转换，而不是对 Game Boy 寄存器语义的更改。"
+    }
+  ]
+}

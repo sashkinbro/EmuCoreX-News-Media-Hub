@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu rundet NV2A-Alarmfristen auf, um Timer-Schleifen zu vermeiden",
+  "summary": "Durch das Abschneiden von Teiltaktkonvertierungen könnte ein Xbox-GPU-Alarm zu früh geplant und immer wieder zum gleichen Zeitpunkt neu geplant werden. xemu rundet jetzt Konvertierungen und Tick-Abstände nach oben, behandelt den Alarm-Wrap explizit und vermeidet Host-Timer, wenn der Gast-Interrupt deaktiviert ist.",
+  "heroAlt": "Draufsicht auf die ursprüngliche Xbox-Konsole.",
+  "searchKeywords": [
+    "xemu",
+    "xemu rundet NV2A-Alarmfristen auf, um Timer-Schleifen zu vermeiden",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "xemu — Änderungsantrag #3035",
+    "implementation": "Zusammengeführte Implementierung und PTIMER-Tests"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Gast-Timer und der Host-Timer verwenden unterschiedliche Uhren"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der programmierbare Timer NV2A stellt die Gastzeit in Registerticks dar, während QEMU Rückrufe mithilfe virtueller Nanosekunden plant. Die Konvertierung zwischen diesen Bereichen erfordert Verhältnisse und Ganzzahlarithmetik. Das Abschneiden jeder Division kann einen Bruchteil eines Ticks verwerfen und den Eindruck erwecken, dass eine zukünftige Frist bereits fällig ist. Der gemeldete Randfall führte wiederholt zu einer sofortigen Neuplanung des Host-Alarms, obwohl die Gast-Deadline noch vor der Tür stand."
+    },
+    {
+      "type": "heading",
+      "text": "Runden Sie die Frist von Null weg ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderung verwendet aufrundende Multiplikations-/Dividierungshilfen bei der Konvertierung interner Ticks durch die GPU-Taktfrequenz, rundet den Registerabstand auf einen ganzen Timer-Tick und erzwingt eine Host-Verzögerung von mindestens einer Nanosekunde. Dadurch wird verhindert, dass ein positives Gastintervall zu einem sofortigen Host-Rückruf führt. Die Berechnung bevorzugt bewusst einen Termin, der um einen Bruchteil zu spät liegt, gegenüber einem Termin, der auf den aktuellen Zeitpunkt abgerundet und wiederholt geplant wird."
+    },
+    {
+      "type": "heading",
+      "text": "Behandeln Sie Wrap- und Deaktivierungsalarme explizit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Alarmhelfer wählt nun den nächsten passenden Low-Word-Wert in der richtigen 32-Bit-Epoche. Wenn der Alarm-Interrupt deaktiviert ist, löscht xemu den QEMU-Timer, anstatt einen unnötigen Rückruf aktiv zu halten; Eine Gastlesung oder eine spätere erneute Aktivierung kann träge feststellen, dass ein Alarm fällig geworden ist. Diese Unterscheidung behandelt maskierte Alarme, ohne den Host-Timer kontinuierlich abzufragen, und behält gleichzeitig den für den Gast sichtbaren Alarmstatus bei."
+    },
+    {
+      "type": "heading",
+      "text": "Trainieren Sie Grenzen mit gezielten Unit-Tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Pull-Anfrage fügt ein Xbox PTIMER-Testziel mit Scheinuhr-, Timer- und Interrupt-Funktionen hinzu. Die Fälle umfassen One-Tick-Alarme bei unterschiedlichen Zähler- und Nennerverhältnissen, das Aktivierungs- und Deaktivierungsverhalten sowie das Alarm-Timing. Mocks machen die Konvertierungs- und Planungsentscheidungen deterministisch, sodass Grenzregressionen durchgeführt werden können, ohne vom Timing eines bestimmten Spiels oder Host-Betriebssystems abhängig zu sein."
+    }
+  ]
+}

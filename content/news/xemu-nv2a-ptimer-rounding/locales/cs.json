@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu zaokrouhluje termíny alarmů NV2A nahoru, aby se zabránilo smyčkám časovače",
+  "summary": "Zkrácení převodů zlomkových hodin by mohlo naplánovat alarm GPU Xbox příliš brzy a opakovaně jej přeplánovat ve stejný okamžik. xemu nyní zaokrouhluje převody a vzdálenosti oddělovačů směrem nahoru, explicitně zpracovává zalamování alarmů a vyhýbá se časovačům hostitele, když je zakázáno přerušení hosta.",
+  "heroAlt": "Pohled shora na původní konzoli Xbox.",
+  "searchKeywords": [
+    "xemu",
+    "xemu zaokrouhluje termíny alarmů NV2A nahoru, aby se zabránilo smyčkám časovače",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "xemu — požadavek na sloučení #3035",
+    "implementation": "Sloučená implementace a testy PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Hostující časovač a hostitelský časovač používají různé hodiny"
+    },
+    {
+      "type": "paragraph",
+      "text": "Programovatelný časovač NV2A představuje čas hosta v registrech, zatímco QEMU plánuje zpětná volání pomocí virtuálních nanosekund. Převod mezi těmito doménami zahrnuje poměry a celočíselnou aritmetiku. Zkrácení každé divize může zahodit zlomek zaškrtnutí a budoucí termín se zdá být již splatný. Hlášený okrajový případ způsobil opakované okamžité přeplánování poplachu hostitele, i když termín pro hosty byl stále před námi."
+    },
+    {
+      "type": "heading",
+      "text": "Zaokrouhlete termín od nuly"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změna využívá pomocníky zaokrouhlení násobení/rozdělení při převodu interních tiků prostřednictvím hodinové frekvence GPU, zaokrouhluje vzdálenost registru na celý tick časovače a vynucuje minimální zpoždění hostitele o jednu nanosekundu. To zabrání tomu, aby se kladný interval hosta zhroutil do okamžitého zpětného volání hostitele. Výpočet záměrně upřednostňuje termín, který je o zlomek pozdní než termín, který se zaokrouhluje dolů na aktuální okamžik a je plánován opakovaně."
+    },
+    {
+      "type": "heading",
+      "text": "Explicitně manipulujte s obalem a deaktivovanými alarmy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pomocník alarmu nyní vybere další odpovídající hodnotu nízkého slova ve správné 32bitové epoše. Když je přerušení poplachu deaktivováno, xemu vymaže časovač QEMU místo toho, aby drželo aktivované zbytečné zpětné volání; přečtení hostem nebo pozdější opětovné povolení si mohou líně všimnout, že nastal poplach. Tento rozdíl zvládá maskované poplachy bez neustálého dotazování časovače hostitele, přičemž zachovává stav poplachu viditelný pro hosty."
+    },
+    {
+      "type": "heading",
+      "text": "Hranice cvičení se zaměřenými jednotkovými testy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Požadavek na stažení přidá cíl testu Xbox PTIMER s falešnými hodinami, časovačem a funkcemi přerušení. Jeho případy pokrývají alarmy s jedním zaškrtnutím pod různými poměry čitatelů a jmenovatelů, aktivují a deaktivují chování a načasování alarmů. Zesměšňování činí rozhodnutí o převodu a plánování deterministickým, takže hraniční regrese lze provádět bez závislosti na načasování konkrétní hry nebo hostitelského operačního systému."
+    }
+  ]
+}

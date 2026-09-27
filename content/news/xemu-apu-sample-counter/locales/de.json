@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu verknüpft den MCPX-Audiozähler mit verarbeiteten Samples",
+  "summary": "Das Xbox-Audioregister NV_PAPU_XGSCNT meldete die verstrichene virtuelle Zeit, als wäre es eine Beispielzählung. xemu leitet den Wert nun aus seinem emulierten Frame-Teiler und den Samples pro Frame ab und behebt so die in Innocent Tears gemeldete Sprachdesynchronisierung.",
+  "heroAlt": "Unterseitenansicht einer originalen Xbox-Konsole.",
+  "searchKeywords": [
+    "xemu",
+    "xemu verknüpft den MCPX-Audiozähler mit verarbeiteten Samples",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "xemu — Änderungsantrag #2945",
+    "implementation": "Zusammengeführte Implementierung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Register muss die zu erwartenden Einheitsspiele melden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der MCPX-Audioprozessor stellt NV_PAPU_XGSCNT als Zählung zur Verfügung, die während der Sprachverarbeitung verwendet wird. Die alte xemu-Implementierung gab Nanosekunden der virtuellen Uhr geteilt durch 100 zurück, eine zeitabgeleitete Schätzung, deren Beziehung zu den pro emulierten Frame verarbeiteten Samples nicht hergestellt werden konnte. Da ein Gast dieses Register liest, um den APU-Fortschritt zu verfolgen, kann ein uhrbasierter Wert von der tatsächlichen Beispielarbeit des Geräts abweichen."
+    },
+    {
+      "type": "heading",
+      "text": "Verwenden Sie direkt den Audio-Frame-Zähler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die zusammengeführte einzeilige Korrektur berechnet das Register aus `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Beide Werte stammen aus dem eigenen Frame-Verarbeitungsmodell der APU, sodass die zurückgegebene Zahl die Samples verfolgt, die tatsächlich durch dieses Modell verstrichen sind, anstatt die virtuelle Zeit wie eine Wanduhr umzuwandeln. Dadurch wird die gemeldete Anzahl mit dem emulierten Frame-Fortschritt verknüpft, auch wenn die Host-Wiedergabeplanung und die Gastausführung nicht in identischen Schritten voranschreiten."
+    },
+    {
+      "type": "heading",
+      "text": "Warum eine falsche Zählung hörbar wird"
+    },
+    {
+      "type": "paragraph",
+      "text": "Audiostimmen nutzen die Zählung, um ihren Wiedergabefortschritt zu koordinieren. Wenn sich Gast und Emulator nicht darüber einig sind, wie viele Samples verarbeitet wurden, kann es zu Abweichungen im Sprach-Timing kommen und Teile des Audiosignals sind möglicherweise nicht synchron. Der Pull-Request nennt Innocent Tears als Titel, bei dem das Problem beobachtet wurde; Der Bericht besagt, dass die meisten Audiodaten desynchronisiert waren und nicht vollständig abgespielt wurden. Verwandte Audioberichte sind in der Diskussion verlinkt, es wird jedoch nicht behauptet, dass sie alle von dieser Änderung getestet wurden."
+    },
+    {
+      "type": "heading",
+      "text": "Behandeln Sie die Korrektur als Timing-Korrektur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull-Request-Autor sagte, die Tests seien zu diesem Zeitpunkt auf Innocent Tears beschränkt gewesen, obwohl die Änderung auf mehrere Berichte verweise. Der Code legt die vorgesehene Zählereinheit fest; Bei einer umfassenderen Überprüfung sollten Registerlesevorgänge, Sprachfortschritt und Audio-Timing über Frame-Grenzen und andere Titel hinweg verglichen werden. Der enge Bereich ist für die Diagnose nützlich: Wenn die Zählung nun den verarbeiteten Samples folgt, ein Titel aber immer noch abweicht, kann die Untersuchung auf spätere Teile der Audio-Pipeline verlagert werden."
+    }
+  ]
+}

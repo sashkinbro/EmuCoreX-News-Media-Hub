@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu adds a switchable JIT engine for the Xbox audio DSP",
+  "summary": "A new DSP56300 backend gives xemu an alternative to interpreting every guest instruction. A shared state layer keeps the existing interpreter available and connects both engines to save-state handling.",
+  "heroAlt": "Original Xbox console beside its Duke controller on a white background.",
+  "searchKeywords": [
+    "xemu",
+    "Xbox",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "xemu pull request #2801",
+    "implementation": "Merged implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "One audio processor, two execution paths"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Xbox MCPX audio processor includes a Motorola DSP56300 digital signal processor. xemu already had a C interpreter for that guest processor; pull request #2801 added a second backend that uses just-in-time compilation. The change concerns how DSP instructions run inside the emulator, rather than introducing a new audio format or a game-specific patch."
+    },
+    {
+      "type": "heading",
+      "text": "Translate instruction work ahead of execution"
+    },
+    {
+      "type": "paragraph",
+      "text": "An interpreter decodes and dispatches guest instructions as they are reached. A JIT can translate a sequence into host instructions and reuse the generated code, trading compilation work for less repeated dispatch. The xemu change adds a Rust-based JIT alongside the C interpreter. Its benefit depends on how much time a title spends in DSP code and on the host CPU; the project did not claim one universal speedup."
+    },
+    {
+      "type": "heading",
+      "text": "Keep both engines behind a shared state boundary"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch introduces a DSP operations interface and a common core-state representation. That boundary lets xemu select or switch execution engines without making the rest of the audio processor depend on one implementation. It also gives save and load code a common state to serialize, which is essential when a saved session is reopened with a different backend selected."
+    },
+    {
+      "type": "heading",
+      "text": "Preserve the interpreter as a useful reference"
+    },
+    {
+      "type": "paragraph",
+      "text": "The C interpreter remains available, and the new setting allows the JIT path to be enabled or disabled. Keeping both paths helps developers compare behavior when investigating an audio discrepancy: the JIT can be checked against a simpler instruction-by-instruction implementation. The same refactor also fixes defects found in the existing interpreter, so the patch is not only a compiler addition."
+    },
+    {
+      "type": "heading",
+      "text": "Performance claims need workload-specific testing"
+    },
+    {
+      "type": "paragraph",
+      "text": "Early discussion attached measurements from a small set of games and noted remaining edge cases, including audio loops and titles tied to frame rate. Those reports are useful leads, not a cross-game benchmark. The merged change establishes a second DSP engine and its state plumbing; repeatable tests across games, host CPUs, save-state transitions, and timing-sensitive audio are still needed to characterize its practical gains."
+    }
+  ]
+}

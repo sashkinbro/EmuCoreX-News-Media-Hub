@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "当 GBA 音频强制 32 位 FIFO 传输时，mGBA 会重新调整缓存的 DMA 偏移量",
+  "summary": "FIFO DMA 可以以 16 位宽度进行编程，然后通过 GBA 音频路径转换为 ​​32 位传输。 mGBA 现在将缓存的源步骤重新调整为正负四个字节，从而保留方向并防止样本读取重复或未对齐。",
+  "heroAlt": "Game Boy Advance 主板上音频电路的特写。",
+  "searchKeywords": [
+    "mGBA",
+    "当 GBA 音频强制 32 位 FIFO 传输时，mGBA 会重新调整缓存的 DMA 偏移量",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "mGBA — 合并请求 #3850",
+    "implementation": "合并音频 DMA 校正"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "游戏的 DMA 宽度提前缓存"
+    },
+    {
+      "type": "paragraph",
+      "text": "当GBA写入DMA控制寄存器时，mGBA记录源和目标偏移量。 游戏可以将该通道配置为 16 位传输，这为缓存的源步骤提供了两个字节的跨度。 音频 FIFO 后来使用相同的 DMA 机制，但强加了自己的传输宽度，因此之前的设置必须与新的用途相协调。"
+    },
+    {
+      "type": "heading",
+      "text": "FIFO音频改变传输宽度"
+    },
+    {
+      "type": "paragraph",
+      "text": "当 mGBA 调度 FIFO DMA 时，它会强制通道为 32 位宽度和固定目的地。 在此更正之前，它清除了目标偏移量，但保留了原始 16 位设置的缓存源偏移量。 然后，引擎前进两个字节，同时消耗四字节音频字，复制和错位样本流的部分。"
+    },
+    {
+      "type": "heading",
+      "text": "重新缩放源步骤并保留其符号"
+    },
+    {
+      "type": "paragraph",
+      "text": "在宽度强制为 32 位后，合并的修复将正源偏移标准化为 `4`，将负偏移标准化为 `-4`。 零仍然是零。 保留符号可以保持源代码控制方向完整，同时将后续读取与 FIFO 传输现在使用的宽度对齐。 目标继续使用固定的 FIFO 地址。"
+    },
+    {
+      "type": "heading",
+      "text": "通过二分法分离回归"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求记录了使用经典 NES 系列：塞尔达传说和可重复的硬跳转预言的平分。 它将早期的缓存偏移重构确定为回归边界。 这为开发人员提供了一个具体的回放案例，用于检查 FIFO 样本是否不再在重复的 DMA 请求中组合双倍或未对齐的字节。"
+    }
+  ]
+}

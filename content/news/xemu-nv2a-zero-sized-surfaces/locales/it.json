@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu rafforza la gestione della superficie NV2A per le regioni di rendering vuote",
+  "summary": "Un gioco Xbox può lasciare la GPU emulata con una superficie la cui regione di ritaglio ha larghezza o altezza pari a zero. xemu ora salta i trasferimenti e il tracciamento dell'accesso alla CPU per quelle superfici, fornendo al tempo stesso alle API grafiche host segnaposto sicuri da un pixel.",
+  "heroAlt": "Screenshot della dashboard Xbox originale in esecuzione nell'emulatore xemu.",
+  "searchKeywords": [
+    "xemu",
+    "xemu rafforza la gestione della superficie NV2A per le regioni di rendering vuote",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "xemu — richiesta di modifica #2517",
+    "implementation": "Implementazione unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una superficie può essere validamente vuota"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il processore grafico Xbox NV2A espone superfici di colore e profondità supportate dalla memoria video. Un ospite può programmare il ritaglio o le dimensioni che producono una superficie con larghezza o altezza pari a zero. Questo stato è scomodo per un'API grafica host, che si aspetta estensioni di immagine positive e regioni di trasferimento significative."
+    },
+    {
+      "type": "heading",
+      "text": "Proteggi ogni punto in cui si muovono i pixel"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica unita di xemu aggiunge controlli a dimensione zero in entrambi i percorsi OpenGL e Vulkan. La ricerca display, la registrazione callback dell'accesso CPU, il caricamento e il download ora evitano di trattare una superficie vuota come dati pixel. Le protezioni coprono i punti in cui un'estensione non valida potrebbe altrimenti raggiungere un'operazione grafica."
+    },
+    {
+      "type": "heading",
+      "text": "Mantieni la sincronizzazione e la contabilità coerenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il percorso di caricamento Vulkan contrassegna una superficie vuota inizializzata prima del ritorno. La modifica fa inoltre sì che la rimozione del callback tolleri un callback nullo, corrispondendo alla decisione di non registrarne uno per un'immagine vuota. Questi dettagli mantengono coerenti la pulizia e lo stato del renderer quando l'ospite crea una superficie priva di pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Assegna un segnaposto host innocuo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Laddove un oggetto immagine necessita ancora di un'estensione, il renderer ne sostituisce una con una dimensione zero. L'allocazione di un pixel è un segnaposto lato host; non inventa pixel visibili dagli ospiti né trasforma la superficie vuota in una regione disegnabile. Il PR collega le guardie a diversi rapporti, pur sottolineando che un rapporto non era riproducibile in modo affidabile."
+    }
+  ]
+}

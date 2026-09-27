@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 cancella il ritardo PPU obsoleto all'avvio di un thread",
+  "summary": "Una regolazione della pianificazione PPU reimposta il ritardo di sospensione dopo un'attesa e controlla la funzione corrente prima di applicare l'euristica di avvio del thread.",
+  "heroAlt": "Montaggio che mette a confronto diversi modelli di console PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 cancella il ritardo PPU obsoleto all'avvio di un thread",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — richiesta di modifica #19580",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un ritardo può sopravvivere all’attesa che lo ha impostato"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 utilizza l'euristica di pianificazione dell'host per stimolare i thread PPU emulati. La richiesta pull n. 19580 regola la logica di sospensione e avvio in modo che un ritardo di sospensione hardware registrato venga cancellato dopo che la CPU ha completato il percorso di sospensione o di attesa. Senza tale pulizia, una decisione di pianificazione successiva può ereditare lo stato temporale da un'attesa precedente, anche se il thread è andato avanti."
+    },
+    {
+      "type": "heading",
+      "text": "Proteggere il caso speciale di avvio del thread"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch restringe inoltre l'euristica del ritardo: evita di applicare il caso speciale in cui la CPU valutata non è la PPU corrente e controlla la funzione corrente prima di fare affidamento sul valore atteso nel registro generico 11 per `sys_ppu_thread_start`. Tali controlli impediscono a un'euristica specifica della funzione di agire su uno stato di esecuzione non correlato."
+    },
+    {
+      "type": "heading",
+      "text": "Preservare il comportamento di pianificazione ordinario"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si tratta di una correzione mirata alla contabilità dello scheduler, non di un nuovo modello temporale. Il percorso di inizio thread utilizza ancora l'euristica esistente quando le sue precondizioni corrispondono; le nuove protezioni impediscono che tale logica si inoltri su una PPU diversa o su una funzione non correlata. L'eliminazione del ritardo al limite di attesa rende la transizione di stato esplicita e su cui è più semplice ragionare durante la pianificazione."
+    },
+    {
+      "type": "heading",
+      "text": "Le correzioni temporali necessitano di prove di regressione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La tempistica dei thread può variare in base al carico dell'host, al comportamento del gioco e ai modelli di sincronizzazione. La patch rende le condizioni previste più precise, ma non stabilisce di per sé una modifica universale delle prestazioni o della compatibilità. Test utili dovrebbero coprire l'avvio del thread dopo la sospensione, le chiamate da contesti PPU non correnti, funzioni non correlate con contenuti di registro simili e normali sequenze di attesa/ripresa."
+    }
+  ]
+}

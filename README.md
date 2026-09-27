@@ -60,6 +60,7 @@ Articles must be original summaries based on cited sources. Full copies of third
 - Manuals include prerequisites, numbered actions, a verification checkpoint, rollback guidance, and common failure modes. They do not provide copyrighted firmware or game data and do not direct readers to unauthorized downloads.
 - Video entries are watched before publication. The provider ID, exact title, channel, date, duration, subject, and availability are verified; misleading, unrelated, unavailable, duplicated, or piracy-promoting videos are rejected.
 - Every article hero must be locally stored, directly relevant, visibly distinct from other catalog media, and accompanied by source, creator, license, attribution, modification, and download-permission metadata. Additional images are used only when they add evidence or useful context.
+- Source article heroes from existing, relevant images published online. Do not generate hero illustrations or diagrams for this catalog; verify and record redistribution rights before storing a copy locally.
 - Every required locale is a complete translation of the same article. Machine output or placeholder text remains a draft until terminology, protected names, code identifiers, meaning, and natural phrasing have been reviewed.
 
 ## Validation

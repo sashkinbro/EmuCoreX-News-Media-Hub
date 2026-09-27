@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast adds bounded NEON paths for ARM64 framebuffer work",
+  "summary": "Flycast now uses ARM64 NEON for framebuffer conversion and VRAM writes, while retaining scalar fallbacks for unaligned or unsupported cases. A physical-VRAM bounds check keeps vector reads inside both 8 MB and 16 MB memory configurations.",
+  "heroAlt": "Product photo showing the Sega Dreamcast console, controller, and accessories.",
+  "searchKeywords": [
+    "Flycast",
+    "ARM64",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2452",
+    "implementation": "Merged implementation and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Framebuffer conversion is a hot memory path"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast’s framebuffer emulation moves pixel data between the emulated PowerVR display logic and host-visible memory. On ARM64, doing that work one scalar value at a time can leave vector instructions unused. The merged renderer change adds NEON implementations for conversion and writes to emulated VRAM. These are separate stages in the framebuffer path: one translates pixel representation, while the other places the resulting data into the emulated memory layout."
+    },
+    {
+      "type": "heading",
+      "text": "Vectorize only the region that is safe to read"
+    },
+    {
+      "type": "paragraph",
+      "text": "A vector load can cross the end of a physical allocation if code assumes the logical row length is always available. The patch checks the actual VRAM footprint before issuing vector reads and keeps scalar fallbacks for unsupported or unaligned regions. It explicitly accounts for 8 MB and 16 MB VRAM configurations, so the safe extent is derived from the selected console memory size rather than a wider host pointer range."
+    },
+    {
+      "type": "heading",
+      "text": "Keep a fallback for awkward boundaries"
+    },
+    {
+      "type": "paragraph",
+      "text": "SIMD routines are most useful for regular aligned spans, but framebuffer edges and partial rows can violate those assumptions. Retaining a scalar path lets the optimized loop handle the safe bulk while preserving defined behavior for the remainder instead of widening reads past the emulated memory boundary. The split also makes unusual tails easier to reason about: vectorization is an optimization within a checked region, not a requirement for every pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Validate speed work against memory safety"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change merged into Flycast’s development branch after maintainer feedback refined framebuffer-write tracking. Its evidence is an implementation change and passing repository checks, not a published cross-device benchmark. Useful follow-up measurements should separate conversion cost from VRAM writes and cover both supported memory sizes, different row alignments, and short spans where scalar setup may be cheaper."
+    }
+  ]
+}

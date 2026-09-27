@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast 为 OpenGL ES 3.1 带来了按像素排序",
+  "summary": "libretro OpenGL ES 路径现在可以请求 GLES 3.1 上下文并验证 Flycast 的顺序无关透明渲染器所需的图像原子、着色器存储块、计数器、绑定和缓冲区限制。",
+  "heroAlt": "世嘉 Dreamcast 游戏机位于其图形处理器套件旁边。",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast 为 OpenGL ES 3.1 带来了按像素排序",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "Flycast — 合并请求 #2451",
+    "implementation": "合并实施"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "为什么透明度需要片段顺序"
+    },
+    {
+      "type": "paragraph",
+      "text": "传统的深度缓冲区保留最近的不透明表面，但重叠的半透明多边形可能需要按深度顺序混合多个片段。 Flycast 的 OIT 渲染器使用每像素链接列表方法，因此可以在绘制后收集和解析片段，而不是依赖于单个固定层。 每个像素将头指针记录到共享片段缓冲区中，而原子则跨并行片段调用安全地分配节点。"
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 公开了所需的构建块"
+    },
+    {
+      "type": "paragraph",
+      "text": "当选择 OIT 渲染器时，合并的更改会要求 libretro 前端提供显式 OpenGL ES 3.1 上下文。 它添加了渲染器使用的图像原子和着色器存储支持，直接请求上下文版本，并使用适当的存储缓冲区内存屏障来进行解析工作。 这避免了依赖前端默默地返回比要求提供的上下文更新的上下文。"
+    },
+    {
+      "type": "heading",
+      "text": "检查实际限制而不是信任版本字符串"
+    },
+    {
+      "type": "paragraph",
+      "text": "标称的 API 版本不能保证此渲染器有足够的资源。 Flycast 现在检查片段着色器存储块、图像单元、原子计数器和绑定、组合着色器输出以及存储缓冲区大小。 它还在宣传每像素排序支持之前处理 GLES 图像原子扩展要求。 如果任何资源不足，渲染器会记录失败的功能，而不是盲目地尝试路径。"
+    },
+    {
+      "type": "heading",
+      "text": "跨帧重用分配"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁还保留帧缓冲区读回缓冲区，而不是在每个帧上分配新的存储空间。 这一更改减少了同一渲染路径中的重复分配工作。 因此，该功能取决于正确的 GPU 功能检测以及片段写入和后续合成过程之间的仔细同步。 测试应包括最低支持版本的 GLES 实现，并验证透明排序和不支持的设备回退行为。"
+    }
+  ]
+}

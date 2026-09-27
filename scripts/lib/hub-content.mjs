@@ -490,6 +490,14 @@ function validateLocalizedStructure(englishDocument, document, location, errors)
       errors.push(`${location}: block ${index} type does not match English`);
       continue;
     }
+    const englishFields = Object.keys(englishBlock).sort();
+    const localizedFields = Object.keys(localizedBlock).sort();
+    if (JSON.stringify(localizedFields) !== JSON.stringify(englishFields)) {
+      errors.push(`${location}: block ${index} fields do not match English`);
+    }
+    if (englishBlock.type === "list" && localizedBlock.items?.length !== englishBlock.items?.length) {
+      errors.push(`${location}: block ${index} list item count does not match English`);
+    }
     if (englishBlock.type === "youtube" && localizedBlock.providerId !== englishBlock.providerId) {
       errors.push(`${location}: block ${index} providerId does not match English`);
     }

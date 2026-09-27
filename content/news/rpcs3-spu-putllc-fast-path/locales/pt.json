@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 restringe o bloqueio de reserva SPU putllc",
+  "summary": "Um novo atalho lida com uma linha de reserva de 128 bytes com uma região bloqueada menor e uma comparação e troca atômica de 16 bytes quando reservas precisas estão desativadas.",
+  "heroAlt": "Vista traseira de um PlayStation 3 mostrando suas portas e gabinete.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 restringe o bloqueio de reserva SPU putllc",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — solicitação de incorporação #19568",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um armazenamento condicional protege a memória compartilhada"
+    },
+    {
+      "type": "paragraph",
+      "text": "A instrução Cell SPU putllc armazena condicionalmente um valor apenas enquanto sua reserva permanece válida. Em um emulador, esse comportamento deve ser coordenado com outros processadores emulados que possam tocar na mesma memória. A solicitação pull RPCS3 #19568 altera o caminho de reserva comum e menos rigoroso: verifica os dados de reserva registrados e, em seguida, executa uma atualização atômica, mantendo o protocolo de reserva intacto."
+    },
+    {
+      "type": "heading",
+      "text": "Bloqueie a linha de reserva, atualize o operando"
+    },
+    {
+      "type": "paragraph",
+      "text": "A implementação usa um bloqueio de intervalo que cobre o grânulo de reserva de 128 bytes, compara os dados de reserva armazenados e usa uma troca de comparação atômica de 16 bytes para o valor real. Isto separa o escopo necessário para proteger a escrituração de reservas da largura da gravação condicional. Se a comparação falhar, o armazenamento não prossegue, preservando a semântica condicional da instrução."
+    },
+    {
+      "type": "heading",
+      "text": "O modo preciso mantém seu caminho mais forte"
+    },
+    {
+      "type": "paragraph",
+      "text": "O atalho é bloqueado quando reservas precisas são desativadas e em um local de reserva registrado válido. O modo preciso continua a usar o bloqueio de gravador mais amplo existente. Essa divisão é importante porque uma otimização de velocidade não deve enfraquecer silenciosamente o comportamento mais rígido que os usuários selecionam para investigações de compatibilidade ou casos de corrida difíceis."
+    },
+    {
+      "type": "heading",
+      "text": "A simultaneidade ainda precisa de cobertura de carga de trabalho"
+    },
+    {
+      "type": "paragraph",
+      "text": "Essa alteração reduz o trabalho de bloqueio em um caminho; não estabelece uma aceleração medida para cada título ou host. Os armazenamentos condicionais interagem com outros threads SPU e acesso à CPU, portanto, a validação deve incluir gravadores simultâneos, invalidação de reserva e ambas as configurações de precisão. A implementação da solicitação pull fornece ao emulador uma operação mais restrita para testar sem alterar o contrato de sucesso ou falha visível ao convidado."
+    }
+  ]
+}

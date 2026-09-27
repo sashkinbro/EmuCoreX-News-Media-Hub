@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast rejects disc descriptors with unfinished quoted filenames",
+  "summary": "A CUE or GDI FILE line ending before its closing quote could leave Flycast’s parser reading indefinitely. The reader now checks every character extraction and raises an invalid-descriptor error at end of file, preventing a malformed text file from hanging disc loading.",
+  "heroAlt": "Two open Sega Dreamcast consoles showing their disc drives.",
+  "searchKeywords": [
+    "Flycast",
+    "CUE",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2413",
+    "implementation": "Merged CUE and GDI parser changes"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A missing quote can turn parsing into an endless read"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast accepts CUE and GDI text descriptors that name the files making up a disc image. In a quoted FILE filename, the parser searched for the next quote without checking whether extraction had reached end of file. An unterminated string could therefore keep appending invalid data rather than stopping, leading to a hang or unbounded memory growth when a malformed descriptor was opened."
+    },
+    {
+      "type": "heading",
+      "text": "Check the stream at each extraction"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merged fix checks the input stream both while skipping whitespace before a filename and on every character read inside a quoted filename. If extraction fails, the parser throws the existing invalid-CUE or invalid-GDI exception immediately instead of looping on an exhausted stream. Valid quoted filenames continue to be read until their closing quote."
+    },
+    {
+      "type": "heading",
+      "text": "Handle character classification safely"
+    },
+    {
+      "type": "paragraph",
+      "text": "The same change casts the extracted byte to `unsigned char` before passing it to `isspace`. The C character-classification functions accept EOF or values representable as unsigned char; passing a negative signed byte is otherwise undefined behavior. This makes the whitespace scan well-defined for filenames containing bytes outside basic ASCII."
+    },
+    {
+      "type": "heading",
+      "text": "Reject bad input before it consumes resources"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch turns one malformed-input case into a normal parse error; it does not validate every possible CUE or GDI field. Regression checks should cover missing quotes, empty names, whitespace before names, non-ASCII bytes, and valid quoted paths. The practical improvement is that a truncated descriptor fails promptly instead of trapping the disc loader in a read loop."
+    }
+  ]
+}

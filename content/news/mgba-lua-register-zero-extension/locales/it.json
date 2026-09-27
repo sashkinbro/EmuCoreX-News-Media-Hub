@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA inizializza le letture del registro Lua prima di restituire valori a 8 bit",
+  "summary": "L'API di scripting del Game Boy ha restituito un `int32_t`, ma la richiamata del registro ha scritto solo il byte basso per i registri a 8 bit. Inizializzare l'output su zero prima della richiamata impedisce ai byte dello stack rimanenti di apparire come bit alti casuali in Lua.",
+  "heroAlt": "Game Boy Advance smontato che mostra il circuito stampato interno.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA inizializza le letture del registro Lua prima di restituire valori a 8 bit",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — richiesta di modifica #3785",
+    "implementation": "Correzione dell'helper di scripting unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un registro stretto è stato inserito in un risultato più ampio"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'API Game Boy Lua espone `emu:readRegister()` tramite un risultato di valore di script supportato da un numero intero a 32 bit. Per un registro CPU a 8 bit, il callback core ha scritto solo un byte attraverso un `uint8_t*`. Gli altri byte nel risultato locale a 32 bit sono stati lasciati intatti, quindi il valore dello script pubblico potrebbe contenere dati non correlati al registro richiesto."
+    },
+    {
+      "type": "heading",
+      "text": "I byte non inizializzati facevano sembrare diverso lo stato identico"
+    },
+    {
+      "type": "paragraph",
+      "text": "Se il registro B contenesse `0x12`, Lua potrebbe ricevere `0x12`, `0x7F12` o un altro valore a seconda dei bit che occupano i byte alti. Il byte basso era corretto; il numero intero restituito non era deterministico. Uno script che confronta, registra o formatta le letture dei registri potrebbe quindi comportarsi in modo incoerente anche quando lo stato della CPU emulata non è cambiato."
+    },
+    {
+      "type": "heading",
+      "text": "Azzerare prima l'intera memoria di restituzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione inizializza il `int32_t out` locale su zero prima di invocare il callback di lettura del registro del core. Una richiamata a 8 bit aggiorna quindi solo il byte basso mentre i byte alti non utilizzati rimangono zero. Callback di registro più ampi possono comunque scrivere il loro valore completo attraverso lo stesso puntatore di output, quindi la correzione preserva l'interfaccia condivisa dell'helper."
+    },
+    {
+      "type": "heading",
+      "text": "La correzione è piccola e direttamente verificabile"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica è limitata all'helper di lettura Lua e non altera lo stato della CPU emulata. Un controllo di regressione mirato può impostare un registro noto a 8 bit, leggerlo ripetutamente da Lua e verificare che il risultato sia costantemente esteso a zero anziché dipendente dal contenuto dello stack precedente. La proprietà importante è la conversione deterministica della larghezza, non una modifica alla semantica del registro del Game Boy."
+    }
+  ]
+}

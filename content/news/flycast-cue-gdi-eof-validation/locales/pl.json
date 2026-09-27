@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast odrzuca deskryptory płyt z niedokończonymi nazwami plików w cudzysłowie",
+  "summary": "Linia CUE lub GDI FILE kończąca się przed cudzysłowem zamykającym może pozostawić odczyt parsera Flycast na czas nieokreślony. Czytnik sprawdza teraz wyodrębnienie każdego znaku i zgłasza błąd nieprawidłowego deskryptora na końcu pliku, zapobiegając zawieszaniu się ładowania dysku z powodu zniekształconego pliku tekstowego.",
+  "heroAlt": "Dwie otwarte konsole Sega Dreamcast pokazujące swoje napędy dyskowe.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast odrzuca deskryptory płyt z niedokończonymi nazwami plików w cudzysłowie",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "Flycast — prośba o scalenie #2413",
+    "implementation": "Połączone zmiany parsera CUE i GDI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Brakujący cytat może zamienić analizę w niekończącą się lekturę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast akceptuje deskryptory tekstowe CUE i GDI, które nadają nazwy plikom tworzącym obraz dysku. W cytowanej nazwie pliku PLIK parser szukał następnego cudzysłowu bez sprawdzania, czy wyodrębnianie osiągnęło koniec pliku. Niezakończony ciąg znaków mógłby zatem zamiast zatrzymywać dołączać nieprawidłowe dane, co prowadziłoby do zawieszenia lub nieograniczonego wzrostu pamięci po otwarciu zniekształconego deskryptora."
+    },
+    {
+      "type": "heading",
+      "text": "Sprawdź strumień przy każdej ekstrakcji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona poprawka sprawdza strumień wejściowy zarówno przy pomijaniu białych znaków przed nazwą pliku, jak i przy każdym znaku odczytywanym w cudzysłowie nazwy pliku. Jeśli ekstrakcja się nie powiedzie, parser natychmiast zgłasza istniejący wyjątek nieprawidłowego CUE lub nieprawidłowego GDI, zamiast zapętlać wyczerpany strumień. Prawidłowe nazwy plików w cudzysłowie będą nadal odczytywane aż do cudzysłowu zamykającego."
+    },
+    {
+      "type": "heading",
+      "text": "Bezpiecznie obsługuj klasyfikację postaci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta sama zmiana rzutuje wyodrębniony bajt na `unsigned char` przed przekazaniem go do `isspace`. Funkcje klasyfikacji znaków w języku C akceptują EOF lub wartości reprezentowane jako znak bez znaku; w przeciwnym razie przekazanie ujemnego bajtu ze znakiem jest zachowaniem niezdefiniowanym. Dzięki temu skanowanie białych znaków jest dobrze zdefiniowane w przypadku nazw plików zawierających bajty spoza podstawowego ASCII."
+    },
+    {
+      "type": "heading",
+      "text": "Odrzuć nieprawidłowe dane wejściowe, zanim zużyją zasoby"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka zamienia jeden przypadek zniekształconych danych wejściowych w normalny błąd analizy; nie sprawdza każdego możliwego pola CUE lub GDI. Kontrole regresji powinny obejmować brakujące cudzysłowy, puste nazwy, białe znaki przed nazwami, bajty inne niż ASCII i prawidłowe ścieżki w cudzysłowie. Praktycznym ulepszeniem jest to, że skrócony deskryptor natychmiast przestaje działać, zamiast uwięzić program ładujący dysk w pętli odczytu."
+    }
+  ]
+}

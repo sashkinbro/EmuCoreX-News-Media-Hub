@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast apporte le tri par pixel à OpenGL ES 3.1",
+  "summary": "Le chemin libretro OpenGL ES peut désormais demander le contexte GLES 3.1 et vérifier les atomes de l'image, les blocs de stockage de shader, les compteurs, les liaisons et les limites de tampon requis par le moteur de rendu de transparence indépendant de l'ordre de Flycast.",
+  "heroAlt": "Console Sega Dreamcast à côté de son package de processeur graphique.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast apporte le tri par pixel à OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "Flycast — demande de fusion #2451",
+    "implementation": "Implémentation fusionnée"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pourquoi la transparence nécessite un ordre des fragments"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un tampon de profondeur conventionnel conserve la surface opaque la plus proche, mais les polygones translucides qui se chevauchent peuvent nécessiter plusieurs fragments mélangés dans l'ordre de la profondeur. Le moteur de rendu OIT de Flycast utilise une approche de liste chaînée par pixel afin que les fragments puissent être collectés et résolus après le dessin plutôt que de s'appuyer sur une seule couche fixe. Chaque pixel enregistre un pointeur de tête dans un tampon de fragment partagé, tandis que les atomes allouent les nœuds en toute sécurité entre les invocations de fragments parallèles."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 expose les éléments de base requis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement fusionné demande aux interfaces libretro un contexte OpenGL ES 3.1 explicite lorsque le moteur de rendu OIT est sélectionné. Il ajoute la prise en charge de l'image atomique et du stockage de shader utilisée par le moteur de rendu, demande directement la version du contexte et utilise les barrières de mémoire tampon de stockage appropriées pour le travail de résolution. Cela évite de s'appuyer sur une interface pour renvoyer silencieusement un contexte plus récent que celui qu'il a été demandé de fournir."
+    },
+    {
+      "type": "heading",
+      "text": "Vérifiez les limites réelles au lieu de faire confiance à une chaîne de version"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une version nominale de l'API ne garantit pas suffisamment de ressources pour ce moteur de rendu. Flycast vérifie désormais les blocs de stockage des shaders de fragments, les unités d'image, les compteurs et liaisons atomiques, les sorties de shaders combinées et les tailles des tampons de stockage. Il gère également les exigences d'extension atomique d'image GLES avant d'annoncer la prise en charge du tri par pixel. Si une ressource est insuffisante, le moteur de rendu enregistre la fonctionnalité qui a échoué plutôt que de tenter le chemin aveuglément."
+    },
+    {
+      "type": "heading",
+      "text": "Réutiliser les allocations entre les images"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif conserve également les tampons de relecture du framebuffer plutôt que d'allouer un nouveau stockage sur chaque image. Ce changement réduit le travail d'allocation répété dans le même chemin de rendu. La fonctionnalité dépend donc à la fois d’une détection correcte des capacités du GPU et d’une synchronisation minutieuse entre les écritures de fragments et la passe de composition ultérieure. Les tests doivent inclure les implémentations de GLES dans la version minimale prise en charge et vérifier à la fois le classement transparent et le comportement de secours des appareils non pris en charge."
+    }
+  ]
+}

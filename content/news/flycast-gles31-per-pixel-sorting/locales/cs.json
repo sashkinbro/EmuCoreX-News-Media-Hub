@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast přináší řazení podle pixelů do OpenGL ES 3.1",
+  "summary": "Libretro OpenGL ES cesta nyní může vyžadovat kontext GLES 3.1 a ověřovat atomiky obrazu, bloky ukládání shaderů, čítače, vazby a limity vyrovnávací paměti, které vyžaduje vykreslování průhlednosti nezávislé na objednávce Flycast.",
+  "heroAlt": "Konzole Sega Dreamcast vedle balíčku grafického procesoru.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast přináší řazení podle pixelů do OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "Flycast — požadavek na sloučení #2451",
+    "implementation": "Sloučená implementace"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč transparentnost potřebuje pořadí fragmentů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Konvenční vyrovnávací paměť hloubky zachovává nejbližší neprůhledný povrch, ale překrývající se průsvitné polygony mohou vyžadovat několik fragmentů smíchaných v hloubkovém pořadí. Vykreslovací modul Flycast OIT používá přístup propojeného seznamu na pixely, takže fragmenty lze shromažďovat a řešit po vykreslení, místo aby se spoléhalo na jedinou pevnou vrstvu. Každý pixel zaznamenává hlavní ukazatel do sdílené vyrovnávací paměti fragmentů, zatímco atomics bezpečně alokuje uzly napříč paralelními vyvoláními fragmentů."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 odhaluje požadované stavební bloky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučená změna žádá libretro frontendy o explicitní kontext OpenGL ES 3.1, když je vybrán vykreslovací modul OIT. Přidává podporu pro atomické obrázky a úložiště shaderu, kterou používá renderer, přímo požaduje kontextovou verzi a pro práci s řešením používá vhodné bariéry paměti vyrovnávací paměti. Vyhnete se tak spoléhání na to, že frontend tiše vrátí novější kontext, než jaký byl požádán o poskytnutí."
+    },
+    {
+      "type": "heading",
+      "text": "Zkontrolujte skutečné limity namísto důvěry v řetězec verze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nominální verze API nezaručuje dostatek zdrojů pro tento renderer. Flycast nyní kontroluje fragmenty shader-úložné bloky, obrazové jednotky, atomické čítače a vazby, kombinované výstupy shaderu a velikosti úložného bufferu. Zvládá také požadavek na atomové rozšíření GLES před inzerováním podpory řazení podle pixelů. Pokud je některý zdroj nedostatečný, vykreslovací modul zaprotokoluje, která funkce selhala, místo aby se pokusil o cestu naslepo."
+    },
+    {
+      "type": "heading",
+      "text": "Znovu použijte alokace napříč rámci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch také zachovává vyrovnávací paměti pro zpětné čtení framebufferu namísto alokace čerstvého úložiště na každém snímku. Tato změna snižuje opakovanou alokaci ve stejné cestě vykreslování. Funkce proto závisí jak na správné detekci schopností GPU, tak na pečlivé synchronizaci mezi zápisy fragmentů a pozdějším průchodem skládání. Testování by mělo zahrnovat implementace GLES v minimální podporované verzi a ověřit jak transparentní řazení, tak záložní chování nepodporovaného zařízení."
+    }
+  ]
+}

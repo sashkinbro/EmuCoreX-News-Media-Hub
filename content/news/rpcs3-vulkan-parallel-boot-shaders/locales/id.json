@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 memparalelkan kompilasi boot shader Vulkan",
+  "summary": "RPCS3 dapat menggunakan thread host untuk kompiler pipa Vulkan awal, kemudian mengubah ukuran kumpulan setelah pemuatan cache shader untuk mengikuti pengaturan runtime yang dikonfigurasi.",
+  "heroAlt": "Foto kit pengembangan PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 memparalelkan kompilasi boot shader Vulkan",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — permintaan penggabungan #19578",
+    "implementation": "Tambalan dan ulasan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cold start sudah berhasil sebelum pertandingan berjalan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perender Vulkan harus menyiapkan alur grafis sebelum dapat menggambarnya. Pada awal yang dingin, RPCS3 mungkin perlu mengkompilasi shader saat membangun backend grafisnya, sehingga startup dapat menghabiskan waktu dalam kompilasi bahkan sebelum beban kerja runtime yang biasa dimulai. Permintaan tarik #19578 mengubah pengaturan kumpulan thread di sekitar fase boot awal tersebut daripada mengubah output shader atau format cache pada disk."
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan inti yang tersedia untuk kompilasi awal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ketika pengaturan thread otomatis adalah nol, kompiler pipa awal sekarang dimulai dengan thread host yang tersedia. Jika pengguna memberikan jumlah thread eksplisit, nilai tersebut akan dihormati. Hal ini membuat konfigurasi otomatis berguna selama persiapan shader awal, di mana pekerjaan dapat dibagi menjadi beberapa tugas kompilasi independen."
+    },
+    {
+      "type": "heading",
+      "text": "Pulihkan kumpulan yang dikonfigurasi setelah pemuatan cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "Setelah pemuatan shader-cache selesai pada thread inisialisasi, RPCS3 mengubah ukuran kumpulan kompiler agar sesuai dengan perilaku runtime yang dikonfigurasi. Kedua fase tersebut memiliki tujuan yang berbeda: booting awal dapat memanfaatkan paralelisme host, sementara pekerjaan selanjutnya akan mengikuti pengaturan yang dipilih pengguna. Mempertahankan perubahan ukuran pada masa transisi akan menghindari perlakuan terhadap keputusan khusus startup sebagai penggantian permanen."
+    },
+    {
+      "type": "heading",
+      "text": "Permulaan dingin dan hangat memerlukan pengukuran terpisah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch mengubah kebijakan penjadwalan, namun nilainya bergantung pada konten cache, topologi CPU, dan berapa banyak kompilasi yang sebenarnya tertunda. Evaluasi yang berguna membandingkan cold boot dengan cache yang terisi, jumlah thread otomatis dan eksplisit, dan total waktu startup serta pertarungan CPU. Perubahan ini tidak menjanjikan perbaikan yang pasti di seluruh sistem; itu menciptakan fase awal yang lebih paralel sambil mempertahankan kumpulan yang dikonfigurasi sesudahnya."
+    }
+  ]
+}

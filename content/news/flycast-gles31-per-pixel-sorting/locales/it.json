@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast porta l'ordinamento per pixel in OpenGL ES 3.1",
+  "summary": "Il percorso libretro OpenGL ES può ora richiedere il contesto GLES 3.1 e verificare gli atomi dell'immagine, i blocchi di archiviazione dello shader, i contatori, i collegamenti e i limiti del buffer richiesti dal renderer di trasparenza indipendente dall'ordine di Flycast.",
+  "heroAlt": "Console Sega Dreamcast accanto al pacchetto del processore grafico.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast porta l'ordinamento per pixel in OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "Flycast — richiesta di modifica #2451",
+    "implementation": "Implementazione unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Perché la trasparenza ha bisogno dell'ordine dei frammenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un buffer di profondità convenzionale mantiene la superficie opaca più vicina, ma i poligoni traslucidi sovrapposti potrebbero richiedere la fusione di diversi frammenti in ordine di profondità. Il renderer OIT di Flycast utilizza un approccio con elenco collegato per pixel in modo che i frammenti possano essere raccolti e risolti dopo l'estrazione anziché fare affidamento su un singolo livello fisso. Ogni pixel registra un puntatore head in un buffer di frammenti condiviso, mentre gli atomi allocano i nodi in modo sicuro attraverso invocazioni di frammenti paralleli."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 espone gli elementi costitutivi richiesti"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica unita richiede ai frontend libretro un contesto OpenGL ES 3.1 esplicito quando è selezionato il renderer OIT. Aggiunge il supporto per l'archiviazione atomica dell'immagine e dello shader utilizzato dal renderer, richiede direttamente la versione del contesto e utilizza le barriere di memoria del buffer di archiviazione appropriate per il lavoro di risoluzione. Ciò evita di fare affidamento su un frontend per restituire silenziosamente un contesto più nuovo di quello che gli è stato chiesto di fornire."
+    },
+    {
+      "type": "heading",
+      "text": "Controlla i limiti effettivi invece di fidarti di una stringa di versione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una versione API nominale non garantisce risorse sufficienti per questo renderer. Flycast ora controlla i blocchi di archiviazione dello shader dei frammenti, le unità di immagine, i contatori e i collegamenti atomici, gli output degli shader combinati e le dimensioni del buffer di archiviazione. Gestisce inoltre i requisiti di estensione atomica dell'immagine GLES prima di pubblicizzare il supporto dell'ordinamento per pixel. Se una risorsa è insufficiente, il renderer registra quale funzionalità ha avuto esito negativo anziché tentare il percorso alla cieca."
+    },
+    {
+      "type": "heading",
+      "text": "Riutilizzare le allocazioni tra frame"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch mantiene inoltre i buffer di rilettura del framebuffer invece di allocare nuovo spazio di archiviazione su ogni frame. Questa modifica riduce il lavoro di allocazione ripetuto nello stesso percorso di rendering. La funzionalità dipende quindi sia dal corretto rilevamento della capacità della GPU sia dall'attenta sincronizzazione tra le scritture dei frammenti e il successivo passaggio di composizione. I test dovrebbero includere le implementazioni GLES alla versione minima supportata e verificare sia l'ordinamento trasparente che il comportamento di fallback dei dispositivi non supportati."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast aggiunge percorsi NEON delimitati per il funzionamento del framebuffer ARM64",
+  "summary": "Flycast ora utilizza ARM64 NEON per la conversione del framebuffer e le scritture VRAM, mantenendo i fallback scalari per i casi non allineati o non supportati. Un controllo dei limiti fisici della VRAM mantiene le letture vettoriali all'interno delle configurazioni di memoria da 8 MB e 16 MB.",
+  "heroAlt": "Foto del prodotto che mostra la console, il controller e gli accessori Sega Dreamcast.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast aggiunge percorsi NEON delimitati per il funzionamento del framebuffer ARM64",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "Flycast — richiesta di modifica #2452",
+    "implementation": "Implementazione e revisione unificate"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La conversione del framebuffer è un percorso di memoria caldo"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'emulazione del framebuffer di Flycast sposta i dati dei pixel tra la logica del display PowerVR emulato e la memoria visibile all'host. Su ARM64, eseguire tale operazione un valore scalare alla volta può lasciare inutilizzate le istruzioni vettoriali. La modifica del renderer unito aggiunge implementazioni NEON per la conversione e scrive sulla VRAM emulata. Si tratta di fasi separate nel percorso del framebuffer: una traduce la rappresentazione dei pixel, mentre l'altra inserisce i dati risultanti nel layout della memoria emulata."
+    },
+    {
+      "type": "heading",
+      "text": "Vettorializzare solo la regione sicura da leggere"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un carico vettoriale può superare la fine di un'allocazione fisica se il codice presuppone che la lunghezza della riga logica sia sempre disponibile. La patch controlla l'effettivo ingombro della VRAM prima di emettere letture vettoriali e mantiene fallback scalari per le regioni non supportate o non allineate. Tiene conto esplicitamente delle configurazioni VRAM da 8 MB e 16 MB, quindi l'estensione sicura deriva dalla dimensione della memoria della console selezionata anziché da un intervallo di puntatori host più ampio."
+    },
+    {
+      "type": "heading",
+      "text": "Mantieni un ripiego per i confini scomodi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le routine SIMD sono molto utili per intervalli allineati regolari, ma i bordi del framebuffer e le righe parziali possono violare tali presupposti. Il mantenimento di un percorso scalare consente al ciclo ottimizzato di gestire la massa sicura preservando al tempo stesso il comportamento definito per il resto invece di ampliare le letture oltre il limite della memoria emulata. La suddivisione rende anche più facile ragionare su code insolite: la vettorizzazione è un'ottimizzazione all'interno di una regione selezionata, non un requisito per ogni pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Convalidare il lavoro sulla velocità rispetto alla sicurezza della memoria"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica è confluita nel ramo di sviluppo di Flycast dopo che il feedback dei manutentori ha perfezionato il tracciamento della scrittura del framebuffer. La prova è una modifica dell'implementazione e il superamento dei controlli del repository, non un benchmark cross-device pubblicato. Misure di follow-up utili dovrebbero separare il costo di conversione dalle scritture VRAM e coprire sia le dimensioni di memoria supportate, i diversi allineamenti delle righe e gli intervalli brevi in ​​cui la configurazione scalare potrebbe essere più economica."
+    }
+  ]
+}

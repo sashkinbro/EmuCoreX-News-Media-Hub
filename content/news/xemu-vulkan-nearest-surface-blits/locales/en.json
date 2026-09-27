@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu preserves sharp Xbox 2D surfaces when scaling in Vulkan",
+  "summary": "When the CPU writes an Xbox surface in VRAM, xemu uploads it and may scale it for a higher internal resolution. The Vulkan path now uses nearest-neighbor blits for both upload upscaling and download downscaling, matching pixel replication instead of adding linear blur.",
+  "heroAlt": "Rear view of the original Xbox console showing its connectors.",
+  "searchKeywords": [
+    "xemu",
+    "NV2A",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "xemu pull request #2874",
+    "implementation": "Merged implementation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU writes can bypass a draw call"
+    },
+    {
+      "type": "paragraph",
+      "text": "The NV2A renderer tracks surfaces in Xbox video memory. When the emulated CPU writes directly into one, xemu calls `pgraph_vk_upload_surface_data()` to synchronize those bytes to a Vulkan image so later rendering sees the update. Above 1× internal resolution, that upload uses `vkCmdBlitImage` to enlarge the surface. This is a distinct path from drawing a normal 3D scene, because the source pixels were written by the CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Linear filtering softened hard-edged artwork"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Vulkan upload blit used `VK_FILTER_LINEAR` for color surfaces. Linear filtering blends neighboring texels when enlarging an image, which can soften pixel edges in menus and other 2D layers. The pull request author reported the Xbox dashboard as an obvious example and noted that pure 3D rendering does not use this path. The OpenGL renderer already expanded surface pixels by replication, giving the project a useful behavioral comparison."
+    },
+    {
+      "type": "heading",
+      "text": "Use nearest sampling in both directions"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merged change switches the upload upscale blit to `VK_FILTER_NEAREST` and makes the same choice for the surface download downscale path. Nearest filtering selects a source texel rather than averaging its neighbors, preserving the discrete values in the transferred surface. Applying the rule in both directions keeps the copy semantics consistent when the CPU and GPU exchange a scaled color surface."
+    },
+    {
+      "type": "heading",
+      "text": "The change is about transfer semantics"
+    },
+    {
+      "type": "paragraph",
+      "text": "This patch affects CPU-to-GPU and GPU-to-CPU surface synchronization in the Vulkan renderer; it does not change a game’s original resolution or its 3D filtering settings. The expected result is sharper scaled 2D content where those blits are used, with validation focused on both transfer directions and color-surface boundaries. The pull request noted limited repro coverage beyond the dashboard, so additional CPU-rendered menus and applications are useful checks."
+    }
+  ]
+}

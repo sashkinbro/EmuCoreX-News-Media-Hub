@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu arredonda os prazos de alarme NV2A para evitar loops de temporizador",
+  "summary": "Truncar as conversões de clock fracionário pode agendar um alarme da GPU do Xbox muito cedo e reagendá-lo repetidamente no mesmo instante. O xemu agora arredonda as conversões e marca as distâncias para cima, lida explicitamente com a quebra de alarme e evita temporizadores de host quando a interrupção do convidado é desativada.",
+  "heroAlt": "Vista superior do console Xbox original.",
+  "searchKeywords": [
+    "xemu",
+    "xemu arredonda os prazos de alarme NV2A para evitar loops de temporizador",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitação de incorporação #3035",
+    "implementation": "Implementação mesclada e testes PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O cronômetro convidado e o cronômetro host usam relógios diferentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "O temporizador programável NV2A representa o tempo do convidado em ticks de registro, enquanto o QEMU agenda retornos de chamada usando nanossegundos virtuais. A conversão entre esses domínios envolve proporções e aritmética inteira. Truncar cada divisão pode descartar uma fração de tick e fazer com que um prazo futuro pareça já vencido. O caso extremo relatado causou repetidos reagendamentos imediatos do alarme do anfitrião, mesmo que o prazo do convidado ainda estivesse adiantado."
+    },
+    {
+      "type": "heading",
+      "text": "Arredonde o prazo para longe de zero"
+    },
+    {
+      "type": "paragraph",
+      "text": "A mudança usa auxiliares de multiplicação/divisão de arredondamento ao converter ticks internos por meio da frequência de clock da GPU, arredonda a distância do registro para um tick de temporizador inteiro e impõe um atraso mínimo de host de um nanossegundo. Isso evita que um intervalo de convidado positivo se transforme em um retorno de chamada de host imediato. O cálculo favorece deliberadamente um prazo com uma fração de atraso em relação a um prazo arredondado para o instante atual e agendado repetidamente."
+    },
+    {
+      "type": "heading",
+      "text": "Lidar com alarmes wrap e desabilitados explicitamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O auxiliar de alarme agora escolhe o próximo valor de palavra baixa correspondente na época correta de 32 bits. Quando a interrupção do alarme é desativada, o xemu exclui o temporizador QEMU em vez de manter um retorno de chamada desnecessário armado; uma leitura de convidado ou uma reativação posterior pode perceber preguiçosamente que um alarme chegou. Essa distinção lida com alarmes mascarados sem consultar continuamente o temporizador do host, preservando ao mesmo tempo o estado de alarme visível para o convidado."
+    },
+    {
+      "type": "heading",
+      "text": "Limites de exercício com testes unitários focados"
+    },
+    {
+      "type": "paragraph",
+      "text": "A solicitação pull adiciona um destino de teste Xbox PTIMER com relógio simulado, cronômetro e funções de interrupção. Seus casos cobrem alarmes de um tique sob diferentes proporções de numeradores e denominadores, comportamento de ativação e desativação e tempo de alarme. As simulações tornam as decisões de conversão e agendamento determinísticas, de modo que as regressões de limites podem ser exercidas sem depender do tempo de um determinado jogo ou sistema operacional host."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-cell-audio-tag-tracking",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 跨端口布局重置 CellAudio 标签状态",
+  "summary": "现在，每个端口的前声道标志会跟踪 CellAudio 标签处理何时必须在立体声和环绕声布局之间更改，从而解决报告的慢速音频情况。",
+  "heroAlt": "PlayStation 3 游戏机的整体视图。",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 跨端口布局重置 CellAudio 标签状态",
+    "audio tags",
+    "stereo",
+    "surround"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — 合并请求 #19550",
+    "implementation": "补丁和审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "音频标签取决于端口布局"
+    },
+    {
+      "type": "paragraph",
+      "text": "CellAudio 端口可以承载立体声或多通道流，RPCS3 使用标签来跟踪音频缓冲区进度。 Pull request #19550 改变了端口在布局之间移动时标记这些标签的方式。 该报告将该问题与缓慢的音频相关联，并且补丁记录了额外的每个端口状态，以便处理可以区分仅前置立体声行为和环绕声道跟踪。"
+    },
+    {
+      "type": "heading",
+      "text": "保持立体声前置通道免受类似标签的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于双通道端口，更新的逻辑避免以与其他标签位置相同的方式标记右前通道。 对于多通道端口，它会迭代定义的端口缓冲区标签计数。 这些是不同的情况：对立体声流使用多通道循环可能会使模拟的制作者和消费者对哪些音频数据已准备好产生分歧。"
+    },
+    {
+      "type": "heading",
+      "text": "记住并重置每端口模式"
+    },
+    {
+      "type": "paragraph",
+      "text": "此更改为每个端口保留一个仅前置端口标志，并在端口达到环绕声道配置时重置它。 当端口被重用或其通道数发生变化时，重置非常重要； 早期立体声设置的过时状态不得引导后续多通道标签更新。 该标志属于每个端口，因此一个流的布局并不决定另一个流的行为。"
+    },
+    {
+      "type": "heading",
+      "text": "测试过渡以及稳定播放"
+    },
+    {
+      "type": "paragraph",
+      "text": "该拉取请求将调整与报告的慢速音频案例联系起来，并指出该问题已在测试场景中得到修复。 这是针对目标故障的有用证据，但音频行为还取决于缓冲区节奏和端口重用。 回归覆盖范围应包括立体声播放、环绕声播放、通道布局之间的转换以及多个活动端口，以验证标签状态是否保持本地和同步。"
+    }
+  ]
+}

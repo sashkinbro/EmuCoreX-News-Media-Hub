@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu zaokrągla terminy alarmów NV2A w górę, aby uniknąć pętli czasowych",
+  "summary": "Obcięcie konwersji zegara ułamkowego może spowodować zbyt wczesne zaplanowanie alarmu procesora graficznego Xbox i wielokrotne przesuwanie go w tym samym momencie. xemu teraz zaokrągla konwersje i odległości w górę, obsługuje bezpośrednio zawijanie alarmów i unika liczników czasu hosta, gdy przerwanie gościa jest wyłączone.",
+  "heroAlt": "Widok z góry oryginalnej konsoli Xbox.",
+  "searchKeywords": [
+    "xemu",
+    "xemu zaokrągla terminy alarmów NV2A w górę, aby uniknąć pętli czasowych",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "xemu — prośba o scalenie #3035",
+    "implementation": "Połączona implementacja i testy PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Timer gościa i timer hosta korzystają z różnych zegarów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Programowalny timer NV2A reprezentuje czas gościa w taktach rejestru, podczas gdy QEMU planuje wywołania zwrotne przy użyciu wirtualnych nanosekund. Konwersja między tymi dziedzinami obejmuje stosunki i arytmetykę liczb całkowitych. Obcięcie każdego podziału może spowodować odrzucenie ułamka zaznaczenia i sprawić, że przyszły termin będzie wydawał się już należny. Zgłoszony przypadek Edge spowodował wielokrotne natychmiastowe przesuwanie alarmu gospodarza, mimo że termin dla gości był jeszcze przed nami."
+    },
+    {
+      "type": "heading",
+      "text": "Zaokrąglij termin od zera"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana wykorzystuje zaokrąglające pomoce mnożenia/dzielenia podczas konwersji wewnętrznych taktów na częstotliwość zegara GPU, zaokrągla odległość rejestru do pełnego taktu licznika czasu i wymusza minimalne opóźnienie hosta wynoszące jedną nanosekundę. Zapobiega to przekształceniu dodatniego interwału gościa w natychmiastowe wywołanie zwrotne hosta. W obliczeniach celowo faworyzuje się termin opóźniony o ułamek sekundy w porównaniu z terminem zaokrąglanym w dół do bieżącej chwili i planowanym wielokrotnie."
+    },
+    {
+      "type": "heading",
+      "text": "Obsługuj zawijanie i wyłączone alarmy jawnie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pomocnik alarmu wybiera teraz następną pasującą wartość małego słowa w prawidłowej epoce 32-bitowej. Kiedy przerwanie alarmu jest wyłączone, xemu usuwa licznik czasu QEMU zamiast utrzymywać niepotrzebne uzbrojenie wywołania zwrotnego; gość przeczytał lub później ponownie włączył, może leniwie zauważyć, że nadszedł czas alarmu. To rozróżnienie obsługuje maskowane alarmy bez ciągłego odpytywania timera hosta, przy jednoczesnym zachowaniu stanu alarmu widocznego dla gościa."
+    },
+    {
+      "type": "heading",
+      "text": "Ćwicz granice za pomocą ukierunkowanych testów jednostkowych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Żądanie ściągnięcia dodaje cel testowy Xbox PTIMER z funkcjami próbnego zegara, timera i przerwania. Jego przypadki obejmują alarmy z jednym zaznaczeniem w różnych stosunkach liczników i mianowników, włączają i wyłączają zachowanie oraz czas alarmu. Próby sprawiają, że decyzje dotyczące konwersji i planowania są deterministyczne, więc regresje graniczne można wykonywać bez zależności od czasu konkretnej gry lub systemu operacyjnego hosta."
+    }
+  ]
+}

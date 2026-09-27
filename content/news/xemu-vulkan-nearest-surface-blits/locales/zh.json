@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu 在 Vulkan 中缩放时保留清晰的 Xbox 2D 表面",
+  "summary": "当 CPU 在 VRAM 中写入 Xbox 表面时，xemu 会上传它并可能对其进行缩放以获得更高的内部分辨率。 Vulkan 路径现在使用最近邻位块传输来进行上传放大和下载缩小，匹配像素复制而不是添加线性模糊。",
+  "heroAlt": "原始 Xbox 控制台的后视图，显示其连接器。",
+  "searchKeywords": [
+    "xemu",
+    "xemu 在 Vulkan 中缩放时保留清晰的 Xbox 2D 表面",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "xemu — 合并请求 #2874",
+    "implementation": "合并实施"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU 写入可以绕过绘制调用"
+    },
+    {
+      "type": "paragraph",
+      "text": "NV2A 渲染器跟踪 Xbox 视频内存中的表面。 当模拟的 CPU 直接写入其中时，xemu 调用 `pgraph_vk_upload_surface_data()` 将这些字节同步到 Vulkan 图像，以便稍后渲染看到更新。 在1×内部分辨率以上，上传使用`vkCmdBlitImage`放大表面。 这与绘制普通 3D 场景不同，因为源像素是由 CPU 写入的。"
+    },
+    {
+      "type": "heading",
+      "text": "线性过滤软化硬边艺术品"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan 上传 blit 使用 `VK_FILTER_LINEAR` 作为颜色表面。 放大图像时，线性过滤会混合相邻的纹素，这可以柔化菜单和其他 2D 图层中的像素边缘。 拉取请求作者报告了 Xbox 仪表板作为一个明显的示例，并指出纯 3D 渲染不使用此路径。 OpenGL 渲染器已经通过复制扩展了表面像素，为该项目提供了有用的行为比较。"
+    },
+    {
+      "type": "heading",
+      "text": "在两个方向上使用最近采样"
+    },
+    {
+      "type": "paragraph",
+      "text": "合并的更改将上传升级 blit 切换为 `VK_FILTER_NEAREST` 并对表面下载缩减路径做出相同的选择。 最近过滤选择源纹素而不是对其邻居进行平均，从而保留传输表面中的离散值。 当 CPU 和 GPU 交换缩放的颜色表面时，在两个方向应用该规则可以保持复制语义一致。"
+    },
+    {
+      "type": "heading",
+      "text": "变化与传输语义有关"
+    },
+    {
+      "type": "paragraph",
+      "text": "此补丁会影响 Vulkan 渲染器中的 CPU 到 GPU 和 GPU 到 CPU 表面同步； 它不会更改游戏的原始分辨率或其 3D 过滤设置。 预期结果是使用这些位块传输的更清晰的缩放二维内容，验证集中在传输方向和颜色表面边界。 拉取请求指出，仪表板之外的重现覆盖范围有限，因此额外的 CPU 渲染菜单和应用程序是有用的检查。"
+    }
+  ]
+}

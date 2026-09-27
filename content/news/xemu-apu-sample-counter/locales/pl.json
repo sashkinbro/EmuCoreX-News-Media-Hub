@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu wiąże licznik audio MCPX z przetworzonymi próbkami",
+  "summary": "Rejestr audio Xbox NV_PAPU_XGSCNT zgłaszał upływ czasu wirtualnego, jakby był to licznik próbek. xemu pobiera teraz wartość z emulowanego dzielnika klatek i próbek na klatkę, rozwiązując problem desynchronizacji głosu opisanej w Innocent Tears.",
+  "heroAlt": "Widok od spodu oryginalnej konsoli Xbox.",
+  "searchKeywords": [
+    "xemu",
+    "xemu wiąże licznik audio MCPX z przetworzonymi próbkami",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "xemu — prośba o scalenie #2945",
+    "implementation": "Połączona implementacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Rejestr musi zgłaszać oczekiwane gry jednostkowe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Procesor dźwięku MCPX udostępnia NV_PAPU_XGSCNT jako licznik używany podczas przetwarzania głosu. Stara implementacja xemu zwracała nanosekundy zegara wirtualnego podzielone przez 100, co stanowi oszacowanie oparte na czasie, którego związek z próbkami przetworzonymi na emulowaną ramkę nie został ustalony. Ponieważ gość czyta ten rejestr, aby śledzić postęp APU, wartość oparta na zegarze może odbiegać od rzeczywistej przykładowej pracy urządzenia."
+    },
+    {
+      "type": "heading",
+      "text": "Użyj bezpośrednio licznika klatek audio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona jednoliniowa korekcja oblicza rejestr z `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Obie wartości pochodzą z własnego modelu przetwarzania klatek APU, więc zwrócona liczba śledzi próbki, które faktycznie przeszły przez ten model, zamiast konwertować czas wirtualny przypominający zegar ścienny. Wiąże to raportowaną liczbę z postępem emulowanej ramki, nawet jeśli harmonogram odtwarzania przez hosta i wykonywanie gościa nie postępują w identycznych przyrostach."
+    },
+    {
+      "type": "heading",
+      "text": "Dlaczego niepoprawna liczba staje się słyszalna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Głosy audio wykorzystują licznik do koordynowania postępu odtwarzania. Jeśli gość i emulator nie zgadzają się co do liczby przetworzonych próbek, synchronizacja głosu może się różnić, a fragmenty dźwięku mogą nie być zsynchronizowane. Żądanie ściągnięcia podaje Innocent Tears jako tytuł, w którym zaobserwowano problem; z raportu wynika, że ​​większość dźwięku uległa desynchronizacji i nie została odtworzona w całości. Powiązane raporty audio są powiązane w dyskusji, ale nie wszystkie zostały zgłoszone jako sprawdzone przez tę zmianę."
+    },
+    {
+      "type": "heading",
+      "text": "Potraktuj poprawkę jako korektę taktowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor żądania ściągnięcia powiedział, że w tamtym momencie testy ograniczały się do Innocent Tears, mimo że zmiana odnosi się do kilku raportów. Kod określa zamierzoną jednostkę licznika; szersza weryfikacja powinna porównać odczyty rejestrów, postęp głosu i synchronizację dźwięku w granicach klatek i innych tytułów. Wąski zakres jest przydatny w diagnostyce: jeśli zliczanie następuje teraz po przetworzonych próbkach, ale tytuł nadal się zmienia, badanie można przenieść do późniejszych części potoku audio."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA přeškáluje offsety DMA uložené v mezipaměti, když GBA audio vynutí 32bitové přenosy FIFO",
+  "summary": "FIFO DMA může být naprogramováno na 16bitovou šířku a poté převedeno na 32bitové přenosy pomocí GBA audio cesty. mGBA nyní změní měřítko kroku zdroje uloženého v mezipaměti na plus nebo mínus čtyři bajty, přičemž zachová směr a zabrání zdvojeným nebo nesprávným čtením vzorků.",
+  "heroAlt": "Detailní záběr na audio obvody Game Boy Advance na základní desce.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA přeškáluje offsety DMA uložené v mezipaměti, když GBA audio vynutí 32bitové přenosy FIFO",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "mGBA — požadavek na sloučení #3850",
+    "implementation": "Sloučená oprava zvuku DMA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Šířka DMA hry je brzy uložena do mezipaměti"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA zaznamenává offsety zdroje a cíle, když GBA zapisuje řídicí registr DMA. Hra může nakonfigurovat tento kanál pro 16bitové přenosy, což dává kroku zdroje uloženého v mezipaměti dvoubajtový krok. Audio FIFO později používá stejný mechanismus DMA, ale ukládá svou vlastní přenosovou šířku, takže dřívější nastavení musí být v souladu s novým použitím."
+    },
+    {
+      "type": "heading",
+      "text": "FIFO audio mění šířku přenosu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Když mGBA naplánuje FIFO DMA, vynutí kanál na šířku 32 bitů a pevný cíl. Před touto opravou vymazal offset cíle, ale zachoval offset zdroje uloženého v mezipaměti z původního 16bitového nastavení. Modul poté postoupil o dva bajty, zatímco spotřebovával čtyřbajtová zvuková slova, duplikoval a nesprávně zarovnával části toku vzorků."
+    },
+    {
+      "type": "heading",
+      "text": "Změňte měřítko kroku zdroje a ponechte jeho znaménko"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučená oprava normalizuje kladný offset zdroje na `4` a záporný offset na `-4` poté, co je šířka vynucena na 32 bitů. Nula zůstává nulou. Zachování znaménka zachová nedotčený směr ovládání zdroje při zarovnání následných čtení na šířku, kterou nyní přenos FIFO používá. Cíl nadále používá pevnou adresu FIFO."
+    },
+    {
+      "type": "heading",
+      "text": "Regrese byla izolována půlením"
+    },
+    {
+      "type": "paragraph",
+      "text": "Požadavek na stažení dokumentuje půlení pomocí klasické série NES: The Legend of Zelda a opakovatelného věštce s tvrdým skokem. Identifikoval dřívější refaktor offsetu uloženého v mezipaměti jako regresní hranici. To poskytuje vývojářům konkrétní případ přehrávání pro kontrolu, že vzorky FIFO již nekombinují zdvojené nebo nesprávně zarovnané bajty přes opakované požadavky DMA."
+    }
+  ]
+}

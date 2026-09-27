@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast rifiuta i descrittori di dischi con nomi di file tra virgolette incompleti",
+  "summary": "Una riga CUE o GDI FILE che termina prima della virgoletta di chiusura potrebbe lasciare il parser di Flycast in lettura per un tempo indefinito. Il lettore ora controlla ogni estrazione di carattere e genera un errore di descrittore non valido alla fine del file, impedendo a un file di testo non valido di bloccare il caricamento del disco.",
+  "heroAlt": "Due console Sega Dreamcast aperte che mostrano le loro unità disco.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast rifiuta i descrittori di dischi con nomi di file tra virgolette incompleti",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "Flycast — richiesta di modifica #2413",
+    "implementation": "Modifiche del parser CUE e GDI unite"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una citazione mancante può trasformare l'analisi in una lettura infinita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast accetta descrittori di testo CUE e GDI che denominano i file che compongono un'immagine disco. In un nome file FILE tra virgolette, il parser ha cercato la citazione successiva senza verificare se l'estrazione aveva raggiunto la fine del file. Una stringa senza terminazione potrebbe quindi continuare ad aggiungere dati non validi anziché interrompersi, provocando un blocco o una crescita illimitata della memoria quando veniva aperto un descrittore non valido."
+    },
+    {
+      "type": "heading",
+      "text": "Controllare il flusso ad ogni estrazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione unita controlla il flusso di input sia durante il salto degli spazi bianchi prima di un nome file sia su ogni carattere letto all'interno di un nome file tra virgolette. Se l'estrazione fallisce, il parser lancia immediatamente l'eccezione invalid-CUE o invalid-GDI esistente invece di eseguire il loop su un flusso esaurito. I nomi file tra virgolette validi continuano a essere letti fino alla virgoletta di chiusura."
+    },
+    {
+      "type": "heading",
+      "text": "Gestisci la classificazione dei caratteri in modo sicuro"
+    },
+    {
+      "type": "paragraph",
+      "text": "La stessa modifica converte il byte estratto in `unsigned char` prima di passarlo a `isspace`. Le funzioni di classificazione dei caratteri C accettano EOF o valori rappresentabili come caratteri senza segno; il passaggio di un byte con segno negativo è altrimenti un comportamento indefinito. Ciò rende la scansione degli spazi bianchi ben definita per i nomi di file contenenti byte al di fuori dell'ASCII di base."
+    },
+    {
+      "type": "heading",
+      "text": "Rifiuta input errati prima che consumino risorse"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch trasforma un caso di input non valido in un normale errore di analisi; non convalida tutti i possibili campi CUE o GDI. I controlli di regressione dovrebbero coprire virgolette mancanti, nomi vuoti, spazi bianchi prima dei nomi, byte non ASCII e percorsi tra virgolette validi. Il miglioramento pratico è che un descrittore troncato fallisce prontamente invece di intrappolare il caricatore del disco in un ciclo di lettura."
+    }
+  ]
+}

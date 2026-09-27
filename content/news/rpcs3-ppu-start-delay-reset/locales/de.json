@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 löscht veraltete PPU-Verzögerungen beim Starten eines Threads",
+  "summary": "Eine PPU-Planungsanpassung setzt die Ruheverzögerung nach einer Wartezeit zurück und überprüft die aktuelle Funktion, bevor die Thread-Start-Heuristik angewendet wird.",
+  "heroAlt": "Montage zum Vergleich mehrerer PlayStation 3-Konsolenmodelle.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 löscht veraltete PPU-Verzögerungen beim Starten eines Threads",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — Änderungsantrag #19580",
+    "implementation": "Patchen und überprüfen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Verzögerung kann das Warten überdauern, das sie ausgelöst hat"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 verwendet Host-Scheduling-Heuristiken, um emulierte PPU-Threads zu beschleunigen. Pull-Request #19580 passt die Ruhe- und Startlogik an, sodass eine aufgezeichnete Hardware-Ruheverzögerung gelöscht wird, nachdem die CPU ihren Ruhe- oder Wartepfad abgeschlossen hat. Ohne diese Bereinigung kann eine spätere Planungsentscheidung den Timing-Status von einer früheren Wartephase erben, auch wenn der Thread weitergegangen ist."
+    },
+    {
+      "type": "heading",
+      "text": "Schützen Sie den Thread-Start-Sonderfall"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch schränkt auch die Verzögerungsheuristik ein: Er vermeidet die Anwendung des Sonderfalls, wenn die ausgewertete CPU nicht die aktuelle PPU ist, und prüft die aktuelle Funktion, bevor er sich auf den erwarteten Wert im Allzweckregister 11 für `sys_ppu_thread_start` verlässt. Diese Prüfungen verhindern, dass eine funktionsspezifische Heuristik auf nicht verwandte Ausführungszustände einwirkt."
+    },
+    {
+      "type": "heading",
+      "text": "Behalten Sie das normale Planungsverhalten bei"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hierbei handelt es sich um eine gezielte Korrektur der Terminbuchhaltung, nicht um ein neues Zeitplanungsmodell. Der Thread-Startpfad verwendet weiterhin die vorhandene Heuristik, wenn seine Vorbedingungen übereinstimmen; Die neuen Wächter verhindern, dass diese Logik auf eine andere PPU oder eine nicht verwandte Funktion übergeht. Durch das Löschen der Verzögerung an der Wartegrenze wird der Zustandsübergang explizit und bei der Planung leichter nachvollziehbar."
+    },
+    {
+      "type": "heading",
+      "text": "Timing-Korrekturen erfordern Regressionsnachweise"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Thread-Timing kann je nach Host-Auslastung, Spielverhalten und Synchronisierungsmustern variieren. Der Patch präzisiert die beabsichtigten Bedingungen, führt jedoch nicht zu einer universellen Leistungs- oder Kompatibilitätsänderung. Nützliche Tests sollten den Thread-Start nach dem Ruhezustand, Aufrufe aus nicht aktuellen PPU-Kontexten, nicht verwandte Funktionen mit ähnlichen Registerinhalten und normale Warte-/Fortsetzungssequenzen abdecken."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA menggantikan interpolator audio sincnya dengan kernel pencarian berjendela",
+  "summary": "Jalur sinc yang lama salah menangani singularitas yang dapat dilepas pada nol dan menyimpan tabel sinc dan window terpisah. mGBA sekarang membangun tampilan flat-top windowed-sinc gaya Lanczos yang dimodifikasi dan menjumlahkan lingkungan 16 sampel tetap, mengurangi memori tabel dan pekerjaan interpolasi.",
+  "heroAlt": "Tampilan depan perangkat genggam Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA menggantikan interpolator audio sincnya dengan kernel pencarian berjendela",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "mGBA — permintaan penggabungan #3844",
+    "implementation": "Implementasi interpolasi gabungan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pengambil sampel ulang memperkirakan sampel di antara titik-titik yang disimpan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Interpolator sinc mGBA merekonstruksi sampel keluaran dari sampel masukan tetangga ketika laju audio host tidak tepat pada posisi sampel sumber. Implementasi sebelumnya menggunakan formulasi Whittaker – Shannon dengan tabel pencarian terpisah untuk respon sinc dan jendelanya. Tabelnya menetapkan nol di tengah, meskipun batas sin yang dapat dilepas di nol adalah satu."
+    },
+    {
+      "type": "heading",
+      "text": "Hitung terlebih dahulu satu respons berjendela gabungan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penggantian ini mengevaluasi `sin(t) / t` dengan kasus `t == 0` yang eksplisit, mengalikannya dengan jendela cosinus flat-top orde keempat, dan menyimpan respons gabungan dalam satu tabel pencarian. Koefisien didokumentasikan dalam implementasi seperti yang digunakan oleh MATLAB. Kontribusi di luar lebar jendela yang dikonfigurasi menghasilkan nol, dan respons diperlakukan secara simetris di sekitar tengah."
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan lingkungan tetap untuk setiap sampel keluaran"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rutin interpolasi sekarang menjumlahkan sampel masukan pada offset −7 hingga 8, menerapkan bobot jendela yang terlihat ke atas untuk masing-masing sampel. Posisi sampel pecahan memilih indeks tabel; offset negatif tercermin daripada memerlukan paruh kedua kernel. Rutinitas baru tidak lagi menyimpan tabel jendela terpisah atau membaginya dengan jumlah kernel per sampel."
+    },
+    {
+      "type": "heading",
+      "text": "Perlakukan kecepatan dan manfaat suara sebagai hipotesis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan penarikan mengatakan jendela gaya Lanczos yang dimodifikasi akan berjalan lebih cepat dan menggunakan lebih sedikit memori, dan mungkin terdengar lebih baik. Itu adalah ekspektasi desain, bukan patokan yang dipublikasikan atau hasil studi pendengaran. Evaluasi yang bermakna harus membandingkan respon impuls dan frekuensi, redaman frekuensi tinggi, perilaku batas, dan output pada beberapa tingkat host sebelum mengklaim perbaikan universal."
+    }
+  ]
+}

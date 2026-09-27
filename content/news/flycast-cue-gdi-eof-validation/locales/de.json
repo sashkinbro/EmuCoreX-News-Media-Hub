@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast lehnt Disc-Deskriptoren mit unvollständigen Dateinamen in Anführungszeichen ab",
+  "summary": "Eine CUE- oder GDI FILE-Zeile, die vor ihrem Schlussanführungszeichen endet, kann dazu führen, dass der Parser von Flycast den Messwert auf unbestimmte Zeit speichert. Das Lesegerät überprüft nun jede Zeichenextraktion und gibt am Ende der Datei einen Fehler aufgrund einer ungültigen Beschreibung aus, wodurch verhindert wird, dass eine fehlerhafte Textdatei beim Laden der Festplatte hängen bleibt.",
+  "heroAlt": "Zwei offene Sega Dreamcast-Konsolen zeigen ihre Laufwerke.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast lehnt Disc-Deskriptoren mit unvollständigen Dateinamen in Anführungszeichen ab",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "Flycast — Änderungsantrag #2413",
+    "implementation": "Die Parseränderungen CUE und GDI wurden zusammengeführt"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein fehlendes Zitat kann das Parsen zu einer endlosen Lektüre machen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast akzeptiert CUE- und GDI-Textdeskriptoren, die die Dateien benennen, aus denen ein Disc-Image besteht. In einem in Anführungszeichen gesetzten FILE-Dateinamen suchte der Parser nach dem nächsten Anführungszeichen, ohne zu prüfen, ob die Extraktion das Ende der Datei erreicht hatte. Eine nicht abgeschlossene Zeichenfolge könnte daher weiterhin ungültige Daten anhängen, anstatt zu stoppen, was zu einem Hängenbleiben oder unbegrenztem Speicherwachstum führen würde, wenn ein fehlerhafter Deskriptor geöffnet würde."
+    },
+    {
+      "type": "heading",
+      "text": "Überprüfen Sie den Stream bei jeder Extraktion"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der zusammengeführte Fix überprüft den Eingabestream sowohl beim Überspringen von Leerzeichen vor einem Dateinamen als auch bei jedem gelesenen Zeichen in einem Dateinamen in Anführungszeichen. Wenn die Extraktion fehlschlägt, löst der Parser sofort die vorhandene ungültige CUE- oder ungültige GDI-Ausnahme aus, anstatt eine Schleife für einen erschöpften Stream durchzuführen. Gültige Dateinamen in Anführungszeichen werden bis zum Schlussanführungszeichen weiterhin gelesen."
+    },
+    {
+      "type": "heading",
+      "text": "Gehen Sie sicher mit der Charakterklassifizierung um"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die gleiche Änderung wandelt das extrahierte Byte in `unsigned char` um, bevor es an `isspace` übergeben wird. Die C-Zeichenklassifizierungsfunktionen akzeptieren EOF oder Werte, die als vorzeichenlose Zeichen dargestellt werden können. Das Übergeben eines negativ vorzeichenbehafteten Bytes ist ansonsten ein undefiniertes Verhalten. Dadurch ist die Leerzeichensuche für Dateinamen, die Bytes außerhalb des Basis-ASCII enthalten, genau definiert."
+    },
+    {
+      "type": "heading",
+      "text": "Lehnen Sie fehlerhafte Eingaben ab, bevor sie Ressourcen verbrauchen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch verwandelt einen Fall einer fehlerhaften Eingabe in einen normalen Analysefehler. Es validiert nicht jedes mögliche CUE- oder GDI-Feld. Regressionsprüfungen sollten fehlende Anführungszeichen, leere Namen, Leerzeichen vor Namen, Nicht-ASCII-Bytes und gültige Pfade in Anführungszeichen abdecken. Die praktische Verbesserung besteht darin, dass ein abgeschnittener Deskriptor sofort fehlschlägt, anstatt den Disc-Loader in einer Leseschleife festzuhalten."
+    }
+  ]
+}

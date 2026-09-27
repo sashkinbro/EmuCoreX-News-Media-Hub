@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 menghilangkan penundaan PPU yang basi saat memulai thread",
+  "summary": "Penyesuaian penjadwalan PPU mengatur ulang penundaan tidur setelah menunggu dan memeriksa fungsi saat ini sebelum menerapkan heuristik thread-start.",
+  "heroAlt": "Montage membandingkan beberapa model konsol PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 menghilangkan penundaan PPU yang basi saat memulai thread",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — permintaan penggabungan #19580",
+    "implementation": "Tambalan dan ulasan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Penundaan dapat melampaui penantian yang menentukannya"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 menggunakan heuristik penjadwalan host untuk mempercepat thread PPU yang ditiru. Permintaan tarik #19580 menyesuaikan logika tidur dan mulai sehingga penundaan tidur perangkat keras yang terekam dihapus setelah CPU menyelesaikan jalur tidur atau tunggunya. Tanpa pembersihan tersebut, keputusan penjadwalan selanjutnya dapat mewarisi status waktu dari penantian sebelumnya, meskipun thread telah dipindahkan."
+    },
+    {
+      "type": "heading",
+      "text": "Jagalah kasus khusus thread-start"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini juga mempersempit heuristik penundaan: menghindari penerapan kasus khusus ketika CPU yang dievaluasi bukan PPU saat ini, dan memeriksa fungsi saat ini sebelum mengandalkan nilai yang diharapkan dalam register tujuan umum 11 untuk `sys_ppu_thread_start`. Pemeriksaan tersebut menjaga heuristik fungsi spesifik agar tidak bertindak pada status eksekusi yang tidak terkait."
+    },
+    {
+      "type": "heading",
+      "text": "Pertahankan perilaku penjadwalan biasa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ini adalah koreksi yang ditargetkan pada pembukuan penjadwal, bukan model pengaturan waktu yang baru. Jalur awal thread masih menggunakan heuristik yang ada ketika prasyaratnya cocok; pelindung baru mencegah logika tersebut berpindah ke PPU lain atau fungsi yang tidak terkait. Menghapus penundaan pada batas tunggu membuat transisi keadaan menjadi eksplisit dan lebih mudah untuk dipertimbangkan selama penjadwalan."
+    },
+    {
+      "type": "heading",
+      "text": "Perbaikan waktu memerlukan bukti regresi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Waktu thread dapat bervariasi menurut beban host, perilaku game, dan pola sinkronisasi. Patch membuat kondisi yang diinginkan menjadi lebih tepat, namun tidak menghasilkan perubahan kinerja atau kompatibilitas universal dengan sendirinya. Pengujian yang berguna harus mencakup permulaan thread setelah tidur, panggilan dari konteks PPU yang tidak aktif, fungsi yang tidak terkait dengan konten register serupa, dan urutan tunggu/lanjutan normal."
+    }
+  ]
+}

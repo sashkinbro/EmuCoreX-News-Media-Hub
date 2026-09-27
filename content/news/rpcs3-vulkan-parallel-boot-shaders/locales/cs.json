@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 paralelizuje kompilaci Vulkan boot shader",
+  "summary": "RPCS3 může použít hostitelská vlákna pro počáteční kompilátor potrubí Vulkan a poté po načtení mezipaměti shaderu změnit velikost fondu tak, aby respektoval nakonfigurované nastavení běhového prostředí.",
+  "heroAlt": "Fotografie vývojové sady pro PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 paralelizuje kompilaci Vulkan boot shader",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — požadavek na sloučení #19578",
+    "implementation": "Oprava a recenze"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Studený start funguje před spuštěním hry"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vykreslovací modul Vulkan musí připravit grafické kanály, než je může kreslit. Při studeném startu může RPCS3 potřebovat zkompilovat shadery při vytváření grafického backendu, takže spuštění může strávit čas kompilací ještě předtím, než začne běžná pracovní zátěž. Požadavek Pull #19578 změní nastavení fondu vláken kolem této počáteční fáze spouštění namísto změny výstupu shaderu nebo formátu mezipaměti na disku."
+    },
+    {
+      "type": "heading",
+      "text": "Pro počáteční kompilaci použijte dostupná jádra"
+    },
+    {
+      "type": "paragraph",
+      "text": "Když je automatické nastavení vlákna nula, počáteční kompilátor kanálu se nyní spustí s dostupnými hostitelskými vlákny. Pokud uživatel zadal explicitní počet vláken, je místo toho dodržena tato hodnota. Díky tomu je automatická konfigurace užitečná během počáteční přípravy shaderu, kdy lze práci rozdělit do nezávislých úloh kompilace."
+    },
+    {
+      "type": "heading",
+      "text": "Po načtení mezipaměti obnovte nakonfigurovaný fond"
+    },
+    {
+      "type": "paragraph",
+      "text": "Po dokončení načítání mezipaměti shaderu v inicializačním vláknu změní RPCS3 velikost fondu kompilátoru tak, aby odpovídal nakonfigurovanému chování za běhu. Tyto dvě fáze mají různé cíle: počáteční spuštění může využívat paralelismus hostitele, zatímco pozdější práce respektuje nastavení, které si uživatel zvolil. Zachování změny velikosti při přechodu zabrání tomu, aby se rozhodnutí pouze při spuštění považovalo za trvalé přepsání."
+    },
+    {
+      "type": "heading",
+      "text": "Studené a teplé starty vyžadují samostatná měření"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava mění politiku plánování, ale její hodnota závisí na obsahu mezipaměti, topologii CPU a na tom, kolik kompilace ve skutečnosti čeká. Užitečné hodnocení porovnává studené spuštění s naplněnou mezipamětí, automatickými a explicitními počty vláken a celkovou dobou spouštění a také spory o CPU. Změna neslibuje pevné zlepšení napříč systémy; vytváří více paralelní počáteční fázi a poté zachovává nakonfigurovaný fond."
+    }
+  ]
+}

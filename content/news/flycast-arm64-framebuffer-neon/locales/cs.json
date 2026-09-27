@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast přidává ohraničené NEON cesty pro práci s framebufferem ARM64",
+  "summary": "Flycast nyní používá ARM64 NEON pro konverzi framebufferu a zápisy VRAM, přičemž zachovává skalární výpadky pro nezarovnané nebo nepodporované případy. Kontrola fyzických hranic VRAM udržuje čtení vektorů v konfiguracích s 8 MB i 16 MB.",
+  "heroAlt": "Fotografie produktu zobrazující konzoli Sega Dreamcast, ovladač a příslušenství.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast přidává ohraničené NEON cesty pro práci s framebufferem ARM64",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "Flycast — požadavek na sloučení #2452",
+    "implementation": "Sloučená implementace a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Konverze Framebufferu je horká paměťová cesta"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulace framebufferu Flycast přesouvá data pixelů mezi emulovanou logikou displeje PowerVR a pamětí viditelnou hostiteli. Na ARM64 může provádění této práce po jedné skalární hodnotě ponechat vektorové instrukce nepoužité. Změna sloučeného rendereru přidává implementace NEON pro konverzi a zápisy do emulované VRAM. Jedná se o oddělené fáze v cestě framebufferu: jedna překládá reprezentaci pixelů, zatímco druhá umísťuje výsledná data do rozvržení emulované paměti."
+    },
+    {
+      "type": "heading",
+      "text": "Vektorizujte pouze oblast, která je bezpečná ke čtení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vektorové zatížení může překročit konec fyzické alokace, pokud kód předpokládá, že délka logického řádku je vždy k dispozici. Patch kontroluje skutečnou stopu VRAM před vydáním vektorových čtení a udržuje skalární nouzová řešení pro nepodporované nebo nezarovnané oblasti. Explicitně zohledňuje konfigurace 8 MB a 16 MB VRAM, takže bezpečný rozsah je odvozen spíše od vybrané velikosti paměti konzoly než ze širšího rozsahu ukazatelů hostitele."
+    },
+    {
+      "type": "heading",
+      "text": "Udržujte rezervu pro nepříjemné hranice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rutiny SIMD jsou nejužitečnější pro pravidelné zarovnané rozpětí, ale okraje framebufferu a částečné řádky mohou tyto předpoklady porušovat. Zachování skalární cesty umožňuje optimalizované smyčce zvládnout bezpečný objem a zároveň zachovat definované chování pro zbytek namísto rozšiřování čtení za hranici emulované paměti. Rozdělení také usnadňuje uvažování o neobvyklých ocasech: vektorizace je optimalizace v rámci kontrolované oblasti, nikoli požadavek pro každý pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Ověřte rychlost práce proti bezpečnosti paměti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato změna se začlenila do vývojové větve Flycast poté, co zpětná vazba od správce vylepšila sledování zápisu do framebufferu. Jeho důkazem je změna implementace a úspěšné ověření úložiště, nikoli publikovaný benchmark pro různá zařízení. Užitečná následná měření by měla oddělit náklady na konverzi od zápisů VRAM a pokrýt jak podporované velikosti paměti, různá zarovnání řádků, tak krátké rozpětí, kde může být skalární nastavení levnější."
+    }
+  ]
+}

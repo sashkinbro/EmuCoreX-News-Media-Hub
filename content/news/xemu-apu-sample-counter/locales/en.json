@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu ties the MCPX audio counter to processed samples",
+  "summary": "The Xbox audio register NV_PAPU_XGSCNT was reporting elapsed virtual time as though it were a sample count. xemu now derives the value from its emulated frame divider and samples per frame, addressing voice desynchronization reported in Innocent Tears.",
+  "heroAlt": "Underside view of an original Xbox console.",
+  "searchKeywords": [
+    "xemu",
+    "Xbox",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "xemu pull request #2945",
+    "implementation": "Merged implementation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A register must report the unit games expect"
+    },
+    {
+      "type": "paragraph",
+      "text": "The MCPX audio processor exposes NV_PAPU_XGSCNT as a count used during voice processing. The old xemu implementation returned virtual-clock nanoseconds divided by 100, a time-derived estimate whose relationship to samples processed per emulated frame was not established. Because a guest reads this register to track APU progress, a clock-based value can drift from the device's actual sample work."
+    },
+    {
+      "type": "heading",
+      "text": "Use the audio frame counter directly"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merged one-line correction computes the register from `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Both values come from the APU’s own frame-processing model, so the returned number tracks the samples that have actually elapsed through that model instead of converting wall-clock-like virtual time. This ties the reported count to emulated frame progress, even when host playback scheduling and guest execution do not advance in identical increments."
+    },
+    {
+      "type": "heading",
+      "text": "Why an incorrect count becomes audible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Audio voices use the count to coordinate their playback progress. If the guest and emulator disagree about how many samples have been processed, voice timing can drift and portions of the audio may arrive out of sync. The pull request names Innocent Tears as the title where the issue was observed; its report says most of the audio desynchronized and did not play completely. Related audio reports are linked in the discussion, but they are not all claimed as tested by this change."
+    },
+    {
+      "type": "heading",
+      "text": "Treat the fix as a timing correction"
+    },
+    {
+      "type": "paragraph",
+      "text": "The pull request author said testing had been limited to Innocent Tears at that point, even though the change references several reports. The code establishes the intended counter unit; broader verification should compare register reads, voice progress, and audio timing across frame boundaries and other titles. The narrow scope is useful for diagnosis: if the count now follows processed samples but a title still drifts, investigation can move to later parts of the audio pipeline."
+    }
+  ]
+}

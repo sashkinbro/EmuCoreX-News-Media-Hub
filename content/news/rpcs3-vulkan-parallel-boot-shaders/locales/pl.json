@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 równolegle kompiluje moduł cieniujący rozruchu Vulkan",
+  "summary": "RPCS3 może używać wątków hosta dla początkowego kompilatora potoku Vulkan, a następnie zmieniać rozmiar puli po załadowaniu pamięci podręcznej modułu cieniującego, aby uwzględnić skonfigurowane ustawienia środowiska wykonawczego.",
+  "heroAlt": "Zdjęcie zestawu deweloperskiego PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 równolegle kompiluje moduł cieniujący rozruchu Vulkan",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — prośba o scalenie #19578",
+    "implementation": "Łatka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zimny start wymaga pracy przed uruchomieniem gry"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mechanizm renderujący Vulkan musi przygotować potoki graficzne, zanim będzie mógł je narysować. Podczas zimnego startu RPCS3 może wymagać skompilowania shaderów podczas tworzenia zaplecza graficznego, więc startup może spędzić czas na kompilacji nawet przed rozpoczęciem zwykłego obciążenia w czasie wykonywania. Żądanie ściągnięcia nr 19578 zmienia konfigurację puli wątków wokół początkowej fazy rozruchu, zamiast zmieniać dane wyjściowe modułu cieniującego lub format pamięci podręcznej na dysku."
+    },
+    {
+      "type": "heading",
+      "text": "Użyj dostępnych rdzeni do wstępnej kompilacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gdy automatyczne ustawienie wątku wynosi zero, początkowy kompilator potoku zaczyna teraz od dostępnych wątków hosta. Jeśli użytkownik podał jawną liczbę wątków, zamiast tego honorowana jest ta wartość. Dzięki temu automatyczna konfiguracja jest przydatna podczas wstępnego przygotowania modułu cieniującego, gdzie pracę można podzielić na niezależne zadania kompilacji."
+    },
+    {
+      "type": "heading",
+      "text": "Przywróć skonfigurowaną pulę po załadowaniu pamięci podręcznej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Po zakończeniu ładowania pamięci podręcznej modułu cieniującego w wątku inicjującym, RPCS3 zmienia rozmiar puli kompilatora, aby dopasować go do skonfigurowanego zachowania środowiska wykonawczego. Obie fazy mają różne cele: podczas początkowego rozruchu można wykorzystać równoległość hosta, natomiast późniejsze prace uwzględniają ustawienia wybrane przez użytkownika. Utrzymanie zmiany rozmiaru podczas przejścia pozwala uniknąć traktowania decyzji dotyczącej tylko uruchomienia jako trwałego zastąpienia."
+    },
+    {
+      "type": "heading",
+      "text": "Rozruchy na zimno i na ciepło wymagają oddzielnych pomiarów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Łatka zmienia politykę planowania, ale jej wartość zależy od zawartości pamięci podręcznej, topologii procesora i ilości faktycznie oczekujących kompilacji. Przydatna ocena porównuje zimny rozruch z zapełnioną pamięcią podręczną, automatyczną i jawną liczbą wątków oraz całkowitym czasem uruchamiania, a także rywalizacją o procesor. Zmiana nie obiecuje trwałej poprawy we wszystkich systemach; tworzy bardziej równoległą fazę początkową, zachowując później skonfigurowaną pulę."
+    }
+  ]
+}

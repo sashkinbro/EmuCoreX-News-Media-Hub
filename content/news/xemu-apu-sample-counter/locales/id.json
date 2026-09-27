@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu mengikat penghitung audio MCPX ke sampel yang diproses",
+  "summary": "Register audio Xbox NV_PAPU_XGSCNT melaporkan waktu virtual yang berlalu seolah-olah itu adalah penghitungan sampel. xemu sekarang mendapatkan nilai dari pembagi frame yang ditiru dan sampel per frame, mengatasi desinkronisasi suara yang dilaporkan di Innocent Tears.",
+  "heroAlt": "Tampilan bawah konsol Xbox asli.",
+  "searchKeywords": [
+    "xemu",
+    "xemu mengikat penghitung audio MCPX ke sampel yang diproses",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "xemu — permintaan penggabungan #2945",
+    "implementation": "Implementasi gabungan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sebuah register harus melaporkan unit permainan yang diharapkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Prosesor audio MCPX menampilkan NV_PAPU_XGSCNT sebagai hitungan yang digunakan selama pemrosesan suara. Implementasi xemu yang lama mengembalikan nanodetik jam virtual dibagi 100, perkiraan turunan waktu yang hubungannya dengan sampel yang diproses per bingkai yang ditiru tidak ditetapkan. Karena tamu membaca register ini untuk melacak kemajuan APU, nilai berbasis jam dapat menyimpang dari contoh kerja perangkat yang sebenarnya."
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan penghitung bingkai audio secara langsung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Koreksi satu baris yang digabungkan menghitung register dari `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Kedua nilai tersebut berasal dari model pemrosesan bingkai APU sendiri, sehingga nomor yang dikembalikan melacak sampel yang benar-benar telah melewati model tersebut alih-alih mengonversi waktu virtual seperti jam dinding. Hal ini mengaitkan jumlah yang dilaporkan dengan kemajuan bingkai yang ditiru, bahkan ketika penjadwalan pemutaran host dan eksekusi tamu tidak meningkat dalam peningkatan yang sama."
+    },
+    {
+      "type": "heading",
+      "text": "Mengapa hitungan yang salah menjadi terdengar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Suara audio menggunakan hitungan untuk mengoordinasikan kemajuan pemutarannya. Jika tamu dan emulator tidak setuju mengenai berapa banyak sampel yang telah diproses, pengaturan waktu suara dapat menyimpang dan sebagian audio mungkin tidak sinkron. Permintaan penarikan menyebutkan Innocent Tears sebagai judul tempat masalah tersebut diamati; laporannya mengatakan sebagian besar audio tidak disinkronkan dan tidak diputar sepenuhnya. Laporan audio terkait ditautkan dalam diskusi, namun tidak semuanya diklaim telah diuji oleh perubahan ini."
+    },
+    {
+      "type": "heading",
+      "text": "Perlakukan perbaikan tersebut sebagai koreksi waktu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penulis permintaan penarikan mengatakan pengujian pada saat itu terbatas pada Innocent Tears, meskipun perubahan tersebut merujuk pada beberapa laporan. Kode tersebut menetapkan unit penghitung yang dimaksud; verifikasi yang lebih luas harus membandingkan pembacaan register, kemajuan suara, dan pengaturan waktu audio melintasi batas bingkai dan judul lainnya. Cakupan yang sempit berguna untuk diagnosis: jika penghitungan kini mengikuti sampel yang diproses namun judul masih menyimpang, penyelidikan dapat berpindah ke bagian selanjutnya dari saluran audio."
+    }
+  ]
+}

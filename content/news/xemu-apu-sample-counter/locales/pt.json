@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu vincula o contador de áudio MCPX às amostras processadas",
+  "summary": "O registro de áudio do Xbox NV_PAPU_XGSCNT estava relatando o tempo virtual decorrido como se fosse uma contagem de amostra. xemu agora deriva o valor de seu divisor de quadros emulado e amostras por quadro, abordando a dessincronização de voz relatada em Innocent Tears.",
+  "heroAlt": "Vista inferior de um console Xbox original.",
+  "searchKeywords": [
+    "xemu",
+    "xemu vincula o contador de áudio MCPX às amostras processadas",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitação de incorporação #2945",
+    "implementation": "Implementação mesclada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um registro deve relatar os jogos unitários esperados"
+    },
+    {
+      "type": "paragraph",
+      "text": "O processador de áudio MCPX expõe NV_PAPU_XGSCNT como uma contagem usada durante o processamento de voz. A antiga implementação do xemu retornava nanossegundos de relógio virtual divididos por 100, uma estimativa derivada do tempo cuja relação com as amostras processadas por quadro emulado não foi estabelecida. Como um convidado lê esse registro para acompanhar o progresso da APU, um valor baseado em relógio pode desviar-se do trabalho de amostra real do dispositivo."
+    },
+    {
+      "type": "heading",
+      "text": "Use o contador de quadros de áudio diretamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção de uma linha mesclada calcula o registro de `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Ambos os valores vêm do próprio modelo de processamento de quadros da APU, portanto, o número retornado rastreia as amostras que realmente decorreram nesse modelo, em vez de converter o tempo virtual semelhante ao de um relógio de parede. Isso vincula a contagem relatada ao progresso do quadro emulado, mesmo quando o agendamento da reprodução do host e a execução do convidado não avançam em incrementos idênticos."
+    },
+    {
+      "type": "heading",
+      "text": "Por que uma contagem incorreta se torna audível"
+    },
+    {
+      "type": "paragraph",
+      "text": "As vozes de áudio usam a contagem para coordenar o progresso da reprodução. Se o convidado e o emulador discordarem sobre quantas amostras foram processadas, o tempo da voz poderá variar e partes do áudio poderão ficar fora de sincronia. A solicitação pull nomeia Innocent Tears como o título onde o problema foi observado; seu relatório diz que a maior parte do áudio foi dessincronizada e não foi reproduzida completamente. Os relatórios de áudio relacionados estão vinculados à discussão, mas nem todos são considerados testados por esta mudança."
+    },
+    {
+      "type": "heading",
+      "text": "Trate a correção como uma correção de tempo"
+    },
+    {
+      "type": "paragraph",
+      "text": "O autor do pull request disse que os testes estavam limitados ao Innocent Tears naquele momento, embora a mudança faça referência a vários relatórios. O código estabelece a unidade de contagem pretendida; uma verificação mais ampla deve comparar leituras de registro, progresso de voz e tempo de áudio entre limites de quadro e outros títulos. O escopo estreito é útil para diagnóstico: se a contagem agora seguir amostras processadas, mas um título ainda oscilar, a investigação poderá passar para partes posteriores do pipeline de áudio."
+    }
+  ]
+}

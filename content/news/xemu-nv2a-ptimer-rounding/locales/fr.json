@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu arrondit les délais d'alarme NV2A pour éviter les boucles de minuterie",
+  "summary": "La troncature des conversions d'horloge fractionnaire pourrait programmer une alarme GPU Xbox trop tôt et la reprogrammer à plusieurs reprises au même instant. xemu arrondit désormais les conversions et les distances de coche vers le haut, gère explicitement le retour à la ligne des alarmes et évite les minuteries de l'hôte lorsque l'interruption de l'invité est désactivée.",
+  "heroAlt": "Vue de dessus de la console Xbox d'origine.",
+  "searchKeywords": [
+    "xemu",
+    "xemu arrondit les délais d'alarme NV2A pour éviter les boucles de minuterie",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "xemu — demande de fusion #3035",
+    "implementation": "Implémentation fusionnée et tests PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La minuterie invité et la minuterie hôte utilisent des horloges différentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "La minuterie programmable NV2A représente le temps des invités en ticks de registre, tandis que QEMU planifie les rappels en utilisant des nanosecondes virtuelles. La conversion entre ces domaines implique des ratios et de l'arithmétique entière. Tronquer chaque division peut supprimer une fraction de tick et donner l’impression qu’une date limite future est déjà due. Le cas limite signalé a entraîné une reprogrammation immédiate et répétée de l'alarme de l'hôte, même si la date limite du client était toujours en avance."
+    },
+    {
+      "type": "heading",
+      "text": "Arrondir le délai en partant de zéro"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement utilise des aides à la multiplication/division d'arrondi lors de la conversion des ticks internes via la fréquence d'horloge du GPU, arrondit la distance du registre à un tick de minuterie entier et applique un délai minimum d'une nanoseconde à l'hôte. Cela empêche qu'un intervalle d'invité positif ne se transforme en un rappel immédiat de l'hôte. Le calcul privilégie délibérément une échéance légèrement en retard par rapport à une échéance arrondie à l'instant présent et programmée de manière répétée."
+    },
+    {
+      "type": "heading",
+      "text": "Gérer explicitement les alarmes de bouclage et de désactivation"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'assistant d'alarme choisit maintenant la prochaine valeur de mot faible correspondante dans l'époque correcte de 32 bits. Lorsque l'interruption d'alarme est désactivée, xemu supprime le temporisateur QEMU au lieu de garder un rappel inutile armé ; un invité lisant ou une réactivation ultérieure peut remarquer paresseusement qu'une alarme est arrivée à échéance. Cette distinction gère les alarmes masquées sans interroger en permanence la minuterie de l'hôte, tout en préservant l'état d'alarme visible par l'invité."
+    },
+    {
+      "type": "heading",
+      "text": "Exercez les limites avec des tests unitaires ciblés"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande d'extraction ajoute une cible de test Xbox PTIMER avec des fonctions d'horloge, de minuterie et d'interruption simulées. Ses cas couvrent les alarmes à un clic sous différents rapports de numérateur et de dénominateur, le comportement d'activation et de désactivation et la synchronisation des alarmes. Les simulations rendent les décisions de conversion et de planification déterministes, de sorte que les régressions de limites peuvent être exercées sans dépendre du timing d'un jeu particulier ou d'un système d'exploitation hôte."
+    }
+  ]
+}

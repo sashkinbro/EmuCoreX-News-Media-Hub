@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu는 Vulkan에서 크기를 조정할 때 날카로운 Xbox 2D 표면을 유지합니다.",
+  "summary": "CPU가 VRAM에 Xbox 표면을 쓰면 xemu는 이를 업로드하고 더 높은 내부 해상도를 위해 크기를 조정할 수 있습니다. Vulkan 경로는 이제 선형 블러를 추가하는 대신 업로드 업스케일링 및 다운로드 다운스케일링에 가장 가까운 이웃 블릿을 사용하여 픽셀 복제를 일치시킵니다.",
+  "heroAlt": "커넥터가 표시된 Xbox 기본 콘솔의 후면 모습.",
+  "searchKeywords": [
+    "xemu",
+    "xemu는 Vulkan에서 크기를 조정할 때 날카로운 Xbox 2D 표면을 유지합니다.",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "개발"
+  },
+  "sourceLabels": {
+    "change": "xemu — 풀 리퀘스트 #2874",
+    "implementation": "병합 구현"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU 쓰기는 그리기 호출을 우회할 수 있습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "NV2A 렌더러는 Xbox 비디오 메모리의 표면을 추적합니다. 에뮬레이트된 CPU가 CPU에 직접 쓰면 xemu는 `pgraph_vk_upload_surface_data()`을 호출하여 해당 바이트를 Vulkan 이미지와 동기화하므로 나중에 렌더링할 때 업데이트가 표시됩니다. 1× 내부 해상도 이상에서는 해당 업로드가 `vkCmdBlitImage`을 사용하여 표면을 확대합니다. 이는 소스 픽셀이 CPU에 의해 작성되었기 때문에 일반적인 3D 장면을 그리는 것과는 별개의 경로입니다."
+    },
+    {
+      "type": "heading",
+      "text": "선형 필터링으로 가장자리가 부드러운 아트워크"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan 업로드 블릿은 색상 표면에 `VK_FILTER_LINEAR`을 사용했습니다. 선형 필터링은 이미지를 확대할 때 인접한 텍셀을 혼합하여 메뉴 및 기타 2D 레이어의 픽셀 가장자리를 부드럽게 할 수 있습니다. 풀 요청 작성자는 Xbox 대시보드를 명백한 예로 보고하고 순수 3D 렌더링에서는 이 경로를 사용하지 않는다고 언급했습니다. OpenGL 렌더러는 이미 복제를 통해 표면 픽셀을 확장하여 프로젝트에 유용한 동작 비교를 제공했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "양방향으로 가장 가까운 샘플링 사용"
+    },
+    {
+      "type": "paragraph",
+      "text": "병합된 변경 사항은 업로드 업스케일 블릿을 `VK_FILTER_NEAREST`로 전환하고 표면 다운로드 다운스케일 경로에 대해 동일한 선택을 합니다. 가장 가까운 필터링은 이웃 텍셀을 평균화하는 대신 소스 텍셀을 선택하여 전송된 표면의 이산 값을 보존합니다. 양방향으로 규칙을 적용하면 CPU와 GPU가 크기 조정된 색상 표면을 교환할 때 복사 의미 체계가 일관되게 유지됩니다."
+    },
+    {
+      "type": "heading",
+      "text": "변경 사항은 전송 의미에 관한 것입니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "이 패치는 Vulkan 렌더러의 CPU-GPU 및 GPU-CPU 표면 동기화에 영향을 미칩니다. 게임의 원래 해상도나 3D 필터링 설정은 변경되지 않습니다. 예상되는 결과는 전송 방향과 색상 표면 경계 모두에 초점을 맞춘 검증을 통해 해당 블릿이 사용되는 경우 더 선명하게 크기가 조정된 2D 콘텐츠입니다. 끌어오기 요청에는 대시보드 이외의 제한된 재현 범위가 명시되어 있으므로 추가 CPU 렌더링 메뉴 및 애플리케이션이 유용한 검사입니다."
+    }
+  ]
+}

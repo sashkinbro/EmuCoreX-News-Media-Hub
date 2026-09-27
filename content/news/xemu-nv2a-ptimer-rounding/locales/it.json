@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu arrotonda le scadenze degli allarmi NV2A per evitare loop del timer",
+  "summary": "Troncare le conversioni dell'orologio frazionario potrebbe programmare un allarme della GPU Xbox troppo presto e riprogrammarlo ripetutamente nello stesso istante. xemu ora arrotonda le conversioni e seleziona le distanze verso l'alto, gestisce esplicitamente il wrap degli allarmi ed evita i timer dell'host quando l'interruzione del guest è disabilitata.",
+  "heroAlt": "Vista dall'alto della console Xbox originale.",
+  "searchKeywords": [
+    "xemu",
+    "xemu arrotonda le scadenze degli allarmi NV2A per evitare loop del timer",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "xemu — richiesta di modifica #3035",
+    "implementation": "Implementazione unita e test PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il timer ospite e il timer host utilizzano orologi diversi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il timer programmabile NV2A rappresenta il tempo dell'ospite in tick di registro, mentre QEMU pianifica le richiamate utilizzando nanosecondi virtuali. La conversione tra questi domini implica rapporti e aritmetica dei numeri interi. Troncare ogni divisione può scartare una frazione di segno di spunta e far sembrare già scaduta una scadenza futura. Il caso limite segnalato ha causato ripetute riprogrammazioni immediate dell'allarme host, anche se la scadenza per l'ospite era ancora in anticipo."
+    },
+    {
+      "type": "heading",
+      "text": "Arrotondare la scadenza da zero"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica utilizza helper di moltiplicazione/divisione per eccesso durante la conversione dei tick interni attraverso la frequenza di clock della GPU, arrotonda la distanza del registro a un tick del timer intero e impone un ritardo host minimo di un nanosecondo. Ciò impedisce che un intervallo guest positivo si trasformi in una richiamata host immediata. Il calcolo privilegia deliberatamente una scadenza leggermente ritardata rispetto a una scadenza arrotondata per difetto all'istante corrente e programmata ripetutamente."
+    },
+    {
+      "type": "heading",
+      "text": "Gestire esplicitamente gli allarmi wrap e disabilitati"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'assistente allarme ora sceglie il successivo valore low-word corrispondente nell'epoca corretta a 32 bit. Quando l'interruzione dell'allarme è disabilitata, xemu cancella il timer QEMU invece di mantenere armata una richiamata non necessaria; una lettura ospite o una riattivazione successiva possono pigramente notare che è scaduto un allarme. Questa distinzione gestisce gli allarmi mascherati senza interrogare continuamente il timer dell'host, preservando allo stesso tempo lo stato di allarme visibile agli ospiti."
+    },
+    {
+      "type": "heading",
+      "text": "Limiti dell'esercizio con test unitari mirati"
+    },
+    {
+      "type": "paragraph",
+      "text": "La richiesta pull aggiunge una destinazione di test Xbox PTIMER con funzioni di orologio fittizio, timer e interruzione. I suoi casi coprono gli allarmi one-tick con diversi rapporti di numeratore e denominatore, abilitano e disabilitano il comportamento e la tempistica degli allarmi. I mock rendono deterministiche le decisioni di conversione e pianificazione, quindi le regressioni ai confini possono essere esercitate senza dipendere dai tempi di un particolare gioco o sistema operativo host."
+    }
+  ]
+}

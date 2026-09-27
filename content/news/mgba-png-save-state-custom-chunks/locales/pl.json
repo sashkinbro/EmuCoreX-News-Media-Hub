@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA instaluje niestandardowe procedury obsługi PNG stanu zapisu przed odczytaniem danych obrazu",
+  "summary": "Stany zapisu PNG mogą zawierać fragmenty `gbAs` i `gbAx` mGBA przed danymi IDAT obrazu. Program ładujący rejestruje teraz swoją niestandardową procedurę obsługi fragmentów przed odczytaniem nagłówka PNG, więc libpng rozpoznaje te fragmenty niezależnie od ich położenia.",
+  "heroAlt": "Tylna strona płyty głównej Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA instaluje niestandardowe procedury obsługi PNG stanu zapisu przed odczytaniem danych obrazu",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "mGBA — prośba o scalenie #3803",
+    "implementation": "Połączona zmiana modułu ładującego serializację"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG dopuszcza dane pomocnicze wokół danych obrazu"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA może przechowywać stan zapisu w formacie PNG obok zrzutu ekranu. Jego specyficzne dla emulatora fragmenty `gbAs` i `gbAx` przenoszą informacje o stanie, podczas gdy IDAT zawiera skompresowane piksele obrazu. Czytniki PNG przetwarzają fragmenty w kolejności plików, więc aplikacja musi zainstalować moduł obsługi, zanim parser dotrze do jednego ze swoich niestandardowych fragmentów."
+    },
+    {
+      "type": "heading",
+      "text": "Zmiana modułu ładującego spowodowała awarię wczesnych fragmentów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana rozwojowa przesunęła rejestrację niestandardowych fragmentów na czas po odczytaniu nagłówka PNG. Było już za późno dla plików, których fragmenty stanu pojawiły się przed IDAT: libpng napotkał nieznany fragment, podczas gdy moduł obsługi mGBA nie był aktywny i odrzucił plik. Raport pochodzi z niestandardowego narzędzia, które wyemitowało tę kolejność; nie był to znany układ wyprodukowany przez samo mGBA."
+    },
+    {
+      "type": "heading",
+      "text": "Zarejestruj moduł obsługi przed przeczytaniem nagłówka"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona poprawka najpierw przydziela bufor stanu i dołączony kontekst stanu, następnie instaluje moduł obsługi `gbAs` i `gbAx` przed wywołaniem `PNGReadHeader`. Zwalnia także bufor stanu mapowanego w przypadku awarii nagłówka i odrzucenia zbyt dużych obrazów. Spowoduje to połączenie wcześniejszego punktu rejestracji z czyszczeniem nowych ścieżek wczesnego powrotu."
+    },
+    {
+      "type": "heading",
+      "text": "Zgodność obejmuje pliki z narzędzi zewnętrznych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Obsługa tych fragmentów przed IDAT sprawia, że moduł ładujący toleruje prawidłową kolejność, której projekt zwykle nie zapisuje. Pozwala uniknąć proszenia użytkowników o przepisanie użytecznych w inny sposób stanów zapisu, jedynie w celu przeniesienia metadanych. Kontrole regresji powinny ładować pliki z niestandardowymi fragmentami po obu stronach IDAT i sprawdzać, czy odzyskane zostały piksele zrzutu ekranu i stan serializowanej maszyny."
+    }
+  ]
+}

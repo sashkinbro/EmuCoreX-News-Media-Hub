@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 schränkt die SPU-Putllc-Reservierungssperre ein",
+  "summary": "Ein neuer schneller Pfad verarbeitet eine 128-Byte-Reservierungszeile mit einem kleineren gesperrten Bereich und einem 16-Byte-atomaren Vergleichs- und Austauschvorgang, wenn genaue Reservierungen deaktiviert sind.",
+  "heroAlt": "Rückansicht einer PlayStation 3 mit Anschlüssen und Gehäuse.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 schränkt die SPU-Putllc-Reservierungssperre ein",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — Änderungsantrag #19568",
+    "implementation": "Patchen und überprüfen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein bedingter Speicher schützt den gemeinsam genutzten Speicher"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Cell SPU-Befehl putllc speichert einen Wert nur bedingt, solange seine Reservierung gültig bleibt. In einem Emulator muss dieses Verhalten mit anderen emulierten Prozessoren koordiniert werden, die möglicherweise denselben Speicher berühren. RPCS3-Pull-Request #19568 ändert den allgemeinen, weniger strengen Reservierungspfad: Er überprüft die aufgezeichneten Reservierungsdaten und führt dann eine atomare Aktualisierung durch, während das Reservierungsprotokoll intakt bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Sperren Sie die Reservierungszeile und aktualisieren Sie den Operanden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Implementierung verwendet eine Bereichssperre, die das 128-Byte-Reservierungsgranulat abdeckt, vergleicht die gespeicherten Reservierungsdaten und verwendet einen atomaren 16-Byte-Vergleichsaustausch für den tatsächlichen Wert. Dadurch wird der zum Schutz der Reservierungsbuchhaltung erforderliche Bereich von der Breite des bedingten Schreibvorgangs getrennt. Wenn der Vergleich fehlschlägt, wird der Speichervorgang nicht fortgesetzt, wobei die bedingte Semantik der Anweisung erhalten bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Der genaue Modus behält seinen stärkeren Weg"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Schnellpfad wird aktiviert, wenn genaue Reservierungen deaktiviert sind und ein gültiger, aufgezeichneter Reservierungsstandort vorhanden ist. Im Accurate-Modus wird weiterhin die vorhandene umfassendere Schreibsperre verwendet. Diese Aufteilung ist wichtig, da eine Geschwindigkeitsoptimierung nicht stillschweigend das strengere Verhalten schwächen sollte, das Benutzer für Kompatibilitätsuntersuchungen oder schwierige Rennfälle wählen."
+    },
+    {
+      "type": "heading",
+      "text": "Parallelität erfordert weiterhin eine Workload-Abdeckung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diese Änderung reduziert den Sperraufwand für einen Pfad. Es wird nicht für jeden Titel oder Host eine gemessene Beschleunigung festgelegt. Bedingte Speicher interagieren mit anderen SPU-Threads und dem CPU-Zugriff, daher sollte die Validierung gleichzeitige Schreibvorgänge, Reservierungsungültigmachung und beide Genauigkeitseinstellungen umfassen. Durch die Implementierung der Pull-Anfrage kann der Emulator einen engeren Testvorgang durchführen, ohne den für den Gast sichtbaren Erfolgs- oder Fehlervertrag zu ändern."
+    }
+  ]
+}

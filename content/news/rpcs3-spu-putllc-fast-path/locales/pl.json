@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 zawęża blokadę rezerwacji putllc SPU",
+  "summary": "Nowa szybka ścieżka obsługuje 128-bajtową linię rezerwacji z mniejszym zablokowanym obszarem i 16-bajtową atomową funkcję porównywania i zamiany, gdy wyłączone są dokładne rezerwacje.",
+  "heroAlt": "Widok z tyłu konsoli PlayStation 3 przedstawiający jej porty i obudowę.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 zawęża blokadę rezerwacji putllc SPU",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — prośba o scalenie #19568",
+    "implementation": "Łatka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Magazyn warunkowy chroni pamięć współdzieloną"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instrukcja Cell SPU putllc warunkowo przechowuje wartość tylko wtedy, gdy jej rezerwacja pozostaje ważna. W emulatorze to zachowanie musi być skoordynowane z innymi emulowanymi procesorami, które mogą dotykać tej samej pamięci. Żądanie ściągnięcia RPCS3 nr 19568 zmienia powszechną, mniej rygorystyczną ścieżkę rezerwacji: sprawdza zarejestrowane dane rezerwacji, a następnie wykonuje niepodzielną aktualizację, zachowując nienaruszony protokół rezerwacji."
+    },
+    {
+      "type": "heading",
+      "text": "Zablokuj linię rezerwacji, zaktualizuj operand"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementacja przyjmuje blokadę zakresu obejmującą 128-bajtową granulację rezerwacji, porównuje przechowywane dane rezerwacji i wykorzystuje 16-bajtową atomową wymianę porównawczą dla rzeczywistej wartości. Oddziela to zakres niezbędny do ochrony księgowości rezerwacji od szerokości zapisu warunkowego. Jeżeli porównanie się nie powiedzie, składowanie nie będzie kontynuowane, zachowując semantykę warunkową instrukcji."
+    },
+    {
+      "type": "heading",
+      "text": "Tryb dokładny utrzymuje silniejszą ścieżkę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Szybka ścieżka jest otwierana w przypadku wyłączenia dokładnych rezerwacji i ważnej zarejestrowanej lokalizacji rezerwacji. Tryb dokładny w dalszym ciągu korzysta z istniejącej, szerszej blokady zapisu. Ten podział ma znaczenie, ponieważ optymalizacja prędkości nie powinna po cichu osłabiać bardziej rygorystycznego zachowania, które użytkownicy wybierają w przypadku badań zgodności lub trudnych przypadków wyścigowych."
+    },
+    {
+      "type": "heading",
+      "text": "Współbieżność nadal wymaga pokrycia obciążenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta zmiana zmniejsza pracę blokowania na jednej ścieżce; nie ustala zmierzonego przyspieszenia dla każdego tytułu lub hosta. Magazyny warunkowe współdziałają z innymi wątkami SPU i dostępem do procesora, dlatego sprawdzanie poprawności powinno obejmować współbieżne moduły zapisujące, unieważnianie rezerwacji i oba ustawienia dokładności. Implementacja żądania ściągnięcia zapewnia emulatorowi węższą operację do testowania bez zmiany widocznej dla gościa umowy o sukcesie lub niepowodzeniu."
+    }
+  ]
+}

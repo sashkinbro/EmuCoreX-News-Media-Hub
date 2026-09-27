@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 narrows the SPU putllc reservation lock",
+  "summary": "A new fast path handles a 128-byte reservation line with a smaller locked region and a 16-byte atomic compare-and-swap when accurate reservations are disabled.",
+  "heroAlt": "Rear view of a PlayStation 3 showing its ports and case.",
+  "searchKeywords": [
+    "RPCS3",
+    "SPU",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #19568",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A conditional store protects shared memory"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Cell SPU instruction putllc conditionally stores a value only while its reservation remains valid. In an emulator, that behavior has to coordinate with other emulated processors that may touch the same memory. RPCS3 pull request #19568 changes the common, less strict reservation path: it checks the recorded reservation data and then performs an atomic update, while keeping the reservation protocol intact."
+    },
+    {
+      "type": "heading",
+      "text": "Lock the reservation line, update the operand"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation takes a range lock covering the 128-byte reservation granule, compares the stored reservation data, and uses a 16-byte atomic compare-exchange for the actual value. This separates the scope needed to protect reservation bookkeeping from the width of the conditional write. If the comparison fails, the store does not proceed, preserving the instruction's conditional semantics."
+    },
+    {
+      "type": "heading",
+      "text": "Accurate mode keeps its stronger path"
+    },
+    {
+      "type": "paragraph",
+      "text": "The fast path is gated on accurate reservations being disabled and on a valid recorded reservation location. Accurate mode continues to use the existing broader writer lock. That split matters because a speed optimization should not silently weaken the stricter behavior users select for compatibility investigations or difficult race cases."
+    },
+    {
+      "type": "heading",
+      "text": "Concurrency still needs workload coverage"
+    },
+    {
+      "type": "paragraph",
+      "text": "This change reduces locking work on one path; it does not establish a measured speedup for every title or host. Conditional stores interact with other SPU threads and CPU access, so validation should include concurrent writers, reservation invalidation, and both accuracy settings. The pull request's implementation gives the emulator a narrower operation to test without changing the guest-visible success or failure contract."
+    }
+  ]
+}

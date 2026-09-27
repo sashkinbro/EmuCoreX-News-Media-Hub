@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast rejeita descritores de disco com nomes de arquivos citados inacabados",
+  "summary": "Uma linha CUE ou GDI FILE terminando antes de sua cotação de fechamento pode deixar a leitura do analisador do Flycast indefinidamente. O leitor agora verifica cada extração de caracteres e gera um erro de descritor inválido no final do arquivo, evitando que um arquivo de texto malformado interrompa o carregamento do disco.",
+  "heroAlt": "Dois consoles Sega Dreamcast abertos mostrando suas unidades de disco.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast rejeita descritores de disco com nomes de arquivos citados inacabados",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "Flycast — solicitação de incorporação #2413",
+    "implementation": "Alterações mescladas do analisador CUE e GDI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma citação perdida pode transformar a análise em uma leitura interminável"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast aceita descritores de texto CUE e GDI que nomeiam os arquivos que compõem uma imagem de disco. Em um nome de arquivo FILE entre aspas, o analisador procurou a próxima citação sem verificar se a extração havia atingido o final do arquivo. Uma string não terminada poderia, portanto, continuar anexando dados inválidos em vez de parar, levando a um travamento ou crescimento ilimitado de memória quando um descritor malformado fosse aberto."
+    },
+    {
+      "type": "heading",
+      "text": "Verifique o fluxo em cada extração"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção mesclada verifica o fluxo de entrada ao ignorar espaços em branco antes de um nome de arquivo e em cada caractere lido dentro de um nome de arquivo entre aspas. Se a extração falhar, o analisador lança imediatamente a exceção CUE inválida ou GDI inválida existente, em vez de fazer um loop em um fluxo esgotado. Nomes de arquivos válidos entre aspas continuam a ser lidos até a citação final."
+    },
+    {
+      "type": "heading",
+      "text": "Lide com a classificação de caracteres com segurança"
+    },
+    {
+      "type": "paragraph",
+      "text": "A mesma alteração converte o byte extraído em `unsigned char` antes de passá-lo para `isspace`. As funções de classificação de caracteres C aceitam EOF ou valores representáveis ​​como unsigned char; passar um byte assinado negativo é um comportamento indefinido. Isso torna a varredura de espaços em branco bem definida para nomes de arquivos contendo bytes fora do ASCII básico."
+    },
+    {
+      "type": "heading",
+      "text": "Rejeite entradas incorretas antes que consumam recursos"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch transforma um caso de entrada malformado em um erro de análise normal; ele não valida todos os campos CUE ou GDI possíveis. As verificações de regressão devem cobrir aspas ausentes, nomes vazios, espaços em branco antes dos nomes, bytes não ASCII e caminhos válidos entre aspas. A melhoria prática é que um descritor truncado falha imediatamente em vez de prender o carregador de disco em um loop de leitura."
+    }
+  ]
+}

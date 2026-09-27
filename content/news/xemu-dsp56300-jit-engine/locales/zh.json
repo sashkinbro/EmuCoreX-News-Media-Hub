@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu 为 Xbox 音频 DSP 添加可切换 JIT 引擎",
+  "summary": "新的 DSP56300 后端为 xemu 提供了解释每条客户指令的替代方案。 共享状态层保持现有解释器可用，并将两个引擎连接到保存状态处理。",
+  "heroAlt": "白色背景上位于其 Duke 控制器旁边的原始 Xbox 控制台。",
+  "searchKeywords": [
+    "xemu",
+    "xemu 为 Xbox 音频 DSP 添加可切换 JIT 引擎",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "xemu — 合并请求 #2801",
+    "implementation": "合并实施和审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一个音频处理器，两条执行路径"
+    },
+    {
+      "type": "paragraph",
+      "text": "Xbox MCPX 音频处理器包括 Motorola DSP56300 数字信号处理器。 xemu 已经为该客户处理器提供了一个 C 解释器； Pull request #2801 添加了第二个使用即时编译的后端。 这一变化涉及 DSP 指令如何在模拟器内运行，而不是引入新的音频格式或游戏特定的补丁。"
+    },
+    {
+      "type": "heading",
+      "text": "在执行之前翻译指令工作"
+    },
+    {
+      "type": "paragraph",
+      "text": "当客人收到指令时，口译员会对其进行解码和发送。 JIT 可以将序列转换为主机指令并重用生成的代码，以编译工作换取更少的重复调度。 xemu 更改在 C 解释器旁边添加了基于 Rust 的 JIT。 它的好处取决于游戏在 DSP 代码和主机 CPU 上花费的时间； 该项目并未声称具有普遍的加速效果。"
+    },
+    {
+      "type": "heading",
+      "text": "将两个引擎保持在共享状态边界后面"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁引入了 DSP 操作接口和通用核心状态表示。 该边界允许 xemu 选择或切换执行引擎，而不会使音频处理器的其余部分依赖于一种实现。 它还为保存和加载代码提供了一个通用的序列化状态，这在选择不同后端重新打开保存的会话时至关重要。"
+    },
+    {
+      "type": "heading",
+      "text": "保留口译员作为有用的参考"
+    },
+    {
+      "type": "paragraph",
+      "text": "C 解释器仍然可用，并且新设置允许启用或禁用 JIT 路径。 保留两条路径有助于开发人员在调查音频差异时比较行为：可以根据更简单的逐指令实现来检查 JIT。 同样的重构还修复了现有解释器中发现的缺陷，因此该补丁不仅仅是编译器的补充。"
+    },
+    {
+      "type": "heading",
+      "text": "性能声明需要针对特定​​工作负载进行测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "早期的讨论附加了一小部分游戏的测量结果，并指出了剩余的边缘情况，包括音频循环和与帧速率相关的标题。 这些报告是有用的线索，而不是跨游戏基准。 合并后的更改建立了第二个 DSP 引擎及其状态管道； 仍然需要跨游戏、主机 CPU、保存状态转换和时间敏感音频进行可重复的测试来表征其实际收益。"
+    }
+  ]
+}

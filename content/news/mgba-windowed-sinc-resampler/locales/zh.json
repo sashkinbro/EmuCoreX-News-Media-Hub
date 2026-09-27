@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA 用窗口查找内核替换了 sinc 音频插值器",
+  "summary": "旧的 sinc 路径错误地处理了其可移动奇点为零并存储了单独的 sinc 和窗口表。 mGBA 现在构建了一个修改后的 Lanczos 风格、平顶窗口 sinc 查找并对固定的 16 个样本邻域求和，从而减少了表内存和插值工作。",
+  "heroAlt": "Game Boy Advance 手持设备的前视图。",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA 用窗口查找内核替换了 sinc 音频插值器",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "mGBA — 合并请求 #3844",
+    "implementation": "合并插值实现"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "重采样器估计存储点之间的样本"
+    },
+    {
+      "type": "paragraph",
+      "text": "当主机音频速率未准确落在源样本位置时，mGBA 的 sinc 插值器会根据相邻输入样本重建输出样本。 之前的实现使用 Whittaker-Shannon 公式，其中包含用于 sinc 响应及其窗口的单独查找表。 它的表在中心分配了零，尽管 sinc 在零处的可移动极限是 1。"
+    },
+    {
+      "type": "heading",
+      "text": "预先计算一个组合窗口响应"
+    },
+    {
+      "type": "paragraph",
+      "text": "替换使用显式 `t == 0` 情况计算 `sin(t) / t`，将其乘以四阶平顶余弦窗口，并将组合响应存储在一个查找表中。 这些系数在实现中记录为 MATLAB 使用的系数。 配置窗口宽度之外的贡献返回零，并且响应围绕中心对称处理。"
+    },
+    {
+      "type": "heading",
+      "text": "对每个输出样本使用固定邻域"
+    },
+    {
+      "type": "paragraph",
+      "text": "插值例程现在对偏移量 -7 到 8 处的输入样本求和，对每个样本应用查找的加窗权重。 分数样本位置选择一个表索引； 负偏移量会被反映，而不需要内核的后半部分。 新例程不再存储单独的窗口表或除以每个样本的内核总和。"
+    },
+    {
+      "type": "heading",
+      "text": "将速度和声音优势视为假设"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求表示，修改后的 Lanczos 风格窗口应该运行得更快，使用更少的内存，而且听起来可能更好。 这些是设计预期，而不是已发布的基准或听力研究结果。 有意义的评估应该在声称普遍改进之前比较脉冲和频率响应、高频衰减、边界行为和多个主机速率下的输出。"
+    }
+  ]
+}

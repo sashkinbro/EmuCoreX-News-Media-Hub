@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA replaces its sinc audio interpolator with a windowed lookup kernel",
+  "summary": "The old sinc path mishandled its removable singularity at zero and stored separate sinc and window tables. mGBA now builds a modified Lanczos-style, flat-top windowed-sinc lookup and sums a fixed 16-sample neighborhood, reducing table memory and interpolation work.",
+  "heroAlt": "Front view of a Game Boy Advance handheld.",
+  "searchKeywords": [
+    "mGBA",
+    "sinc interpolation",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "mGBA pull request #3844",
+    "implementation": "Merged interpolation implementation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A resampler estimates samples between stored points"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA’s sinc interpolator reconstructs an output sample from neighboring input samples when the host audio rate does not land exactly on source sample positions. The previous implementation used a Whittaker–Shannon formulation with separate lookup tables for the sinc response and its window. Its table assigned zero at the center, even though the removable limit of sinc at zero is one."
+    },
+    {
+      "type": "heading",
+      "text": "Precompute one combined windowed response"
+    },
+    {
+      "type": "paragraph",
+      "text": "The replacement evaluates `sin(t) / t` with an explicit `t == 0` case, multiplies it by a fourth-order flat-top cosine window, and stores the combined response in one lookup table. The coefficients are documented in the implementation as those used by MATLAB. Contributions outside the configured window width return zero, and the response is treated symmetrically around the center."
+    },
+    {
+      "type": "heading",
+      "text": "Use a fixed neighborhood for each output sample"
+    },
+    {
+      "type": "paragraph",
+      "text": "The interpolation routine now sums input samples at offsets −7 through 8, applying a looked-up windowed weight to each one. The fractional sample position selects a table index; negative offsets are reflected rather than requiring a second half of the kernel. The new routine no longer stores a separate window table or divides by a per-sample kernel sum."
+    },
+    {
+      "type": "heading",
+      "text": "Treat speed and sound benefits as hypotheses"
+    },
+    {
+      "type": "paragraph",
+      "text": "The pull request says the modified Lanczos-style window should run faster and use less memory, and may sound better. Those are design expectations, not published benchmark or listening-study results. A meaningful evaluation should compare impulse and frequency responses, high-frequency attenuation, boundary behavior, and output at several host rates before claiming a universal improvement."
+    }
+  ]
+}

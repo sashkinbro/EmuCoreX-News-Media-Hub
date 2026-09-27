@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA는 GBA 오디오가 32비트 FIFO 전송을 강제할 때 캐시된 DMA 오프셋 크기를 조정합니다.",
+  "summary": "FIFO DMA는 16비트 폭으로 프로그래밍한 다음 GBA 오디오 경로를 통해 32비트 전송으로 변환할 수 있습니다. mGBA는 이제 캐시된 소스 단계를 플러스 또는 마이너스 4바이트로 재조정하여 방향을 유지하고 샘플 읽기가 두 배로 증가하거나 잘못 정렬되는 것을 방지합니다.",
+  "heroAlt": "마더보드의 Game Boy Advance 오디오 회로 클로즈업.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA는 GBA 오디오가 32비트 FIFO 전송을 강제할 때 캐시된 DMA 오프셋 크기를 조정합니다.",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "개발"
+  },
+  "sourceLabels": {
+    "change": "mGBA — 풀 리퀘스트 #3850",
+    "implementation": "병합된 오디오 DMA 수정"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "게임의 DMA 너비가 일찍 캐시됩니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA는 GBA가 DMA 제어 레지스터에 쓸 때 소스 및 대상 오프셋을 기록합니다. 게임은 16비트 전송을 위해 해당 채널을 구성할 수 있으며, 이는 캐시된 소스 단계에 2바이트 스트라이드를 제공합니다. 나중에 오디오 FIFO는 동일한 DMA 메커니즘을 사용하지만 자체 전송 폭을 적용하므로 이전 설정을 새로운 용도에 맞게 조정해야 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "FIFO 오디오는 전송 폭을 변경합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA가 FIFO DMA를 예약할 때 채널을 32비트 너비와 고정된 대상으로 지정합니다. 이 수정 전에는 대상 오프셋이 지워졌지만 원래 16비트 설정에서 캐시된 소스 오프셋은 유지되었습니다. 그런 다음 엔진은 4바이트 오디오 단어를 소비하면서 샘플 스트림의 일부를 복제하고 잘못 정렬하면서 2바이트를 향상시켰습니다."
+    },
+    {
+      "type": "heading",
+      "text": "소스 단계의 크기를 조정하고 해당 부호를 유지합니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "병합된 수정 사항은 너비가 32비트로 강제 적용된 후 양수 소스 오프셋을 `4`로 정규화하고 음수 오프셋을 `-4`로 정규화합니다. 0은 0으로 유지됩니다. 부호를 유지하면 소스 제어 방향이 그대로 유지되는 동시에 후속 읽기를 FIFO 전송이 현재 사용하는 너비에 맞춰 정렬됩니다. 대상은 고정 FIFO 주소를 계속 사용합니다."
+    },
+    {
+      "type": "heading",
+      "text": "회귀는 이분법으로 분리되었습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "풀 요청은 클래식 NES 시리즈: 젤다의 전설과 반복 가능한 하드 점프 오라클을 사용한 이분법을 문서화합니다. 이전의 캐시된 오프셋 리팩터링을 회귀 경계로 식별했습니다. 이는 개발자에게 FIFO 샘플이 반복되는 DMA 요청에서 더 이상 두 배로 늘어나거나 잘못 정렬된 바이트를 결합하지 않는지 확인하기 위한 구체적인 재생 사례를 제공합니다."
+    }
+  ]
+}

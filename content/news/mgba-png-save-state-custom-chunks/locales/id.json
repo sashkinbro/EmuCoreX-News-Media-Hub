@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA menginstal penangan PNG status penyimpanan khusus sebelum membaca data gambar",
+  "summary": "Status penyimpanan PNG dapat membawa potongan `gbAs` dan `gbAx` mGBA sebelum data IDAT gambar. Loader sekarang mendaftarkan pengendali bongkahan kustomnya sebelum membaca header PNG, sehingga libpng mengenali bongkahan tersebut terlepas dari posisinya.",
+  "heroAlt": "Sisi belakang motherboard Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA menginstal penangan PNG status penyimpanan khusus sebelum membaca data gambar",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "mGBA — permintaan penggabungan #3803",
+    "implementation": "Perubahan pemuat serialisasi yang digabungkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG mengizinkan data tambahan di sekitar data gambar"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA dapat menyimpan status penyimpanan dalam PNG di samping tangkapan layar. Potongan `gbAs` dan `gbAx` khusus emulatornya membawa informasi status, sedangkan IDAT berisi piksel gambar terkompresi. Pembaca PNG memproses potongan dalam urutan file, sehingga aplikasi harus menginstal pengendalinya sebelum parser mencapai salah satu potongan kustomnya."
+    },
+    {
+      "type": "heading",
+      "text": "Perubahan pemuat membuat potongan awal gagal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan pengembangan telah memindahkan pendaftaran potongan khusus hingga header PNG dibaca. Sudah terlambat untuk file yang potongan statusnya muncul sebelum IDAT: libpng menemukan potongan yang tidak diketahui sementara pengendali mGBA tidak aktif dan menolak file tersebut. Laporan tersebut berasal dari alat khusus yang mengeluarkan pemesanan ini; itu bukanlah tata letak yang diketahui yang diproduksi oleh mGBA sendiri."
+    },
+    {
+      "type": "heading",
+      "text": "Daftarkan handler sebelum membaca header"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan gabungan ini mengalokasikan buffer status dan konteks status yang dibundel terlebih dahulu, kemudian menginstal handler `gbAs` dan `gbAx` sebelum memanggil `PNGReadHeader`. Ini juga membebaskan buffer status yang dipetakan pada kegagalan header dan saat menolak gambar berukuran besar. Ini memasangkan titik pendaftaran sebelumnya dengan pembersihan untuk jalur pengembalian awal yang baru."
+    },
+    {
+      "type": "heading",
+      "text": "Kompatibilitas mencakup file dari alat eksternal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mendukung potongan-potongan ini sebelum IDAT membuat loader toleran terhadap pemesanan valid yang biasanya tidak ditulis oleh proyek. Ini menghindari meminta pengguna untuk menulis ulang status penyimpanan yang dapat digunakan hanya untuk memindahkan metadata. Pemeriksaan regresi harus memuat file dengan potongan khusus di kedua sisi IDAT dan memverifikasi bahwa piksel tangkapan layar dan status mesin serial telah dipulihkan."
+    }
+  ]
+}

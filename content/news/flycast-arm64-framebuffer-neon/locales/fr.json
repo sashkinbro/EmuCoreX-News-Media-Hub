@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast ajoute des chemins NEON délimités pour le travail du framebuffer ARM64",
+  "summary": "Flycast utilise désormais ARM64 NEON pour la conversion du framebuffer et les écritures VRAM, tout en conservant les solutions de secours scalaires pour les cas non alignés ou non pris en charge. Une vérification des limites physiques de la VRAM conserve les lectures vectorielles dans les configurations de mémoire de 8 Mo et 16 Mo.",
+  "heroAlt": "Photo du produit montrant la console, la manette et les accessoires Sega Dreamcast.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast ajoute des chemins NEON délimités pour le travail du framebuffer ARM64",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "Flycast — demande de fusion #2452",
+    "implementation": "Mise en œuvre et examen fusionnés"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La conversion du framebuffer est un chemin de mémoire chaud"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'émulation du framebuffer de Flycast déplace les données de pixels entre la logique d'affichage PowerVR émulée et la mémoire visible par l'hôte. Sur ARM64, effectuer ce travail une valeur scalaire à la fois peut laisser les instructions vectorielles inutilisées. Le changement de moteur de rendu fusionné ajoute des implémentations NEON pour la conversion et écrit sur la VRAM émulée. Il s'agit d'étapes distinctes dans le chemin du framebuffer : l'une traduit la représentation des pixels, tandis que l'autre place les données résultantes dans la disposition de la mémoire émulée."
+    },
+    {
+      "type": "heading",
+      "text": "Vectorisez uniquement la région lisible en toute sécurité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une charge vectorielle peut franchir la fin d'une allocation physique si le code suppose que la longueur de ligne logique est toujours disponible. Le correctif vérifie l'empreinte VRAM réelle avant d'émettre des lectures vectorielles et conserve des solutions de secours scalaires pour les régions non prises en charge ou non alignées. Il prend explicitement en compte les configurations VRAM de 8 Mo et 16 Mo, de sorte que l'étendue sûre est dérivée de la taille de mémoire de la console sélectionnée plutôt que d'une plage de pointeurs d'hôte plus large."
+    },
+    {
+      "type": "heading",
+      "text": "Gardez une solution de repli pour les limites difficiles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les routines SIMD sont plus utiles pour les étendues alignées régulières, mais les bords du framebuffer et les lignes partielles peuvent violer ces hypothèses. Le fait de conserver un chemin scalaire permet à la boucle optimisée de gérer le volume sécurisé tout en préservant le comportement défini pour le reste au lieu d'élargir les lectures au-delà des limites de la mémoire émulée. La division facilite également le raisonnement sur les queues inhabituelles : la vectorisation est une optimisation dans une région vérifiée, et non une exigence pour chaque pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Valider le travail de vitesse par rapport à la sécurité de la mémoire"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement a été fusionné dans la branche de développement de Flycast après que les commentaires du responsable ont affiné le suivi de l'écriture du framebuffer. Sa preuve est un changement de mise en œuvre et la réussite des vérifications du référentiel, et non une référence multi-appareils publiée. Des mesures de suivi utiles devraient séparer le coût de conversion des écritures VRAM et couvrir à la fois les tailles de mémoire prises en charge, les différents alignements de lignes et les courtes périodes où la configuration scalaire peut être moins chère."
+    }
+  ]
+}

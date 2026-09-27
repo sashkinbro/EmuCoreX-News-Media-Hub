@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast menolak deskriptor disk dengan nama file yang belum selesai dikutip",
+  "summary": "Baris CUE atau GDI FILE yang berakhir sebelum kutipan penutupnya dapat membuat parser Flycast terbaca tanpa batas waktu. Pembaca sekarang memeriksa setiap ekstraksi karakter dan memunculkan kesalahan deskriptor yang tidak valid di akhir file, mencegah file teks yang salah formatnya terhenti saat memuat disk.",
+  "heroAlt": "Dua konsol Sega Dreamcast terbuka menampilkan drive disknya.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast menolak deskriptor disk dengan nama file yang belum selesai dikutip",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "Flycast — permintaan penggabungan #2413",
+    "implementation": "Menggabungkan perubahan parser CUE dan GDI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kutipan yang hilang dapat mengubah penguraian menjadi bacaan tanpa akhir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast menerima deskriptor teks CUE dan GDI yang memberi nama file yang membentuk image disk. Dalam nama file FILE yang dikutip, parser mencari kutipan berikutnya tanpa memeriksa apakah ekstraksi telah mencapai akhir file. Oleh karena itu, string yang tidak diakhiri dapat terus menambahkan data yang tidak valid alih-alih berhenti, menyebabkan hang atau pertumbuhan memori yang tidak terbatas ketika format deskriptor yang salah dibuka."
+    },
+    {
+      "type": "heading",
+      "text": "Periksa aliran pada setiap ekstraksi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan gabungan memeriksa aliran input saat melewatkan spasi sebelum nama file dan pada setiap karakter yang dibaca di dalam nama file yang dikutip. Jika ekstraksi gagal, parser segera membuang pengecualian CUE atau GDI yang tidak valid, alih-alih melakukan perulangan pada aliran yang sudah habis. Nama file yang dikutip dan valid terus dibaca hingga kutipan penutupnya."
+    },
+    {
+      "type": "heading",
+      "text": "Tangani klasifikasi karakter dengan aman"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan yang sama melemparkan byte yang diekstraksi ke `unsigned char` sebelum meneruskannya ke `isspace`. Fungsi klasifikasi karakter C menerima EOF atau nilai yang dapat direpresentasikan sebagai karakter yang tidak ditandatangani; meneruskan byte bertanda negatif adalah perilaku yang tidak terdefinisi. Hal ini membuat pemindaian spasi terdefinisi dengan baik untuk nama file yang berisi byte di luar ASCII dasar."
+    },
+    {
+      "type": "heading",
+      "text": "Tolak masukan yang buruk sebelum menghabiskan sumber daya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tambalan ini mengubah satu kasus masukan yang salah format menjadi kesalahan penguraian normal; itu tidak memvalidasi setiap bidang CUE atau GDI yang mungkin. Pemeriksaan regresi harus mencakup tanda kutip yang hilang, nama kosong, spasi sebelum nama, byte non-ASCII, dan jalur kutipan yang valid. Peningkatan praktisnya adalah deskriptor yang terpotong langsung gagal alih-alih menjebak pemuat disk dalam loop baca."
+    }
+  ]
+}

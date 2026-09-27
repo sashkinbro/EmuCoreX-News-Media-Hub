@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast fügt begrenzte NEON-Pfade für die ARM64-Framebuffer-Arbeit hinzu",
+  "summary": "Flycast verwendet jetzt ARM64 NEON für die Framebuffer-Konvertierung und VRAM-Schreibvorgänge und behält dabei skalare Fallbacks für nicht ausgerichtete oder nicht unterstützte Fälle bei. Eine Überprüfung der physischen VRAM-Grenzen sorgt dafür, dass Vektorlesevorgänge sowohl in 8-MB- als auch in 16-MB-Speicherkonfigurationen erfolgen.",
+  "heroAlt": "Produktfoto mit der Sega Dreamcast-Konsole, dem Controller und dem Zubehör.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast fügt begrenzte NEON-Pfade für die ARM64-Framebuffer-Arbeit hinzu",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "Flycast — Änderungsantrag #2452",
+    "implementation": "Zusammengeführte Implementierung und Überprüfung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die Framebuffer-Konvertierung ist ein Hot-Memory-Pfad"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Framebuffer-Emulation von Flycast verschiebt Pixeldaten zwischen der emulierten PowerVR-Anzeigelogik und dem für den Host sichtbaren Speicher. Auf ARM64 kann die Ausführung dieser Arbeit jeweils für einen Skalarwert dazu führen, dass Vektoranweisungen ungenutzt bleiben. Die zusammengeführte Renderer-Änderung fügt NEON-Implementierungen für die Konvertierung und Schreibvorgänge in den emulierten VRAM hinzu. Dies sind separate Stufen im Framebuffer-Pfad: Eine übersetzt die Pixeldarstellung, während die andere die resultierenden Daten im emulierten Speicherlayout platziert."
+    },
+    {
+      "type": "heading",
+      "text": "Vektorisieren Sie nur den Bereich, der sicher lesbar ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine Vektorlast kann das Ende einer physischen Zuweisung überschreiten, wenn der Code davon ausgeht, dass die logische Zeilenlänge immer verfügbar ist. Der Patch überprüft den tatsächlichen VRAM-Footprint, bevor er Vektorlesevorgänge ausgibt, und behält skalare Fallbacks für nicht unterstützte oder nicht ausgerichtete Regionen bei. Es berücksichtigt explizit 8-MB- und 16-MB-VRAM-Konfigurationen, sodass der sichere Umfang von der ausgewählten Konsolenspeichergröße und nicht von einem größeren Host-Zeigerbereich abgeleitet wird."
+    },
+    {
+      "type": "heading",
+      "text": "Behalten Sie einen Rückgriff auf unangenehme Grenzen"
+    },
+    {
+      "type": "paragraph",
+      "text": "SIMD-Routinen sind am nützlichsten für regelmäßig ausgerichtete Bereiche, aber Framebuffer-Kanten und Teilzeilen können diese Annahmen verletzen. Durch die Beibehaltung eines Skalarpfads kann die optimierte Schleife die sichere Masse verarbeiten und gleichzeitig das definierte Verhalten für den Rest beibehalten, anstatt die Lesevorgänge über die emulierte Speichergrenze hinaus auszudehnen. Die Aufteilung erleichtert auch das Nachdenken über ungewöhnliche Enden: Die Vektorisierung ist eine Optimierung innerhalb eines überprüften Bereichs und nicht eine Anforderung für jedes Pixel."
+    },
+    {
+      "type": "heading",
+      "text": "Validieren Sie die Geschwindigkeitsarbeit im Vergleich zur Speichersicherheit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderung wurde in den Entwicklungszweig von Flycast übernommen, nachdem das Feedback der Betreuer das Framebuffer-Write-Tracking verfeinert hatte. Sein Beweis ist eine Implementierungsänderung und das Bestehen von Repository-Prüfungen, kein veröffentlichter geräteübergreifender Benchmark. Nützliche Folgemessungen sollten die Konvertierungskosten von den VRAM-Schreibvorgängen trennen und sowohl unterstützte Speichergrößen, unterschiedliche Zeilenausrichtungen als auch kurze Bereiche abdecken, in denen die Skalareinrichtung möglicherweise günstiger ist."
+    }
+  ]
+}

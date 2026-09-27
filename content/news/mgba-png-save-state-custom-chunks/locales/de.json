@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA installiert benutzerdefinierte PNG-Handler für den Speicherstatus, bevor Bilddaten gelesen werden",
+  "summary": "PNG-Speicherzustände können die `gbAs`- und `gbAx`-Blöcke des mGBA vor den Bild-IDAT-Daten enthalten. Der Loader registriert nun seinen Custom-Chunk-Handler, bevor er den PNG-Header liest, sodass libpng diese Chunks unabhängig von ihrer Position erkennt.",
+  "heroAlt": "Rückseite des Game Boy Advance-Motherboards.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA installiert benutzerdefinierte PNG-Handler für den Speicherstatus, bevor Bilddaten gelesen werden",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "mGBA — Änderungsantrag #3803",
+    "implementation": "Änderung des zusammengeführten Serialisierungsladers"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG erlaubt Zusatzdaten rund um Bilddaten"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA kann neben dem Screenshot einen Speicherstatus in einer PNG-Datei speichern. Seine emulatorspezifischen Blöcke `gbAs` und `gbAx` enthalten Statusinformationen, während IDAT komprimierte Bildpixel enthält. PNG-Reader verarbeiten Blöcke in Dateireihenfolge, daher muss eine Anwendung ihren Handler installieren, bevor der Parser einen ihrer benutzerdefinierten Blöcke erreicht."
+    },
+    {
+      "type": "heading",
+      "text": "Ein Laderwechsel führte dazu, dass frühe Chunks fehlschlugen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aufgrund einer Entwicklungsänderung wurde die Registrierung benutzerdefinierter Chunks verschoben, bis der PNG-Header gelesen wurde. Für Dateien, deren Statusblöcke vor IDAT erschienen, war das zu spät: libpng stieß auf einen unbekannten Block, während der Handler von mGBA nicht aktiv war, und lehnte die Datei ab. Der Bericht stammte von einem benutzerdefinierten Tool, das diese Reihenfolge ausgegeben hat; Es handelte sich nicht um ein bekanntes Layout, das von mGBA selbst erstellt wurde."
+    },
+    {
+      "type": "heading",
+      "text": "Registrieren Sie den Handler, bevor Sie den Header lesen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der zusammengeführte Fix weist zuerst den Statuspuffer und den gebündelten Statuskontext zu und installiert dann die Handler `gbAs` und `gbAx`, bevor er `PNGReadHeader` aufruft. Außerdem wird der zugeordnete Statuspuffer bei Headerfehlern und beim Zurückweisen übergroßer Bilder freigegeben. Dadurch wird der frühere Registrierungspunkt mit der Bereinigung für die neuen Pfade für die vorzeitige Rückkehr kombiniert."
+    },
+    {
+      "type": "heading",
+      "text": "Die Kompatibilität umfasst Dateien von externen Tools"
+    },
+    {
+      "type": "paragraph",
+      "text": "Durch die Unterstützung dieser Chunks vor IDAT wird der Loader gegenüber einer gültigen Reihenfolge tolerant gemacht, die das Projekt normalerweise nicht schreibt. Dadurch wird vermieden, dass Benutzer aufgefordert werden, ansonsten verwendbare Speicherzustände neu zu schreiben, nur um Metadaten zu verschieben. Regressionsprüfungen sollten Dateien mit den benutzerdefinierten Blöcken auf beiden Seiten von IDAT laden und überprüfen, ob Screenshot-Pixel und serialisierter Maschinenstatus wiederhergestellt werden."
+    }
+  ]
+}

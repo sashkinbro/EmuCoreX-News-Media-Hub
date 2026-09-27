@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 paraleliza la compilación del sombreador de arranque de Vulkan",
+  "summary": "RPCS3 puede usar subprocesos de host para el compilador de canalización inicial de Vulkan y luego cambiar el tamaño del grupo después de cargar la caché del sombreador para respetar la configuración de tiempo de ejecución configurada.",
+  "heroAlt": "Fotografía de un kit de desarrollo de PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 paraleliza la compilación del sombreador de arranque de Vulkan",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — solicitud de cambios #19578",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El arranque en frío funciona antes de que se ejecute el juego."
+    },
+    {
+      "type": "paragraph",
+      "text": "Un renderizador de Vulkan debe preparar los canales de gráficos antes de poder dibujarlos. En un arranque en frío, es posible que RPCS3 necesite compilar sombreadores mientras construye su backend de gráficos, por lo que el inicio puede dedicar tiempo a la compilación incluso antes de que comience la carga de trabajo habitual en tiempo de ejecución. La solicitud de extracción n.º 19578 cambia la configuración del grupo de subprocesos en torno a esa fase de arranque inicial en lugar de alterar la salida del sombreador o el formato de la caché en el disco."
+    },
+    {
+      "type": "heading",
+      "text": "Utilice núcleos disponibles para la compilación inicial"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando la configuración del subproceso automático es cero, el compilador de canalización inicial ahora comienza con los subprocesos del host disponibles. Si el usuario proporcionó un número de subprocesos explícito, ese valor se respeta. Esto hace que la configuración automática sea útil durante la preparación inicial del sombreador, donde el trabajo se puede dividir en tareas de compilación independientes."
+    },
+    {
+      "type": "heading",
+      "text": "Restaurar el grupo configurado después de la carga de la caché"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una vez finalizada la carga del caché del sombreador en el subproceso de inicialización, RPCS3 cambia el tamaño del grupo del compilador para que coincida con el comportamiento del tiempo de ejecución configurado. Las dos fases tienen objetivos diferentes: el arranque inicial puede aprovechar el paralelismo del host, mientras que el trabajo posterior respeta la configuración elegida por el usuario. Mantener el cambio de tamaño en la transición evita tratar una decisión de inicio únicamente como una anulación permanente."
+    },
+    {
+      "type": "heading",
+      "text": "Los arranques en frío y en caliente necesitan mediciones separadas"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche cambia la política de programación, pero su valor depende del contenido de la caché, la topología de la CPU y la cantidad de compilación pendiente. Una evaluación útil compara el arranque en frío con una caché llena, recuentos de subprocesos automáticos y explícitos y el tiempo total de inicio, así como la contención de la CPU. El cambio no promete una mejora fija en todos los sistemas; Crea una fase inicial más paralela y al mismo tiempo preserva el grupo configurado posteriormente."
+    }
+  ]
+}

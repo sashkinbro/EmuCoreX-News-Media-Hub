@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 clears stale PPU delay when starting a thread",
+  "summary": "A PPU scheduling adjustment resets the sleep delay after a wait and checks the current function before applying the thread-start heuristic.",
+  "heroAlt": "Montage comparing several PlayStation 3 console models.",
+  "searchKeywords": [
+    "RPCS3",
+    "PPU",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #19580",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A delay can outlive the wait that set it"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 uses host scheduling heuristics to pace emulated PPU threads. Pull request #19580 adjusts the sleep and start logic so a recorded hardware sleep delay is cleared after the CPU completes its sleep or wait path. Without that cleanup, a later scheduling decision can inherit timing state from an earlier wait, even though the thread has moved on."
+    },
+    {
+      "type": "heading",
+      "text": "Guard the thread-start special case"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch also narrows the delay heuristic: it avoids applying the special case when the CPU being evaluated is not the current PPU, and it checks the current function before relying on the expected value in general-purpose register 11 for `sys_ppu_thread_start`. Those checks keep a function-specific heuristic from acting on unrelated execution state."
+    },
+    {
+      "type": "heading",
+      "text": "Preserve ordinary scheduling behavior"
+    },
+    {
+      "type": "paragraph",
+      "text": "This is a targeted correction to scheduler bookkeeping, not a new timing model. The thread-start path still uses the existing heuristic when its preconditions match; the new guards prevent that logic from crossing onto a different PPU or an unrelated function. Clearing the delay at the wait boundary makes the state transition explicit and easier to reason about during scheduling."
+    },
+    {
+      "type": "heading",
+      "text": "Timing fixes need regression evidence"
+    },
+    {
+      "type": "paragraph",
+      "text": "Thread timing can vary with host load, game behavior, and synchronization patterns. The patch makes the intended conditions more precise, but does not establish a universal performance or compatibility change by itself. Useful tests should cover thread start after sleep, calls from non-current PPU contexts, unrelated functions with similar register contents, and normal wait/resume sequences."
+    }
+  ]
+}

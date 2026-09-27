@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu fortalece o manuseio de superfície NV2A para regiões de renderização vazias",
+  "summary": "Um jogo do Xbox pode deixar a GPU emulada com uma superfície cuja região do clipe tem largura ou altura zero. O xemu agora ignora transferências e rastreamento de acesso à CPU para essas superfícies, ao mesmo tempo que fornece às APIs gráficas do host espaços reservados seguros de um pixel.",
+  "heroAlt": "Captura de tela do painel original do Xbox em execução no emulador xemu.",
+  "searchKeywords": [
+    "xemu",
+    "xemu fortalece o manuseio de superfície NV2A para regiões de renderização vazias",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitação de incorporação #2517",
+    "implementation": "Implementação mesclada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Uma superfície pode estar validamente vazia"
+    },
+    {
+      "type": "paragraph",
+      "text": "O processador gráfico Xbox NV2A expõe superfícies de cor e profundidade apoiadas por memória de vídeo. Um convidado pode programar recortes ou dimensões que produzam uma superfície com largura ou altura zero. Esse estado é estranho para uma API gráfica hospedeira, que espera extensões de imagem positivas e regiões de transferência significativas."
+    },
+    {
+      "type": "heading",
+      "text": "Proteja cada ponto onde os pixels se movem"
+    },
+    {
+      "type": "paragraph",
+      "text": "A mudança mesclada do xemu adiciona verificações de dimensão zero nos caminhos OpenGL e Vulkan. Pesquisa de exibição, registro de retorno de chamada de acesso à CPU, upload e download agora evitam tratar uma superfície vazia como dados de pixel. As proteções cobrem os pontos onde uma extensão inválida poderia atingir uma operação gráfica."
+    },
+    {
+      "type": "heading",
+      "text": "Mantenha a sincronização e a contabilidade consistentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "O caminho de upload do Vulkan marca uma superfície vazia inicializada antes de retornar. A mudança também faz com que a remoção do retorno de chamada tolere um retorno de chamada nulo, correspondendo à decisão de não registrar um para uma imagem vazia. Esses detalhes mantêm a limpeza e o estado do renderizador coerentes quando o convidado cria uma superfície sem pixels."
+    },
+    {
+      "type": "heading",
+      "text": "Aloque um espaço reservado de host inofensivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Onde um objeto de imagem ainda precisa de uma extensão, o renderizador substitui um por uma dimensão zero. Essa alocação de um pixel é um espaço reservado do lado do host; ele não inventa pixels visíveis para convidados nem transforma a superfície vazia em uma região desenhável. O PR vincula os guardas a vários relatórios, embora observe que um relatório não era reproduzível de forma confiável."
+    }
+  ]
+}

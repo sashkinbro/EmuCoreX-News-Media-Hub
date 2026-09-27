@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA inicializuje čtení registru Lua a poté vrátí 8bitové hodnoty",
+  "summary": "Skriptovací API Game Boy vrátilo `int32_t`, ale jeho zpětné volání registru zapsalo pouze dolní bajt pro 8bitové registry. Inicializace výstupu na nulu před zpětným voláním zabrání tomu, aby se zbývající bajty zásobníku objevily jako náhodné vysoké bity v Lua.",
+  "heroAlt": "Rozebraný Game Boy Advance ukazuje jeho vnitřní obvodovou desku.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA inicializuje čtení registru Lua a poté vrátí 8bitové hodnoty",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "mGBA — požadavek na sloučení #3785",
+    "implementation": "Sloučená oprava pomocného skriptu"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Úzký rejstřík byl umístěn v širším výsledku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game Boy Lua API odhaluje `emu:readRegister()` prostřednictvím výsledku s hodnotou skriptu podpořeného 32bitovým celým číslem. U 8bitového registru CPU zapsalo zpětné volání jádra pouze jeden bajt přes `uint8_t*`. Ostatní bajty v místním 32bitovém výsledku byly ponechány nedotčené, takže veřejná hodnota skriptu mohla obsahovat data nesouvisející s požadovaným registrem."
+    },
+    {
+      "type": "heading",
+      "text": "Neinicializované bajty způsobily, že stejný stav vypadal jinak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud registr B obsahoval `0x12`, Lua by mohla obdržet `0x12`, `0x7F12` nebo jinou hodnotu v závislosti na tom, jaké bity se staly obsazením vysokých bajtů. Nízký bajt byl správný; vrácené celé číslo nebylo deterministické. Skript, který porovnává, protokoluje nebo formátuje čtení registrů, by se proto mohl chovat nekonzistentně, i když se stav emulovaného CPU nezměnil."
+    },
+    {
+      "type": "heading",
+      "text": "Nejprve vynulujte úplné úložiště pro vrácení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava inicializuje místní `int32_t out` na nulu před vyvoláním zpětného volání čtení registru jádra. 8bitové zpětné volání pak aktualizuje pouze nízký bajt, zatímco nevyužité horní bajty zůstávají nulové. Širší zpětná volání registru mohou stále zapisovat svou úplnou hodnotu přes stejný výstupní ukazatel, takže oprava zachovává sdílené rozhraní pomocníka."
+    },
+    {
+      "type": "heading",
+      "text": "Korekce je malá a přímo testovatelná"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změna je omezena na pomocníka čtení Lua a nemění stav emulovaného CPU. Kontrola cílené regrese může nastavit známý 8bitový registr, opakovaně jej číst z Lua a ověřit, že výsledek je konzistentně nulový, spíše než závislý na obsahu předchozího zásobníku. Důležitou vlastností je deterministická konverze šířky, nikoli změna sémantiky registru Game Boy."
+    }
+  ]
+}

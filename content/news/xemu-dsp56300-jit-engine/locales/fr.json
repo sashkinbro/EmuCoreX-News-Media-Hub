@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu ajoute un moteur JIT commutable pour le DSP audio Xbox",
+  "summary": "Un nouveau backend DSP56300 offre à xemu une alternative à l'interprétation de chaque instruction invité. Une couche d'état partagée maintient l'interpréteur existant disponible et connecte les deux moteurs à la gestion de l'état de sauvegarde.",
+  "heroAlt": "Console Xbox originale à côté de sa manette Duke sur fond blanc.",
+  "searchKeywords": [
+    "xemu",
+    "xemu ajoute un moteur JIT commutable pour le DSP audio Xbox",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "xemu — demande de fusion #2801",
+    "implementation": "Mise en œuvre et examen fusionnés"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un processeur audio, deux voies d'exécution"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le processeur audio Xbox MCPX comprend un processeur de signal numérique Motorola DSP56300. xemu avait déjà un interpréteur C pour ce processeur invité ; La pull request #2801 a ajouté un deuxième backend qui utilise la compilation juste à temps. Le changement concerne la manière dont les instructions DSP s'exécutent dans l'émulateur, plutôt que l'introduction d'un nouveau format audio ou d'un correctif spécifique au jeu."
+    },
+    {
+      "type": "heading",
+      "text": "Traduire le travail d’instruction avant l’exécution"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un interprète décode et transmet les instructions aux clients au fur et à mesure qu'ils arrivent. Un JIT peut traduire une séquence en instructions hôte et réutiliser le code généré, échangeant le travail de compilation contre une expédition moins répétée. Le changement xemu ajoute un JIT basé sur Rust aux côtés de l'interpréteur C. Son avantage dépend du temps qu'un titre passe dans le code DSP et du CPU hôte ; le projet ne revendiquait pas une accélération universelle."
+    },
+    {
+      "type": "heading",
+      "text": "Gardez les deux moteurs derrière une frontière d'état partagée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif introduit une interface d'opérations DSP et une représentation commune de l'état de base. Cette limite permet à xemu de sélectionner ou de changer de moteur d'exécution sans que le reste du processeur audio ne dépende d'une seule implémentation. Il donne également au code de sauvegarde et de chargement un état commun à sérialiser, ce qui est essentiel lorsqu'une session enregistrée est rouverte avec un backend différent sélectionné."
+    },
+    {
+      "type": "heading",
+      "text": "Conserver l’interprète comme référence utile"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'interpréteur C reste disponible et le nouveau paramètre permet d'activer ou de désactiver le chemin JIT. Conserver les deux chemins aide les développeurs à comparer le comportement lors de l'enquête sur une anomalie audio : le JIT peut être comparé à une implémentation instruction par instruction plus simple. Le même refactor corrige également les défauts trouvés dans l’interpréteur existant, le correctif n’est donc pas seulement un ajout au compilateur."
+    },
+    {
+      "type": "heading",
+      "text": "Les allégations de performances nécessitent des tests spécifiques à la charge de travail"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les premières discussions ont attaché des mesures à partir d'un petit ensemble de jeux et ont noté les cas extrêmes restants, y compris les boucles audio et les titres liés à la fréquence d'images. Ces rapports sont des pistes utiles, et non une référence entre les jeux. Le changement fusionné établit un deuxième moteur DSP et sa plomberie d'état ; des tests reproductibles sur les jeux, les processeurs hôtes, les transitions d'état de sauvegarde et l'audio sensible au timing sont encore nécessaires pour caractériser ses gains pratiques."
+    }
+  ]
+}

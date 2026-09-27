@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast dodaje ograniczone ścieżki NEON do pracy z buforem ramki ARM64",
+  "summary": "Flycast wykorzystuje teraz ARM64 NEON do konwersji bufora ramki i zapisu VRAM, zachowując jednocześnie skalarne rezerwy dla niewyrównanych lub nieobsługiwanych przypadków. Kontrola granic fizycznej pamięci VRAM utrzymuje odczyty wektorów w konfiguracjach pamięci 8 MB i 16 MB.",
+  "heroAlt": "Zdjęcie produktu przedstawiające konsolę Sega Dreamcast, kontroler i akcesoria.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast dodaje ograniczone ścieżki NEON do pracy z buforem ramki ARM64",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "Flycast — prośba o scalenie #2452",
+    "implementation": "Połączone wdrożenie i przegląd"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Konwersja bufora ramki to gorąca ścieżka pamięci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulacja bufora ramki Flycast przenosi dane pikseli pomiędzy emulowaną logiką wyświetlacza PowerVR a pamięcią widoczną dla hosta. Na ARM64 wykonywanie tej pracy po jednej wartości skalarnej na raz może pozostawić instrukcje wektorowe niewykorzystane. Połączona zmiana modułu renderującego dodaje implementacje NEON do konwersji i zapisuje do emulowanej pamięci VRAM. Są to oddzielne etapy ścieżki bufora ramki: jeden tłumaczy reprezentację pikseli, a drugi umieszcza powstałe dane w emulowanym układzie pamięci."
+    },
+    {
+      "type": "heading",
+      "text": "Wektoryzuj tylko region, który jest bezpieczny do odczytania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Obciążenie wektorowe może przekroczyć koniec alokacji fizycznej, jeśli w kodzie założono, że logiczna długość wiersza jest zawsze dostępna. Łatka sprawdza rzeczywisty rozmiar pamięci VRAM przed wydaniem odczytów wektorowych i utrzymuje skalarne rezerwy dla nieobsługiwanych lub niewyrównanych regionów. Wyraźnie uwzględnia konfiguracje 8 MB i 16 MB pamięci VRAM, więc bezpieczny zakres wynika z wybranego rozmiaru pamięci konsoli, a nie z szerszego zakresu wskaźników hosta."
+    },
+    {
+      "type": "heading",
+      "text": "Zachowaj rezerwę dla niewygodnych granic"
+    },
+    {
+      "type": "paragraph",
+      "text": "Procedury SIMD są najbardziej przydatne w przypadku regularnie wyrównanych rozpiętości, ale krawędzie bufora ramki i częściowe wiersze mogą naruszać te założenia. Zachowanie ścieżki skalarnej pozwala zoptymalizowanej pętli obsłużyć bezpieczną masę, zachowując jednocześnie określone zachowanie przez pozostałą część, zamiast poszerzać odczyty poza granicę emulowanej pamięci. Dzięki podziałowi łatwiej jest uzasadnić nietypowe ogony: wektoryzacja to optymalizacja w obrębie zaznaczonego obszaru, a nie wymóg dla każdego piksela."
+    },
+    {
+      "type": "heading",
+      "text": "Sprawdź prędkość pracy pod kątem bezpieczeństwa pamięci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana ta została włączona do gałęzi rozwojowej Flycast po tym, jak na podstawie opinii opiekunów udoskonalono śledzenie zapisu i bufora ramki. Dowodem na to jest zmiana wdrożeniowa i pozytywne sprawdzenie repozytorium, a nie opublikowany test porównawczy dla różnych urządzeń. Przydatne pomiary uzupełniające powinny oddzielić koszt konwersji od zapisów VRAM i uwzględnić zarówno obsługiwane rozmiary pamięci, różne wyrównania wierszy, jak i krótkie rozpiętości, gdzie konfiguracja skalarna może być tańsza."
+    }
+  ]
+}

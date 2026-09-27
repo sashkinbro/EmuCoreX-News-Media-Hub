@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu renforce la gestion des surfaces NV2A pour les régions de rendu vides",
+  "summary": "Un jeu Xbox peut laisser le GPU émulé avec une surface dont la région de découpage a une largeur ou une hauteur nulle. xemu ignore désormais les transferts et le suivi des accès au processeur pour ces surfaces tout en donnant aux API graphiques hôtes des espaces réservés sécurisés d'un pixel.",
+  "heroAlt": "Capture d'écran du tableau de bord Xbox d'origine exécuté dans l'émulateur xemu.",
+  "searchKeywords": [
+    "xemu",
+    "xemu renforce la gestion des surfaces NV2A pour les régions de rendu vides",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "xemu — demande de fusion #2517",
+    "implementation": "Implémentation fusionnée"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une surface peut être valablement vide"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le processeur graphique Xbox NV2A expose des surfaces de couleur et de profondeur soutenues par la mémoire vidéo. Un invité peut programmer un découpage ou des dimensions qui produisent une surface avec une largeur ou une hauteur nulle. Cet état est gênant pour une API graphique hôte, qui attend des étendues d’image positives et des régions de transfert significatives."
+    },
+    {
+      "type": "heading",
+      "text": "Protégez chaque point où les pixels se déplacent"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modification fusionnée de xemu ajoute des vérifications de dimension nulle dans les chemins OpenGL et Vulkan. La recherche d'affichage, l'enregistrement des rappels d'accès au processeur, le téléchargement et le téléchargement évitent désormais de traiter une surface vide comme des données de pixels. Les gardes couvrent les points où une étendue invalide pourrait autrement atteindre une opération graphique."
+    },
+    {
+      "type": "heading",
+      "text": "Maintenir la cohérence de la synchronisation et de la comptabilité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le chemin de téléchargement Vulkan marque une surface vide initialisée avant de revenir. Le changement permet également à la suppression du rappel de tolérer un rappel nul, correspondant à la décision de ne pas en enregistrer un pour une image vide. Ces détails maintiennent la cohérence du nettoyage et de l’état du rendu lorsque l’invité crée une surface sans pixels."
+    },
+    {
+      "type": "heading",
+      "text": "Attribuer un espace réservé à l'hôte inoffensif"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsqu'un objet image a encore besoin d'une étendue, le moteur de rendu en remplace une par une dimension nulle. Cette allocation d'un pixel est un espace réservé côté hôte ; il n'invente pas de pixels visibles par les invités et ne transforme pas la surface vide en une région dessinable. Le PR relie les gardes à plusieurs rapports, tout en notant qu'un rapport n'était pas reproductible de manière fiable."
+    }
+  ]
+}

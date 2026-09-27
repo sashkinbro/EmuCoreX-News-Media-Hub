@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 zužuje zámek rezervace SPU putllc",
+  "summary": "Nová rychlá cesta zpracovává 128bajtovou rezervační linku s menší uzamčenou oblastí a 16bajtové atomické porovnání a výměnu, když jsou přesné rezervace zakázány.",
+  "heroAlt": "Zadní pohled na PlayStation 3 zobrazující její porty a pouzdro.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 zužuje zámek rezervace SPU putllc",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — požadavek na sloučení #19568",
+    "implementation": "Oprava a recenze"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Podmíněné úložiště chrání sdílenou paměť"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instrukce Cell SPU putllc podmíněně ukládá hodnotu pouze po dobu platnosti rezervace. V emulátoru se toto chování musí koordinovat s ostatními emulovanými procesory, které se mohou dotýkat stejné paměti. RPCS3 pull request #19568 mění běžnou, méně přísnou cestu k rezervaci: kontroluje zaznamenaná data rezervace a poté provádí atomickou aktualizaci, přičemž zachovává rezervační protokol nedotčený."
+    },
+    {
+      "type": "heading",
+      "text": "Zamkněte rezervační řádek, aktualizujte operand"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementace využívá zámek rozsahu pokrývající granule 128bajtové rezervace, porovnává uložená data rezervace a pro skutečnou hodnotu používá 16bajtovou atomickou výměnu. Tím se oddělí rozsah potřebný k ochraně vedení rezervací od šířky podmíněného zápisu. Pokud se srovnání nezdaří, úložiště nepokračuje a zachová podmíněnou sémantiku instrukce."
+    },
+    {
+      "type": "heading",
+      "text": "Přesný režim si zachovává svou silnější dráhu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rychlá cesta je bráněna při deaktivaci přesných rezervací a na platném zaznamenaném místě rezervace. Přesný režim nadále používá stávající širší zámek zápisu. Na tomto rozdělení záleží, protože optimalizace rychlosti by neměla tiše oslabit přísnější chování, které uživatelé volí pro vyšetřování kompatibility nebo složité závody."
+    },
+    {
+      "type": "heading",
+      "text": "Souběžnost stále potřebuje pokrytí pracovní zátěže"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato změna snižuje zamykání na jedné cestě; nestanoví měřené zrychlení pro každý titul nebo hostitele. Podmíněné úložiště komunikuje s jinými vlákny SPU a přístupem k CPU, takže ověření by mělo zahrnovat souběžné zapisovače, zneplatnění rezervace a nastavení přesnosti. Implementace požadavku na stažení poskytuje emulátoru užší operaci k testování, aniž by se změnila smlouva o úspěchu nebo selhání viditelná pro hosty."
+    }
+  ]
+}

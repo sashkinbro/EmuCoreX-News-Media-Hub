@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu preserva le superfici Xbox 2D nitide durante il ridimensionamento in Vulkan",
+  "summary": "Quando la CPU scrive una superficie Xbox nella VRAM, xemu la carica e può ridimensionarla per una risoluzione interna più elevata. Il percorso Vulkan ora utilizza i blit del vicino più vicino sia per l'upscaling in caricamento che per il downscaling in download, abbinando la replica dei pixel invece di aggiungere sfocatura lineare.",
+  "heroAlt": "Vista posteriore della console Xbox originale che mostra i suoi connettori.",
+  "searchKeywords": [
+    "xemu",
+    "xemu preserva le superfici Xbox 2D nitide durante il ridimensionamento in Vulkan",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "xemu — richiesta di modifica #2874",
+    "implementation": "Implementazione unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le scritture della CPU possono ignorare una chiamata di estrazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il renderer NV2A tiene traccia delle superfici nella memoria video Xbox. Quando la CPU emulata scrive direttamente in una, xemu chiama `pgraph_vk_upload_surface_data()` per sincronizzare quei byte con un'immagine Vulkan in modo che il rendering successivo veda l'aggiornamento. Al di sopra della 1× risoluzione interna, il caricamento utilizza `vkCmdBlitImage` per ingrandire la superficie. Questo è un percorso diverso dal disegno di una normale scena 3D, perché i pixel sorgente sono stati scritti dalla CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Il filtraggio lineare ammorbidisce la grafica dai bordi netti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il blit di caricamento di Vulkan utilizzava `VK_FILTER_LINEAR` per le superfici colorate. Il filtraggio lineare fonde i texel vicini quando si ingrandisce un'immagine, il che può ammorbidire i bordi dei pixel nei menu e in altri livelli 2D. L'autore della richiesta pull ha segnalato il dashboard Xbox come esempio ovvio e ha notato che il rendering 3D puro non utilizza questo percorso. Il renderer OpenGL ha già espanso i pixel della superficie mediante replica, fornendo al progetto un utile confronto comportamentale."
+    },
+    {
+      "type": "heading",
+      "text": "Utilizzare il campionamento più vicino in entrambe le direzioni"
+    },
+    {
+      "type": "paragraph",
+      "text": "La modifica unita cambia il blit di upscale del caricamento in `VK_FILTER_NEAREST` e fa la stessa scelta per il percorso di downscale del download di superficie. Il filtraggio più vicino seleziona un texel di origine anziché calcolare la media dei suoi vicini, preservando i valori discreti nella superficie trasferita. L'applicazione della regola in entrambe le direzioni mantiene coerente la semantica della copia quando CPU e GPU scambiano una superficie di colore ridimensionata."
+    },
+    {
+      "type": "heading",
+      "text": "Il cambiamento riguarda la semantica di trasferimento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Questa patch influisce sulla sincronizzazione della superficie da CPU a GPU e da GPU a CPU nel renderer Vulkan; non modifica la risoluzione originale del gioco o le sue impostazioni di filtro 3D. Il risultato atteso è un contenuto 2D in scala più nitido in cui vengono utilizzati tali blit, con una convalida focalizzata sia sulle direzioni di trasferimento che sui confini della superficie del colore. La richiesta pull ha rilevato una copertura di riproduzione limitata oltre il dashboard, quindi menu e applicazioni aggiuntivi renderizzati dalla CPU sono controlli utili."
+    }
+  ]
+}

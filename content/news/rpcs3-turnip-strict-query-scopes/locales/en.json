@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-turnip-strict-query-scopes",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 scopes a Vulkan query workaround to Mesa Turnip",
+  "summary": "A GPU hang report led RPCS3 to enable strict query scopes for Turnip while leaving Qualcomm’s proprietary driver on its existing path.",
+  "heroAlt": "Photograph of a PlayStation 3 Slim console.",
+  "searchKeywords": [
+    "RPCS3",
+    "Vulkan",
+    "Turnip",
+    "Adreno",
+    "query"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #19561",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A wait appeared outside the expected query scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 pull request #19561 responds to a GPU hang reported with Mesa Turnip on an Adreno X1-85. A captured GPU command stream showed a query result being copied with a WAIT operation before the next query’s begin and end commands and its availability handling. That ordering implicated how the driver treated query scope boundaries, rather than a general Vulkan rendering failure."
+    },
+    {
+      "type": "heading",
+      "text": "Recognize the driver before choosing behavior"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change identifies Qualcomm hardware and the Mesa Turnip driver, then enables stricter query scope handling only for Turnip. This is a targeted compatibility rule: the vendor alone is not enough to select it, because Qualcomm’s proprietary driver follows a different implementation path. The distinction prevents a Mesa-specific workaround from being applied indiscriminately to every Qualcomm GPU."
+    },
+    {
+      "type": "heading",
+      "text": "Strict ordering addresses the observed sequence"
+    },
+    {
+      "type": "paragraph",
+      "text": "Query scopes describe when results become valid and when commands may consume them. Enforcing the stricter scope behavior constrains RPCS3’s command generation around those boundaries, matching the problematic ordering visible in the capture. The patch does not claim that all query-related hangs are fixed; it addresses the driver and sequence observed in the report."
+    },
+    {
+      "type": "heading",
+      "text": "Validation remains driver and title specific"
+    },
+    {
+      "type": "paragraph",
+      "text": "The report also mentioned wipEout HD and Burnout Paradise, but a captured failure is evidence for a narrow case, not a full compatibility survey. Testing should compare Turnip revisions, affected titles, and other query-heavy workloads, while confirming that proprietary Qualcomm drivers retain their prior behavior. The guarded rule keeps the fix easy to revisit as driver behavior changes."
+    }
+  ]
+}

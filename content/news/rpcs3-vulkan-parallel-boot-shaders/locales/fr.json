@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 parallélise la compilation du shader de démarrage Vulkan",
+  "summary": "RPCS3 peut utiliser des threads hôtes pour le compilateur de canal Vulkan initial, puis redimensionner le pool après le chargement du cache du shader pour honorer le paramètre d'exécution configuré.",
+  "heroAlt": "Photographie d'un kit de développement PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 parallélise la compilation du shader de démarrage Vulkan",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — demande de fusion #19578",
+    "implementation": "Patch et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le démarrage à froid a du travail avant que le jeu ne démarre"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un moteur de rendu Vulkan doit préparer les pipelines graphiques avant de pouvoir les dessiner. Lors d'un démarrage à froid, RPCS3 peut avoir besoin de compiler des shaders lors de la construction de son backend graphique, de sorte que le démarrage peut passer du temps à compiler avant même le début de la charge de travail d'exécution habituelle. La demande d'extraction n° 19578 modifie la configuration du pool de threads autour de cette phase de démarrage initiale plutôt que de modifier la sortie du shader ou le format du cache sur disque."
+    },
+    {
+      "type": "heading",
+      "text": "Utiliser les cœurs disponibles pour la compilation initiale"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque le paramètre de thread automatique est égal à zéro, le compilateur de canal initial démarre désormais avec les threads hôtes disponibles. Si l'utilisateur a fourni un nombre de threads explicite, cette valeur est honorée à la place. Cela rend la configuration automatique utile lors de la préparation initiale du shader, où le travail peut être divisé en tâches de compilation indépendantes."
+    },
+    {
+      "type": "heading",
+      "text": "Restaurer le pool configuré après le chargement du cache"
+    },
+    {
+      "type": "paragraph",
+      "text": "Une fois le chargement du cache de shader terminé sur le thread d'initialisation, RPCS3 redimensionne le pool du compilateur pour correspondre au comportement d'exécution configuré. Les deux phases ont des objectifs différents : le démarrage initial peut tirer parti du parallélisme de l'hôte, tandis que les travaux ultérieurs respectent le paramètre choisi par l'utilisateur. Conserver le redimensionnement lors de la transition évite de traiter une décision de démarrage uniquement comme un remplacement permanent."
+    },
+    {
+      "type": "heading",
+      "text": "Les démarrages à froid et à chaud nécessitent des mesures séparées"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif modifie la politique de planification, mais sa valeur dépend du contenu du cache, de la topologie du processeur et de la quantité de compilation réellement en attente. Une évaluation utile compare le démarrage à froid avec un cache rempli, le nombre de threads automatiques et explicites, le temps de démarrage total ainsi que les conflits de processeur. Le changement ne promet pas une amélioration fixe dans tous les systèmes ; cela crée une phase initiale plus parallèle tout en préservant le pool configuré par la suite."
+    }
+  ]
+}

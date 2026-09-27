@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu vincula el contador de audio MCPX a muestras procesadas",
+  "summary": "El registro de audio de Xbox NV_PAPU_XGSCNT informaba el tiempo virtual transcurrido como si fuera un recuento de muestra. xemu ahora deriva el valor de su divisor de cuadros emulado y muestras por cuadro, solucionando la desincronización de voz reportada en Innocent Tears.",
+  "heroAlt": "Vista inferior de una consola Xbox original.",
+  "searchKeywords": [
+    "xemu",
+    "xemu vincula el contador de audio MCPX a muestras procesadas",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitud de cambios #2945",
+    "implementation": "Implementación fusionada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un registro debe informar los juegos unitarios esperados."
+    },
+    {
+      "type": "paragraph",
+      "text": "El procesador de audio MCPX expone NV_PAPU_XGSCNT como un recuento utilizado durante el procesamiento de voz. La antigua implementación de xemu devolvió nanosegundos de reloj virtual divididos por 100, una estimación derivada del tiempo cuya relación con las muestras procesadas por cuadro emulado no se estableció. Debido a que un invitado lee este registro para rastrear el progreso de la APU, un valor basado en reloj puede variar del trabajo de muestra real del dispositivo."
+    },
+    {
+      "type": "heading",
+      "text": "Utilice el contador de fotogramas de audio directamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "La corrección de una línea combinada calcula el registro desde `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Ambos valores provienen del propio modelo de procesamiento de fotogramas de la APU, por lo que el número devuelto rastrea las muestras que realmente han transcurrido a través de ese modelo en lugar de convertir el tiempo virtual como un reloj de pared. Esto vincula el recuento informado con el progreso de fotogramas emulados, incluso cuando la programación de reproducción del host y la ejecución del invitado no avanzan en incrementos idénticos."
+    },
+    {
+      "type": "heading",
+      "text": "¿Por qué se escucha un conteo incorrecto?"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las voces de audio utilizan el conteo para coordinar el progreso de su reproducción. Si el invitado y el emulador no están de acuerdo sobre cuántas muestras se han procesado, la sincronización de la voz puede variar y partes del audio pueden no estar sincronizadas. La solicitud de extracción nombra a Innocent Tears como el título donde se observó el problema; su informe dice que la mayor parte del audio se desincronizó y no se reprodujo por completo. Los informes de audio relacionados están vinculados en la discusión, pero no todos están probados por este cambio."
+    },
+    {
+      "type": "heading",
+      "text": "Trate la solución como una corrección de tiempo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El autor de la solicitud de extracción dijo que las pruebas se habían limitado a Innocent Tears en ese momento, a pesar de que el cambio hace referencia a varios informes. El código establece la unidad de contador prevista; Una verificación más amplia debe comparar las lecturas de registros, el progreso de la voz y la temporización del audio a través de los límites de los fotogramas y otros títulos. El alcance limitado es útil para el diagnóstico: si el recuento ahora sigue las muestras procesadas pero un título aún varía, la investigación puede avanzar a partes posteriores del proceso de audio."
+    }
+  ]
+}

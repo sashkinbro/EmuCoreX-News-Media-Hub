@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast rejette les descripteurs de disque avec des noms de fichiers cités inachevés",
+  "summary": "Une ligne CUE ou GDI FILE se terminant avant son guillemet de clôture pourrait laisser l'analyseur de Flycast lire indéfiniment. Le lecteur vérifie désormais chaque extraction de caractères et génère une erreur de descripteur invalide à la fin du fichier, empêchant ainsi un fichier texte mal formé de bloquer le chargement du disque.",
+  "heroAlt": "Deux consoles Sega Dreamcast ouvertes montrant leurs lecteurs de disque.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast rejette les descripteurs de disque avec des noms de fichiers cités inachevés",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "Flycast — demande de fusion #2413",
+    "implementation": "Modifications des analyseurs fusionnés CUE et GDI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Une citation manquante peut transformer l'analyse en une lecture sans fin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast accepte les descripteurs de texte CUE et GDI qui nomment les fichiers constituant une image disque. Dans un nom de fichier FILE cité, l'analyseur a recherché la citation suivante sans vérifier si l'extraction avait atteint la fin du fichier. Une chaîne non terminée pourrait donc continuer à ajouter des données invalides plutôt que de s'arrêter, entraînant un blocage ou une croissance illimitée de la mémoire lorsqu'un descripteur mal formé était ouvert."
+    },
+    {
+      "type": "heading",
+      "text": "Vérifiez le flux à chaque extraction"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif fusionné vérifie le flux d'entrée à la fois en sautant les espaces avant un nom de fichier et sur chaque caractère lu à l'intérieur d'un nom de fichier cité. Si l’extraction échoue, l’analyseur lève immédiatement l’exception invalid-CUE ou invalid-GDI existante au lieu de boucler sur un flux épuisé. Les noms de fichiers valides entre guillemets continuent d'être lus jusqu'à leur guillemet de clôture."
+    },
+    {
+      "type": "heading",
+      "text": "Gérer la classification des caractères en toute sécurité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le même changement convertit l'octet extrait en `unsigned char` avant de le transmettre à `isspace`. Les fonctions de classification de caractères C acceptent des EOF ou des valeurs représentables sous forme de caractères non signés ; passer un octet signé négatif est par ailleurs un comportement indéfini. Cela rend l'analyse des espaces bien définie pour les noms de fichiers contenant des octets en dehors de l'ASCII de base."
+    },
+    {
+      "type": "heading",
+      "text": "Rejeter les mauvaises entrées avant qu'elles ne consomment des ressources"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif transforme un cas d'entrée mal formée en une erreur d'analyse normale ; il ne valide pas tous les champs CUE ou GDI possibles. Les contrôles de régression doivent couvrir les guillemets manquants, les noms vides, les espaces avant les noms, les octets non-ASCII et les chemins entre guillemets valides. L'amélioration pratique est qu'un descripteur tronqué échoue rapidement au lieu de piéger le chargeur de disque dans une boucle de lecture."
+    }
+  ]
+}

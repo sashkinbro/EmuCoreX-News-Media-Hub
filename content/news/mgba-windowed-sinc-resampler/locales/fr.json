@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA remplace son interpolateur audio sinc par un noyau de recherche fenêtré",
+  "summary": "L'ancien chemin sinc gérait mal sa singularité amovible à zéro et stockait des tables sinc et window séparées. mGBA construit désormais une recherche modifiée de type Lanczos, avec fenêtre à dessus plat et additionne un voisinage fixe de 16 échantillons, réduisant ainsi la mémoire de la table et le travail d'interpolation.",
+  "heroAlt": "Vue de face d'un ordinateur de poche Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA remplace son interpolateur audio sinc par un noyau de recherche fenêtré",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "mGBA — demande de fusion #3844",
+    "implementation": "Implémentation de l'interpolation fusionnée"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un rééchantillonneur estime les échantillons entre les points stockés"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'interpolateur sinc de mGBA reconstruit un échantillon de sortie à partir d'échantillons d'entrée voisins lorsque le débit audio de l'hôte n'atteint pas exactement les positions de l'échantillon source. L'implémentation précédente utilisait une formulation Whittaker-Shannon avec des tables de recherche distinctes pour la réponse sinc et sa fenêtre. Sa table attribuait zéro au centre, même si la limite amovible de sinc à zéro est un."
+    },
+    {
+      "type": "heading",
+      "text": "Précalculer une réponse fenêtrée combinée"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le remplacement évalue `sin(t) / t` avec un cas explicite `t == 0`, le multiplie par une fenêtre de cosinus à sommet plat du quatrième ordre et stocke la réponse combinée dans une table de recherche. Les coefficients sont documentés dans l'implémentation comme ceux utilisés par MATLAB. Les contributions en dehors de la largeur de fenêtre configurée renvoient zéro et la réponse est traitée symétriquement autour du centre."
+    },
+    {
+      "type": "heading",
+      "text": "Utiliser un voisinage fixe pour chaque échantillon de sortie"
+    },
+    {
+      "type": "paragraph",
+      "text": "La routine d'interpolation additionne désormais les échantillons d'entrée aux décalages de -7 à 8, en appliquant un poids fenêtré recherché à chacun. La position de l'échantillon fractionnaire sélectionne un index de table ; les décalages négatifs sont reflétés plutôt que de nécessiter une seconde moitié du noyau. La nouvelle routine ne stocke plus une table de fenêtre séparée ni ne divise par une somme de noyau par échantillon."
+    },
+    {
+      "type": "heading",
+      "text": "Considérez les avantages en matière de vitesse et de son comme des hypothèses"
+    },
+    {
+      "type": "paragraph",
+      "text": "La demande d'extraction indique que la fenêtre modifiée de style Lanczos devrait s'exécuter plus rapidement et utiliser moins de mémoire, et peut avoir un meilleur son. Il s’agit d’attentes de conception, et non de résultats de référence ou d’études d’écoute publiés. Une évaluation significative doit comparer les réponses impulsionnelles et fréquentielles, l'atténuation des hautes fréquences, le comportement aux limites et la sortie à plusieurs fréquences hôtes avant de revendiquer une amélioration universelle."
+    }
+  ]
+}

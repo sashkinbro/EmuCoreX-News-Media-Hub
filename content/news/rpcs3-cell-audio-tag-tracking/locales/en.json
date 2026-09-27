@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-cell-audio-tag-tracking",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 resets CellAudio tag state across port layouts",
+  "summary": "A per-port front-channel flag now tracks when CellAudio tag handling must change between stereo and surround layouts, addressing a reported slow-audio case.",
+  "heroAlt": "Overall view of a PlayStation 3 console.",
+  "searchKeywords": [
+    "RPCS3",
+    "CellAudio",
+    "audio tags",
+    "stereo",
+    "surround"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #19550",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Audio tags depend on the port layout"
+    },
+    {
+      "type": "paragraph",
+      "text": "CellAudio ports can carry stereo or multichannel streams, and RPCS3 uses tags to track audio buffer progress. Pull request #19550 changes how those tags are marked as a port moves between layouts. The report associated the issue with slow audio, and the patch records additional per-port state so the handling can distinguish front-only stereo behavior from surround channel tracking."
+    },
+    {
+      "type": "heading",
+      "text": "Keep stereo front channels from advancing tags alike"
+    },
+    {
+      "type": "paragraph",
+      "text": "For two-channel ports, the updated logic avoids marking the front-right channel in the same way as the other tag positions. For multichannel ports, it iterates through the defined port buffer tag count. These are separate cases: using the multichannel loop for a stereo stream can make the emulated producer and consumer disagree about which audio data is ready."
+    },
+    {
+      "type": "heading",
+      "text": "Remember and reset the per-port mode"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change keeps a front-only-port flag for each port and resets it when the port reaches the surround-channel configuration. That reset is important when a port is reused or its channel count changes; stale state from an earlier stereo setup must not steer subsequent multichannel tag updates. The flag belongs to each port, so one stream’s layout does not determine another stream’s behavior."
+    },
+    {
+      "type": "heading",
+      "text": "Test transitions as well as steady playback"
+    },
+    {
+      "type": "paragraph",
+      "text": "The pull request links the adjustment to a reported slow-audio case and notes that the issue was fixed in the tested scenario. That is useful evidence for the targeted failure, but audio behavior also depends on buffer cadence and port reuse. Regression coverage should include stereo playback, surround playback, transitions between channel layouts, and multiple active ports to verify that the tag state stays local and synchronized."
+    }
+  ]
+}

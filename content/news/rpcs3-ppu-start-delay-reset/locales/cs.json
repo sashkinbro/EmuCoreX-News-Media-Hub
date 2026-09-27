@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 vymaže zpoždění zastaralého PPU při spouštění vlákna",
+  "summary": "Úprava plánování PPU resetuje zpoždění spánku po čekání a zkontroluje aktuální funkci před použitím heuristiky spuštění vlákna.",
+  "heroAlt": "Sestřih porovnávající několik modelů konzolí PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 vymaže zpoždění zastaralého PPU při spouštění vlákna",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — požadavek na sloučení #19580",
+    "implementation": "Oprava a recenze"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zpoždění může přežít čekání, které ho nastavilo"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 používá heuristiku plánování hostitele ke tempu emulovaných vláken PPU. Požadavek Pull #19580 upravuje logiku spánku a spuštění, takže zaznamenané hardwarové zpoždění spánku je vymazáno poté, co CPU dokončí cestu spánku nebo čekání. Bez tohoto vyčištění může pozdější rozhodnutí o plánování zdědit stav časování z dřívějšího čekání, i když se vlákno posunulo dál."
+    },
+    {
+      "type": "heading",
+      "text": "Chraňte speciální pouzdro pro začátek závitu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch také zužuje heuristiku zpoždění: vyhýbá se použití speciálního případu, kdy vyhodnocovaný CPU není aktuální PPU, a kontroluje aktuální funkci, než se spolehne na očekávanou hodnotu v obecném registru 11 pro `sys_ppu_thread_start`. Tyto kontroly zabraňují heuristice specifické pro funkci působit na nesouvisející stav provádění."
+    },
+    {
+      "type": "heading",
+      "text": "Zachovat běžné chování při plánování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jedná se o cílenou opravu účetnictví plánovače, nikoli o nový model časování. Cesta ke spuštění vlákna stále používá existující heuristiku, když její předpoklady odpovídají; nové ochranné prvky zabraňují přechodu této logiky na jinou PPU nebo nesouvisející funkci. Vymazáním zpoždění na hranici čekání bude přechod stavu explicitní a bude snazší o něm uvažovat během plánování."
+    },
+    {
+      "type": "heading",
+      "text": "Opravy časování vyžadují regresní důkazy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Načasování vlákna se může lišit podle zatížení hostitele, chování hry a vzorců synchronizace. Oprava zpřesňuje zamýšlené podmínky, ale sama o sobě nezavádí univerzální změnu výkonu nebo kompatibility. Užitečné testy by měly zahrnovat spuštění vlákna po spánku, volání z neaktuálních kontextů PPU, nesouvisející funkce s podobným obsahem registru a normální sekvence čekání/obnovení."
+    }
+  ]
+}

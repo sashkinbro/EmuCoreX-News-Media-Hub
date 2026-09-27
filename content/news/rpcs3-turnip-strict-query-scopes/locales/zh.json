@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-turnip-strict-query-scopes",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 将 Vulkan 查询解决方法范围限定为 Mesa Turnip",
+  "summary": "GPU 挂起报告导致 RPCS3 为 Turnip 启用严格的查询范围，同时将高通的专有驱动程序保留在其现有路径上。",
+  "heroAlt": "PlayStation 3 Slim 游戏机的照片。",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 将 Vulkan 查询解决方法范围限定为 Mesa Turnip",
+    "Turnip",
+    "Adreno",
+    "query"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — 合并请求 #19561",
+    "implementation": "补丁和审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "等待出现在预期的查询范围之外"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 拉取请求 #19561 响应 Adreno X1-85 上 Mesa Turnip 报告的 GPU 挂起。 捕获的 GPU 命令流显示，在下一个查询的开始和结束命令及其可用性处理之前，通过 WAIT 操作复制查询结果。 该顺序暗示了驱动程序如何处理查询范围边界，而不是一般的 Vulkan 渲染失败。"
+    },
+    {
+      "type": "heading",
+      "text": "在选择行为之前识别驾驶员"
+    },
+    {
+      "type": "paragraph",
+      "text": "此更改标识了 Qualcomm 硬件和 Mesa Turnip 驱动程序，然后仅针对 Turnip 启用更严格的查询范围处理。 这是一个有针对性的兼容性规则：仅供应商不足以选择它，因为高通的专有驱动程序遵循不同的实现路径。 这种区别可以防止特定于 Mesa 的解决方法被不加区别地应用于每个 Qualcomm GPU。"
+    },
+    {
+      "type": "heading",
+      "text": "严格排序解决了观察到的序列"
+    },
+    {
+      "type": "paragraph",
+      "text": "查询范围描述了结果何时有效以及命令何时可以使用它们。 强制执行更严格的范围行为会限制 RPCS3 在这些边界周围生成命令，从而匹配捕获中可见的有问题的顺序。 该补丁并未声称所有与查询相关的挂起均已修复； 它解决了报告中观察到的驱动程序和顺序。"
+    },
+    {
+      "type": "heading",
+      "text": "验证仍取决于驱动程序和标题"
+    },
+    {
+      "type": "paragraph",
+      "text": "该报告还提到了 wipEout HD 和 Burnout Paradise，但捕获的失败只是狭隘案例的证据，而不是完整的兼容性调查。 测试应比较 Turnip 修订版、受影响的标题和其他查询繁重的工作负载，同时确认专有的 Qualcomm 驱动程序保留其先前的行为。 当驾驶员行为发生变化时，受保护的规则可以轻松地重新访问修复程序。"
+    }
+  ]
+}

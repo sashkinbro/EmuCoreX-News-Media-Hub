@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA skaliert zwischengespeicherte DMA-Offsets neu, wenn GBA-Audio 32-Bit-FIFO-Übertragungen erzwingt",
+  "summary": "Ein FIFO DMA kann mit einer Breite von 16-Bit programmiert und dann durch den GBA-Audiopfad in 32-Bit-Übertragungen umgewandelt werden. mGBA skaliert jetzt den zwischengespeicherten Quellschritt auf plus oder minus vier Bytes neu, wobei die Richtung erhalten bleibt und doppelte oder falsch ausgerichtete Beispiellesevorgänge verhindert werden.",
+  "heroAlt": "Nahaufnahme der Audioschaltung des Game Boy Advance auf der Hauptplatine.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA skaliert zwischengespeicherte DMA-Offsets neu, wenn GBA-Audio 32-Bit-FIFO-Übertragungen erzwingt",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "mGBA — Änderungsantrag #3850",
+    "implementation": "Zusammengeführte Audio-DMA-Korrektur"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die DMA-Breite des Spiels wird frühzeitig zwischengespeichert"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA zeichnet Quell- und Zieloffsets auf, wenn der GBA das DMA-Steuerregister schreibt. Ein Spiel kann diesen Kanal für 16-Bit-Übertragungen konfigurieren, was dem zwischengespeicherten Quellschritt einen Zwei-Byte-Schritt verleiht. Der Audio-FIFO verwendet später denselben DMA-Mechanismus, erzwingt jedoch eine eigene Übertragungsbreite, sodass die frühere Einstellung mit der neuen Verwendung in Einklang gebracht werden muss."
+    },
+    {
+      "type": "heading",
+      "text": "FIFO-Audio ändert die Übertragungsbreite"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn mGBA FIFO DMA plant, erzwingt es, dass der Kanal eine 32-Bit-Breite und ein festes Ziel hat. Vor dieser Korrektur wurde der Ziel-Offset gelöscht, der zwischengespeicherte Quell-Offset von der ursprünglichen 16-Bit-Einstellung jedoch beibehalten. Die Engine rückte dann zwei Bytes vor und verbrauchte dabei vier Byte lange Audiowörter, wodurch Teile des Sample-Streams dupliziert und falsch ausgerichtet wurden."
+    },
+    {
+      "type": "heading",
+      "text": "Skalieren Sie den Quellschritt neu und behalten Sie sein Vorzeichen bei"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der zusammengeführte Fix normalisiert einen positiven Quelloffset auf `4` und einen negativen Offset auf `-4`, nachdem die Breite auf 32-Bit erzwungen wurde. Null bleibt Null. Durch die Beibehaltung des Vorzeichens bleibt die Quellcodeverwaltungsrichtung erhalten, während nachfolgende Lesevorgänge an der Breite ausgerichtet werden, die die FIFO-Übertragung jetzt verwendet. Das Ziel verwendet weiterhin die feste FIFO-Adresse."
+    },
+    {
+      "type": "heading",
+      "text": "Die Regression wurde durch Halbierung isoliert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Pull-Anfrage dokumentiert eine Halbierung mit der klassischen NES-Serie: The Legend of Zelda und einem wiederholbaren Hard-Jump-Orakel. Es identifizierte den früheren zwischengespeicherten Offset-Refaktor als Regressionsgrenze. Dies gibt Entwicklern einen konkreten Wiedergabefall für die Überprüfung, dass FIFO-Samples bei wiederholten DMA-Anfragen keine doppelten oder falsch ausgerichteten Bytes mehr kombinieren."
+    }
+  ]
+}

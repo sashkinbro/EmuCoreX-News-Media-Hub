@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 reduce el bloqueo de reserva putllc de SPU",
+  "summary": "Una nueva ruta rápida maneja una línea de reserva de 128 bytes con una región bloqueada más pequeña y una comparación e intercambio atómico de 16 bytes cuando las reservas precisas están deshabilitadas.",
+  "heroAlt": "Vista trasera de una PlayStation 3 mostrando sus puertos y carcasa.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 reduce el bloqueo de reserva putllc de SPU",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — solicitud de cambios #19568",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un almacén condicional protege la memoria compartida"
+    },
+    {
+      "type": "paragraph",
+      "text": "La instrucción Cell SPU putllc almacena condicionalmente un valor sólo mientras su reserva sigue siendo válida. En un emulador, ese comportamiento tiene que coordinarse con otros procesadores emulados que puedan tocar la misma memoria. La solicitud de extracción RPCS3 n.° 19568 cambia la ruta de reserva común y menos estricta: verifica los datos de reserva registrados y luego realiza una actualización atómica, manteniendo intacto el protocolo de reserva."
+    },
+    {
+      "type": "heading",
+      "text": "Bloquear la línea de reserva, actualizar el operando"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación toma un bloqueo de rango que cubre el gránulo de reserva de 128 bytes, compara los datos de reserva almacenados y utiliza un intercambio de comparación atómico de 16 bytes para el valor real. Esto separa el alcance necesario para proteger la contabilidad de reservas del ancho de la escritura condicional. Si la comparación falla, la tienda no continúa, preservando la semántica condicional de la instrucción."
+    },
+    {
+      "type": "heading",
+      "text": "El modo preciso mantiene su camino más fuerte"
+    },
+    {
+      "type": "paragraph",
+      "text": "La ruta rápida está cerrada cuando se desactivan las reservas precisas y cuando hay una ubicación de reserva registrada válida. El modo Preciso sigue utilizando el bloqueo de escritura más amplio existente. Esa división es importante porque una optimización de la velocidad no debería debilitar silenciosamente el comportamiento más estricto que los usuarios seleccionan para investigaciones de compatibilidad o casos de carreras difíciles."
+    },
+    {
+      "type": "heading",
+      "text": "La simultaneidad aún necesita cobertura de carga de trabajo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Este cambio reduce el trabajo de bloqueo en un camino; no establece una aceleración medida para cada título o anfitrión. Los almacenes condicionales interactúan con otros subprocesos de SPU y acceso a la CPU, por lo que la validación debe incluir escritores simultáneos, invalidación de reservas y ambas configuraciones de precisión. La implementación de la solicitud de extracción le brinda al emulador una operación más limitada para probar sin cambiar el contrato de éxito o fracaso visible para los invitados."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA initialisiert Lua-Registerlesevorgänge, bevor 8-Bit-Werte zurückgegeben werden",
+  "summary": "Die Game Boy-Skript-API gab einen `int32_t` zurück, aber ihr Registerrückruf schrieb nur das niederwertige Byte für 8-Bit-Register. Das Initialisieren der Ausgabe auf Null vor dem Rückruf verhindert, dass übrig gebliebene Stapelbytes in Lua als zufällige High-Bits erscheinen.",
+  "heroAlt": "Zerlegter Game Boy Advance mit interner Platine.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA initialisiert Lua-Registerlesevorgänge, bevor 8-Bit-Werte zurückgegeben werden",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "mGBA — Änderungsantrag #3785",
+    "implementation": "Korrektur der zusammengeführten Skripthilfe"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein schmales Register wurde in einem breiteren Ergebnis platziert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Game Boy Lua-API stellt `emu:readRegister()` durch ein Skriptwertergebnis bereit, das durch eine 32-Bit-Ganzzahl unterstützt wird. Für ein 8-Bit-CPU-Register hat der Kernrückruf nur ein Byte über einen `uint8_t*` geschrieben. Die anderen Bytes im lokalen 32-Bit-Ergebnis blieben unberührt, sodass der öffentliche Skriptwert Daten enthalten könnte, die nichts mit dem angeforderten Register zu tun haben."
+    },
+    {
+      "type": "heading",
+      "text": "Nicht initialisierte Bytes führten dazu, dass identische Zustände unterschiedlich aussahen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn Register B `0x12` enthielt, könnte Lua `0x12`, `0x7F12` oder einen anderen Wert empfangen, je nachdem, welche Bits zufällig die hohen Bytes belegten. Das Low-Byte war korrekt; Die zurückgegebene Ganzzahl war nicht deterministisch. Ein Skript, das Registerlesevorgänge vergleicht, protokolliert oder formatiert, könnte sich daher selbst dann inkonsistent verhalten, wenn sich der emulierte CPU-Status nicht geändert hat."
+    },
+    {
+      "type": "heading",
+      "text": "Nullen Sie zunächst den gesamten Rücklaufspeicher"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Fix initialisiert den lokalen `int32_t out` auf Null, bevor der Register-Lese-Callback des Kerns aufgerufen wird. Ein 8-Bit-Callback aktualisiert dann nur das Low-Byte, während die nicht verwendeten High-Bytes Null bleiben. Rückrufe für breitere Register können weiterhin ihren vollständigen Wert über denselben Ausgabezeiger schreiben, sodass die Korrektur die gemeinsam genutzte Schnittstelle des Helfers beibehält."
+    },
+    {
+      "type": "heading",
+      "text": "Die Korrektur ist gering und direkt testbar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderung ist auf den Lua-Lesehelfer beschränkt und verändert den emulierten CPU-Status nicht. Eine gezielte Regressionsprüfung kann ein bekanntes 8-Bit-Register festlegen, es wiederholt aus Lua lesen und überprüfen, ob das Ergebnis konsistent auf Null erweitert ist und nicht von vorherigen Stapelinhalten abhängt. Die wichtige Eigenschaft ist die deterministische Breitenkonvertierung und keine Änderung der Registersemantik des Game Boy."
+    }
+  ]
+}

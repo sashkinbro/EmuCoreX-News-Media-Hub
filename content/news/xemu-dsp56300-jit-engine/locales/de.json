@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu fügt eine umschaltbare JIT-Engine für den Xbox-Audio-DSP hinzu",
+  "summary": "Ein neues DSP56300-Backend bietet xemu eine Alternative zur Interpretation jeder Gastanweisung. Eine gemeinsame Statusschicht hält den vorhandenen Interpreter verfügbar und verbindet beide Engines mit der Save-State-Verarbeitung.",
+  "heroAlt": "Originale Xbox-Konsole neben ihrem Duke-Controller auf weißem Hintergrund.",
+  "searchKeywords": [
+    "xemu",
+    "xemu fügt eine umschaltbare JIT-Engine für den Xbox-Audio-DSP hinzu",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "xemu — Änderungsantrag #2801",
+    "implementation": "Zusammengeführte Implementierung und Überprüfung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ein Audioprozessor, zwei Ausführungspfade"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Xbox MCPX-Audioprozessor enthält einen digitalen Signalprozessor Motorola DSP56300. xemu hatte bereits einen C-Interpreter für diesen Gastprozessor; Pull-Request #2801 fügte ein zweites Backend hinzu, das Just-in-Time-Kompilierung verwendet. Die Änderung betrifft die Art und Weise, wie DSP-Anweisungen im Emulator ausgeführt werden, und nicht die Einführung eines neuen Audioformats oder eines spielspezifischen Patches."
+    },
+    {
+      "type": "heading",
+      "text": "Übersetzen Sie die Anweisungen vor der Ausführung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein Dolmetscher entschlüsselt und übermittelt die Anweisungen des Gastes, sobald diese eingehen. Ein JIT kann eine Sequenz in Host-Anweisungen übersetzen und den generierten Code wiederverwenden, wodurch Kompilierungsarbeit gegen weniger wiederholten Versand eingetauscht wird. Die xemu-Änderung fügt neben dem C-Interpreter ein Rust-basiertes JIT hinzu. Sein Nutzen hängt davon ab, wie viel Zeit ein Titel im DSP-Code und auf der Host-CPU verbringt; Das Projekt beanspruchte keine universelle Beschleunigung."
+    },
+    {
+      "type": "heading",
+      "text": "Halten Sie beide Motoren hinter einer gemeinsamen Staatsgrenze"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch führt eine DSP-Operationsschnittstelle und eine gemeinsame Kernzustandsdarstellung ein. Diese Grenze ermöglicht es xemu, Ausführungs-Engines auszuwählen oder zu wechseln, ohne dass der Rest des Audioprozessors von einer Implementierung abhängt. Es gibt dem Speicher- und Ladecode außerdem einen gemeinsamen Status zum Serialisieren, was wichtig ist, wenn eine gespeicherte Sitzung mit einem anderen ausgewählten Backend erneut geöffnet wird."
+    },
+    {
+      "type": "heading",
+      "text": "Bewahren Sie den Dolmetscher als nützliche Referenz auf"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der C-Interpreter bleibt verfügbar und die neue Einstellung ermöglicht die Aktivierung oder Deaktivierung des JIT-Pfads. Die Beibehaltung beider Pfade hilft Entwicklern, das Verhalten bei der Untersuchung einer Audio-Diskrepanz zu vergleichen: Die JIT kann anhand einer einfacheren Anweisung-für-Anweisung-Implementierung überprüft werden. Derselbe Refactor behebt auch Fehler, die im vorhandenen Interpreter gefunden wurden, sodass es sich bei dem Patch nicht nur um eine Compiler-Ergänzung handelt."
+    },
+    {
+      "type": "heading",
+      "text": "Leistungsansprüche erfordern arbeitslastspezifische Tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zu den ersten Diskussionen gehörten Messungen einer kleinen Reihe von Spielen und die Feststellung verbleibender Randfälle, einschließlich Audioschleifen und an die Bildrate gebundener Titel. Diese Berichte sind nützliche Hinweise und kein spielübergreifender Benchmark. Die zusammengeführte Änderung richtet eine zweite DSP-Engine und deren Zustandsinstallation ein; Wiederholbare Tests für Spiele, Host-CPUs, Speicherzustandsübergänge und zeitkritisches Audio sind noch erforderlich, um die praktischen Vorteile zu charakterisieren."
+    }
+  ]
+}

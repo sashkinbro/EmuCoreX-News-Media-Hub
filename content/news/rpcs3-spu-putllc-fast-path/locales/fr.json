@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 réduit le verrou de réservation SPU putllc",
+  "summary": "Un nouveau chemin rapide gère une ligne de réservation de 128 octets avec une région verrouillée plus petite et une comparaison et un échange atomique de 16 octets lorsque les réservations précises sont désactivées.",
+  "heroAlt": "Vue arrière d'une PlayStation 3 montrant ses ports et son boîtier.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 réduit le verrou de réservation SPU putllc",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — demande de fusion #19568",
+    "implementation": "Patch et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un magasin conditionnel protège la mémoire partagée"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'instruction Cell SPU putllc stocke conditionnellement une valeur uniquement tant que sa réservation reste valide. Dans un émulateur, ce comportement doit être coordonné avec d'autres processeurs émulés pouvant toucher la même mémoire. La pull request RPCS3 #19568 modifie le chemin de réservation commun, moins strict : elle vérifie les données de réservation enregistrées puis effectue une mise à jour atomique, tout en gardant le protocole de réservation intact."
+    },
+    {
+      "type": "heading",
+      "text": "Verrouiller la ligne de réservation, mettre à jour l'opérande"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implémentation prend un verrou de plage couvrant le granule de réservation de 128 octets, compare les données de réservation stockées et utilise un échange de comparaison atomique de 16 octets pour la valeur réelle. Cela sépare la portée nécessaire pour protéger la comptabilité de réservation de la largeur de l'écriture conditionnelle. Si la comparaison échoue, le magasin ne continue pas, préservant la sémantique conditionnelle de l'instruction."
+    },
+    {
+      "type": "heading",
+      "text": "Le mode précis garde sa trajectoire la plus forte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le chemin rapide est bloqué sur des réservations précises désactivées et sur un emplacement de réservation enregistré valide. Le mode précis continue d'utiliser le verrou d'écriture plus large existant. Cette répartition est importante car une optimisation de la vitesse ne devrait pas affaiblir silencieusement le comportement plus strict que les utilisateurs choisissent pour les enquêtes de compatibilité ou les cas de course difficiles."
+    },
+    {
+      "type": "heading",
+      "text": "La simultanéité a encore besoin de couverture de la charge de travail"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ce changement réduit le travail de verrouillage sur un chemin ; il n'établit pas d'accélération mesurée pour chaque titre ou hôte. Les magasins conditionnels interagissent avec d’autres threads SPU et accès au processeur, la validation doit donc inclure les rédacteurs simultanés, l’invalidation de réservation et les deux paramètres de précision. L'implémentation de la pull request donne à l'émulateur une opération plus étroite à tester sans modifier le contrat de réussite ou d'échec visible par l'invité."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu behält bei der Skalierung in Vulkan scharfe Xbox 2D-Oberflächen bei",
+  "summary": "Wenn die CPU eine Xbox-Oberfläche in VRAM schreibt, lädt xemu sie hoch und skaliert sie möglicherweise für eine höhere interne Auflösung. Der Vulkan-Pfad verwendet jetzt Nearest-Neighbor-Blits sowohl für die Hochskalierung des Uploads als auch für die Herunterskalierung des Downloads und passt sich der Pixelreplikation an, anstatt lineare Unschärfe hinzuzufügen.",
+  "heroAlt": "Rückansicht der ursprünglichen Xbox-Konsole mit ihren Anschlüssen.",
+  "searchKeywords": [
+    "xemu",
+    "xemu behält bei der Skalierung in Vulkan scharfe Xbox 2D-Oberflächen bei",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "xemu — Änderungsantrag #2874",
+    "implementation": "Zusammengeführte Implementierung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU-Schreibvorgänge können einen Draw-Aufruf umgehen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der NV2A-Renderer verfolgt Oberflächen im Xbox-Videospeicher. Wenn die emulierte CPU direkt in eine schreibt, ruft xemu `pgraph_vk_upload_surface_data()` auf, um diese Bytes mit einem Vulkan-Image zu synchronisieren, damit beim späteren Rendern das Update angezeigt wird. Über 1× interner Auflösung verwendet dieser Upload `vkCmdBlitImage`, um die Oberfläche zu vergrößern. Dies ist ein anderer Weg als das Zeichnen einer normalen 3D-Szene, da die Quellpixel von der CPU geschrieben wurden."
+    },
+    {
+      "type": "heading",
+      "text": "Die lineare Filterung mildert scharfkantige Grafiken"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Vulkan-Upload-Blit verwendete `VK_FILTER_LINEAR` für Farboberflächen. Durch die lineare Filterung werden benachbarte Texel beim Vergrößern eines Bildes gemischt, wodurch Pixelkanten in Menüs und anderen 2D-Ebenen weicher werden können. Der Pull-Request-Autor nannte das Xbox-Dashboard als offensichtliches Beispiel und stellte fest, dass reines 3D-Rendering diesen Pfad nicht verwendet. Der OpenGL-Renderer hat die Oberflächenpixel bereits durch Replikation erweitert, was dem Projekt einen nützlichen Verhaltensvergleich ermöglicht."
+    },
+    {
+      "type": "heading",
+      "text": "Verwenden Sie die nächstgelegene Abtastung in beide Richtungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die zusammengeführte Änderung ändert den Upload-Upscale-Blit auf `VK_FILTER_NEAREST` und trifft die gleiche Wahl für den Downscale-Pfad für den Oberflächen-Download. Bei der Nearest-Filterung wird ein Quelltexel ausgewählt, anstatt den Durchschnitt seiner Nachbarn zu bilden, wodurch die diskreten Werte in der übertragenen Oberfläche erhalten bleiben. Durch die Anwendung der Regel in beide Richtungen bleibt die Kopiersemantik konsistent, wenn CPU und GPU eine skalierte Farboberfläche austauschen."
+    },
+    {
+      "type": "heading",
+      "text": "Bei der Änderung geht es um die Übertragungssemantik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dieser Patch betrifft die CPU-zu-GPU- und GPU-zu-CPU-Oberflächensynchronisierung im Vulkan-Renderer; Es ändert weder die ursprüngliche Auflösung eines Spiels noch seine 3D-Filtereinstellungen. Das erwartete Ergebnis ist ein schärfer skalierter 2D-Inhalt, wenn diese Blits verwendet werden, wobei sich die Validierung sowohl auf Übertragungsrichtungen als auch auf Farboberflächengrenzen konzentriert. In der Pull-Anfrage wurde festgestellt, dass die Repro-Abdeckung über das Dashboard hinaus begrenzt ist, sodass zusätzliche von der CPU gerenderte Menüs und Anwendungen nützliche Überprüfungen darstellen."
+    }
+  ]
+}

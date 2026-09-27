@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-vulkan-parallel-boot-shaders",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 parallelizes Vulkan boot shader compilation",
+  "summary": "RPCS3 can use host threads for the initial Vulkan pipe compiler, then resize the pool after shader cache loading to honor the configured runtime setting.",
+  "heroAlt": "Photograph of a PlayStation 3 development kit.",
+  "searchKeywords": [
+    "RPCS3",
+    "Vulkan",
+    "shader compilation",
+    "boot",
+    "thread pool"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #19578",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The cold start has work before the game runs"
+    },
+    {
+      "type": "paragraph",
+      "text": "A Vulkan renderer must prepare graphics pipelines before it can draw them. On a cold start, RPCS3 may need to compile shaders while constructing its graphics backend, so startup can spend time in compilation even before the usual runtime workload begins. Pull request #19578 changes thread-pool setup around that initial boot phase rather than altering shader output or the on-disk cache format."
+    },
+    {
+      "type": "heading",
+      "text": "Use available cores for initial compilation"
+    },
+    {
+      "type": "paragraph",
+      "text": "When the automatic thread setting is zero, the initial pipe compiler now starts with the available host threads. If the user supplied an explicit thread count, that value is honored instead. This makes automatic configuration useful during the initial shader preparation, where work can be divided across independent compilation tasks."
+    },
+    {
+      "type": "heading",
+      "text": "Restore the configured pool after cache loading"
+    },
+    {
+      "type": "paragraph",
+      "text": "After shader-cache loading finishes on the initialization thread, RPCS3 resizes the compiler pool to match the configured runtime behavior. The two phases have different goals: initial boot can take advantage of host parallelism, while later work respects the setting the user chose. Keeping the resize at the transition avoids treating a startup-only decision as a permanent override."
+    },
+    {
+      "type": "heading",
+      "text": "Cold and warm starts need separate measurements"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch changes scheduling policy, but its value depends on cache contents, CPU topology, and how much compilation is actually pending. A useful evaluation compares cold boot with a populated cache, automatic and explicit thread counts, and total startup time as well as CPU contention. The change does not promise a fixed improvement across systems; it creates a more parallel initial phase while preserving the configured pool afterward."
+    }
+  ]
+}

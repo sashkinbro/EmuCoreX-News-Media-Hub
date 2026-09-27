@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast menambahkan jalur NEON yang dibatasi untuk pekerjaan framebuffer ARM64",
+  "summary": "Flycast sekarang menggunakan ARM64 NEON untuk konversi framebuffer dan penulisan VRAM, sambil mempertahankan fallback skalar untuk kasus yang tidak selaras atau tidak didukung. Pemeriksaan batas fisik-VRAM menjaga pembacaan vektor di dalam konfigurasi memori 8 MB dan 16 MB.",
+  "heroAlt": "Foto produk yang menampilkan konsol, pengontrol, dan aksesori Sega Dreamcast.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast menambahkan jalur NEON yang dibatasi untuk pekerjaan framebuffer ARM64",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "Flycast — permintaan penggabungan #2452",
+    "implementation": "Implementasi dan peninjauan yang digabungkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Konversi framebuffer adalah jalur memori panas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulasi framebuffer Flycast memindahkan data piksel antara logika tampilan PowerVR yang ditiru dan memori yang terlihat oleh host. Di ARM64, melakukan pekerjaan itu satu nilai skalar dalam satu waktu dapat membuat instruksi vektor tidak terpakai. Perubahan penyaji gabungan menambahkan implementasi NEON untuk konversi dan menulis ke VRAM yang ditiru. Ini adalah tahapan terpisah dalam jalur framebuffer: satu menerjemahkan representasi piksel, sementara yang lain menempatkan data yang dihasilkan ke dalam tata letak memori yang ditiru."
+    },
+    {
+      "type": "heading",
+      "text": "Vektorisasikan hanya wilayah yang aman untuk dibaca"
+    },
+    {
+      "type": "paragraph",
+      "text": "Beban vektor dapat melewati akhir alokasi fisik jika kode mengasumsikan panjang baris logis selalu tersedia. Patch ini memeriksa jejak VRAM sebenarnya sebelum mengeluarkan pembacaan vektor dan menyimpan fallback skalar untuk wilayah yang tidak didukung atau tidak selaras. Ini secara eksplisit menyumbang konfigurasi VRAM 8 MB dan 16 MB, sehingga tingkat aman berasal dari ukuran memori konsol yang dipilih daripada rentang penunjuk host yang lebih luas."
+    },
+    {
+      "type": "heading",
+      "text": "Simpan cadangan untuk batasan yang canggung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rutinitas SIMD paling berguna untuk rentang yang disejajarkan secara teratur, namun tepi framebuffer dan baris parsial dapat melanggar asumsi tersebut. Mempertahankan jalur skalar memungkinkan loop yang dioptimalkan menangani sebagian besar aman sambil mempertahankan perilaku yang ditentukan untuk sisanya alih-alih memperluas pembacaan melewati batas memori yang ditiru. Pemisahan ini juga membuat ekor yang tidak biasa menjadi lebih mudah untuk dipikirkan: vektorisasi adalah optimasi dalam wilayah yang dicentang, bukan persyaratan untuk setiap piksel."
+    },
+    {
+      "type": "heading",
+      "text": "Validasi kecepatan kerja terhadap keamanan memori"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan tersebut digabungkan ke dalam cabang pengembangan Flycast setelah umpan balik pengelola menyempurnakan pelacakan framebuffer-write. Buktinya adalah perubahan implementasi dan lolosnya pemeriksaan repositori, bukan tolok ukur lintas perangkat yang dipublikasikan. Pengukuran tindak lanjut yang berguna harus memisahkan biaya konversi dari penulisan VRAM dan mencakup ukuran memori yang didukung, penyelarasan baris yang berbeda, dan rentang pendek di mana pengaturan skalar mungkin lebih murah."
+    }
+  ]
+}

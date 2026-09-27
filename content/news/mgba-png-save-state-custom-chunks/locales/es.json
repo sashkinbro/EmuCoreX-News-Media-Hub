@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA instala controladores PNG de estado de guardado personalizados antes de leer los datos de la imagen",
+  "summary": "Los estados de guardado de PNG pueden transportar los fragmentos `gbAs` y `gbAx` de mGBA antes de los datos IDAT de la imagen. El cargador ahora registra su controlador de fragmentos personalizados antes de leer el encabezado PNG, por lo que libpng reconoce esos fragmentos independientemente de su posición.",
+  "heroAlt": "Parte trasera de la placa base de Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA instala controladores PNG de estado de guardado personalizados antes de leer los datos de la imagen",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitud de cambios #3803",
+    "implementation": "Cambio del cargador de serialización fusionado"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG permite datos auxiliares alrededor de datos de imagen"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA puede almacenar un estado guardado en un PNG junto con la captura de pantalla. Sus fragmentos `gbAs` y `gbAx` específicos del emulador transportan información de estado, mientras que IDAT contiene píxeles de imagen comprimidos. Los lectores PNG procesan fragmentos en el orden de los archivos, por lo que una aplicación debe instalar su controlador antes de que el analizador llegue a uno de sus fragmentos personalizados."
+    },
+    {
+      "type": "heading",
+      "text": "Un cambio en el cargador hizo que los primeros fragmentos fallaran"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un cambio de desarrollo había movido el registro de fragmentos personalizados hasta después de que se leyera el encabezado PNG. Eso fue demasiado tarde para los archivos cuyos fragmentos de estado aparecían antes de IDAT: libpng encontró un fragmento desconocido mientras el controlador de mGBA no estaba activo y rechazó el archivo. El informe provino de una herramienta personalizada que emitió este pedido; no era un diseño conocido producido por el propio mGBA."
+    },
+    {
+      "type": "heading",
+      "text": "Registre el controlador antes de leer el encabezado."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solución fusionada asigna primero el búfer de estado y el contexto de estado empaquetado, luego instala el controlador `gbAs` y `gbAx` antes de llamar a `PNGReadHeader`. También libera el búfer de estado mapeado en caso de falla del encabezado y al rechazar imágenes de gran tamaño. Esto combina el punto de registro anterior con la limpieza de las nuevas rutas de retorno temprano."
+    },
+    {
+      "type": "heading",
+      "text": "La compatibilidad incluye archivos de herramientas externas."
+    },
+    {
+      "type": "paragraph",
+      "text": "El soporte de estos fragmentos antes de IDAT hace que el cargador sea tolerante a un pedido válido que el proyecto normalmente no escribía. Evita pedir a los usuarios que reescriban estados de guardado que de otro modo serían utilizables simplemente para mover metadatos. Las comprobaciones de regresión deben cargar archivos con fragmentos personalizados en ambos lados de IDAT y verificar que se recuperen los píxeles de la captura de pantalla y el estado serializado de la máquina."
+    }
+  ]
+}

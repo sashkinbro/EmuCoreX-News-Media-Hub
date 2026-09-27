@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-milcd-pregap-chd",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast reads MIL-CD session gaps from CHD track metadata",
+  "summary": "Dreamcast MIL-CD images can describe a second session with a lead-out, lead-in, and pregap that must be reflected in disc time. Flycast’s CHD reader now accounts for those gaps and interprets pregap metadata instead of assuming every track begins at its stored frame boundary.",
+  "heroAlt": "Angled view of a Sega Dreamcast console.",
+  "searchKeywords": [
+    "Flycast",
+    "MIL-CD",
+    "CHD",
+    "pregap",
+    "lead-in",
+    "lead-out",
+    "Dreamcast disc"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2481",
+    "implementation": "Merged CHD reader changes"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A disc image can contain more than one session"
+    },
+    {
+      "type": "paragraph",
+      "text": "MIL-CD discs used by some Dreamcast software combine a game session with a second CD session. A reader has to preserve the gaps and offsets between sessions so guest-visible sector addresses match the physical disc layout, even when the image stores only selected track data. Treating the file as a flat sequence of tracks loses that relationship."
+    },
+    {
+      "type": "heading",
+      "text": "CHD metadata describes gaps in different ways"
+    },
+    {
+      "type": "paragraph",
+      "text": "The CHD track metadata distinguishes pregap type and length, including whether pregap sectors are present in the track’s stored frame count or occupy disc time without being stored there. It also describes track subtype and subcode information, which affect how the reader interprets each track record. A parser therefore needs to combine frame lengths with the gap flags rather than adding every value as stored audio or data."
+    },
+    {
+      "type": "heading",
+      "text": "Account for the MIL-CD session gap"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merged Flycast change adds a session-gap constant representing the lead-out, lead-in, and pregap interval: 6,750 frames plus 4,500 plus 150. It tracks the last pregap while building track offsets and treats stored pregap sectors differently from gaps that only exist in the disc timeline. The 150-frame pregap is two seconds at the CD frame rate."
+    },
+    {
+      "type": "heading",
+      "text": "Preserve sector layout while warning about unused data"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation notes that CHD subcode is stored but not used by Flycast, and that postgap sectors are not stored in the file. It warns when these fields appear rather than silently changing sector layout. A careful regression check compares track starts and sector reads before and after parsing representative multi-session images, including images where pregap data is physically included in a track."
+    }
+  ]
+}

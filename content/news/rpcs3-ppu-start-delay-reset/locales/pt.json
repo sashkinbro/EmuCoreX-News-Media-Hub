@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 limpa atraso de PPU obsoleto ao iniciar um thread",
+  "summary": "Um ajuste de agendamento de PPU redefine o atraso de suspensão após uma espera e verifica a função atual antes de aplicar a heurística de início de thread.",
+  "heroAlt": "Montagem comparando vários modelos de console PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 limpa atraso de PPU obsoleto ao iniciar um thread",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — solicitação de incorporação #19580",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um atraso pode sobreviver à espera que o definiu"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 usa heurística de agendamento de host para acelerar threads PPU emulados. A solicitação pull #19580 ajusta a lógica de suspensão e inicialização para que um atraso de suspensão de hardware registrado seja apagado após a CPU concluir seu caminho de suspensão ou espera. Sem essa limpeza, uma decisão de agendamento posterior pode herdar o estado de temporização de uma espera anterior, mesmo que o thread tenha seguido em frente."
+    },
+    {
+      "type": "heading",
+      "text": "Proteja o caso especial de início de thread"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch também restringe a heurística de atraso: evita aplicar o caso especial quando a CPU que está sendo avaliada não é a PPU atual e verifica a função atual antes de confiar no valor esperado no registro de uso geral 11 para `sys_ppu_thread_start`. Essas verificações evitam que uma heurística específica da função atue em estados de execução não relacionados."
+    },
+    {
+      "type": "heading",
+      "text": "Preservar o comportamento normal de agendamento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esta é uma correção direcionada à contabilidade do agendador, e não um novo modelo de temporização. O caminho de início do thread ainda usa a heurística existente quando suas pré-condições correspondem; os novos guardas evitam que a lógica passe para uma PPU diferente ou para uma função não relacionada. Eliminar o atraso no limite de espera torna a transição de estado explícita e mais fácil de raciocinar durante o agendamento."
+    },
+    {
+      "type": "heading",
+      "text": "Correções de tempo precisam de evidências de regressão"
+    },
+    {
+      "type": "paragraph",
+      "text": "O tempo do thread pode variar de acordo com a carga do host, o comportamento do jogo e os padrões de sincronização. O patch torna as condições pretendidas mais precisas, mas não estabelece por si só uma mudança universal de desempenho ou compatibilidade. Testes úteis devem cobrir o início do thread após suspensão, chamadas de contextos de PPU não atuais, funções não relacionadas com conteúdo de registro semelhante e sequências normais de espera/retomada."
+    }
+  ]
+}

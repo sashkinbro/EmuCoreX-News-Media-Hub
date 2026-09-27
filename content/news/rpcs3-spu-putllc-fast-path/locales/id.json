@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 mempersempit kunci reservasi SPU putllc",
+  "summary": "Jalur cepat baru menangani jalur reservasi 128 byte dengan wilayah terkunci yang lebih kecil dan perbandingan dan pertukaran atom 16 byte ketika reservasi akurat dinonaktifkan.",
+  "heroAlt": "Tampak belakang PlayStation 3 menunjukkan port dan casingnya.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 mempersempit kunci reservasi SPU putllc",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — permintaan penggabungan #19568",
+    "implementation": "Tambalan dan ulasan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Penyimpanan bersyarat melindungi memori bersama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Instruksi Cell SPU putllc secara kondisional menyimpan nilai hanya selama reservasinya tetap valid. Di emulator, perilaku tersebut harus berkoordinasi dengan prosesor teremulasi lainnya yang mungkin menyentuh memori yang sama. Permintaan penarikan RPCS3 #19568 mengubah jalur reservasi yang umum dan tidak terlalu ketat: ia memeriksa data reservasi yang direkam dan kemudian melakukan pembaruan atom, sambil menjaga protokol reservasi tetap utuh."
+    },
+    {
+      "type": "heading",
+      "text": "Kunci jalur reservasi, perbarui operan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementasinya mengambil kunci rentang yang mencakup butiran reservasi 128 byte, membandingkan data reservasi yang disimpan, dan menggunakan pertukaran perbandingan atom 16 byte untuk nilai sebenarnya. Hal ini memisahkan cakupan yang diperlukan untuk melindungi pembukuan reservasi dari lebar penulisan bersyarat. Jika perbandingan gagal, penyimpanan tidak dilanjutkan, mempertahankan semantik kondisional instruksi."
+    },
+    {
+      "type": "heading",
+      "text": "Mode Akurat mempertahankan jalurnya yang lebih kuat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jalur cepat dibatasi pada reservasi akurat yang dinonaktifkan dan pada lokasi reservasi tercatat yang valid. Mode Akurat terus menggunakan kunci penulis yang lebih luas. Perpecahan ini penting karena pengoptimalan kecepatan tidak boleh secara diam-diam melemahkan perilaku ketat yang dipilih pengguna untuk penyelidikan kompatibilitas atau kasus balapan yang sulit."
+    },
+    {
+      "type": "heading",
+      "text": "Konkurensi masih memerlukan cakupan beban kerja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan ini mengurangi pekerjaan penguncian pada satu jalur; itu tidak menetapkan percepatan terukur untuk setiap judul atau host. Penyimpanan bersyarat berinteraksi dengan thread SPU dan akses CPU lainnya, sehingga validasi harus mencakup penulis bersamaan, pembatalan reservasi, dan kedua pengaturan akurasi. Implementasi permintaan penarikan memberi emulator operasi yang lebih sempit untuk diuji tanpa mengubah kontrak keberhasilan atau kegagalan yang terlihat oleh tamu."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA instala manipuladores PNG de estado de salvamento personalizados antes de ler os dados da imagem",
+  "summary": "Os estados de salvamento do PNG podem transportar pedaços `gbAs` e `gbAx` do mGBA antes dos dados IDAT da imagem. O carregador agora registra seu manipulador de pedaços personalizados antes de ler o cabeçalho PNG, então libpng reconhece esses pedaços independentemente de sua posição.",
+  "heroAlt": "Parte traseira da placa-mãe do Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA instala manipuladores PNG de estado de salvamento personalizados antes de ler os dados da imagem",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitação de incorporação #3803",
+    "implementation": "Alteração do carregador de serialização mesclado"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG permite dados auxiliares em torno dos dados da imagem"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA pode armazenar um estado de salvamento em um PNG junto com a captura de tela. Seus pedaços `gbAs` e `gbAx` específicos do emulador carregam informações de estado, enquanto o IDAT contém pixels de imagem compactados. Os leitores PNG processam pedaços na ordem dos arquivos, portanto, um aplicativo deve instalar seu manipulador antes que o analisador alcance um de seus pedaços personalizados."
+    },
+    {
+      "type": "heading",
+      "text": "Uma alteração no carregador fez com que os primeiros pedaços falhassem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uma mudança de desenvolvimento moveu o registro do bloco personalizado até depois da leitura do cabeçalho PNG. Isso era tarde demais para arquivos cujos pedaços de estado apareciam antes do IDAT: libpng encontrou um pedaço desconhecido enquanto o manipulador do mGBA não estava ativo e rejeitou o arquivo. O relatório veio de uma ferramenta customizada que emitia esta ordenação; não era um layout conhecido produzido pelo próprio mGBA."
+    },
+    {
+      "type": "heading",
+      "text": "Registre o manipulador antes de ler o cabeçalho"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção mesclada aloca o buffer de estado e o contexto de estado agrupado primeiro e, em seguida, instala o manipulador `gbAs` e `gbAx` antes de chamar `PNGReadHeader`. Ele também libera o buffer de estado mapeado em caso de falha no cabeçalho e ao rejeitar imagens superdimensionadas. Isso emparelha o ponto de registro anterior com a limpeza dos novos caminhos de retorno antecipado."
+    },
+    {
+      "type": "heading",
+      "text": "A compatibilidade inclui arquivos de ferramentas externas"
+    },
+    {
+      "type": "paragraph",
+      "text": "O suporte a esses pedaços antes do IDAT torna o carregador tolerante a uma ordem válida que o projeto normalmente não escreve. Ele evita pedir aos usuários que reescrevam estados de salvamento utilizáveis ​​​​apenas para mover metadados. As verificações de regressão devem carregar arquivos com pedaços personalizados em ambos os lados do IDAT e verificar se os pixels da captura de tela e o estado da máquina serializada foram recuperados."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA nahrazuje svůj sinc audio interpolátor jádrem pro vyhledávání v okně",
+  "summary": "Stará sinková cesta špatně zacházela se svou odstranitelnou singularitou na nule a ukládala oddělené sincové a okenní tabulky. mGBA nyní vytváří modifikované vyhledávání ve stylu Lanczos s plochým oknem a sčítá pevné 16-vzorkové okolí, čímž snižuje paměť tabulky a práci s interpolací.",
+  "heroAlt": "Čelní pohled na kapesní počítač Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA nahrazuje svůj sinc audio interpolátor jádrem pro vyhledávání v okně",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "mGBA — požadavek na sloučení #3844",
+    "implementation": "Sloučená implementace interpolace"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Resampler odhaduje vzorky mezi uloženými body"
+    },
+    {
+      "type": "paragraph",
+      "text": "Interpolátor mGBA sinc rekonstruuje výstupní vzorek ze sousedních vstupních vzorků, když rychlost hostitelského zvuku nedopadá přesně na pozice zdrojového vzorku. Předchozí implementace používala Whittaker-Shannonovu formulaci se samostatnými vyhledávacími tabulkami pro odezvu sinc a její okno. Jeho tabulka přiřadila uprostřed nulu, i když odstranitelný limit sinc na nule je jedna."
+    },
+    {
+      "type": "heading",
+      "text": "Předpočtěte jednu kombinovanou okénkovou odpověď"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nahrazení vyhodnotí `sin(t) / t` s explicitním případem `t == 0`, vynásobí jej plochým kosinusovým oknem čtvrtého řádu a uloží kombinovanou odpověď do jedné vyhledávací tabulky. Koeficienty jsou v implementaci dokumentovány jako ty, které používá MATLAB. Příspěvky mimo konfigurovanou šířku okna vrátí nulu a odpověď je zpracována symetricky kolem středu."
+    },
+    {
+      "type": "heading",
+      "text": "Pro každý výstupní vzorek použijte pevné okolí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Interpolační rutina nyní sčítá vstupní vzorky s offsety −7 až 8, přičemž na každý z nich aplikuje vyhlédnutou okénkovou váhu. Poloha dílčího vzorku vybírá index tabulky; záporné offsety se odrážejí spíše než vyžadují druhou polovinu jádra. Nová rutina již neukládá samostatnou tabulku oken ani se nedělí součtem jádra na vzorek."
+    },
+    {
+      "type": "heading",
+      "text": "Rychlost a zvukové výhody považujte za hypotézy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Požadavek na stažení říká, že upravené okno ve stylu Lanczos by mělo běžet rychleji a používat méně paměti a může znít lépe. To jsou očekávání ohledně designu, nikoli publikované srovnávací testy nebo výsledky poslechových studií. Smysluplné hodnocení by mělo porovnat impulsní a frekvenční odezvy, vysokofrekvenční útlum, hraniční chování a výstup při několika hostitelských rychlostech, než bude nárokovat univerzální zlepšení."
+    }
+  ]
+}

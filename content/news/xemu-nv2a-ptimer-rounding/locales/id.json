@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu membulatkan tenggat waktu alarm NV2A untuk menghindari putaran pengatur waktu",
+  "summary": "Memotong konversi jam pecahan dapat menjadwalkan alarm GPU Xbox terlalu dini dan berulang kali menjadwalkan ulang pada saat yang bersamaan. xemu sekarang membulatkan konversi dan mencentang jarak ke atas, menangani bungkus alarm secara eksplisit, dan menghindari pengatur waktu host ketika interupsi tamu dinonaktifkan.",
+  "heroAlt": "Tampilan atas konsol Xbox asli.",
+  "searchKeywords": [
+    "xemu",
+    "xemu membulatkan tenggat waktu alarm NV2A untuk menghindari putaran pengatur waktu",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "xemu — permintaan penggabungan #3035",
+    "implementation": "Implementasi gabungan dan pengujian PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pengatur waktu tamu dan pengatur waktu tuan rumah menggunakan jam yang berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengatur waktu NV2A yang dapat diprogram mewakili waktu tamu dalam tick register, sementara QEMU menjadwalkan panggilan balik menggunakan nanodetik virtual. Konversi antara domain-domain tersebut melibatkan rasio dan aritmatika bilangan bulat. Memotong setiap divisi dapat menghilangkan sebagian kecil dari tanda centang dan membuat tenggat waktu di masa depan tampak sudah jatuh tempo. Kasus edge yang dilaporkan menyebabkan penjadwalan ulang alarm tuan rumah berulang kali, meskipun tenggat waktu tamu masih lebih awal."
+    },
+    {
+      "type": "heading",
+      "text": "Bulatkan tenggat waktu dari nol"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan ini menggunakan pembantu perkalian/pembagian saat mengonversi tick internal melalui frekuensi jam GPU, membulatkan jarak register ke tick seluruh timer, dan menerapkan penundaan host minimum satu nanodetik. Hal ini mencegah interval tamu positif agar tidak diciutkan menjadi panggilan balik host langsung. Penghitungannya sengaja mengutamakan tenggat waktu yang terlambat sebagian dibandingkan tenggat waktu yang dibulatkan ke bawah ke saat ini dan dijadwalkan berulang kali."
+    },
+    {
+      "type": "heading",
+      "text": "Tangani alarm bungkus dan nonaktifkan secara eksplisit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembantu alarm sekarang memilih nilai kata rendah berikutnya yang cocok dalam zaman 32-bit yang benar. Ketika interupsi alarm dinonaktifkan, xemu menghapus pengatur waktu QEMU alih-alih membiarkan panggilan balik yang tidak perlu tetap diaktifkan; seorang tamu yang membaca atau mengaktifkan kembali nanti dapat dengan malas menyadari bahwa alarm telah tiba. Perbedaan tersebut menangani alarm yang disamarkan tanpa melakukan polling pada pengatur waktu host secara terus-menerus, sekaligus mempertahankan status alarm yang terlihat oleh tamu."
+    },
+    {
+      "type": "heading",
+      "text": "Latihan batasan dengan pengujian unit terfokus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Permintaan penarikan menambahkan target pengujian Xbox PTIMER dengan fungsi jam tiruan, pengatur waktu, dan interupsi. Kasusnya mencakup alarm satu klik dengan rasio pembilang dan penyebut yang berbeda, perilaku mengaktifkan dan menonaktifkan, dan waktu alarm. Mocks membuat keputusan konversi dan penjadwalan bersifat deterministik, sehingga regresi batas dapat dilakukan tanpa bergantung pada waktu permainan atau sistem operasi host tertentu."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-cell-audio-tag-tracking",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 setzt den CellAudio-Tag-Status über Port-Layouts hinweg zurück",
+  "summary": "Ein Frontkanal-Flag pro Port verfolgt jetzt, wann die CellAudio-Tag-Verarbeitung zwischen Stereo- und Surround-Layouts wechseln muss, um einen gemeldeten Fall von langsamem Audio zu beheben.",
+  "heroAlt": "Gesamtansicht einer PlayStation 3-Konsole.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 setzt den CellAudio-Tag-Status über Port-Layouts hinweg zurück",
+    "audio tags",
+    "stereo",
+    "surround"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — Änderungsantrag #19550",
+    "implementation": "Patchen und überprüfen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Audio-Tags hängen vom Port-Layout ab"
+    },
+    {
+      "type": "paragraph",
+      "text": "CellAudio-Ports können Stereo- oder Mehrkanal-Streams übertragen, und RPCS3 verwendet Tags, um den Fortschritt des Audiopuffers zu verfolgen. Pull-Request Nr. 19550 ändert die Art und Weise, wie diese Tags markiert werden, wenn ein Port zwischen Layouts verschoben wird. Der Bericht brachte das Problem mit langsamem Audio in Verbindung, und der Patch zeichnet zusätzliche Status pro Port auf, sodass bei der Handhabung das Front-Only-Stereoverhalten vom Surround-Kanal-Tracking unterschieden werden kann."
+    },
+    {
+      "type": "heading",
+      "text": "Verhindern Sie, dass Stereo-Frontkanäle gleichzeitig Tags weiterleiten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bei Zweikanal-Ports vermeidet die aktualisierte Logik, dass der vordere rechte Kanal auf die gleiche Weise markiert wird wie die anderen Tag-Positionen. Bei Mehrkanal-Ports wird die Anzahl der definierten Port-Puffer-Tags durchlaufen. Dabei handelt es sich um verschiedene Fälle: Die Verwendung der Mehrkanalschleife für einen Stereostream kann dazu führen, dass sich emulierter Produzent und Konsument darüber uneinig sind, welche Audiodaten bereitstehen."
+    },
+    {
+      "type": "heading",
+      "text": "Merken Sie sich den Pro-Port-Modus und setzen Sie ihn zurück"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderung behält für jeden Port ein Front-Only-Port-Flag bei und setzt es zurück, wenn der Port die Surround-Kanal-Konfiguration erreicht. Dieses Zurücksetzen ist wichtig, wenn ein Port wiederverwendet wird oder sich seine Kanalanzahl ändert; Der veraltete Status eines früheren Stereo-Setups darf keine nachfolgenden Mehrkanal-Tag-Aktualisierungen steuern. Das Flag gehört zu jedem Port, sodass das Layout eines Streams nicht das Verhalten eines anderen Streams bestimmt."
+    },
+    {
+      "type": "heading",
+      "text": "Testen Sie Übergänge sowie eine gleichmäßige Wiedergabe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull-Request verknüpft die Anpassung mit einem gemeldeten Fall von langsamer Audiowiedergabe und stellt fest, dass das Problem im getesteten Szenario behoben wurde. Das ist ein nützlicher Beweis für den angestrebten Fehler, aber das Audioverhalten hängt auch von der Pufferfrequenz und der Port-Wiederverwendung ab. Die Regressionsabdeckung sollte Stereowiedergabe, Surround-Wiedergabe, Übergänge zwischen Kanallayouts und mehrere aktive Ports umfassen, um sicherzustellen, dass der Tag-Status lokal und synchronisiert bleibt."
+    }
+  ]
+}

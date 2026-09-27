@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA initialise les lectures du registre Lua avant de renvoyer des valeurs 8 bits",
+  "summary": "L'API de script Game Boy a renvoyé un `int32_t`, mais son rappel de registre n'a écrit que l'octet de poids faible pour les registres 8 bits. L'initialisation de la sortie à zéro avant le rappel empêche les octets restants de la pile d'apparaître sous forme de bits élevés aléatoires dans Lua.",
+  "heroAlt": "Game Boy Advance démonté montrant son circuit imprimé interne.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA initialise les lectures du registre Lua avant de renvoyer des valeurs 8 bits",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "mGBA — demande de fusion #3785",
+    "implementation": "Correction de l'aide à la création de scripts fusionnés"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un registre étroit a été placé dans un résultat plus large"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'API Game Boy Lua expose `emu:readRegister()` via un résultat de valeur de script soutenu par un entier de 32 bits. Pour un registre CPU 8 bits, le rappel principal n'écrivait qu'un seul octet via un `uint8_t*`. Les autres octets du résultat local de 32 bits n'ont pas été modifiés, de sorte que la valeur de script publique pourrait contenir des données sans rapport avec le registre demandé."
+    },
+    {
+      "type": "heading",
+      "text": "Les octets non initialisés donnent un aspect différent à un état identique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si le registre B contenait `0x12`, Lua pourrait recevoir `0x12`, `0x7F12` ou une autre valeur en fonction des bits occupant les octets de poids fort. L'octet de poids faible était correct ; l'entier renvoyé n'était pas déterministe. Un script qui compare, enregistre ou formate les lectures de registre peut donc se comporter de manière incohérente même lorsque l'état du processeur émulé n'a pas changé."
+    },
+    {
+      "type": "heading",
+      "text": "Mettez d'abord à zéro le stockage de retour complet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif initialise le `int32_t out` local à zéro avant d'appeler le rappel de lecture de registre du noyau. Un rappel de 8 bits met alors à jour uniquement l'octet de poids faible tandis que les octets de poids fort inutilisés restent nuls. Les rappels de registre plus larges peuvent toujours écrire leur valeur complète via le même pointeur de sortie, de sorte que la correction préserve l'interface partagée de l'assistant."
+    },
+    {
+      "type": "heading",
+      "text": "La correction est petite et directement testable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le changement se limite à l'assistant de lecture Lua et ne modifie pas l'état du processeur émulé. Une vérification de régression ciblée peut définir un registre de 8 bits connu, le lire à plusieurs reprises à partir de Lua et vérifier que le résultat est systématiquement étendu à zéro plutôt que dépendant du contenu de la pile antérieure. La propriété importante est la conversion déterministe de la largeur, et non une modification de la sémantique des registres de la Game Boy."
+    }
+  ]
+}

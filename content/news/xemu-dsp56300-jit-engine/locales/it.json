@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu aggiunge un motore JIT commutabile per il DSP audio Xbox",
+  "summary": "Un nuovo backend DSP56300 offre a xemu un'alternativa all'interpretazione di ogni istruzione dell'ospite. Un livello di stato condiviso mantiene disponibile l'interprete esistente e collega entrambi i motori per la gestione dello stato di salvataggio.",
+  "heroAlt": "Console Xbox originale accanto al controller Duke su uno sfondo bianco.",
+  "searchKeywords": [
+    "xemu",
+    "xemu aggiunge un motore JIT commutabile per il DSP audio Xbox",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "xemu — richiesta di modifica #2801",
+    "implementation": "Implementazione e revisione unificate"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un processore audio, due percorsi di esecuzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il processore audio Xbox MCPX include un processore di segnale digitale Motorola DSP56300. xemu aveva già un interprete C per quel processore guest; La richiesta pull n. 2801 ha aggiunto un secondo backend che utilizza la compilazione just-in-time. Il cambiamento riguarda il modo in cui le istruzioni DSP vengono eseguite all'interno dell'emulatore, piuttosto che introdurre un nuovo formato audio o una patch specifica del gioco."
+    },
+    {
+      "type": "heading",
+      "text": "Tradurre il lavoro delle istruzioni prima dell'esecuzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un interprete decodifica e invia le istruzioni agli ospiti non appena vengono raggiunti. Un JIT può tradurre una sequenza in istruzioni host e riutilizzare il codice generato, scambiando il lavoro di compilazione con un invio meno ripetuto. La modifica xemu aggiunge un JIT basato su Rust insieme all'interprete C. Il suo vantaggio dipende da quanto tempo trascorre un titolo nel codice DSP e dalla CPU host; il progetto non richiedeva un'accelerazione universale."
+    },
+    {
+      "type": "heading",
+      "text": "Mantieni entrambi i motori dietro un confine di stato condiviso"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch introduce un'interfaccia operativa DSP e una rappresentazione comune dello stato core. Questo limite consente a xemu di selezionare o cambiare motore di esecuzione senza che il resto del processore audio dipenda da un'implementazione. Fornisce inoltre al codice di salvataggio e caricamento uno stato comune da serializzare, il che è essenziale quando una sessione salvata viene riaperta con un backend diverso selezionato."
+    },
+    {
+      "type": "heading",
+      "text": "Conserva l'interprete come riferimento utile"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'interprete C rimane disponibile e la nuova impostazione consente di abilitare o disabilitare il percorso JIT. Mantenere entrambi i percorsi aiuta gli sviluppatori a confrontare il comportamento durante l'analisi di una discrepanza audio: il JIT può essere confrontato con un'implementazione istruzione per istruzione più semplice. Lo stesso refactor corregge anche i difetti riscontrati nell'interprete esistente, quindi la patch non è solo un'aggiunta al compilatore."
+    },
+    {
+      "type": "heading",
+      "text": "Le dichiarazioni sulle prestazioni richiedono test specifici del carico di lavoro"
+    },
+    {
+      "type": "paragraph",
+      "text": "La discussione iniziale ha collegato le misurazioni di un piccolo set di giochi e ha notato i casi limite rimanenti, inclusi loop audio e titoli legati al frame rate. Questi rapporti sono indicazioni utili, non un benchmark tra giochi. La modifica risultante dalla fusione stabilisce un secondo motore DSP e il suo stato idraulico; sono ancora necessari test ripetibili su giochi, CPU host, transizioni di stato di salvataggio e audio sensibile al timing per caratterizzare i suoi vantaggi pratici."
+    }
+  ]
+}

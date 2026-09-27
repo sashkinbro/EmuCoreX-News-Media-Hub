@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu, Vulkan'da ölçeklendirme sırasında keskin Xbox 2D yüzeylerini koruyor",
+  "summary": "CPU, VRAM'de bir Xbox yüzeyine yazdığında, xemu bunu yükler ve daha yüksek bir dahili çözünürlük için ölçeklendirebilir. Vulkan yolu artık hem yükleme yükseltme hem de indirme ölçekleme için en yakın komşu blit'lerini kullanıyor ve doğrusal bulanıklık eklemek yerine piksel çoğaltmasını eşleştiriyor.",
+  "heroAlt": "Orijinal Xbox konsolunun konektörlerini gösteren arkadan görünümü.",
+  "searchKeywords": [
+    "xemu",
+    "xemu, Vulkan'da ölçeklendirme sırasında keskin Xbox 2D yüzeylerini koruyor",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Geliştirme"
+  },
+  "sourceLabels": {
+    "change": "xemu — birleştirme isteği #2874",
+    "implementation": "Birleştirilmiş uygulama"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "CPU yazma işlemleri bir çizim çağrısını atlayabilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "NV2A oluşturucu, Xbox video belleğindeki yüzeyleri izler. Öykünülmüş CPU doğrudan birine yazdığında, xemu bu baytları bir Vulkan görüntüsüyle senkronize etmek için `pgraph_vk_upload_surface_data()` öğesini çağırır, böylece daha sonra oluşturma işlemi güncellemeyi görür. 1× dahili çözünürlüğün üzerinde, bu yükleme, yüzeyi büyütmek için `vkCmdBlitImage` kullanır. Bu, normal bir 3 boyutlu sahne çizmekten farklı bir yoldur çünkü kaynak pikseller CPU tarafından yazılmıştır."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrusal filtreleme yumuşatılmış sert kenarlı resimler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan yükleme bölümü renkli yüzeyler için `VK_FILTER_LINEAR` kullandı. Doğrusal filtreleme, bir görüntüyü büyütürken komşu dokuları harmanlayarak menülerdeki ve diğer 2B katmanlardaki piksel kenarlarını yumuşatabilir. Çekme isteği yazarı, Xbox kontrol panelini bariz bir örnek olarak bildirdi ve saf 3D oluşturmanın bu yolu kullanmadığını kaydetti. OpenGL oluşturucu zaten yüzey piksellerini çoğaltma yoluyla genişleterek projeye yararlı bir davranışsal karşılaştırma sağladı."
+    },
+    {
+      "type": "heading",
+      "text": "Her iki yönde de en yakın örneklemeyi kullanın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Birleştirilmiş değişiklik, yükleme yükseltme boyutunu `VK_FILTER_NEAREST` olarak değiştirir ve yüzey indirme ölçek düşürme yolu için aynı seçimi yapar. En yakın filtreleme, aktarılan yüzeydeki ayrık değerleri koruyarak komşularının ortalamasını almak yerine bir kaynak dokuyu seçer. Kuralın her iki yönde uygulanması, CPU ve GPU ölçeklendirilmiş bir renk yüzeyi değiştirdiğinde kopya semantiğinin tutarlı olmasını sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "Değişiklik transfer anlambilimiyle ilgilidir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu yama, Vulkan oluşturucudaki CPU'dan GPU'ya ve GPU'dan CPU'ya yüzey senkronizasyonunu etkiler; oyunun orijinal çözünürlüğünü veya 3D filtreleme ayarlarını değiştirmez. Beklenen sonuç, doğrulamanın hem aktarım yönlerine hem de renk yüzeyi sınırlarına odaklandığı, bu bölünmelerin kullanıldığı daha keskin ölçeklendirilmiş 2D içeriktir. Çekme isteği, kontrol panelinin ötesinde sınırlı çoğaltma kapsamına dikkat çekti, bu nedenle CPU tarafından oluşturulan ek menüler ve uygulamalar yararlı kontrollerdir."
+    }
+  ]
+}

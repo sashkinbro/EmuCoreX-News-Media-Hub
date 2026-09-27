@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA 在读取图像数据之前安装自定义保存状态 PNG 处理程序",
+  "summary": "PNG 保存状态可以在图像 IDAT 数据之前携带 mGBA 的 `gbAs` 和 `gbAx` 块。 现在，加载器在读取 PNG 标头之前注册其自定义块处理程序，因此 libpng 可以识别这些块，无论它们的位置如何。",
+  "heroAlt": "Game Boy Advance 主板的背面。",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA 在读取图像数据之前安装自定义保存状态 PNG 处理程序",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "mGBA — 合并请求 #3803",
+    "implementation": "合并序列化加载器更改"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG 允许图像数据周围的辅助数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA 可以将保存状态与屏幕截图一起存储在 PNG 中。 其特定于模拟器的 `gbAs` 和 `gbAx` 块携带状态信息，而 IDAT 包含压缩图像像素。 PNG 读取器按文件顺序处理块，因此应用程序必须在解析器到达其自定义块之一之前安装其处理程序。"
+    },
+    {
+      "type": "heading",
+      "text": "加载器更改导致早期块失败"
+    },
+    {
+      "type": "paragraph",
+      "text": "开发更改已将自定义块注册移动到读取 PNG 标头之后。 对于状态块出现在 IDAT 之前的文件来说为时已晚：libpng 遇到未知块，而 mGBA 的处理程序未激活并拒绝该文件。 该报告来自发出此排序的自定义工具； 这并不是 mGBA 本身制作的已知布局。"
+    },
+    {
+      "type": "heading",
+      "text": "在读取标头之前注册处理程序"
+    },
+    {
+      "type": "paragraph",
+      "text": "合并的修复首先分配状态缓冲区和捆绑状态上下文，然后在调用 `PNGReadHeader` 之前安装 `gbAs` 和 `gbAx` 处理程序。 它还会在标头失败和拒绝超大图像时释放映射的状态缓冲区。 这会将较早的注册点与新的提前返回路径的清理配对。"
+    },
+    {
+      "type": "heading",
+      "text": "兼容性包括来自外部工具的文件"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 IDAT 之前支持这些块使得加载程序能够容忍项目通常不写入的有效顺序。 它避免要求用户仅仅为了移动元数据而重写其他可用的保存状态。 回归检查应在 IDAT 两侧加载具有自定义块的文件，并验证屏幕截图像​​素和序列化机器状态是否已恢复。"
+    }
+  ]
+}

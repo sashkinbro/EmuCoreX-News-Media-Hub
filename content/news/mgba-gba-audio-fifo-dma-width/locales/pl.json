@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA przeskalowuje buforowane przesunięcia DMA, gdy dźwięk GBA wymusza 32-bitowe transfery FIFO",
+  "summary": "FIFO DMA można zaprogramować przy szerokości 16 bitów, a następnie przekonwertować na transfery 32-bitowe za pomocą ścieżki audio GBA. mGBA przeskalowuje teraz buforowany krok źródłowy do plus/minus czterech bajtów, zachowując kierunek i zapobiegając podwójnym lub źle wyrównanym odczytom próbek.",
+  "heroAlt": "Zbliżenie na obwód audio Game Boy Advance na płycie głównej.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA przeskalowuje buforowane przesunięcia DMA, gdy dźwięk GBA wymusza 32-bitowe transfery FIFO",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "mGBA — prośba o scalenie #3850",
+    "implementation": "Połączona korekta dźwięku DMA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Szerokość DMA gry jest buforowana wcześnie"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA rejestruje przesunięcia źródła i miejsca docelowego, gdy GBA zapisuje rejestr kontrolny DMA. Gra może skonfigurować ten kanał dla transferów 16-bitowych, co daje krok źródłowy w pamięci podręcznej o dwa bajty. Audio FIFO później wykorzystuje ten sam mechanizm DMA, ale narzuca własną szerokość transferu, dlatego wcześniejsze ustawienie należy pogodzić z nowym zastosowaniem."
+    },
+    {
+      "type": "heading",
+      "text": "Dźwięk FIFO zmienia szerokość transferu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kiedy mGBA planuje FIFO DMA, wymusza szerokość 32-bitową kanału i stałe miejsce docelowe. Przed tą korektą usuwał przesunięcie docelowe, ale zachowywał przesunięcie źródła w pamięci podręcznej w stosunku do oryginalnego ustawienia 16-bitowego. Następnie silnik przyspieszył o dwa bajty, zużywając czterobajtowe słowa audio, duplikując i błędnie dopasowując części strumienia próbki."
+    },
+    {
+      "type": "heading",
+      "text": "Przeskaluj krok źródłowy i zachowaj jego znak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Połączona poprawka normalizuje dodatnie przesunięcie źródłowe do `4` i ujemne przesunięcie do `-4` po wymuszeniu szerokości do 32-bitów. Zero pozostaje zerem. Zachowanie znaku utrzymuje nienaruszony kierunek kontroli źródła, jednocześnie dopasowując kolejne odczyty do szerokości używanej teraz przez transfer FIFO. Miejsce docelowe nadal korzysta ze stałego adresu FIFO."
+    },
+    {
+      "type": "heading",
+      "text": "Regresję wyizolowano metodą bisekcji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Żądanie ściągnięcia dokumentuje połowę przy użyciu klasycznej serii NES: The Legend of Zelda i powtarzalnej wyroczni o twardym skoku. Zidentyfikował wcześniejszy refaktor z buforowanym przesunięciem jako granicę regresji. Daje to programistom konkretny przypadek odtwarzania, pozwalający sprawdzić, czy próbki FIFO nie łączą już podwójnych lub źle wyrównanych bajtów w powtarzających się żądaniach DMA."
+    }
+  ]
+}

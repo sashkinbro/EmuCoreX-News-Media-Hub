@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast trae la clasificación por píxel a OpenGL ES 3.1",
+  "summary": "La ruta libretro OpenGL ES ahora puede solicitar el contexto GLES 3.1 y verificar los átomos de la imagen, los bloques de almacenamiento de sombreadores, los contadores, los enlaces y los límites del búfer requeridos por el renderizador de transparencia independiente del orden de Flycast.",
+  "heroAlt": "Consola Sega Dreamcast junto a su paquete de procesador gráfico.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast trae la clasificación por píxel a OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "Flycast — solicitud de cambios #2451",
+    "implementation": "Implementación fusionada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por qué la transparencia necesita orden de fragmentos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un buffer de profundidad convencional mantiene la superficie opaca más cercana, pero los polígonos translúcidos superpuestos pueden necesitar varios fragmentos mezclados en orden de profundidad. El renderizador OIT de Flycast utiliza un enfoque de lista vinculada por píxel para que los fragmentos se puedan recopilar y resolver después del sorteo en lugar de depender de una única capa fija. Cada píxel registra un puntero principal en un búfer de fragmentos compartido, mientras que los atómicos asignan nodos de forma segura entre invocaciones de fragmentos paralelas."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 expone los componentes básicos necesarios"
+    },
+    {
+      "type": "paragraph",
+      "text": "El cambio combinado solicita a las interfaces de Libretro un contexto OpenGL ES 3.1 explícito cuando se selecciona el renderizador OIT. Agrega el soporte de almacenamiento de sombreado y atómico de imágenes utilizado por el renderizador, solicita la versión de contexto directamente y utiliza las barreras de memoria del búfer de almacenamiento adecuadas para el trabajo de resolución. Esto evita depender de una interfaz para devolver silenciosamente un contexto más nuevo que el que se le pidió que proporcionara."
+    },
+    {
+      "type": "heading",
+      "text": "Verifique los límites reales en lugar de confiar en una cadena de versión"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una versión nominal de API no garantiza suficientes recursos para este renderizador. Flycast ahora verifica bloques de almacenamiento de sombreadores de fragmentos, unidades de imagen, enlaces y contadores atómicos, salidas de sombreadores combinados y tamaños de búfer de almacenamiento. También maneja el requisito de extensión atómica de imagen GLES antes de anunciar el soporte de clasificación por píxel. Si algún recurso es insuficiente, el renderizador registra qué capacidad falló en lugar de intentar la ruta a ciegas."
+    },
+    {
+      "type": "heading",
+      "text": "Reutilizar asignaciones entre marcos"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche también conserva los buffers de lectura de framebuffer en lugar de asignar almacenamiento nuevo en cada frame. Ese cambio reduce el trabajo de asignación repetido en la misma ruta de renderizado. Por lo tanto, la característica depende tanto de la detección correcta de la capacidad de la GPU como de una sincronización cuidadosa entre las escrituras de fragmentos y el paso de composición posterior. Las pruebas deben incluir implementaciones de GLES en la versión mínima compatible y verificar tanto el orden transparente como el comportamiento alternativo de los dispositivos no compatibles."
+    }
+  ]
+}

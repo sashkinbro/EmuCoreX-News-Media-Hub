@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu redondea los plazos de alarma NV2A para evitar bucles de temporizador",
+  "summary": "Truncar las conversiones de reloj fraccionario podría programar una alarma de GPU de Xbox demasiado pronto y reprogramarla repetidamente en el mismo instante. xemu ahora redondea las conversiones y las distancias de marca hacia arriba, maneja la configuración de alarma explícitamente y evita los temporizadores del host cuando la interrupción del invitado está deshabilitada.",
+  "heroAlt": "Vista superior de la consola Xbox original.",
+  "searchKeywords": [
+    "xemu",
+    "xemu redondea los plazos de alarma NV2A para evitar bucles de temporizador",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitud de cambios #3035",
+    "implementation": "Implementación fusionada y pruebas PTIMER"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El temporizador de invitado y el temporizador de anfitrión usan relojes diferentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "El temporizador programable NV2A representa el tiempo del huésped en ticks de registro, mientras que QEMU programa devoluciones de llamadas utilizando nanosegundos virtuales. La conversión entre esos dominios implica proporciones y aritmética de enteros. Truncar cada división puede descartar una fracción de un tick y hacer que una fecha límite futura parezca que ya venció. El caso límite informado provocó repetidas reprogramaciones inmediatas de la alarma del anfitrión, a pesar de que la fecha límite para los invitados aún estaba por delante."
+    },
+    {
+      "type": "heading",
+      "text": "Redondear el plazo desde cero"
+    },
+    {
+      "type": "paragraph",
+      "text": "El cambio utiliza ayudas de multiplicación/división de redondeo al convertir ticks internos a través de la frecuencia del reloj de la GPU, redondea la distancia del registro a un tick del temporizador completo y aplica un retraso mínimo del host de un nanosegundo. Esto evita que un intervalo de invitado positivo se convierta en una devolución de llamada inmediata del anfitrión. El cálculo favorece deliberadamente una fecha límite con una fracción de retraso en lugar de una que se redondea a la baja al instante actual y se programa repetidamente."
+    },
+    {
+      "type": "heading",
+      "text": "Manejar alarmas envolventes y deshabilitadas explícitamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "El asistente de alarma ahora elige el siguiente valor de palabra baja coincidente en la época correcta de 32 bits. Cuando la interrupción de alarma está desactivada, xemu elimina el temporizador QEMU en lugar de mantener armada una devolución de llamada innecesaria; una lectura invitada o una reactivación posterior pueden notar perezosamente que se ha producido una alarma. Esa distinción maneja alarmas enmascaradas sin sondear continuamente el temporizador del anfitrión, preservando al mismo tiempo el estado de alarma visible para los huéspedes."
+    },
+    {
+      "type": "heading",
+      "text": "Ejercer límites con pruebas unitarias enfocadas"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de extracción agrega un objetivo de prueba Xbox PTIMER con funciones simuladas de reloj, temporizador e interrupción. Sus casos cubren alarmas de un solo tick con diferentes proporciones de numerador y denominador, comportamiento de activación y desactivación y temporización de alarma. Los simulacros hacen que las decisiones de conversión y programación sean deterministas, por lo que se pueden realizar regresiones de límites sin depender del tiempo de un juego en particular o del sistema operativo anfitrión."
+    }
+  ]
+}

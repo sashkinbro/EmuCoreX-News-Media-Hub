@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu collega il contatore audio MCPX ai campioni elaborati",
+  "summary": "Il registro audio Xbox NV_PAPU_XGSCNT riportava il tempo virtuale trascorso come se fosse un conteggio campione. xemu ora deriva il valore dal divisore di frame emulato e dai campioni per frame, risolvendo la desincronizzazione vocale riportata in Innocent Tears.",
+  "heroAlt": "Vista dalla parte inferiore di una console Xbox originale.",
+  "searchKeywords": [
+    "xemu",
+    "xemu collega il contatore audio MCPX ai campioni elaborati",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "xemu — richiesta di modifica #2945",
+    "implementation": "Implementazione unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un registro deve riportare i giochi unitari previsti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il processore audio MCPX espone NV_PAPU_XGSCNT come conteggio utilizzato durante l'elaborazione vocale. La vecchia implementazione di xemu restituiva i nanosecondi dell'orologio virtuale divisi per 100, una stima derivata dal tempo la cui relazione con i campioni elaborati per frame emulato non era stabilita. Poiché un ospite legge questo registro per tenere traccia dei progressi dell'APU, un valore basato sull'orologio può discostarsi dall'effettivo funzionamento del campione del dispositivo."
+    },
+    {
+      "type": "heading",
+      "text": "Utilizza direttamente il contatore dei fotogrammi audio"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione su una riga unita calcola il registro da `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Entrambi i valori provengono dal modello di elaborazione dei fotogrammi dell'APU, quindi il numero restituito tiene traccia dei campioni effettivamente trascorsi attraverso quel modello invece di convertire il tempo virtuale simile a un orologio da parete. Ciò lega il conteggio segnalato all'avanzamento del fotogramma emulato, anche quando la pianificazione della riproduzione dell'host e l'esecuzione del guest non avanzano con incrementi identici."
+    },
+    {
+      "type": "heading",
+      "text": "Perché un conteggio errato diventa udibile"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le voci audio utilizzano il conteggio per coordinare l'avanzamento della riproduzione. Se l'ospite e l'emulatore non sono d'accordo sul numero di campioni elaborati, il timing della voce può variare e parti dell'audio potrebbero arrivare non sincronizzate. La richiesta pull nomina Innocent Tears come titolo in cui è stato osservato il problema; il suo rapporto dice che la maggior parte dell'audio è desincronizzata e non viene riprodotta completamente. I resoconti audio correlati sono collegati nella discussione, ma non sono tutti dichiarati come testati da questa modifica."
+    },
+    {
+      "type": "heading",
+      "text": "Tratta la correzione come una correzione temporale"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'autore della richiesta pull ha affermato che a quel punto i test erano stati limitati a Innocent Tears, anche se la modifica fa riferimento a diversi report. Il codice stabilisce l'unità contatore prevista; una verifica più ampia dovrebbe confrontare le letture dei registri, l'avanzamento della voce e i tempi dell'audio oltre i limiti dei fotogrammi e altri titoli. L'ambito ristretto è utile per la diagnosi: se il conteggio ora segue i campioni elaborati ma un titolo va ancora alla deriva, l'indagine può spostarsi su parti successive della pipeline audio."
+    }
+  ]
+}

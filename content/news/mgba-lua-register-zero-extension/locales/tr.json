@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA, 8 bitlik değerleri döndürmeden önce Lua kayıt okumalarını başlatır",
+  "summary": "Game Boy komut dosyası oluşturma API'si bir `int32_t` döndürdü, ancak kayıt geri araması 8 bitlik kayıtlar için yalnızca düşük baytı yazdı. Geri çağırmadan önce çıkışın sıfıra başlatılması, kalan yığın baytlarının Lua'da rastgele yüksek bitler olarak görünmesini önler.",
+  "heroAlt": "Demonte Game Boy Advance, dahili devre kartını gösteriyor.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA, 8 bitlik değerleri döndürmeden önce Lua kayıt okumalarını başlatır",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Geliştirme"
+  },
+  "sourceLabels": {
+    "change": "mGBA — birleştirme isteği #3785",
+    "implementation": "Birleştirilmiş komut dosyası oluşturma yardımcısı düzeltmesi"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Daha geniş bir sonuca dar bir kayıt yerleştirildi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game Boy Lua API'si, 32 bitlik bir tamsayı tarafından desteklenen bir komut dosyası değeri sonucu aracılığıyla `emu:readRegister()`'yi ortaya çıkarır. 8-bitlik bir CPU kaydı için çekirdek geri çağırma, `uint8_t*` üzerinden yalnızca bir bayt yazdı. Yerel 32-bit sonucundaki diğer baytlara dokunulmadan bırakıldı, böylece genel komut dosyası değeri, istenen kayıtla ilgisi olmayan veriler içerebilir."
+    },
+    {
+      "type": "heading",
+      "text": "Başlatılmamış baytlar aynı durumun farklı görünmesine neden oldu"
+    },
+    {
+      "type": "paragraph",
+      "text": "B kaydı `0x12` içeriyorsa Lua, yüksek baytları işgal eden bitlere bağlı olarak `0x12`, `0x7F12` veya başka bir değer alabilir. Düşük bayt doğruydu; döndürülen tam sayı deterministik değildi. Bu nedenle, yazmaç okumalarını karşılaştıran, günlüğe kaydeden veya biçimlendiren bir komut dosyası, öykünülmüş CPU durumu değişmediğinde bile tutarsız davranabilir."
+    },
+    {
+      "type": "heading",
+      "text": "Önce tam dönüş depolama alanını sıfırlayın"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme, çekirdeğin kayıt okuma geri çağrısını başlatmadan önce yerel `int32_t out` değerini sıfıra başlatır. Daha sonra 8 bitlik bir geri arama yalnızca düşük baytı güncellerken, kullanılmayan yüksek baytlar sıfır kalır. Daha geniş kayıt geri çağırmaları yine de tam değerlerini aynı çıkış işaretçisi aracılığıyla yazabilir, böylece düzeltme yardımcının paylaşılan arayüzünü korur."
+    },
+    {
+      "type": "heading",
+      "text": "Düzeltme küçük ve doğrudan test edilebilir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Değişiklik Lua okuma yardımcısıyla sınırlıdır ve öykünülmüş CPU durumunu değiştirmez. Odaklanmış bir regresyon kontrolü, bilinen bir 8 bitlik kaydı ayarlayabilir, bunu Lua'dan tekrar tekrar okuyabilir ve sonucun önceki yığın içeriklerine bağlı olmak yerine tutarlı bir şekilde sıfır genişletmeli olduğunu doğrulayabilir. Önemli olan özellik, Game Boy'un kayıt semantiğinde bir değişiklik değil, deterministik genişlik dönüşümüdür."
+    }
+  ]
+}

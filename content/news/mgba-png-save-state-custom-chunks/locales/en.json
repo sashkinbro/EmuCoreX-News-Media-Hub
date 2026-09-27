@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA installs custom save-state PNG handlers before reading image data",
+  "summary": "PNG save states can carry mGBA’s `gbAs` and `gbAx` chunks before the image IDAT data. The loader now registers its custom-chunk handler before reading the PNG header, so libpng recognizes those chunks regardless of their position.",
+  "heroAlt": "Rear side of the Game Boy Advance motherboard.",
+  "searchKeywords": [
+    "mGBA",
+    "PNG save state",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "mGBA pull request #3803",
+    "implementation": "Merged serialization loader change"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG permits ancillary data around image data"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA can store a save state in a PNG alongside the screenshot. Its emulator-specific `gbAs` and `gbAx` chunks carry state information, while IDAT contains compressed image pixels. PNG readers process chunks in file order, so an application must install its handler before the parser reaches one of its custom chunks."
+    },
+    {
+      "type": "heading",
+      "text": "A loader change made early chunks fail"
+    },
+    {
+      "type": "paragraph",
+      "text": "A development change had moved custom-chunk registration until after the PNG header was read. That was too late for files whose state chunks appeared before IDAT: libpng encountered an unknown chunk while mGBA’s handler was not active and rejected the file. The report came from a custom tool that emitted this ordering; it was not a known layout produced by mGBA itself."
+    },
+    {
+      "type": "heading",
+      "text": "Register the handler before reading the header"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merged fix allocates the state buffer and bundled state context first, then installs the `gbAs` and `gbAx` handler before calling `PNGReadHeader`. It also frees the mapped state buffer on header failure and when rejecting oversized images. This pairs the earlier registration point with cleanup for the new early-return paths."
+    },
+    {
+      "type": "heading",
+      "text": "Compatibility includes files from external tools"
+    },
+    {
+      "type": "paragraph",
+      "text": "Supporting these chunks before IDAT makes the loader tolerant of a valid ordering the project did not normally write. It avoids asking users to rewrite otherwise usable save states merely to move metadata. Regression checks should load files with the custom chunks on both sides of IDAT and verify that screenshot pixels and serialized machine state are recovered."
+    }
+  ]
+}

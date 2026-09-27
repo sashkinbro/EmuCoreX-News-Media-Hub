@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA rescales cached DMA offsets when GBA audio forces 32-bit FIFO transfers",
+  "summary": "A FIFO DMA can be programmed at 16-bit width, then converted to 32-bit transfers by the GBA audio path. mGBA now rescales the cached source step to plus or minus four bytes, preserving direction and preventing doubled or misaligned sample reads.",
+  "heroAlt": "Close-up of the Game Boy Advance audio circuitry on its motherboard.",
+  "searchKeywords": [
+    "mGBA",
+    "GBA",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "mGBA pull request #3850",
+    "implementation": "Merged audio DMA correction"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The game’s DMA width is cached early"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA records source and destination offsets when the GBA writes the DMA control register. A game can configure that channel for 16-bit transfers, which gives the cached source step a two-byte stride. The audio FIFO later uses the same DMA mechanism but imposes its own transfer width, so the earlier setting must be reconciled with the new use."
+    },
+    {
+      "type": "heading",
+      "text": "FIFO audio changes the transfer width"
+    },
+    {
+      "type": "paragraph",
+      "text": "When mGBA schedules FIFO DMA, it forces the channel to 32-bit width and a fixed destination. Before this correction, it cleared the destination offset but retained the cached source offset from the original 16-bit setting. The engine then advanced two bytes while consuming four-byte audio words, duplicating and misaligning portions of the sample stream."
+    },
+    {
+      "type": "heading",
+      "text": "Rescale the source step and keep its sign"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merged fix normalizes a positive source offset to `4` and a negative offset to `-4` after the width is forced to 32-bit. Zero remains zero. Preserving the sign keeps the source-control direction intact while aligning subsequent reads to the width the FIFO transfer now uses. The destination continues to use the fixed FIFO address."
+    },
+    {
+      "type": "heading",
+      "text": "The regression was isolated by bisection"
+    },
+    {
+      "type": "paragraph",
+      "text": "The pull request documents a bisect using Classic NES Series: The Legend of Zelda and a repeatable hard-jump oracle. It identified the earlier cached-offset refactor as the regression boundary. That gives developers a concrete playback case for checking that FIFO samples no longer combine doubled or misaligned bytes across repeated DMA requests."
+    }
+  ]
+}

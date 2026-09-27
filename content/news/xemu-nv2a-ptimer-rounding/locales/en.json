@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu rounds NV2A alarm deadlines up to avoid timer loops",
+  "summary": "Truncating fractional clock conversions could schedule an Xbox GPU alarm too early and repeatedly reschedule it at the same instant. xemu now rounds conversions and tick distances upward, handles alarm wrap explicitly, and avoids host timers when the guest interrupt is disabled.",
+  "heroAlt": "Top view of the original Xbox console.",
+  "searchKeywords": [
+    "xemu",
+    "NV2A",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "xemu pull request #3035",
+    "implementation": "Merged implementation and PTIMER tests"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The guest timer and host timer use different clocks"
+    },
+    {
+      "type": "paragraph",
+      "text": "The NV2A programmable timer represents guest time in register ticks, while QEMU schedules callbacks using virtual nanoseconds. Converting between those domains involves ratios and integer arithmetic. Truncating each division can discard a fraction of a tick and make a future deadline appear to be due already. The reported edge case caused repeated immediate rescheduling of the host alarm, even though the guest deadline was still ahead."
+    },
+    {
+      "type": "heading",
+      "text": "Round the deadline away from zero"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change uses round-up multiply/divide helpers when converting internal ticks through the GPU clock frequency, rounds the register distance to a whole timer tick, and enforces a minimum one-nanosecond host delay. This prevents a positive guest interval from collapsing into an immediate host callback. The calculation deliberately favors a deadline that is a fraction late over one that is rounded down to the current instant and scheduled repeatedly."
+    },
+    {
+      "type": "heading",
+      "text": "Handle wrap and disabled alarms explicitly"
+    },
+    {
+      "type": "paragraph",
+      "text": "The alarm helper now chooses the next matching low-word value in the correct 32-bit epoch. When the alarm interrupt is disabled, xemu deletes the QEMU timer instead of keeping an unnecessary callback armed; a guest read or a later re-enable can lazily notice that an alarm has become due. That distinction handles masked alarms without polling the host timer continuously, while preserving the guest-visible alarm state."
+    },
+    {
+      "type": "heading",
+      "text": "Exercise boundaries with focused unit tests"
+    },
+    {
+      "type": "paragraph",
+      "text": "The pull request adds an Xbox PTIMER test target with mock clock, timer, and interrupt functions. Its cases cover one-tick alarms under different numerator and denominator ratios, enable and disable behavior, and alarm timing. Mocks make the conversion and scheduling decisions deterministic, so boundary regressions can be exercised without depending on the timing of a particular game or host operating system."
+    }
+  ]
+}

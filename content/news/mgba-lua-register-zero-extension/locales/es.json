@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA inicializa las lecturas del registro Lua antes de devolver valores de 8 bits",
+  "summary": "La API de secuencias de comandos de Game Boy devolvió un `int32_t`, pero su devolución de llamada de registro escribió solo el byte bajo para registros de 8 bits. Inicializar la salida a cero antes de la devolución de llamada evita que los bytes sobrantes de la pila aparezcan como bits altos aleatorios en Lua.",
+  "heroAlt": "Game Boy Advance desmontado mostrando su placa de circuito interno.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA inicializa las lecturas del registro Lua antes de devolver valores de 8 bits",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitud de cambios #3785",
+    "implementation": "Corrección del asistente de secuencias de comandos fusionadas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un registro estrecho se colocó en un resultado más amplio."
+    },
+    {
+      "type": "paragraph",
+      "text": "La API de Game Boy Lua expone `emu:readRegister()` a través de un resultado de valor de script respaldado por un entero de 32 bits. Para un registro de CPU de 8 bits, la devolución de llamada del núcleo escribió solo un byte a través de `uint8_t*`. Los demás bytes del resultado local de 32 bits no se modificaron, por lo que el valor del script público podría contener datos no relacionados con el registro solicitado."
+    },
+    {
+      "type": "heading",
+      "text": "Los bytes no inicializados hicieron que un estado idéntico pareciera diferente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si el registro B contuviera `0x12`, Lua podría recibir `0x12`, `0x7F12` u otro valor dependiendo de los bits que ocuparan los bytes altos. El byte bajo era correcto; el número entero devuelto no era determinista. Por lo tanto, un script que compara, registra o formatea lecturas de registros podría comportarse de manera inconsistente incluso cuando el estado de la CPU emulada no haya cambiado."
+    },
+    {
+      "type": "heading",
+      "text": "Primero ponga a cero el almacenamiento de devolución completo"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solución inicializa el `int32_t out` local a cero antes de invocar la devolución de llamada de lectura de registro del núcleo. Una devolución de llamada de 8 bits actualiza solo el byte bajo, mientras que los bytes altos no utilizados permanecen en cero. Las devoluciones de llamadas de registros más amplios aún pueden escribir su valor completo a través del mismo puntero de salida, por lo que la corrección preserva la interfaz compartida del asistente."
+    },
+    {
+      "type": "heading",
+      "text": "La corrección es pequeña y directamente comprobable."
+    },
+    {
+      "type": "paragraph",
+      "text": "El cambio se limita al asistente de lectura de Lua y no altera el estado de la CPU emulada. Una verificación de regresión enfocada puede establecer un registro conocido de 8 bits, leerlo repetidamente desde Lua y verificar que el resultado sea consistentemente extendido a cero en lugar de depender del contenido de la pila anterior. La propiedad importante es la conversión de ancho determinista, no un cambio en la semántica del registro de Game Boy."
+    }
+  ]
+}

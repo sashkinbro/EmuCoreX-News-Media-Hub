@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-spu-putllc-fast-path",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 restringe il blocco della prenotazione putllc della SPU",
+  "summary": "Un nuovo percorso rapido gestisce una riga di prenotazione da 128 byte con un'area bloccata più piccola e un confronto e scambio atomico da 16 byte quando le prenotazioni accurate sono disabilitate.",
+  "heroAlt": "Vista posteriore di una PlayStation 3 che mostra le porte e il case.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 restringe il blocco della prenotazione putllc della SPU",
+    "putllc",
+    "reservation",
+    "atomic"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — richiesta di modifica #19568",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un archivio condizionale protegge la memoria condivisa"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'istruzione Cell SPU putllc memorizza in modo condizionale un valore solo finché la sua prenotazione rimane valida. In un emulatore, tale comportamento deve coordinarsi con altri processori emulati che potrebbero toccare la stessa memoria. La richiesta pull RPCS3 n. 19568 modifica il percorso di prenotazione comune e meno rigido: controlla i dati di prenotazione registrati e quindi esegue un aggiornamento atomico, mantenendo intatto il protocollo di prenotazione."
+    },
+    {
+      "type": "heading",
+      "text": "Blocca la riga di prenotazione, aggiorna l'operando"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implementazione accetta un blocco di intervallo che copre il granulo di prenotazione da 128 byte, confronta i dati di prenotazione archiviati e utilizza uno scambio di confronto atomico da 16 byte per il valore effettivo. Ciò separa l'ambito necessario per proteggere la contabilità delle prenotazioni dall'ampiezza della scrittura condizionale. Se il confronto fallisce, l'archivio non procede, preservando la semantica condizionale dell'istruzione."
+    },
+    {
+      "type": "heading",
+      "text": "La modalità accurata mantiene il suo percorso più forte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il percorso rapido è limitato alle prenotazioni accurate disabilitate e a una posizione di prenotazione registrata valida. La modalità accurata continua a utilizzare il blocco del writer più ampio esistente. Questa divisione è importante perché un’ottimizzazione della velocità non dovrebbe indebolire silenziosamente il comportamento più rigoroso che gli utenti scelgono per indagini di compatibilità o casi di razza difficili."
+    },
+    {
+      "type": "heading",
+      "text": "La concorrenza necessita ancora della copertura del carico di lavoro"
+    },
+    {
+      "type": "paragraph",
+      "text": "Questa modifica riduce il lavoro di blocco su un percorso; non stabilisce un aumento di velocità misurato per ogni titolo o host. Gli archivi condizionali interagiscono con altri thread SPU e accesso alla CPU, quindi la convalida dovrebbe includere scrittori simultanei, invalidazione della prenotazione ed entrambe le impostazioni di precisione. L'implementazione della richiesta pull offre all'emulatore un'operazione più ristretta da testare senza modificare il contratto di successo o fallimento visibile al guest."
+    }
+  ]
+}

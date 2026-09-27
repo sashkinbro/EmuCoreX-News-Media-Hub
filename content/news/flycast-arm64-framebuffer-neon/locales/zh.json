@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-arm64-framebuffer-neon",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast 为 ARM64 帧缓冲区工作添加了有界 NEON 路径",
+  "summary": "Flycast 现在使用 ARM64 NEON 进行帧缓冲区转换和 VRAM 写入，同时保留未对齐或不受支持情况的标量回退。 物理 VRAM 边界检查将向量读取保留在 8 MB 和 16 MB 内存配置内。",
+  "heroAlt": "显示世嘉 Dreamcast 控制台、控制器和配件的产品照片。",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast 为 ARM64 帧缓冲区工作添加了有界 NEON 路径",
+    "NEON",
+    "framebuffer conversion",
+    "VRAM writes",
+    "bounds check"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "Flycast — 合并请求 #2452",
+    "implementation": "合并实施和审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "帧缓冲区转换是一个热内存路径"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast 的帧缓冲区仿真在仿真的 PowerVR 显示逻辑和主机可见内存之间移动像素数据。 在 ARM64 上，一次只处理一个标量值可能会导致向量指令未被使用。 合并的渲染器更改添加了用于转换和写入模拟 VRAM 的 NEON 实现。 这些是帧缓冲区路径中的单独阶段：一个阶段转换像素表示，而另一个阶段将结果数据放入模拟内存布局中。"
+    },
+    {
+      "type": "heading",
+      "text": "仅矢量化可安全读取的区域"
+    },
+    {
+      "type": "paragraph",
+      "text": "如果代码假设逻辑行长度始终可用，则向量加载可能会跨越物理分配的末尾。 该补丁在发出向量读取之前检查实际的 VRAM 占用空间，并为不受支持或未对齐的区域保留标量回退。 它明确考虑了 8 MB 和 16 MB VRAM 配置，因此安全范围源自所选的控制台内存大小，而不是更宽的主机指针范围。"
+    },
+    {
+      "type": "heading",
+      "text": "为尴尬的边界留出后备空间"
+    },
+    {
+      "type": "paragraph",
+      "text": "SIMD 例程对于常规对齐跨度最有用，但帧缓冲区边缘和部分行可能会违反这些假设。 保留标量路径可以让优化循环处理安全块，同时保留剩余部分的定义行为，而不是将读取范围扩大到超过模拟内存边界。 分割还使得异常尾部更容易推理：矢量化是检查区域内的优化，而不是每个像素的要求。"
+    },
+    {
+      "type": "heading",
+      "text": "根据内存安全验证速度工作"
+    },
+    {
+      "type": "paragraph",
+      "text": "在维护者反馈改进了帧缓冲区写入跟踪后，这一更改合并到了 Flycast 的开发分支中。 其证据是实施更改和通过存储库检查，而不是已发布的跨设备基准。 有用的后续测量应将转换成本与 VRAM 写入分开，并涵盖支持的内存大小、不同的行对齐以及标量设置可能更便宜的短跨度。"
+    }
+  ]
+}

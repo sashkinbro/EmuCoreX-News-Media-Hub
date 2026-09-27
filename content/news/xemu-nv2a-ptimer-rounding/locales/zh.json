@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-ptimer-rounding",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu 将 NV2A 警报截止时间向上舍入以避免计时器循环",
+  "summary": "截断小数时钟转换可能会过早安排 Xbox GPU 警报，并在同一时刻重复重新安排它。 xemu 现在向上舍入转换和刻度距离，显式处理警报环绕，并在禁用来宾中断时避免主机计时器。",
+  "heroAlt": "原始 Xbox 控制台的俯视图。",
+  "searchKeywords": [
+    "xemu",
+    "xemu 将 NV2A 警报截止时间向上舍入以避免计时器循环",
+    "PTIMER",
+    "alarm interrupt",
+    "rounding",
+    "QEMU timer"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "xemu — 合并请求 #3035",
+    "implementation": "合并实现和 PTIMER 测试"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "访客定时器和主机定时器使用不同的时钟"
+    },
+    {
+      "type": "paragraph",
+      "text": "NV2A 可编程定时器以寄存器滴答数表示来宾时间，而 QEMU 使用虚拟纳秒来调度回调。 这些域之间的转换涉及比率和整数算术。 截断每个分区可能会丢弃一小部分刻度，并使未来的最后期限看起来已经到期。 所报告的边缘情况导致主机警报多次立即重新安排，尽管客机截止日期仍然提前。"
+    },
+    {
+      "type": "heading",
+      "text": "将截止日期舍入远离零"
+    },
+    {
+      "type": "paragraph",
+      "text": "该更改在通过 GPU 时钟频率转换内部滴答时使用向上舍入乘法/除法助手，将寄存器距离舍入到整个计时器滴答，并强制执行最小一纳秒的主机延迟。 这可以防止正的访客间隔崩溃为立即主机回调。 该计算有意选择比四舍五入到当前时刻并重复安排的截止日期晚一小部分的截止日期。"
+    },
+    {
+      "type": "heading",
+      "text": "显式处理换行和禁用警报"
+    },
+    {
+      "type": "paragraph",
+      "text": "警报助手现在会在正确的 32 位纪元中选择下一个匹配的低字值。 当闹钟中断被禁用时，xemu 会删除 QEMU 定时器，而不是保留不必要的回调； 访客读取或稍后重新启用可以懒洋洋地注意到警报已到期。 这种区别可以处理隐藏的警报，而无需连续轮询主机计时器，同时保留访客可见的警报状态。"
+    },
+    {
+      "type": "heading",
+      "text": "通过集中的单元测试来锻炼边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "拉取请求添加了具有模拟时钟、计时器和中断功能的 Xbox PTIMER 测试目标。 其案例涵盖不同分子和分母比率下的一次性警报、启用和禁用行为以及警报计时。 模拟使转换和调度决策具有确定性，因此可以在不依赖于特定游戏或主机操作系统的时间的情况下执行边界回归。"
+    }
+  ]
+}

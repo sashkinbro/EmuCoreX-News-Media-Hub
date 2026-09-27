@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast bringt Pixel-Sortierung in OpenGL ES 3.1",
+  "summary": "Der Libretro OpenGL ES-Pfad kann jetzt den GLES 3.1-Kontext anfordern und die Bildatome, Shader-Speicherblöcke, Zähler, Bindungen und Puffergrenzen überprüfen, die für den reihenfolgeunabhängigen Transparenz-Renderer von Flycast erforderlich sind.",
+  "heroAlt": "Sega Dreamcast-Konsole neben ihrem Grafikprozessorpaket.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast bringt Pixel-Sortierung in OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "Flycast — Änderungsantrag #2451",
+    "implementation": "Zusammengeführte Implementierung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warum Transparenz eine Fragmentordnung braucht"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein herkömmlicher Tiefenpuffer behält die nächste undurchsichtige Oberfläche bei, aber überlappende durchscheinende Polygone erfordern möglicherweise mehrere Fragmente, die in der Tiefenreihenfolge gemischt werden. Der OIT-Renderer von Flycast verwendet einen pro-Pixel-verknüpften Listenansatz, sodass Fragmente nach der Zeichnung gesammelt und aufgelöst werden können, anstatt sich auf eine einzelne feste Ebene zu verlassen. Jedes Pixel zeichnet einen Kopfzeiger in einem gemeinsam genutzten Fragmentpuffer auf, während Atomics Knoten sicher über parallele Fragmentaufrufe hinweg zuordnen."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 stellt die erforderlichen Bausteine bereit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die zusammengeführte Änderung fragt Libretro-Frontends nach einem expliziten OpenGL ES 3.1-Kontext, wenn der OIT-Renderer ausgewählt wird. Es fügt die vom Renderer verwendete Bild-Atom- und Shader-Speicherunterstützung hinzu, fordert die Kontextversion direkt an und verwendet die entsprechenden Speicherpuffer-Speicherbarrieren für die Auflösungsarbeit. Dadurch wird vermieden, dass ein Frontend stillschweigend einen neueren Kontext zurückgibt als den, den es bereitstellen sollte."
+    },
+    {
+      "type": "heading",
+      "text": "Überprüfen Sie die tatsächlichen Grenzwerte, anstatt einer Versionszeichenfolge zu vertrauen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine nominelle API-Version garantiert nicht genügend Ressourcen für diesen Renderer. Flycast überprüft jetzt Fragment-Shader-Speicherblöcke, Bildeinheiten, atomare Zähler und Bindungen, kombinierte Shader-Ausgaben und Speicherpuffergrößen. Außerdem wird die GLES-Anforderung an die bildatomare Erweiterung behandelt, bevor die Unterstützung für die Sortierung pro Pixel angekündigt wird. Wenn eine Ressource nicht ausreicht, protokolliert der Renderer, welche Funktion fehlgeschlagen ist, anstatt den Pfad blind auszuprobieren."
+    },
+    {
+      "type": "heading",
+      "text": "Zuordnungen über Frames hinweg wiederverwenden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch behält auch Framebuffer-Rücklesepuffer bei, anstatt jedem Frame neuen Speicher zuzuweisen. Diese Änderung reduziert die wiederholte Zuordnungsarbeit im selben Rendering-Pfad. Die Funktion hängt daher sowohl von der korrekten Erkennung der GPU-Fähigkeit als auch von einer sorgfältigen Synchronisierung zwischen Fragment-Schreibvorgängen und dem späteren Compositing-Durchlauf ab. Die Tests sollten GLES-Implementierungen in der unterstützten Mindestversion umfassen und sowohl die transparente Reihenfolge als auch das Fallback-Verhalten bei nicht unterstützten Geräten überprüfen."
+    }
+  ]
+}

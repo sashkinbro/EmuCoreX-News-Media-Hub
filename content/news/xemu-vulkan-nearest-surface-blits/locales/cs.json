@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-vulkan-nearest-surface-blits",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu zachovává ostré povrchy Xbox 2D při škálování ve Vulkanu",
+  "summary": "Když CPU zapíše povrch Xbox do VRAM, xemu jej nahraje a může jej škálovat pro vyšší vnitřní rozlišení. Cesta Vulkan nyní používá blity nejbližšího souseda pro upscaling uploadu i download downscaling, přičemž odpovídá replikaci pixelů namísto přidávání lineárního rozostření.",
+  "heroAlt": "Zadní pohled na původní konzoli Xbox zobrazující její konektory.",
+  "searchKeywords": [
+    "xemu",
+    "xemu zachovává ostré povrchy Xbox 2D při škálování ve Vulkanu",
+    "Vulkan",
+    "nearest filter",
+    "surface blit",
+    "internal resolution"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "xemu — požadavek na sloučení #2874",
+    "implementation": "Sloučená implementace"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zápisy CPU mohou obejít volání draw"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vykreslovací modul NV2A sleduje povrchy ve videopaměti Xbox. Když emulovaný CPU zapisuje přímo do jednoho, xemu zavolá `pgraph_vk_upload_surface_data()` k synchronizaci těchto bajtů s obrazem Vulkan, takže pozdější renderování uvidí aktualizaci. Nad 1× vnitřní rozlišení používá tento upload ke zvětšení povrchu `vkCmdBlitImage`. Toto je odlišná cesta od kreslení normální 3D scény, protože zdrojové pixely byly zapsány CPU."
+    },
+    {
+      "type": "heading",
+      "text": "Lineární filtrování změkčené kresby s tvrdými hranami"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan upload blit používal `VK_FILTER_LINEAR` pro barevné povrchy. Lineární filtrování při zvětšování obrazu prolne sousední texely, což může změkčit okraje pixelů v nabídkách a dalších 2D vrstvách. Autor žádosti o stažení uvedl řídicí panel Xbox jako zřejmý příklad a poznamenal, že čisté 3D vykreslování tuto cestu nepoužívá. OpenGL renderer již rozšířil povrchové pixely replikací, což dává projektu užitečné srovnání chování."
+    },
+    {
+      "type": "heading",
+      "text": "Použijte nejbližší odběr v obou směrech"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučená změna přepne upscale blit nahrávání na `VK_FILTER_NEAREST` a provede stejnou volbu pro cestu downscale pro povrchové stahování. Nejbližší filtrování vybere zdrojový texel spíše než zprůměrování jeho sousedů, přičemž zachová diskrétní hodnoty v přeneseném povrchu. Použití pravidla v obou směrech udržuje sémantiku kopírování konzistentní, když si CPU a GPU vyměňují zmenšený barevný povrch."
+    },
+    {
+      "type": "heading",
+      "text": "Změna se týká sémantiky přenosu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato oprava ovlivňuje synchronizaci povrchu CPU-GPU a GPU-CPU v rendereru Vulkan; nemění původní rozlišení hry ani její nastavení 3D filtrování. Očekávaným výsledkem je ostřejší škálovaný 2D obsah tam, kde jsou tyto blity použity, s validací zaměřenou jak na směry přenosu, tak na hranice barevného povrchu. Požadavek na stažení zaznamenal omezené pokrytí reprosoustavy mimo řídicí panel, takže další nabídky a aplikace vykreslené procesorem jsou užitečnou kontrolou."
+    }
+  ]
+}

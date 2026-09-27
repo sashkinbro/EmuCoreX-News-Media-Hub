@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA menginisialisasi pembacaan register Lua sebelum mengembalikan nilai 8-bit",
+  "summary": "API skrip Game Boy mengembalikan `int32_t`, namun callback registernya hanya menulis byte rendah untuk register 8-bit. Menginisialisasi keluaran ke nol sebelum panggilan balik mencegah byte tumpukan sisa muncul sebagai bit tinggi acak di Lua.",
+  "heroAlt": "Game Boy Advance yang dibongkar memperlihatkan papan sirkuit internalnya.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA menginisialisasi pembacaan register Lua sebelum mengembalikan nilai 8-bit",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "mGBA — permintaan penggabungan #3785",
+    "implementation": "Koreksi pembantu skrip yang digabungkan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Daftar sempit ditempatkan pada hasil yang lebih luas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game Boy Lua API mengekspos `emu:readRegister()` melalui hasil nilai skrip yang didukung oleh bilangan bulat 32-bit. Untuk register CPU 8-bit, callback inti hanya menulis satu byte melalui `uint8_t*`. Byte lain dalam hasil 32-bit lokal tidak disentuh, sehingga nilai skrip publik dapat berisi data yang tidak terkait dengan register yang diminta."
+    },
+    {
+      "type": "heading",
+      "text": "Byte yang tidak diinisialisasi membuat status identik terlihat berbeda"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jika register B berisi `0x12`, Lua dapat menerima `0x12`, `0x7F12`, atau nilai lain tergantung pada bit apa pun yang menempati byte tinggi. Byte rendahnya benar; bilangan bulat yang dikembalikan tidak deterministik. Oleh karena itu, skrip yang membandingkan, mencatat, atau memformat pembacaan register dapat berperilaku tidak konsisten meskipun status CPU yang ditiru tidak berubah."
+    },
+    {
+      "type": "heading",
+      "text": "Nolkan penyimpanan pengembalian penuh terlebih dahulu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan ini menginisialisasi `int32_t out` lokal ke nol sebelum memanggil callback register-read inti. Callback 8-bit kemudian hanya memperbarui byte rendah sedangkan byte tinggi yang tidak digunakan tetap nol. Callback register yang lebih luas masih dapat menulis nilai lengkapnya melalui penunjuk keluaran yang sama, sehingga koreksi mempertahankan antarmuka bersama helper."
+    },
+    {
+      "type": "heading",
+      "text": "Koreksinya kecil dan dapat diuji secara langsung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan ini terbatas pada helper baca Lua dan tidak mengubah keadaan CPU yang ditiru. Pemeriksaan regresi terfokus dapat mengatur register 8-bit yang diketahui, membacanya berulang kali dari Lua, dan memverifikasi bahwa hasilnya secara konsisten diperluas ke nol daripada bergantung pada isi tumpukan sebelumnya. Properti penting adalah konversi lebar deterministik, bukan perubahan semantik register Game Boy."
+    }
+  ]
+}

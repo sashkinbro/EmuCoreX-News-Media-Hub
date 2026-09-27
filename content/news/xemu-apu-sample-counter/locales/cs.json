@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-apu-sample-counter",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu spojuje audio čítač MCPX se zpracovanými vzorky",
+  "summary": "Zvukový registr Xbox NV_PAPU_XGSCNT hlásil uplynulý virtuální čas, jako by se jednalo o počet vzorků. xemu nyní odvozuje hodnotu ze svého emulovaného rozdělovače snímků a vzorků na snímek, přičemž řeší desynchronizaci hlasu uvedenou v Innocent Tears.",
+  "heroAlt": "Pohled zespodu na původní konzoli Xbox.",
+  "searchKeywords": [
+    "xemu",
+    "xemu spojuje audio čítač MCPX se zpracovanými vzorky",
+    "MCPX",
+    "NV_PAPU_XGSCNT",
+    "audio samples",
+    "voice synchronization"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "xemu — požadavek na sloučení #2945",
+    "implementation": "Sloučená implementace"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Registr musí hlásit, jaké jednotky hry očekávají"
+    },
+    {
+      "type": "paragraph",
+      "text": "Audio procesor MCPX odhaluje NV_PAPU_XGSCNT jako počet používaný během zpracování hlasu. Stará implementace xemu vrátila nanosekundy virtuálních hodin dělené 100, což je odhad odvozený od času, jehož vztah ke vzorkům zpracovaným na emulovaný snímek nebyl stanoven. Protože host čte tento registr, aby sledoval průběh APU, může se hodnota založená na hodinách odchýlit od skutečné ukázkové práce zařízení."
+    },
+    {
+      "type": "heading",
+      "text": "Použijte přímo čítač zvukových snímků"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučená jednořádková korekce vypočítá registr z `ep_frame_div * NUM_SAMPLES_PER_FRAME`. Obě hodnoty pocházejí z vlastního modelu zpracování snímků APU, takže vrácené číslo sleduje vzorky, které skutečně prošly tímto modelem, namísto převodu virtuálního času jako u nástěnných hodin. To spojuje hlášený počet s průběhem emulovaného snímku, i když plánování přehrávání hostitele a provádění hosta nepostupují ve stejných přírůstcích."
+    },
+    {
+      "type": "heading",
+      "text": "Proč je slyšet nesprávný počet"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zvukové hlasy používají počet ke koordinaci průběhu přehrávání. Pokud se host a emulátor neshodnou na tom, kolik vzorků bylo zpracováno, může dojít k posunu časování hlasu a části zvuku mohou přijít nesynchronizované. Žádost o stažení uvádí Innocent Tears jako název, kde byl problém pozorován; jeho zpráva říká, že většina zvuku byla desynchronizována a nepřehrála se úplně. Související zvukové zprávy jsou propojeny v diskuzi, ale ne všechny jsou prohlášeny za testované touto změnou."
+    },
+    {
+      "type": "heading",
+      "text": "Považujte opravu za opravu načasování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor žádosti o stažení uvedl, že testování bylo v tu chvíli omezeno na Innocent Tears, i když změna odkazuje na několik zpráv. Kód stanoví zamýšlenou čítačovou jednotku; širší ověření by mělo porovnávat čtení registru, průběh hlasu a časování zvuku napříč hranicemi snímků a dalšími tituly. Úzký rozsah je užitečný pro diagnostiku: pokud počet nyní následuje zpracované vzorky, ale titul se stále pohybuje, vyšetřování se může přesunout do pozdějších částí audio potrubí."
+    }
+  ]
+}

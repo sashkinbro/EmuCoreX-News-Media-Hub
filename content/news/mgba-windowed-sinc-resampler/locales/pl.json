@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA zastępuje swój interpolator audio sinc jądrem wyszukiwania w oknie",
+  "summary": "Stara ścieżka sinc źle obsługiwała usuwalną osobliwość na poziomie zera i przechowywała oddzielne tabele sinc i window. mGBA tworzy teraz zmodyfikowane wyszukiwanie w stylu Lanczosa z płaskim oknem i sumuje stałe sąsiedztwo składające się z 16 próbek, redukując pamięć tabeli i pracę interpolacyjną.",
+  "heroAlt": "Widok z przodu handhelda Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA zastępuje swój interpolator audio sinc jądrem wyszukiwania w oknie",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "mGBA — prośba o scalenie #3844",
+    "implementation": "Scalona implementacja interpolacji"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Urządzenie do ponownego próbkowania szacuje próbki pomiędzy zapisanymi punktami"
+    },
+    {
+      "type": "paragraph",
+      "text": "Interpolator sinc mGBA rekonstruuje próbkę wyjściową z sąsiednich próbek wejściowych, gdy częstotliwość dźwięku hosta nie trafia dokładnie w pozycje próbek źródłowych. W poprzedniej implementacji zastosowano sformułowanie Whittakera-Shannona z oddzielnymi tabelami przeglądowymi dla odpowiedzi sinc i jej okna. W jego tabeli przypisano zero w środku, mimo że usuwalna granica sinc przy zera wynosi jeden."
+    },
+    {
+      "type": "heading",
+      "text": "Oblicz wstępnie jedną połączoną odpowiedź okienkową"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zastąpienie ocenia `sin(t) / t` z jawnym przypadkiem `t == 0`, mnoży go przez płaskie okno cosinusa czwartego rzędu i przechowuje połączoną odpowiedź w jednej tabeli przeglądowej. Współczynniki są udokumentowane w implementacji jako te stosowane przez MATLAB. Wkłady wykraczające poza skonfigurowaną szerokość okna zwracają zero, a odpowiedź jest traktowana symetrycznie wokół środka."
+    },
+    {
+      "type": "heading",
+      "text": "Użyj stałego sąsiedztwa dla każdej próbki wyjściowej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Procedura interpolacji sumuje teraz próbki wejściowe z przesunięciami od -7 do 8, stosując do każdej z nich sprawdzaną wagę okienkową. Ułamkowa pozycja próbki wybiera indeks tabeli; ujemne przesunięcia są odzwierciedlane, zamiast wymagać drugiej połowy jądra. Nowa procedura nie przechowuje już oddzielnej tabeli okna ani nie dzieli przez sumę jądra przypadającą na próbkę."
+    },
+    {
+      "type": "heading",
+      "text": "Traktuj korzyści związane z szybkością i dźwiękiem jako hipotezy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Żądanie ściągnięcia mówi, że zmodyfikowane okno w stylu Lanczosa powinno działać szybciej i zużywać mniej pamięci, a także może brzmieć lepiej. To są oczekiwania projektowe, a nie opublikowane wyniki testów porównawczych lub badań odsłuchowych. Znacząca ocena powinna porównać odpowiedzi impulsowe i częstotliwościowe, tłumienie wysokich częstotliwości, zachowanie graniczne i moc wyjściową przy kilku częstotliwościach hosta, zanim stwierdzi się uniwersalną poprawę."
+    }
+  ]
+}

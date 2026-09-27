@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA substitui seu interpolador de áudio sincronizado por um kernel de pesquisa em janela",
+  "summary": "O antigo caminho sinc manipulava incorretamente sua singularidade removível em zero e armazenava tabelas sinc e window separadas. O mGBA agora constrói uma pesquisa de sincronização em janela plana no estilo Lanczos modificada e soma uma vizinhança fixa de 16 amostras, reduzindo a memória da tabela e o trabalho de interpolação.",
+  "heroAlt": "Vista frontal de um portátil Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA substitui seu interpolador de áudio sincronizado por um kernel de pesquisa em janela",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitação de incorporação #3844",
+    "implementation": "Implementação de interpolação mesclada"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um reamostrador estima amostras entre pontos armazenados"
+    },
+    {
+      "type": "paragraph",
+      "text": "O interpolador sinc do mGBA reconstrói uma amostra de saída a partir de amostras de entrada vizinhas quando a taxa de áudio do host não atinge exatamente as posições da amostra de origem. A implementação anterior usou uma formulação de Whittaker-Shannon com tabelas de pesquisa separadas para a resposta sinc e sua janela. Sua tabela atribuiu zero no centro, embora o limite removível de sinc em zero seja um."
+    },
+    {
+      "type": "heading",
+      "text": "Pré-calcular uma resposta em janela combinada"
+    },
+    {
+      "type": "paragraph",
+      "text": "A substituição avalia `sin(t) / t` com um caso `t == 0` explícito, multiplica-o por uma janela de cosseno plana de quarta ordem e armazena a resposta combinada em uma tabela de pesquisa. Os coeficientes são documentados na implementação como aqueles utilizados pelo MATLAB. As contribuições fora da largura da janela configurada retornam zero e a resposta é tratada simetricamente em torno do centro."
+    },
+    {
+      "type": "heading",
+      "text": "Use uma vizinhança fixa para cada amostra de saída"
+    },
+    {
+      "type": "paragraph",
+      "text": "A rotina de interpolação agora soma as amostras de entrada nos deslocamentos de -7 a 8, aplicando um peso de janela consultado a cada uma delas. A posição da amostra fracionária seleciona um índice de tabela; compensações negativas são refletidas em vez de exigir uma segunda metade do kernel. A nova rotina não armazena mais uma tabela de janela separada ou divide por uma soma de kernel por amostra."
+    },
+    {
+      "type": "heading",
+      "text": "Trate os benefícios de velocidade e som como hipóteses"
+    },
+    {
+      "type": "paragraph",
+      "text": "A solicitação pull diz que a janela modificada no estilo Lanczos deve rodar mais rápido e usar menos memória, e pode soar melhor. Essas são expectativas de design, não benchmarks publicados ou resultados de estudos de escuta. Uma avaliação significativa deve comparar respostas de impulso e frequência, atenuação de alta frequência, comportamento de limite e saída em diversas taxas de host antes de reivindicar uma melhoria universal."
+    }
+  ]
+}

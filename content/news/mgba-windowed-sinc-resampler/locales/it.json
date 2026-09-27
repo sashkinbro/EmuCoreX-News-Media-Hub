@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-windowed-sinc-resampler",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA sostituisce il suo interpolatore audio sinc con un kernel di ricerca a finestra",
+  "summary": "Il vecchio percorso di sincronizzazione gestiva in modo errato la sua singolarità rimovibile a zero e memorizzava tabelle di sincronizzazione e finestre separate. mGBA ora crea una ricerca flat-top windowd-sinc in stile Lanczos modificata e somma un quartiere fisso di 16 campioni, riducendo la memoria della tabella e il lavoro di interpolazione.",
+  "heroAlt": "Vista frontale di un palmare Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA sostituisce il suo interpolatore audio sinc con un kernel di ricerca a finestra",
+    "Lanczos window",
+    "audio resampler",
+    "sample rate conversion"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — richiesta di modifica #3844",
+    "implementation": "Implementazione dell'interpolazione unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un ricampionatore stima i campioni tra i punti memorizzati"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'interpolatore sinc di mGBA ricostruisce un campione di output da campioni di input vicini quando la frequenza audio dell'host non raggiunge esattamente le posizioni del campione sorgente. L'implementazione precedente utilizzava una formulazione Whittaker–Shannon con tabelle di ricerca separate per la risposta sinc e la relativa finestra. La sua tabella ha assegnato zero al centro, anche se il limite rimovibile di sinc a zero è uno."
+    },
+    {
+      "type": "heading",
+      "text": "Precalcola una risposta combinata in una finestra"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sostituzione valuta `sin(t) / t` con un caso esplicito `t == 0`, lo moltiplica per una finestra coseno piatta del quarto ordine e memorizza la risposta combinata in una tabella di ricerca. I coefficienti sono documentati nell'implementazione come quelli utilizzati da MATLAB. I contributi al di fuori della larghezza della finestra configurata restituiscono zero e la risposta viene trattata simmetricamente attorno al centro."
+    },
+    {
+      "type": "heading",
+      "text": "Utilizzare un quartiere fisso per ciascun campione di output"
+    },
+    {
+      "type": "paragraph",
+      "text": "La routine di interpolazione ora somma i campioni di input agli offset da −7 a 8, applicando a ciascuno un peso finestrato. La posizione del campione frazionario seleziona un indice di tabella; gli offset negativi vengono riflessi invece di richiedere una seconda metà del kernel. La nuova routine non memorizza più una tabella di finestre separata né divide per una somma del kernel per campione."
+    },
+    {
+      "type": "heading",
+      "text": "Tratta i benefici in termini di velocità e suono come ipotesi"
+    },
+    {
+      "type": "paragraph",
+      "text": "La richiesta pull dice che la finestra modificata in stile Lanczos dovrebbe funzionare più velocemente e utilizzare meno memoria e potrebbe suonare meglio. Queste sono aspettative di progettazione, non benchmark pubblicati o risultati di studi di ascolto. Una valutazione significativa dovrebbe confrontare le risposte all’impulso e alla frequenza, l’attenuazione ad alta frequenza, il comportamento al confine e l’uscita a diverse velocità di host prima di dichiarare un miglioramento universale."
+    }
+  ]
+}

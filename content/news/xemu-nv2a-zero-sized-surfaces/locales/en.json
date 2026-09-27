@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu hardens NV2A surface handling for empty render regions",
+  "summary": "An Xbox game can leave the emulated GPU with a surface whose clip region has zero width or height. xemu now skips transfers and CPU access tracking for those surfaces while giving host graphics APIs safe one-pixel placeholders.",
+  "heroAlt": "Screenshot of the original Xbox dashboard running in the xemu emulator.",
+  "searchKeywords": [
+    "xemu",
+    "Xbox",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "xemu pull request #2517",
+    "implementation": "Merged implementation"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A surface can be validly empty"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Xbox NV2A graphics processor exposes color and depth surfaces backed by video memory. A guest can program clipping or dimensions that produce a surface with zero width or height. That state is awkward for a host graphics API, which expects positive image extents and meaningful transfer regions."
+    },
+    {
+      "type": "heading",
+      "text": "Guard each point where pixels move"
+    },
+    {
+      "type": "paragraph",
+      "text": "xemu’s merged change adds zero-dimension checks in both the OpenGL and Vulkan paths. Display lookup, CPU-access callback registration, upload, and download now avoid treating an empty surface as pixel data. The guards cover the points where an invalid extent could otherwise reach a graphics operation."
+    },
+    {
+      "type": "heading",
+      "text": "Keep synchronization and bookkeeping consistent"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Vulkan upload path marks an empty surface initialized before returning. The change also makes callback removal tolerate a null callback, matching the decision not to register one for an empty image. These details keep cleanup and renderer state coherent when the guest creates a surface that has no pixels."
+    },
+    {
+      "type": "heading",
+      "text": "Allocate a harmless host placeholder"
+    },
+    {
+      "type": "paragraph",
+      "text": "Where an image object still needs an extent, the renderer substitutes one for a zero dimension. That one-pixel allocation is a host-side placeholder; it does not invent guest-visible pixels or turn the empty surface into a drawable region. The PR links the guards to several reports, while noting one report was not reliably reproducible."
+    }
+  ]
+}

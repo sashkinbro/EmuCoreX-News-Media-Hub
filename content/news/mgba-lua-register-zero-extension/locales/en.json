@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA initializes Lua register reads before returning 8-bit values",
+  "summary": "The Game Boy scripting API returned an `int32_t`, but its register callback wrote only the low byte for 8-bit registers. Initializing the output to zero before the callback prevents leftover stack bytes from appearing as random high bits in Lua.",
+  "heroAlt": "Disassembled Game Boy Advance showing its internal circuit board.",
+  "searchKeywords": [
+    "mGBA",
+    "Lua",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Development"
+  },
+  "sourceLabels": {
+    "change": "mGBA pull request #3785",
+    "implementation": "Merged scripting helper correction"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A narrow register was placed in a wider result"
+    },
+    {
+      "type": "paragraph",
+      "text": "The Game Boy Lua API exposes `emu:readRegister()` through a script-value result backed by a 32-bit integer. For an 8-bit CPU register, the core callback wrote only one byte through a `uint8_t*`. The other bytes in the local 32-bit result were left untouched, so the public scripting value could contain data unrelated to the requested register."
+    },
+    {
+      "type": "heading",
+      "text": "Uninitialized bytes made identical state look different"
+    },
+    {
+      "type": "paragraph",
+      "text": "If register B contained `0x12`, Lua could receive `0x12`, `0x7F12`, or another value depending on whatever bits happened to occupy the high bytes. The low byte was correct; the returned integer was not deterministic. A script that compares, logs, or formats register reads could therefore behave inconsistently even when emulated CPU state had not changed."
+    },
+    {
+      "type": "heading",
+      "text": "Zero the full return storage first"
+    },
+    {
+      "type": "paragraph",
+      "text": "The fix initializes the local `int32_t out` to zero before invoking the core’s register-read callback. An 8-bit callback then updates only the low byte while the unused high bytes remain zero. Wider register callbacks can still write their complete value through the same output pointer, so the correction preserves the helper’s shared interface."
+    },
+    {
+      "type": "heading",
+      "text": "The correction is small and directly testable"
+    },
+    {
+      "type": "paragraph",
+      "text": "The change is confined to the Lua read helper and does not alter emulated CPU state. A focused regression check can set a known 8-bit register, read it repeatedly from Lua, and verify the result is consistently zero-extended rather than dependent on prior stack contents. The important property is deterministic width conversion, not a change to the Game Boy’s register semantics."
+    }
+  ]
+}

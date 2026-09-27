@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu verschärft die NV2A-Oberflächenbehandlung für leere Renderbereiche",
+  "summary": "Ein Xbox-Spiel kann die emulierte GPU mit einer Oberfläche verlassen, deren Clip-Bereich eine Breite oder Höhe von Null hat. xemu überspringt jetzt Übertragungen und CPU-Zugriffsverfolgung für diese Oberflächen und stellt Host-Grafik-APIs sichere Ein-Pixel-Platzhalter zur Verfügung.",
+  "heroAlt": "Screenshot des ursprünglichen Xbox-Dashboards, das im XEMU-Emulator ausgeführt wird.",
+  "searchKeywords": [
+    "xemu",
+    "xemu verschärft die NV2A-Oberflächenbehandlung für leere Renderbereiche",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "Entwicklung"
+  },
+  "sourceLabels": {
+    "change": "xemu — Änderungsantrag #2517",
+    "implementation": "Zusammengeführte Implementierung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eine Oberfläche kann gültig leer sein"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Xbox NV2A-Grafikprozessor stellt Farb- und Tiefenoberflächen bereit, die durch Videospeicher unterstützt werden. Ein Gast kann Ausschnitte oder Abmessungen programmieren, die eine Oberfläche mit einer Breite oder Höhe von Null erzeugen. Dieser Zustand ist für eine Host-Grafik-API unangenehm, die positive Bildausdehnungen und sinnvolle Übertragungsbereiche erwartet."
+    },
+    {
+      "type": "heading",
+      "text": "Bewachen Sie jeden Punkt, an dem sich Pixel bewegen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die zusammengeführte Änderung von xemu fügt nulldimensionale Prüfungen sowohl im OpenGL- als auch im Vulkan-Pfad hinzu. Anzeigesuche, CPU-Zugriffs-Callback-Registrierung, Upload und Download vermeiden jetzt die Behandlung einer leeren Oberfläche als Pixeldaten. Die Wächter decken die Punkte ab, an denen ein ungültiger Extent andernfalls eine Grafikoperation erreichen könnte."
+    },
+    {
+      "type": "heading",
+      "text": "Halten Sie die Synchronisierung und Buchhaltung konsistent"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Vulkan-Upload-Pfad markiert eine leere Oberfläche, die vor der Rückkehr initialisiert wird. Die Änderung sorgt außerdem dafür, dass beim Entfernen von Rückrufen ein Null-Rückruf toleriert wird, was der Entscheidung entspricht, keinen Rückruf für ein leeres Bild zu registrieren. Diese Details sorgen dafür, dass die Bereinigung und der Renderer-Status kohärent sind, wenn der Gast eine Oberfläche ohne Pixel erstellt."
+    },
+    {
+      "type": "heading",
+      "text": "Weisen Sie einen harmlosen Host-Platzhalter zu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn ein Bildobjekt noch eine Ausdehnung benötigt, ersetzt der Renderer eine durch eine Nulldimension. Diese Ein-Pixel-Zuweisung ist ein hostseitiger Platzhalter; Es werden keine für Gäste sichtbaren Pixel erfunden und die leere Oberfläche nicht in einen zeichnbaren Bereich umgewandelt. Die PR bringt die Wachen mit mehreren Berichten in Verbindung, stellt jedoch fest, dass ein Bericht nicht zuverlässig reproduzierbar sei."
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu agrega un motor JIT conmutable para el DSP de audio de Xbox",
+  "summary": "Un nuevo backend DSP56300 le brinda a xemu una alternativa para interpretar cada instrucción de los invitados. Una capa de estado compartida mantiene disponible el intérprete existente y conecta ambos motores para el manejo del estado de guardado.",
+  "heroAlt": "Consola Xbox original junto a su controlador Duke sobre un fondo blanco.",
+  "searchKeywords": [
+    "xemu",
+    "xemu agrega un motor JIT conmutable para el DSP de audio de Xbox",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitud de cambios #2801",
+    "implementation": "Implementación y revisión fusionadas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un procesador de audio, dos rutas de ejecución"
+    },
+    {
+      "type": "paragraph",
+      "text": "El procesador de audio Xbox MCPX incluye un procesador de señal digital Motorola DSP56300. xemu ya tenía un intérprete de C para ese procesador invitado; La solicitud de extracción n.° 2801 agregó un segundo backend que utiliza compilación justo a tiempo. El cambio se refiere a cómo se ejecutan las instrucciones DSP dentro del emulador, en lugar de introducir un nuevo formato de audio o un parche específico del juego."
+    },
+    {
+      "type": "heading",
+      "text": "Traducir el trabajo de instrucción antes de la ejecución."
+    },
+    {
+      "type": "paragraph",
+      "text": "Un intérprete decodifica y envía las instrucciones a los huéspedes a medida que las recibe. Un JIT puede traducir una secuencia en instrucciones del host y reutilizar el código generado, intercambiando el trabajo de compilación por un envío menos repetido. El cambio de xemu agrega un JIT basado en Rust junto con el intérprete de C. Su beneficio depende de cuánto tiempo pasa un título en el código DSP y de la CPU del host; el proyecto no reclamó una aceleración universal."
+    },
+    {
+      "type": "heading",
+      "text": "Mantenga ambos motores detrás de un límite estatal compartido"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche introduce una interfaz de operaciones DSP y una representación de estado central común. Ese límite permite a xemu seleccionar o cambiar motores de ejecución sin que el resto del procesador de audio dependa de una implementación. También proporciona al código de carga y guardado un estado común para serializar, lo cual es esencial cuando se vuelve a abrir una sesión guardada con un backend diferente seleccionado."
+    },
+    {
+      "type": "heading",
+      "text": "Preservar al intérprete como referencia útil."
+    },
+    {
+      "type": "paragraph",
+      "text": "El intérprete de C permanece disponible y la nueva configuración permite habilitar o deshabilitar la ruta JIT. Mantener ambas rutas ayuda a los desarrolladores a comparar el comportamiento al investigar una discrepancia de audio: el JIT se puede comparar con una implementación más simple instrucción por instrucción. El mismo refactor también corrige defectos encontrados en el intérprete existente, por lo que el parche no es sólo una adición al compilador."
+    },
+    {
+      "type": "heading",
+      "text": "Las afirmaciones de rendimiento necesitan pruebas específicas de la carga de trabajo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Las primeras discusiones adjuntaron mediciones de un pequeño conjunto de juegos y observaron casos extremos restantes, incluidos bucles de audio y títulos vinculados a la velocidad de fotogramas. Esos informes son pistas útiles, no un punto de referencia entre juegos. El cambio fusionado establece un segundo motor DSP y su estado de plomería; Aún se necesitan pruebas repetibles en juegos, CPU host, transiciones de estado de guardado y audio sensible al tiempo para caracterizar sus beneficios prácticos."
+    }
+  ]
+}

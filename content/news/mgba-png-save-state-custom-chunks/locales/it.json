@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA installa gestori PNG personalizzati con stato di salvataggio prima di leggere i dati dell'immagine",
+  "summary": "Gli stati di salvataggio PNG possono contenere i blocchi `gbAs` e `gbAx` di mGBA prima dei dati IDAT dell'immagine. Il caricatore ora registra il suo gestore di blocchi personalizzati prima di leggere l'intestazione PNG, quindi libpng riconosce quei blocchi indipendentemente dalla loro posizione.",
+  "heroAlt": "Lato posteriore della scheda madre del Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA installa gestori PNG personalizzati con stato di salvataggio prima di leggere i dati dell'immagine",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — richiesta di modifica #3803",
+    "implementation": "Modifica del caricatore di serializzazione unito"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG consente dati ausiliari attorno ai dati dell'immagine"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA può memorizzare uno stato di salvataggio in un PNG insieme allo screenshot. I suoi blocchi `gbAs` e `gbAx` specifici dell'emulatore trasportano informazioni sullo stato, mentre IDAT contiene pixel di immagine compressi. I lettori PNG elaborano i blocchi in ordine di file, quindi un'applicazione deve installare il proprio gestore prima che il parser raggiunga uno dei suoi blocchi personalizzati."
+    },
+    {
+      "type": "heading",
+      "text": "Una modifica al caricatore ha causato il fallimento dei primi blocchi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Una modifica di sviluppo aveva spostato la registrazione del blocco personalizzato fino a dopo la lettura dell'intestazione PNG. Era troppo tardi per i file i cui blocchi di stato apparivano prima di IDAT: libpng ha riscontrato un blocco sconosciuto mentre il gestore di mGBA non era attivo e ha rifiutato il file. Il report proviene da uno strumento personalizzato che ha emesso questo ordinamento; non era un layout noto prodotto dalla stessa mGBA."
+    },
+    {
+      "type": "heading",
+      "text": "Registra il gestore prima di leggere l'intestazione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione unita alloca prima il buffer di stato e il contesto di stato in bundle, quindi installa il gestore `gbAs` e `gbAx` prima di chiamare `PNGReadHeader`. Inoltre, libera il buffer di stato mappato in caso di errore dell'intestazione e quando si rifiutano immagini di grandi dimensioni. Ciò associa il punto di registrazione precedente alla pulizia per i nuovi percorsi di ritorno anticipato."
+    },
+    {
+      "type": "heading",
+      "text": "La compatibilità include file di strumenti esterni"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il supporto di questi blocchi prima di IDAT rende il caricatore tollerante nei confronti di un ordinamento valido che il progetto normalmente non scrive. Evita di chiedere agli utenti di riscrivere stati di salvataggio altrimenti utilizzabili semplicemente per spostare i metadati. I controlli di regressione dovrebbero caricare i file con i blocchi personalizzati su entrambi i lati di IDAT e verificare che i pixel dello screenshot e lo stato della macchina serializzata vengano ripristinati."
+    }
+  ]
+}

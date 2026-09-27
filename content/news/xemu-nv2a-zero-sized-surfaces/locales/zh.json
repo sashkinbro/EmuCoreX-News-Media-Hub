@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-nv2a-zero-sized-surfaces",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu 强化了空渲染区域的 NV2A 表面处理",
+  "summary": "Xbox 游戏可以为模拟 GPU 留下一个剪辑区域宽度或高度为零的表面。 xemu 现在跳过这些表面的传输和 CPU 访问跟踪，同时为主机图形 API 提供安全的单像素占位符。",
+  "heroAlt": "在 xemu 模拟器中运行的原始 Xbox 仪表板的屏幕截图。",
+  "searchKeywords": [
+    "xemu",
+    "xemu 强化了空渲染区域的 NV2A 表面处理",
+    "NV2A",
+    "zero-sized surface",
+    "OpenGL",
+    "Vulkan",
+    "VRAM"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "xemu — 合并请求 #2517",
+    "implementation": "合并实施"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "表面可以有效地为空"
+    },
+    {
+      "type": "paragraph",
+      "text": "Xbox NV2A 图形处理器显示由视频内存支持的颜色和深度表面。 客人可以对剪切或尺寸进行编程，以产生宽度或高度为零的表面。 对于主机图形 API 来说，这种状态很尴尬，因为主机图形 API 需要正的图像范围和有意义的传输区域。 零宽或零高是游戏提交的空表面状态，不应被解释为可绘制的图像。正尺寸检查在两种主机渲染后端都执行，避免同一输入在 OpenGL 与 Vulkan 中得到不同处理。"
+    },
+    {
+      "type": "heading",
+      "text": "保护像素移动的每个点"
+    },
+    {
+      "type": "paragraph",
+      "text": "xemu 的合并更改在 OpenGL 和 Vulkan 路径中添加了零维检查。 显示查找、CPU 访问回调注册、上传和下载现在可以避免将空表面视为像素数据。 防护措施覆盖了无效范围可能到达图形操作的点。 跳过上传和下载意味着空表面不会被当作像素内容复制；跳过 CPU 访问回调也避免为不存在的数据建立追踪。Vulkan 的初始化标记和空回调清理规则则让资源生命周期保持一致。"
+    },
+    {
+      "type": "heading",
+      "text": "保持同步和簿记一致"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vulkan 上传路径标记了一个在返回之前初始化的空表面。 这一更改还使得回调删除可以容忍空回调，这与不为空图像注册回调的决定相匹配。 当来宾创建没有像素的表面时，这些细节使清理和渲染器状态保持一致。 单像素对象只满足主机 API 对图像尺寸的要求。它不会映射回游戏可见的显存像素，也不会让原本为空的区域参与绘制。"
+    },
+    {
+      "type": "heading",
+      "text": "分配无害的主机占位符"
+    },
+    {
+      "type": "paragraph",
+      "text": "当图像对象仍然需要一定范围时，渲染器会用一代替零维度。 该单像素分配是主机端占位符； 它不会发明访客可见的像素或将空白表面变成可绘制区域。 该公关将警卫与几份报告联系起来，同时指出其中一份报告无法可靠地复制。 验证应覆盖零宽、零高以及正常正尺寸表面，并在 OpenGL 和 Vulkan 下检查回调注册、上传、下载与资源清理。补丁关联了数份问题报告，但其中一份无法稳定复现。"
+    }
+  ]
+}

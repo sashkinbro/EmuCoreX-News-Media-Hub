@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast odmítá deskriptory disku s nedokončenými názvy souborů v uvozovkách",
+  "summary": "Řádek CUE nebo GDI FILE končící před jeho závěrečnou uvozovkou by mohl ponechat čtení analyzátoru Flycast na neurčito. Čtečka nyní kontroluje každou extrakci znaků a na konci souboru vyvolá chybu neplatného deskriptoru, čímž zabrání tomu, aby se chybně formátovaný textový soubor zablokoval při načítání disku.",
+  "heroAlt": "Dvě otevřené konzole Sega Dreamcast zobrazující jejich diskové jednotky.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast odmítá deskriptory disku s nedokončenými názvy souborů v uvozovkách",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Vývoj"
+  },
+  "sourceLabels": {
+    "change": "Flycast — požadavek na sloučení #2413",
+    "implementation": "Sloučené změny analyzátoru CUE a GDI"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Chybějící citát může proměnit analýzu v nekonečné čtení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast přijímá textové deskriptory CUE a GDI, které pojmenovávají soubory tvořící obraz disku. V souboru FILE v uvozovkách analyzátor hledal další uvozovku, aniž by zkontroloval, zda extrakce dosáhla konce souboru. Neukončený řetězec by proto mohl nadále připojovat neplatná data místo toho, aby se zastavil, což vedlo k zablokování nebo neomezenému nárůstu paměti, když byl otevřen chybně tvarovaný deskriptor."
+    },
+    {
+      "type": "heading",
+      "text": "Zkontrolujte proud při každé extrakci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučená oprava kontroluje vstupní proud jak při vynechávání mezer před názvem souboru, tak u každého znaku přečteného uvnitř souboru v uvozovkách. Pokud se extrakce nezdaří, analyzátor okamžitě vyvolá existující výjimku invalid-CUE nebo invalid-GDI namísto opakování na vyčerpaném datovém proudu. Platné názvy souborů v uvozovkách se budou číst až do jejich závěrečné uvozovky."
+    },
+    {
+      "type": "heading",
+      "text": "Zvládejte klasifikaci postav bezpečně"
+    },
+    {
+      "type": "paragraph",
+      "text": "Stejná změna přetypuje extrahovaný bajt na `unsigned char`, než jej předá `isspace`. Funkce klasifikace znaků C přijímají EOF nebo hodnoty reprezentovatelné jako znak bez znaménka; předání záporného znaménka je jinak nedefinované chování. Díky tomu je skenování mezer dobře definované pro názvy souborů obsahujících bajty mimo základní ASCII."
+    },
+    {
+      "type": "heading",
+      "text": "Odmítněte špatný vstup dříve, než spotřebovává zdroje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch změní jeden případ chybného vstupu na normální chybu analýzy; neověřuje všechna možná pole CUE nebo GDI. Regresní kontroly by se měly týkat chybějících uvozovek, prázdných názvů, mezer před názvy, ne-ASCII bajtů a platných cest v uvozovkách. Praktickým vylepšením je, že zkrácený deskriptor okamžitě selže, místo aby zavaděč disku uvízl ve smyčce čtení."
+    }
+  ]
+}

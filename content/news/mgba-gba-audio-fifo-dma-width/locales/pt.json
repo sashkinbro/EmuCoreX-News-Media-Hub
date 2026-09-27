@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA redimensiona compensações de DMA em cache quando o áudio GBA força transferências FIFO de 32 bits",
+  "summary": "Um FIFO DMA pode ser programado com largura de 16 bits e depois convertido em transferências de 32 bits pelo caminho de áudio GBA. O mGBA agora redimensiona a etapa de origem armazenada em cache para mais ou menos quatro bytes, preservando a direção e evitando leituras de amostras duplicadas ou desalinhadas.",
+  "heroAlt": "Close do circuito de áudio do Game Boy Advance na placa-mãe.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA redimensiona compensações de DMA em cache quando o áudio GBA força transferências FIFO de 32 bits",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "mGBA — solicitação de incorporação #3850",
+    "implementation": "Correção de áudio mesclado DMA"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "A largura DMA do jogo é armazenada em cache antecipadamente"
+    },
+    {
+      "type": "paragraph",
+      "text": "O mGBA registra os deslocamentos de origem e destino quando o GBA grava o registrador de controle DMA. Um jogo pode configurar esse canal para transferências de 16 bits, o que dá à etapa de origem em cache um avanço de dois bytes. O FIFO de áudio posteriormente usa o mesmo mecanismo DMA, mas impõe sua própria largura de transferência, portanto a configuração anterior deve ser conciliada com o novo uso."
+    },
+    {
+      "type": "heading",
+      "text": "O áudio FIFO altera a largura de transferência"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando o mGBA agenda o FIFO DMA, ele força o canal a ter largura de 32 bits e um destino fixo. Antes desta correção, ele limpou o deslocamento de destino, mas manteve o deslocamento de origem armazenado em cache da configuração original de 16 bits. O mecanismo então avançou dois bytes enquanto consumia palavras de áudio de quatro bytes, duplicando e desalinhando partes do fluxo de amostra."
+    },
+    {
+      "type": "heading",
+      "text": "Redimensione a etapa de origem e mantenha seu sinal"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção mesclada normaliza um deslocamento de origem positivo para `4` e um deslocamento negativo para `-4` depois que a largura é forçada para 32 bits. Zero permanece zero. Preservar o sinal mantém intacta a direção do controle de origem enquanto alinha as leituras subsequentes com a largura que a transferência FIFO usa agora. O destino continua a usar o endereço FIFO fixo."
+    },
+    {
+      "type": "heading",
+      "text": "A regressão foi isolada por bissecção"
+    },
+    {
+      "type": "paragraph",
+      "text": "A solicitação de pull documenta uma bissecção usando a série Classic NES: The Legend of Zelda e um oráculo de salto difícil repetível. Ele identificou o refator de deslocamento em cache anterior como o limite de regressão. Isso dá aos desenvolvedores um caso concreto de reprodução para verificar se as amostras FIFO não combinam mais bytes duplicados ou desalinhados em solicitações DMA repetidas."
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "xemu-dsp56300-jit-engine",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "xemu adiciona um mecanismo JIT comutável para o DSP de áudio do Xbox",
+  "summary": "Um novo backend DSP56300 oferece ao xemu uma alternativa para interpretar todas as instruções do convidado. Uma camada de estado compartilhada mantém o intérprete existente disponível e conecta ambos os mecanismos para a manipulação do estado salvo.",
+  "heroAlt": "Console Xbox original ao lado do controlador Duke em um fundo branco.",
+  "searchKeywords": [
+    "xemu",
+    "xemu adiciona um mecanismo JIT comutável para o DSP de áudio do Xbox",
+    "MCPX",
+    "DSP56300",
+    "audio",
+    "JIT",
+    "interpreter"
+  ],
+  "categoryLabels": {
+    "development": "Desenvolvimento"
+  },
+  "sourceLabels": {
+    "change": "xemu — solicitação de incorporação #2801",
+    "implementation": "Implementação e revisão mescladas"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Um processador de áudio, dois caminhos de execução"
+    },
+    {
+      "type": "paragraph",
+      "text": "O processador de áudio Xbox MCPX inclui um processador de sinal digital Motorola DSP56300. O xemu já tinha um interpretador C para esse processador convidado; a solicitação pull nº 2801 adicionou um segundo back-end que usa compilação just-in-time. A mudança diz respeito à forma como as instruções DSP são executadas dentro do emulador, em vez de introduzir um novo formato de áudio ou um patch específico do jogo."
+    },
+    {
+      "type": "heading",
+      "text": "Traduza o trabalho de instrução antes da execução"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um intérprete decodifica e envia instruções aos hóspedes assim que eles são alcançados. Um JIT pode traduzir uma sequência em instruções de host e reutilizar o código gerado, trocando o trabalho de compilação por despachos menos repetidos. A mudança do xemu adiciona um JIT baseado em Rust junto com o interpretador C. Seu benefício depende de quanto tempo um título gasta no código DSP e na CPU hospedeira; o projeto não reivindicou uma aceleração universal."
+    },
+    {
+      "type": "heading",
+      "text": "Mantenha ambos os motores atrás de um limite de estado compartilhado"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch introduz uma interface de operações DSP e uma representação comum do estado central. Esse limite permite que o xemu selecione ou alterne os mecanismos de execução sem fazer com que o restante do processador de áudio dependa de uma implementação. Ele também fornece ao código de salvamento e carregamento um estado comum para serialização, o que é essencial quando uma sessão salva é reaberta com um back-end diferente selecionado."
+    },
+    {
+      "type": "heading",
+      "text": "Preservar o intérprete como uma referência útil"
+    },
+    {
+      "type": "paragraph",
+      "text": "O interpretador C permanece disponível e a nova configuração permite que o caminho JIT seja habilitado ou desabilitado. Manter os dois caminhos ajuda os desenvolvedores a comparar o comportamento ao investigar uma discrepância de áudio: o JIT pode ser verificado em relação a uma implementação mais simples, instrução por instrução. O mesmo refatorador também corrige defeitos encontrados no interpretador existente, portanto o patch não é apenas uma adição do compilador."
+    },
+    {
+      "type": "heading",
+      "text": "As declarações de desempenho precisam de testes específicos da carga de trabalho"
+    },
+    {
+      "type": "paragraph",
+      "text": "A discussão inicial anexou medições de um pequeno conjunto de jogos e observou casos extremos restantes, incluindo loops de áudio e títulos vinculados à taxa de quadros. Esses relatórios são pistas úteis, não uma referência entre jogos. A mudança mesclada estabelece um segundo mecanismo DSP e seu encanamento de estado; testes repetíveis em jogos, CPUs host, transições de estado de salvamento e áudio sensível ao tempo ainda são necessários para caracterizar seus ganhos práticos."
+    }
+  ]
+}

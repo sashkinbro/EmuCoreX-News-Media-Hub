@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast는 인용된 파일 이름이 완료되지 않은 디스크 설명자를 거부합니다.",
+  "summary": "닫는 따옴표 앞에 끝나는 CUE 또는 GDI FILE 줄은 Flycast의 파서가 무기한 읽기를 하게 할 수 있습니다. 이제 리더는 모든 문자 추출을 확인하고 파일 끝에서 잘못된 설명자 오류를 발생시켜 잘못된 형식의 텍스트 파일이 디스크 로딩을 멈추는 것을 방지합니다.",
+  "heroAlt": "디스크 드라이브를 보여주는 두 개의 개방형 Sega Dreamcast 콘솔.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast는 인용된 파일 이름이 완료되지 않은 디스크 설명자를 거부합니다.",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "개발"
+  },
+  "sourceLabels": {
+    "change": "Flycast — 풀 리퀘스트 #2413",
+    "implementation": "CUE 및 GDI 파서 변경 사항 병합"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "누락된 인용문은 구문 분석을 끝없는 읽기로 바꿀 수 있습니다."
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast는 디스크 이미지를 구성하는 파일의 이름을 지정하는 CUE 및 GDI 텍스트 설명자를 허용합니다. 인용된 FILE 파일 이름에서 파서는 추출이 파일 끝에 도달했는지 여부를 확인하지 않고 다음 인용문을 검색했습니다. 따라서 종료되지 않은 문자열은 중지되지 않고 잘못된 데이터를 계속 추가하여 잘못된 설명자가 열릴 때 중단되거나 메모리가 무제한으로 증가할 수 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "각 추출 시 스트림 확인"
+    },
+    {
+      "type": "paragraph",
+      "text": "병합된 수정 사항은 파일 이름 앞의 공백을 건너뛰는 동시에 인용된 파일 이름 내에서 읽은 모든 문자에 대해 입력 스트림을 확인합니다. 추출이 실패하면 파서는 소진된 스트림을 반복하는 대신 기존의 잘못된 CUE 또는 잘못된 GDI 예외를 즉시 발생시킵니다. 유효한 따옴표로 묶인 파일 이름은 닫는 따옴표까지 계속 읽혀집니다."
+    },
+    {
+      "type": "heading",
+      "text": "문자 분류를 안전하게 처리"
+    },
+    {
+      "type": "paragraph",
+      "text": "동일한 변경으로 추출된 바이트를 `isspace`에 전달하기 전에 `unsigned char`로 캐스팅합니다. C 문자 분류 함수는 EOF 또는 unsigned char로 표현 가능한 값을 허용합니다. 음수 부호 바이트를 전달하는 것은 정의되지 않은 동작입니다. 이렇게 하면 기본 ASCII 외부의 바이트가 포함된 파일 이름에 대해 공백 검색이 잘 정의됩니다."
+    },
+    {
+      "type": "heading",
+      "text": "잘못된 입력이 리소스를 소비하기 전에 거부"
+    },
+    {
+      "type": "paragraph",
+      "text": "패치는 하나의 잘못된 입력 사례를 정상적인 구문 분석 오류로 바꿉니다. 가능한 모든 CUE 또는 GDI 필드의 유효성을 검사하지는 않습니다. 회귀 검사에서는 누락된 따옴표, 빈 이름, 이름 앞의 공백, 비ASCII 바이트 및 유효한 인용 경로를 다루어야 합니다. 실질적인 개선점은 디스크 로더를 읽기 루프에 가두는 대신 잘린 설명자가 즉시 실패한다는 것입니다."
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-gba-audio-fifo-dma-width",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA ridimensiona gli offset DMA memorizzati nella cache quando l'audio GBA impone trasferimenti FIFO a 32 bit",
+  "summary": "Un FIFO DMA può essere programmato con una larghezza di 16 bit, quindi convertito in trasferimenti di 32 bit tramite il percorso audio GBA. mGBA ora ridimensiona il passaggio dell'origine memorizzata nella cache a più o meno quattro byte, preservando la direzione e prevenendo letture di campioni raddoppiate o disallineate.",
+  "heroAlt": "Primo piano dei circuiti audio del Game Boy Advance sulla scheda madre.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA ridimensiona gli offset DMA memorizzati nella cache quando l'audio GBA impone trasferimenti FIFO a 32 bit",
+    "FIFO DMA",
+    "32-bit transfer",
+    "source offset",
+    "audio samples"
+  ],
+  "categoryLabels": {
+    "development": "Sviluppo"
+  },
+  "sourceLabels": {
+    "change": "mGBA — richiesta di modifica #3850",
+    "implementation": "Correzione audio DMA unita"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La larghezza DMA del gioco viene memorizzata nella cache in anticipo"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA registra gli offset di origine e destinazione quando GBA scrive il registro di controllo DMA. Un gioco può configurare quel canale per trasferimenti a 16 bit, il che dà al passaggio dell'origine memorizzata nella cache un passo di due byte. Il FIFO audio successivamente utilizza lo stesso meccanismo DMA ma impone la propria larghezza di trasferimento, quindi l'impostazione precedente deve essere conciliata con il nuovo utilizzo."
+    },
+    {
+      "type": "heading",
+      "text": "L'audio FIFO modifica la larghezza di trasferimento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando mGBA pianifica FIFO DMA, forza il canale a una larghezza di 32 bit e una destinazione fissa. Prima di questa correzione, cancellava l'offset di destinazione ma conservava l'offset della sorgente memorizzata nella cache rispetto all'impostazione originale a 16 bit. Il motore quindi avanzava di due byte consumando parole audio di quattro byte, duplicando e disallineando parti del flusso di campione."
+    },
+    {
+      "type": "heading",
+      "text": "Ridimensiona il passo sorgente e mantieni il suo segno"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione unita normalizza un offset di origine positivo su `4` e un offset negativo su `-4` dopo che la larghezza è stata forzata su 32-bit. Lo zero resta zero. La conservazione del segno mantiene intatta la direzione del controllo del codice sorgente mentre allinea le letture successive alla larghezza ora utilizzata dal trasferimento FIFO. La destinazione continua a utilizzare l'indirizzo FIFO fisso."
+    },
+    {
+      "type": "heading",
+      "text": "La regressione è stata isolata mediante bisezione"
+    },
+    {
+      "type": "paragraph",
+      "text": "La richiesta pull documenta una bisezione utilizzando la serie Classic NES: The Legend of Zelda e un oracolo ripetibile di salto difficile. Ha identificato il precedente refactoring con offset della cache come limite di regressione. Ciò offre agli sviluppatori un caso concreto di riproduzione per verificare che i campioni FIFO non combinino più byte raddoppiati o disallineati tra richieste DMA ripetute."
+    }
+  ]
+}

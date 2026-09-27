@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-turnip-strict-query-scopes",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 は Vulkan クエリの回避策の範囲を Mesa Turnip に限定します",
+  "summary": "GPU ハング レポートにより、RPCS3 は Qualcomm 独自のドライバーを既存のパスに残したまま、Turip の厳密なクエリ スコープを有効にするようになりました。",
+  "heroAlt": "PlayStation 3 Slim 本体の写真。",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 は Vulkan クエリの回避策の範囲を Mesa Turnip に限定します",
+    "Turnip",
+    "Adreno",
+    "query"
+  ],
+  "categoryLabels": {
+    "development": "開発"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — プルリクエスト #19561",
+    "implementation": "パッチとレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "待機が予期されたクエリの範囲外に発生しました"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 プル リクエスト #19561 は、Adreno X1-85 上の Mesa Turnip で報告された GPU ハングに応答します。 キャプチャされた GPU コマンド ストリームには、次のクエリの開始コマンドと終了コマンド、およびその可用性処理の前に、WAIT 操作を使用してコピーされたクエリ結果が示されています。 この順序は、一般的な Vulkan レンダリングの失敗ではなく、ドライバーがクエリ スコープの境界をどのように処理するかを暗示していました。"
+    },
+    {
+      "type": "heading",
+      "text": "行動を選択する前にドライバーを認識する"
+    },
+    {
+      "type": "paragraph",
+      "text": "この変更により、Qualcomm ハードウェアと Mesa Turnip ドライバーが識別され、Turnip に対してのみ、より厳密なクエリ スコープの処理が有効になります。 これは対象を絞った互換性ルールです。Qualcomm 独自のドライバーは異なる実装パスに従っているため、ベンダーだけではそれを選択するのに十分ではありません。 この区別により、Mesa 固有の回避策がすべての Qualcomm GPU に無差別に適用されることが防止されます。"
+    },
+    {
+      "type": "heading",
+      "text": "厳密な順序付けにより、観察されたシーケンスに対処します"
+    },
+    {
+      "type": "paragraph",
+      "text": "クエリ スコープは、結果がいつ有効になるか、およびコマンドが結果をいつ使用できるかを記述します。 より厳密なスコープ動作を強制すると、RPCS3 のコマンド生成がこれらの境界付近に制限され、キャプチャで確認できる問題のある順序と一致します。 このパッチは、クエリ関連のすべてのハングが修正されるとは主張しません。 レポートで観察されたドライバーとシーケンスについて説明します。"
+    },
+    {
+      "type": "heading",
+      "text": "検証はドライバーとタイトル固有のままです"
+    },
+    {
+      "type": "paragraph",
+      "text": "このレポートでは、wipEout HD と Burnout Paradise についても言及されていますが、キャプチャされた障害は狭いケースの証拠であり、完全な互換性調査ではありません。 テストでは、独自の Qualcomm ドライバーが以前の動作を保持していることを確認しながら、Turip のリビジョン、影響を受けるタイトル、およびその他のクエリの多いワークロードを比較する必要があります。 保護されたルールにより、ドライバーの動作が変化した場合でも修正を簡単に再検討できます。"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-png-save-state-custom-chunks",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA installe des gestionnaires PNG d'état de sauvegarde personnalisés avant de lire les données d'image",
+  "summary": "Les états de sauvegarde PNG peuvent transporter les morceaux `gbAs` et `gbAx` de mGBA avant les données IDAT de l'image. Le chargeur enregistre désormais son gestionnaire de morceaux personnalisés avant de lire l'en-tête PNG, donc libpng reconnaît ces morceaux quelle que soit leur position.",
+  "heroAlt": "Face arrière de la carte mère Game Boy Advance.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA installe des gestionnaires PNG d'état de sauvegarde personnalisés avant de lire les données d'image",
+    "gbAs",
+    "gbAx",
+    "IDAT",
+    "custom chunks"
+  ],
+  "categoryLabels": {
+    "development": "Développement"
+  },
+  "sourceLabels": {
+    "change": "mGBA — demande de fusion #3803",
+    "implementation": "Changement du chargeur de sérialisation fusionné"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "PNG autorise les données auxiliaires autour des données d'image"
+    },
+    {
+      "type": "paragraph",
+      "text": "mGBA peut stocker un état de sauvegarde au format PNG à côté de la capture d'écran. Ses morceaux `gbAs` et `gbAx` spécifiques à l'émulateur contiennent des informations d'état, tandis qu'IDAT contient des pixels d'image compressés. Les lecteurs PNG traitent les fragments dans l'ordre des fichiers. Une application doit donc installer son gestionnaire avant que l'analyseur n'atteigne l'un de ses fragments personnalisés."
+    },
+    {
+      "type": "heading",
+      "text": "Un changement de chargeur a provoqué l'échec des premiers morceaux"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un changement de développement avait déplacé l'enregistrement des morceaux personnalisés jusqu'à ce que l'en-tête PNG soit lu. C'était trop tard pour les fichiers dont les fragments d'état apparaissaient avant IDAT : libpng a rencontré un fragment inconnu alors que le gestionnaire de mGBA n'était pas actif et a rejeté le fichier. Le rapport provenait d'un outil personnalisé qui émettait cet ordre ; ce n'était pas une mise en page connue produite par mGBA lui-même."
+    },
+    {
+      "type": "heading",
+      "text": "Enregistrez le gestionnaire avant de lire l'en-tête"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif fusionné alloue d'abord le tampon d'état et le contexte d'état groupé, puis installe les gestionnaires `gbAs` et `gbAx` avant d'appeler `PNGReadHeader`. Il libère également le tampon d'état mappé en cas de défaillance de l'en-tête et lors du rejet d'images surdimensionnées. Cela associe le point d'enregistrement précédent au nettoyage des nouveaux chemins de retour anticipé."
+    },
+    {
+      "type": "heading",
+      "text": "La compatibilité inclut les fichiers provenant d'outils externes"
+    },
+    {
+      "type": "paragraph",
+      "text": "La prise en charge de ces morceaux avant IDAT rend le chargeur tolérant un ordre valide que le projet n'écrit normalement pas. Cela évite de demander aux utilisateurs de réécrire des états de sauvegarde autrement utilisables simplement pour déplacer des métadonnées. Les contrôles de régression doivent charger les fichiers avec les morceaux personnalisés des deux côtés de l'IDAT et vérifier que les pixels de la capture d'écran et l'état de la machine sérialisé sont récupérés."
+    }
+  ]
+}

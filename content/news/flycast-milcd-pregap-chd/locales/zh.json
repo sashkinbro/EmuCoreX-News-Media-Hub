@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-milcd-pregap-chd",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast 从 CHD 轨道元数据中读取 MIL-CD 会话间隙",
+  "summary": "Dreamcast MIL-CD 图像可以描述第二个会话，其中包含必须反映在光盘时间中的导出、导入和预间隙。 Flycast 的 CHD 读取器现在会考虑这些间隙并解释预间隙元数据，而不是假设每个轨道都从其存储的帧边界开始。",
+  "heroAlt": "Sega Dreamcast 控制台的角度视图。",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast 从 CHD 轨道元数据中读取 MIL-CD 会话间隙",
+    "CHD",
+    "pregap",
+    "lead-in",
+    "lead-out",
+    "Dreamcast disc"
+  ],
+  "categoryLabels": {
+    "development": "开发"
+  },
+  "sourceLabels": {
+    "change": "Flycast — 合并请求 #2481",
+    "implementation": "合并 CHD 读卡器更改"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "一张光盘映像可以包含多个会话"
+    },
+    {
+      "type": "paragraph",
+      "text": "某些 Dreamcast 软件使用的 MIL-CD 光盘将游戏会话与第二个 CD 会话结合在一起。 读取器必须保留会话之间的间隙和偏移，以便访客可见的扇区地址与物理磁盘布局相匹配，即使映像仅存储选定的磁道数据。 将文件视为平坦的轨道序列会失去这种关系。"
+    },
+    {
+      "type": "heading",
+      "text": "CHD 元数据以不同方式描述差距"
+    },
+    {
+      "type": "paragraph",
+      "text": "CHD 轨道元数据区分预间隙类型和长度，包括预间隙扇区是否存在于轨道的存储帧计数中或占用光盘时间而不存储在那里。 它还描述了轨道子类型和子代码信息，这些信息影响读者如何解释每个轨道记录。 因此，解析器需要将帧长度与间隙标志相结合，而不是将每个值添加为存储的音频或数据。"
+    },
+    {
+      "type": "heading",
+      "text": "考虑 MIL-CD 会话差距"
+    },
+    {
+      "type": "paragraph",
+      "text": "合并的 Flycast 更改添加了一个表示导出、导入和预间隙间隔的会话间隙常量：6,750 帧加 4,500 加 150。它在构建轨道偏移时跟踪最后一个预间隙，并将存储的预间隙扇区与仅存在于光盘时间线中的间隙区别对待。 在 CD 帧速率下，150 帧预间隙为两秒。"
+    },
+    {
+      "type": "heading",
+      "text": "保留扇区布局，同时警告未使用的数据"
+    },
+    {
+      "type": "paragraph",
+      "text": "该实现注意到，Flycast 存储了 CHD 子代码但不使用它，并且后​​间隙扇区不存储在文件中。 当这些字段出现时它会发出警告，而不是默默地改变扇区布局。 仔细的回归检查会比较解析代表性多会话图像之前和之后的磁道起始和扇区读取，包括预间隙数据物理上包含在磁道中的图像。"
+    }
+  ]
+}

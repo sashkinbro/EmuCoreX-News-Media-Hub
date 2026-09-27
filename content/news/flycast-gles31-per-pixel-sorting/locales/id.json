@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gles31-per-pixel-sorting",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast menghadirkan penyortiran per piksel ke OpenGL ES 3.1",
+  "summary": "Jalur libretro OpenGL ES sekarang dapat meminta konteks GLES 3.1 dan memverifikasi atom gambar, blok penyimpanan shader, penghitung, pengikatan, dan batas buffer yang diperlukan oleh perender transparansi yang tidak bergantung pada pesanan Flycast.",
+  "heroAlt": "Konsol Sega Dreamcast di samping paket prosesor grafisnya.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast menghadirkan penyortiran per piksel ke OpenGL ES 3.1",
+    "OIT",
+    "PPLL",
+    "image atomics",
+    "shader storage"
+  ],
+  "categoryLabels": {
+    "development": "Pengembangan"
+  },
+  "sourceLabels": {
+    "change": "Flycast — permintaan penggabungan #2451",
+    "implementation": "Implementasi gabungan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa transparansi membutuhkan tatanan yang terfragmentasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Buffer kedalaman konvensional menjaga permukaan buram terdekat, namun poligon tembus pandang yang tumpang tindih mungkin memerlukan beberapa fragmen yang dicampur dalam urutan kedalaman. Perender OIT Flycast menggunakan pendekatan daftar tertaut per piksel sehingga fragmen dapat dikumpulkan dan diselesaikan setelah pengundian daripada mengandalkan satu lapisan tetap. Setiap piksel mencatat penunjuk kepala ke dalam buffer fragmen bersama, sementara atom mengalokasikan node dengan aman di seluruh pemanggilan fragmen paralel."
+    },
+    {
+      "type": "heading",
+      "text": "GLES 3.1 memaparkan elemen penyusun yang diperlukan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan yang digabungkan meminta frontend libretro untuk konteks OpenGL ES 3.1 yang eksplisit ketika perender OIT dipilih. Ia menambahkan dukungan penyimpanan gambar-atomik dan shader yang digunakan oleh perender, meminta versi konteks secara langsung, dan menggunakan penghalang memori buffer penyimpanan yang sesuai untuk pekerjaan penyelesaian. Hal ini menghindari ketergantungan pada frontend untuk secara diam-diam mengembalikan konteks yang lebih baru daripada konteks yang diminta untuk disediakan."
+    },
+    {
+      "type": "heading",
+      "text": "Periksa batas sebenarnya daripada mempercayai string versi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Versi API nominal tidak menjamin sumber daya yang cukup untuk perender ini. Flycast sekarang memeriksa blok penyimpanan shader fragmen, unit gambar, penghitung dan pengikatan atom, keluaran shader gabungan, dan ukuran buffer penyimpanan. Ini juga menangani persyaratan ekstensi atom gambar GLES sebelum mengiklankan dukungan penyortiran per piksel. Jika ada sumber daya yang tidak mencukupi, perender akan mencatat kemampuan yang gagal daripada mencoba jalur tersebut secara membabi buta."
+    },
+    {
+      "type": "heading",
+      "text": "Gunakan kembali alokasi di seluruh frame"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini juga mempertahankan buffer readback framebuffer daripada mengalokasikan penyimpanan baru pada setiap frame. Perubahan tersebut mengurangi pekerjaan alokasi berulang di jalur rendering yang sama. Oleh karena itu, fitur ini bergantung pada deteksi kemampuan GPU yang benar dan sinkronisasi yang cermat antara penulisan fragmen dan proses pengomposisian selanjutnya. Pengujian harus mencakup penerapan GLES pada versi minimum yang didukung dan memverifikasi pemesanan transparan dan perilaku penggantian perangkat yang tidak didukung."
+    }
+  ]
+}

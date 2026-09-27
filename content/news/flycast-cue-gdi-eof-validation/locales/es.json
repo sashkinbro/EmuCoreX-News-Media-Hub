@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-cue-gdi-eof-validation",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast rechaza descriptores de disco con nombres de archivos entrecomillados sin terminar",
+  "summary": "Una línea CUE o GDI FILE que finaliza antes de su cotización de cierre podría dejar que el analizador de Flycast lea indefinidamente. El lector ahora verifica cada extracción de caracteres y genera un error de descriptor no válido al final del archivo, lo que evita que un archivo de texto con formato incorrecto cuelgue la carga del disco.",
+  "heroAlt": "Dos consolas Sega Dreamcast abiertas mostrando sus unidades de disco.",
+  "searchKeywords": [
+    "Flycast",
+    "Flycast rechaza descriptores de disco con nombres de archivos entrecomillados sin terminar",
+    "GDI",
+    "quoted filename",
+    "EOF",
+    "disc parser"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "Flycast — solicitud de cambios #2413",
+    "implementation": "Cambios en el analizador CUE y GDI combinados"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Una cita faltante puede convertir el análisis en una lectura interminable"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flycast acepta descriptores de texto CUE y GDI que nombran los archivos que componen una imagen de disco. En un nombre de archivo FILE entre comillas, el analizador buscó la siguiente cita sin comprobar si la extracción había llegado al final del archivo. Por lo tanto, una cadena sin terminar podría seguir agregando datos no válidos en lugar de detenerse, lo que provocaría un bloqueo o un crecimiento ilimitado de la memoria cuando se abriera un descriptor con formato incorrecto."
+    },
+    {
+      "type": "heading",
+      "text": "Verifique el flujo en cada extracción."
+    },
+    {
+      "type": "paragraph",
+      "text": "La solución combinada verifica el flujo de entrada mientras omite los espacios en blanco antes de un nombre de archivo y en cada carácter leído dentro de un nombre de archivo entre comillas. Si la extracción falla, el analizador genera inmediatamente la excepción CUE no válida o GDI no válida existente en lugar de realizar un bucle en una secuencia agotada. Los nombres de archivos citados válidos se siguen leyendo hasta su cita de cierre."
+    },
+    {
+      "type": "heading",
+      "text": "Manejar la clasificación de personajes de forma segura"
+    },
+    {
+      "type": "paragraph",
+      "text": "El mismo cambio convierte el byte extraído a `unsigned char` antes de pasarlo a `isspace`. Las funciones de clasificación de caracteres de C aceptan EOF o valores representables como caracteres sin signo; De lo contrario, pasar un byte con signo negativo es un comportamiento indefinido. Esto hace que el escaneo de espacios en blanco esté bien definido para nombres de archivos que contengan bytes fuera del ASCII básico."
+    },
+    {
+      "type": "heading",
+      "text": "Rechace la mala entrada antes de que consuma recursos"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche convierte un caso de entrada mal formada en un error de análisis normal; no valida todos los campos CUE o GDI posibles. Las comprobaciones de regresión deben cubrir comillas faltantes, nombres vacíos, espacios en blanco antes de los nombres, bytes que no sean ASCII y rutas entre comillas válidas. La mejora práctica es que un descriptor truncado falla rápidamente en lugar de atrapar al cargador de discos en un bucle de lectura."
+    }
+  ]
+}

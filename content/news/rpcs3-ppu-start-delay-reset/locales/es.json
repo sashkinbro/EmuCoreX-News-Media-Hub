@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-ppu-start-delay-reset",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "RPCS3 borra el retraso de PPU obsoleto al iniciar un hilo",
+  "summary": "Un ajuste de programación de PPU restablece el retraso del sueño después de una espera y verifica la función actual antes de aplicar la heurística de inicio de subproceso.",
+  "heroAlt": "Montaje comparativo de varios modelos de consola PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RPCS3 borra el retraso de PPU obsoleto al iniciar un hilo",
+    "thread start",
+    "scheduler",
+    "sleep delay"
+  ],
+  "categoryLabels": {
+    "development": "Desarrollo"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 — solicitud de cambios #19580",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Un retraso puede sobrevivir a la espera que lo provocó"
+    },
+    {
+      "type": "paragraph",
+      "text": "RPCS3 utiliza heurísticas de programación de host para controlar los subprocesos de PPU emulados. La solicitud de extracción n.º 19580 ajusta la lógica de suspensión e inicio para que un retraso de suspensión del hardware registrado se borre después de que la CPU complete su ruta de suspensión o espera. Sin esa limpieza, una decisión de programación posterior puede heredar el estado de sincronización de una espera anterior, aunque el hilo haya avanzado."
+    },
+    {
+      "type": "heading",
+      "text": "Guarde el caso especial de inicio de hilo"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche también reduce la heurística de retardo: evita aplicar el caso especial cuando la CPU que se evalúa no es la PPU actual y verifica la función actual antes de confiar en el valor esperado en el registro de propósito general 11 para `sys_ppu_thread_start`. Esas comprobaciones evitan que una heurística específica de una función actúe en un estado de ejecución no relacionado."
+    },
+    {
+      "type": "heading",
+      "text": "Preservar el comportamiento de programación normal"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esta es una corrección dirigida a la contabilidad del programador, no un nuevo modelo de sincronización. La ruta de inicio del subproceso todavía utiliza la heurística existente cuando sus condiciones previas coinciden; Las nuevas protecciones evitan que esa lógica pase a una PPU diferente o a una función no relacionada. Borrar el retraso en el límite de espera hace que la transición de estado sea explícita y más fácil de razonar durante la programación."
+    },
+    {
+      "type": "heading",
+      "text": "Las correcciones de tiempo necesitan evidencia de regresión"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sincronización de los subprocesos puede variar según la carga del host, el comportamiento del juego y los patrones de sincronización. El parche hace que las condiciones previstas sean más precisas, pero no establece un cambio universal de rendimiento o compatibilidad por sí solo. Las pruebas útiles deben cubrir el inicio de subprocesos después de la suspensión, llamadas desde contextos de PPU no actuales, funciones no relacionadas con contenidos de registro similares y secuencias normales de espera/reanudación."
+    }
+  ]
+}

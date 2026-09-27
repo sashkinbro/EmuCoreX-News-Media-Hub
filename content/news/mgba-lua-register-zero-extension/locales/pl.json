@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "id": "mgba-lua-register-zero-extension",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "mGBA inicjuje odczyty rejestru Lua przed zwróceniem wartości 8-bitowych",
+  "summary": "Interfejs API skryptów Game Boy zwrócił `int32_t`, ale wywołanie zwrotne rejestru zapisało tylko młodszy bajt dla rejestrów 8-bitowych. Inicjowanie wyjścia do zera przed wywołaniem zwrotnym zapobiega pojawianiu się pozostałych bajtów stosu jako losowych wysokich bitów w Lua.",
+  "heroAlt": "Zdemontowany Game Boy Advance, pokazujący wewnętrzną płytkę drukowaną.",
+  "searchKeywords": [
+    "mGBA",
+    "mGBA inicjuje odczyty rejestru Lua przed zwróceniem wartości 8-bitowych",
+    "emu:readRegister",
+    "Game Boy",
+    "zero extension",
+    "8-bit register"
+  ],
+  "categoryLabels": {
+    "development": "Rozwój"
+  },
+  "sourceLabels": {
+    "change": "mGBA — prośba o scalenie #3785",
+    "implementation": "Połączona poprawka pomocnika skryptowego"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wąski rejestr został umieszczony w szerszym wyniku"
+    },
+    {
+      "type": "paragraph",
+      "text": "Interfejs API Game Boy Lua udostępnia `emu:readRegister()` poprzez wynik wartości skryptu poparty 32-bitową liczbą całkowitą. W przypadku 8-bitowego rejestru procesora, wywołanie zwrotne rdzenia zapisało tylko jeden bajt poprzez `uint8_t*`. Pozostałe bajty lokalnego wyniku 32-bitowego pozostały nietknięte, zatem wartość skryptu publicznego mogła zawierać dane niezwiązane z żądanym rejestrem."
+    },
+    {
+      "type": "heading",
+      "text": "Niezainicjowane bajty sprawiły, że identyczny stan wyglądał inaczej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jeśli rejestr B zawierał `0x12`, Lua mógłby otrzymać `0x12`, `0x7F12` lub inną wartość, w zależności od tego, jakie bity zajmowały starsze bajty. Młodszy bajt był poprawny; zwrócona liczba całkowita nie była deterministyczna. Skrypt porównujący, rejestrujący lub formatujący odczyty rejestrów może zatem zachowywać się niespójnie, nawet jeśli stan emulowanego procesora nie uległ zmianie."
+    },
+    {
+      "type": "heading",
+      "text": "Najpierw wyzeruj pamięć pełnego zwrotu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poprawka inicjuje lokalne `int32_t out` na zero przed wywołaniem wywołania zwrotnego odczytu rejestru rdzenia. 8-bitowe wywołanie zwrotne aktualizuje następnie tylko dolny bajt, podczas gdy nieużywane górne bajty pozostają zerowe. Szersze wywołania zwrotne rejestrów mogą nadal zapisywać całą wartość przez ten sam wskaźnik wyjściowy, więc poprawka zachowuje współdzielony interfejs pomocnika."
+    },
+    {
+      "type": "heading",
+      "text": "Korekta jest niewielka i można ją bezpośrednio przetestować"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiana ogranicza się do pomocnika odczytu Lua i nie zmienia stanu emulowanego procesora. Skoncentrowana kontrola regresji może ustawić znany 8-bitowy rejestr, wielokrotnie go odczytać z Lua i sprawdzić, czy wynik jest konsekwentnie rozszerzony o zero, a nie zależny od wcześniejszej zawartości stosu. Ważną właściwością jest deterministyczna konwersja szerokości, a nie zmiana semantyki rejestru Game Boya."
+    }
+  ]
+}
