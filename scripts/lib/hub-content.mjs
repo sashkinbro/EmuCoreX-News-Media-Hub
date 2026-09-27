@@ -40,7 +40,12 @@ export function sha256Bytes(bytes) {
 }
 
 export function fileReference(filePath, extra = {}) {
-  const bytes = fs.readFileSync(filePath);
+  const sourceBytes = fs.readFileSync(filePath);
+  // .gitattributes publishes text with LF even when a Windows editor wrote CRLF locally.
+  // References must describe the bytes clients download from the committed Git blob.
+  const bytes = path.extname(filePath).toLowerCase() === ".json"
+    ? Buffer.from(sourceBytes.toString("utf8").replace(/\r\n/g, "\n"), "utf8")
+    : sourceBytes;
   return {
     path: relativePath(filePath),
     sha256: sha256Bytes(bytes),
