@@ -825,7 +825,7 @@ class JellyPop(Skin):
 
 @register
 class KawaiiPastel(Skin):
-    id, name = "kawaii-pastel", "Kawaii Pastel"
+    id, name = "pad-kawaii-pastel", "Kawaii Pastel"
     desc = "Soft pastel buttons with polka dots, white piping, sparkles and outlined symbols."
     cats, pro, featured, press = ["playful"], False, False, "spring"
     swatch = ["#FFB8D0", "#B4D2FF", "#BFF0D8", "#E3C8FF"]
@@ -1769,7 +1769,7 @@ class LcdGreen(Skin):
 
 @register
 class ArcadeCabinet(Skin):
-    id, name = "arcade-cabinet", "Arcade Cabinet"
+    id, name = "pad-arcade-cabinet", "Arcade Cabinet"
     desc = "Concave arcade push-buttons in primary colors and a glossy ball-top stick on a black panel."
     cats, pro, featured, press, opacity = ["retro", "playful"], True, True, "spring", 0.96
     swatch = ["#E83240", "#FFC828", "#3C78F0", "#3CD25A"]
