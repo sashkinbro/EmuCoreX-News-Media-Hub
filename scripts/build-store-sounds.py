@@ -1197,8 +1197,12 @@ def main():
     if "--only" in sys.argv:
         only = set(sys.argv[sys.argv.index("--only") + 1].split(","))
     SOUNDS.mkdir(parents=True, exist_ok=True)
+    # Keep translations already present in the files; this table only owns the English text.
+    old_cats = {}
+    if (SOUNDS / "categories.json").exists():
+        old_cats = {c["id"]: c.get("labels", {}) for c in json.loads((SOUNDS / "categories.json").read_text(encoding="utf-8"))}
     write_if_changed(SOUNDS / "categories.json", json.dumps(
-        [{"id": i, "labels": {"en": l}} for i, l in CATEGORIES], indent=2, ensure_ascii=False) + "\n")
+        [{"id": i, "labels": {**old_cats.get(i, {}), "en": l}} for i, l in CATEGORIES], indent=2, ensure_ascii=False) + "\n")
     script_bytes = SELF.read_bytes()
     for pid, name, desc, cats, pro, featured, hue, builder in PACKS:
         if only and pid not in only:
@@ -1214,6 +1218,10 @@ def main():
             "name": {"en": name}, "description": {"en": desc},
         }
         src = SOUNDS / "src" / pid
+        if (src / "listing.json").exists():
+            old = json.loads((src / "listing.json").read_text(encoding="utf-8"))
+            listing["name"] = {**old.get("name", {}), "en": name}
+            listing["description"] = {**old.get("description", {}), "en": desc}
         dist = SOUNDS / "dist" / pid
         src.mkdir(parents=True, exist_ok=True)
         dist.mkdir(parents=True, exist_ok=True)
