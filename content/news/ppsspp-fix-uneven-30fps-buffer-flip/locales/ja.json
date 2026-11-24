@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPPがゲームのバッファ半分切り替え時に発生していた不均一な30fpsペーシングを修正",
+  "summary": "フレームペーシングのバグにより、『サイレントヒル シャッタードメモリーズ』のようなゲームが30fpsでスタッターする原因となっていました。エミュレータが1つのバッファの2つの半分を別々のフレームとして扱っていたためです。この修正では、ダーティフラグに依存する代わりに、実際のフレームバッファ切り替えをカウントするようになりました。",
+  "heroAlt": "暗い表面の上に置かれたシルバーのPlayStation Portable本体。そのワイド液晶画面には、柔らかな室内照明の下で一時停止されたゲームメニューが表示されている。",
+  "searchKeywords": [
+    "PPSSPP",
+    "フレームペーシング",
+    "frame pacing",
+    "30 fps",
+    "フレームバッファ",
+    "framebuffer",
+    "サイレントヒル シャッタードメモリーズ",
+    "Silent Hill Shattered Memories",
+    "エミュレーション精度",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "エミュレーション",
+    "graphics": "グラフィックス"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "パッチとレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "なぜ特定のゲームで30fps制限時にスタッターが発生したのか"
+    },
+    {
+      "type": "paragraph",
+      "text": "『サイレントヒル シャッタードメモリーズ』や同様のタイトルでは、各フレームを幅1024ピクセルの単一バッファの片側半分に描画し、次のVBlankで表示ポインタをもう片方の半分に切り替えています。両半分は同じVirtualFramebufferオブジェクトを共有していますが、左半分のみがアドレスの面からは正確に一致していました。右半分は毎VBlankで提示されるのに対し、左半分は次のフレームの描画呼び出しによってすでにクリアされているダーティフラグに依存していました。30fpsリミッタが有効な場合、フレームが1 VBlank分残留し、次に3 VBlank分、また1 VBlank分と交互に続くため、FPSカウンターに45/45という表示が出て、動きが不均一になっていました。60fpsでは半分切り替えが高速なため、毎VBlankで新しい半分バッファが届くことで問題が隠されていました。"
+    },
+    {
+      "type": "heading",
+      "text": "ダーティフラグではなく実際のフレームバッファ切り替えをカウントするように変更"
+    },
+    {
+      "type": "paragraph",
+      "text": "このパッチでは、同じバッキングバッファ内での表示トップアドレスの変更をすべて新しいフレームとして扱うようにフレームペーシングロジックを変更しました。新しいカウンタframebufChangesは、sceDisplaySetFramebufが異なるアドレスを受け取ったときのみインクリメントされ、同じアドレスの再設定（一部のゲームが毎VBlank行う）は無視されます。FramebufferManagerはdisplaySwitched_とdisplaySwitchedReally_フラグを追跡し、切り替えごとにチェックカウンタをリセットするようになりました。GPUCommonHWのFramebufferDirty()とFramebufferReallyDirty()は、新しいConsumeDisplayDirty()メソッドに委譲し、適切なフラグを消費することで、ゲームが実際にフレームを提示したときにペーサーが新しいフレームを認識できるようにしています。"
+    },
+    {
+      "type": "heading",
+      "text": "プレイヤーが実際に気づく変化"
+    },
+    {
+      "type": "paragraph",
+      "text": "1つのバッファの半分を交互に使用するゲームでは、リミッタ有効時に安定した30fpsを維持し、画面上のカウンターが従来の45/45ではなく30/30を表示するようになります。すでに30fps以下で動作していたタイトルには影響なく、60fpsゲームも従来通り毎VBlankでフリップし続けます。唯一の盲点は、表示ポインタを決してフリップせず、代わりに表示リストを重ね合わせるゲームです。そのタイトルは依然としてリミッタを回避します。幅広いゲームセットでのセーブステート回帰テスト、既存のユニットテスト、pspautotests、frametestsはすべてこの変更でパスしています。"
+    },
+    {
+      "type": "heading",
+      "text": "ヘッドレスフレーム統計がゲーム本来のフレームレートを公開"
+    },
+    {
+      "type": "paragraph",
+      "text": "ヘッドレスランナーの--frame-stats出力に、pageFlipsPerSecondという2列目が追加されました。これはエミュレートされた1秒あたりにゲームが異なるフレームバッファアドレスに切り替えた回数を報告し、ゲームの内部フレームレートを反映します。一方、既存のflipsPerSecond列は、新しいコンテンツを提示するVBlankの回数、つまりGUIのFPSカウンターが表示する数を示します。開発者はこの2列を比較することで30fpsリミッタが機能しているかを検証できます。リミッタ有効時、pageFlipsPerSecondは30付近に留まり、flipsPerSecondは制限されたレートと一致するはずです。"
+    }
+  ]
+}

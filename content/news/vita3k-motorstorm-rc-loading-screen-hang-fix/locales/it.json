@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K risolve il blocco di caricamento di MotorStorm RC con modifiche a Commerce e Audio Scheduler",
+  "summary": "Sono state risolte due fonti di deadlock in MotorStorm RC: una sessione commerce che non falliva mai e un callback audio che veniva eseguito mentre il gioco manteneva ancora il suo lock. Il gioco ora raggiunge il tutorial.",
+  "heroAlt": "Una console portatile PlayStation Vita appoggiata su una superficie scura, che mostra il suo schermo OLED e i due stick analogici",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulatore",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "compatibility": "Compatibilità"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4416",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Perché il gioco si bloccava sulla schermata di caricamento"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) si bloccava durante il controllo iniziale dello store perché l'emulato `sceNpCommerce2CreateSessionStart` restituiva successo senza popolare alcun campo di output. Il gioco leggeva quindi un conteggio elementi non inizializzato e rimaneva in loop infinito in attesa di dati che non sarebbero mai arrivati. Contemporaneamente, il sottosistema audio andava in deadlock quando `sceNgsVoiceKeyOff` invocava immediatamente il callback di fine voce sul thread del chiamante. Il gioco mantiene il proprio lock audio attorno alla chiamata KeyOff, e il callback tentava di acquisire lo stesso lock, creando una classica attesa circolare che arrestava il progresso prima che il tutorial potesse iniziare."
+    },
+    {
+      "type": "heading",
+      "text": "Come le correzioni a commerce e audio risolvono i deadlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il modulo commerce ora definisce `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) e lo restituisce da `sceNpCommerce2CreateSessionStart`, segnalando che nessun server PlayStation Network è disponibile. Il gioco interpreta questo come uno stato di disconnessione e salta completamente il controllo dello store. Nello scheduler audio NGS, `sceNgsVoiceKeyOff` non esegue più direttamente il callback di fine. Invece marca la voce come `FINALIZING` e delega la pulizia alla successiva chiamata a `sceNgsSystemUpdate`, che viene eseguita su un thread diverso dopo che il gioco ha rilasciato il suo lock audio. Sono state aggiunte anche guardie mutex a `play`, `pause` e `resume` per proteggere la deque interna dello scheduler."
+    },
+    {
+      "type": "heading",
+      "text": "Cosa noteranno i giocatori in MotorStorm RC"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con entrambe le modifiche integrate, MotorStorm RC supera la schermata di caricamento e raggiunge il tutorial del primo avvio, accettando normalmente l'input del controller. Chi ha segnalato il problema ha misurato circa 27 frame al secondo su Windows con il backend Vulkan durante il tutorial. Il menu principale oltre il tutorial non è stato validato, e gli artefatti di rendering 3D visibili in gioco sono tracciati come un problema separato non correlato a questa correzione del blocco."
+    },
+    {
+      "type": "heading",
+      "text": "Lavori rimanenti e come verificare la correzione"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il codice errore usato per il fallimento del commerce non è verificato sull'hardware; è stato scelto perché corrisponde alla condizione di disconnessione che il gioco si aspetta. Una futura emulazione del server PSN potrebbe richiedere un percorso di codice diverso. La modifica allo scheduler NGS presuppone che il gioco chiami regolarmente `sceNgsSystemUpdate`, che è una pratica standard. Per verificare la correzione, avviare PCSC00014 su una build recente di Vita3K e confermare che il tutorial appare e risponde all'input. I test di regressione dovrebbero coprire altri titoli che usano la creazione di sessione `sceNpCommerce2` o `sceNgsVoiceKeyOff` con lock audio personalizzati."
+    }
+  ]
+}

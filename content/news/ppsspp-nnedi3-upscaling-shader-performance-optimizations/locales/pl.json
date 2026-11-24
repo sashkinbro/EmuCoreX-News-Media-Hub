@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optymalizacja shaderów skalowania NNEDI3 dla mobilnych układów graficznych",
+  "summary": "Nowe optymalizacje shaderów skalowania NNEDI3 w PPSSPP znacząco poprawiają wydajność poprzez pomijanie zbędnych obliczeń sieci neuronowych w obszarach płaskiego obrazu oraz usprawnienie grupowania wątków GPU.",
+  "heroAlt": "Zbliżenie na konsolę przenośną PlayStation Portable, pokazujące ekran i krzyżak kierunkowy.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shadery",
+    "skalowanie",
+    "wydajność GPU",
+    "gry mobilne",
+    "emulacja",
+    "grafika"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Koszt obliczeniowy skalowania neuronowego"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 to wysokiej jakości algorytm skalowania używany w PPSSPP do poprawy wierności wizualnej tekstur PSP o niskiej rozdzielczości. W przeciwieństwie do prostszych filtrów dwuliniowych lub dwusześciennych, NNEDI3 wykorzystuje sieć neuronową do przewidywania wartości pikseli, co skutkuje ostrzejszymi krawędziami i mniejszą liczbą artefaktów. Jednak ta jakość wiąże się ze znacznym kosztem obliczeniowym, szczególnie na sprzęcie mobilnym, gdzie zasoby GPU są ograniczone. Wcześniej shader wykonywał pełną logikę sieci neuronowej dla każdego przetwarzanego piksela, niezależnie od tego, czy obszar zawierał złożone detale, czy proste, płaskie kolory. To jednolite podejście prowadziło do niepotrzebnego narzutu w scenach z dużymi płaszczyznami jednolitego koloru lub przezroczystości, gdzie złożone przewidywania sieci neuronowej dają niewielkie lub żadne korzyści wizualne w porównaniu z podstawowym uśrednianiem."
+    },
+    {
+      "type": "heading",
+      "text": "Wdrożenie wczesnego wyjścia i grupowania zadań"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby rozwiązać te nieefektywności, najnowsze zmiany wprowadzają mechanizm wczesnego wyjścia (early-exit) oparty na wariancji pikseli. Shader już teraz oblicza średnią i wariancję otaczających pikseli w ramach swojej standardowej procedury. Sprawdzając, czy wariancja spada poniżej określonego progu, silnik może teraz określić, czy wkład sieci neuronowej jest konieczny. Jeśli wariancja wynosi zero lub jest bliska zeru, shader po prostu zwraca średni kolor i całkowicie pomija kosztowne przejście sieci neuronowej. Dodatkowo, w przypadku shaderów jednoprzebiegowych, programista zoptymalizował sposób grupowania zadań w kafelkach. Ponieważ co drugi wiersz lub kolumna w tych operacjach jest często bezpośrednią kopią, shader grupuje teraz te identyczne operacje, pozwalając GPU na wydajniejsze obsługiwanie przewidywań i kopii."
+    },
+    {
+      "type": "heading",
+      "text": "Rzeczywiste zyski wydajności na urządzeniach mobilnych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Te udoskonalenia architektoniczne przekładają się na znaczny wzrost wydajności, zwłaszcza na mobilnych układach GPU, takich jak seria PowerVR. Testy na Pixel 10 Pro XL wykazały, że ekran statusu postaci w Star Ocean otwierał się znacznie szybciej przy użyciu zoptymalizowanych shaderów. Konkretnie, shader Single 2x odnotował 3,5-krotny wzrost prędkości, podczas gdy shader Single 4x działał 6 razy szybciej niż wcześniej. Nawet bardziej złożony wariant Multi 4x wykazał poprawę 1,25-krotną. Te zyski oznaczają, że gracze mogą cieszyć się wysokiej jakości skalowaniem bez zacięć lub długich czasów ładowania, które wcześniej towarzyszyły filtrom neuronowym. Optymalizacja skutecznie zmniejsza wagę obliczeniową shadera, czyniąc wysokiej klasy skalowanie opłacalnym na szerszej gamie sprzętu mobilnego."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i przyszła kompatybilność sprzętowa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wpływ tych zmian jest najbardziej widoczny podczas korzystania z opcji skalowania NNEDI3 w ustawieniach shaderów post-processingu. Gracze mogą zweryfikować poprawę, monitorując czas klatek lub obserwując responsywność elementów interfejsu użytkownika, które wykorzystują skalowanie tekstur. Chociaż skok wydajności jest najbardziej dramatyczny w przypadku konkretnych architektur mobilnych, takich jak PowerVR, wczesne wyjście oparte na wariancji zapewnia uniwersalną korzyść na wszystkich platformach poprzez zmniejszenie całkowitej liczby operacji zmiennoprzecinkowych wymaganych dla płaskich tekstur. Przyszłe prace mogą nadal wykorzystywać zautomatyzowane narzędzia analityczne do znajdowania podobnych wąskich gardeł w innych efektach post-processingu. Na razie te optymalizacje sprawiają, że jedna z najbardziej zaawansowanych metod skalowania w emulatorze jest bardziej dostępna dla ogółu użytkowników."
+    }
+  ]
+}

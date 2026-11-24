@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP opravuje nerovnoměrné tempo 30 fps, když hry přepínají mezi polovinami bufferu",
+  "summary": "Chyba v řízení tempa snímků způsobila, že hry jako Silent Hill: Shattered Memories sekaly při 30 fps, protože emulátor považoval dvě poloviny jednoho bufferu za samostatné snímky. Oprava počítá skutečné přepínání framebufferů místo spoléhání na dirty flagy.",
+  "heroAlt": "Stříbrná ruční konzole PlayStation Portable ležící na tmavém povrchu, její širokoúhlý LCD displej ukazuje pozastavené herní menu pod měkkým vnitřním osvětlením.",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing",
+    "řízení tempa snímků",
+    "30 fps",
+    "framebuffer",
+    "Silent Hill Shattered Memories",
+    "emulation accuracy",
+    "přesnost emulace"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč limit 30 fps sekal u určitých her"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories a podobné tituly vykreslují každý snímek do jedné poloviny jednoho 1024 pixelů širokého bufferu, pak na příštím vblanku přepnou ukazatel displeje na druhou polovinu. Obě poloviny sdílejí stejný objekt VirtualFramebuffer, avšak pouze levá polovina přesně odpovídala jeho adrese. Pravá polovina byla prezentována při každém vblanku, zatímco levá polovina závisela na dirty flagu, který draw volání příštího snímku již vymazalo. S aktivním limiterem 30 fps proto snímky zůstaly pro jeden vblank, pak tři, pak zase jeden, což vytvářelo viditelné čtení 45/45 na FPS čítači a nerovnoměrný pohyb. U 60 fps rychlé přepínání polovin maskovalo problém, protože každý vblank obdržel novou polovinu bufferu."
+    },
+    {
+      "type": "heading",
+      "text": "Počítání skutečných přepnutí framebufferu místo dirty flagů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch mění logiku řízení tempa snímků tak, že jakákoliv změna adresy vrchu displeje uvnitř stejného podkladového bufferu počítá jako nový snímek. Nový čítač, framebufChanges, se inkrementuje pouze když sceDisplaySetFramebuf obdrží jinou adresu; opětovné nastavení stejné adresy (což některé hry dělají každý vblank) je ignorováno. FramebufferManager nyní sleduje flagy displaySwitched_ a displaySwitchedReally_ a resetuje čítač kontrol při každém přepnutí. FramebufferDirty() a FramebufferReallyDirty() z GPUCommonHW nyní oba delegují na novou metodu ConsumeDisplayDirty(), která spotřebuje příslušný flag, čímž zajistí, že pacer uvidí čerstvý snímek přesně v momentě, kdy ho hra skutečně prezentuje."
+    },
+    {
+      "type": "heading",
+      "text": "Co hráči v praxi poznají"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hry, které střídají poloviny jednoho bufferu, nyní udržují stabilních 30 fps, když je limiter povolen, a ukazují 30/30 na obrazovkovém čítači místo předchozích 45/45. Tituly, které již běžely při 30 fps nebo nižší, nejsou ovlivněny, a hry s 60 fps nadále přepínají každý vblank jako dříve. Jediným zbývajícím slepým bodem je hra, která nikdy nepřepíná ukazatel displeje a místo toho překrývá své display listy; tento titul stále limiteru uniká. Regresní testování savestate napříč širokou sadou her, spolu s existujícími unit testy, pspautotesty a frametesty, vše projde se změnou."
+    },
+    {
+      "type": "heading",
+      "text": "Statistiky snímků v headless režimu nyní odhalují vlastní frekvenci snímků hry"
+    },
+    {
+      "type": "paragraph",
+      "text": "Výstup --frame-stats headless runneru získá druhý sloupec, pageFlipsPerSecond, který uvádí, kolikrát za emulovanou vteřinu hra přepnula na jinou adresu framebufferu. To odráží interní frekvenci snímků hry, zatímco existující sloupec flipsPerSecond ukazuje, kolik vblanků mělo nový obsah k prezentaci – číslo, které zobrazuje GUI FPS čítač. Vývojáři nyní mohou ověřit, že limiter 30 fps funguje, porovnáním obou sloupců: když je limiter aktivní, pageFlipsPerSecond by mělo zůstat blízko 30, zatímco flipsPerSecond odpovídá omezované rychlosti."
+    }
+  ]
+}

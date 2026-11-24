@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 通过商务和音频调度器变更修复 MotorStorm RC 加载卡死问题",
+  "summary": "MotorStorm RC 中的两个死锁来源已解决：一个永不失败的商务会话和一个在游戏仍持有锁时运行的音频回调。游戏现可到达教程。",
+  "heroAlt": "一台 PlayStation Vita 手持游戏机放置在深色表面上，显示其 OLED 屏幕和双模拟摇杆",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulator",
+    "PlayStation Vita",
+    "模拟器",
+    "掌机"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "compatibility": "兼容性"
+  },
+  "sourceLabels": {
+    "change": "Vita3K 拉取请求 #4416",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "游戏为何在加载画面卡死"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) 在初始商店检查期间冻结，因为模拟的 `sceNpCommerce2CreateSessionStart` 返回成功却未填充任何输出字段。游戏随即读取未初始化的项目计数，并永远循环等待永远不会到来的数据。同时，当 `sceNgsVoiceKeyOff` 在调用者线程上立即调用语音完成回调时，音频子系统发生死锁。游戏在 KeyOff 调用周围持有自己的音频锁，而回调尝试获取同一把锁，形成经典的循环等待，导致教程开始前进程停滞。"
+    },
+    {
+      "type": "heading",
+      "text": "商务和音频修复如何解决死锁"
+    },
+    {
+      "type": "paragraph",
+      "text": "商务模块现定义 `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) 并从 `sceNpCommerce2CreateSessionStart` 返回该值，表明无可用 PlayStation Network 服务器。游戏将其解读为已登出状态并完全跳过商店检查。在 NGS 音频调度器中，`sceNgsVoiceKeyOff` 不再直接运行完成回调。取而代之，它将语音标记为 `FINALIZING` 并将清理委托给下一次 `sceNgsSystemUpdate` 调用，后者在游戏释放音频锁后于不同线程运行。互斥锁防护也被添加到 `play`、`pause` 和 `resume` 以保护调度器的内部双端队列。"
+    },
+    {
+      "type": "heading",
+      "text": "玩家在 MotorStorm RC 中将注意到的变化"
+    },
+    {
+      "type": "paragraph",
+      "text": "随着两项变更合并，MotorStorm RC 通过加载画面并到达首次启动教程，正常接受手柄输入。报告者测得在 Windows 上使用 Vulkan 后端时教程约为 27 帧/秒。教程之后的主菜单尚未验证，游戏中可见的 3D 渲染伪影作为独立问题追踪，与此卡死修复无关。"
+    },
+    {
+      "type": "heading",
+      "text": "剩余工作及如何验证修复"
+    },
+    {
+      "type": "paragraph",
+      "text": "用于商务失败的错误代码未经硬件验证；选择它是因为它匹配游戏预期的已登出条件。未来的 PSN 服务器模拟可能需要不同的代码路径。NGS 调度器变更假设游戏定期调用 `sceNgsSystemUpdate`，这是标准做法。要验证修复，在最新 Vita3K 构建上启动 PCSC00014 并确认教程出现且响应输入。回归测试应覆盖其他使用 `sceNpCommerce2` 会话创建或带有自定义音频锁的 `sceNgsVoiceKeyOff` 的标题。"
+    }
+  ]
+}

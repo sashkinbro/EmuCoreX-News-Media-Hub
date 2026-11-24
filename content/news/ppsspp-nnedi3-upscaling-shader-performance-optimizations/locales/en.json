@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimizing NNEDI3 Upscaling Shaders for Mobile Graphics Hardware",
+  "summary": "New optimizations to the NNEDI3 upscaling shaders in PPSSPP significantly improve performance by skipping redundant neural network calculations in flat image areas and improving GPU thread grouping.",
+  "heroAlt": "A close-up of a PlayStation Portable handheld console showing the screen and directional pad.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shaders",
+    "upscaling",
+    "GPU performance",
+    "mobile gaming",
+    "emulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Computational Cost of Neural Upscaling"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 is a high-quality upscaling algorithm used in PPSSPP to enhance the visual fidelity of low-resolution PSP textures. Unlike simpler bilinear or bicubic filters, NNEDI3 utilizes a neural network to predict pixel values, resulting in sharper edges and fewer artifacts. However, this quality comes at a significant computational cost, particularly on mobile hardware where GPU resources are limited. Previously, the shader would execute its full neural network logic for every pixel being processed, regardless of whether the area contained complex detail or simple flat colors. This uniform approach led to unnecessary overhead in scenes with large patches of solid color or transparency, where the complex predictions of a neural network provide little to no visual benefit over basic averaging."
+    },
+    {
+      "type": "heading",
+      "text": "Implementing Early Exits and Work Grouping"
+    },
+    {
+      "type": "paragraph",
+      "text": "To address these inefficiencies, the latest changes introduce an early-exit mechanism based on pixel variance. The shader already calculates the average and variance of surrounding pixels as part of its standard routine. By checking if the variance falls below a specific cutoff, the engine can now determine if a neural network contribution is necessary. If the variance is zero or near-zero, the shader simply returns the average color and skips the expensive neural network pass entirely. Additionally, for single-pass shaders, the developer optimized how work is grouped within tiles. Since every other row or column in these operations is often a direct copy, the shader now groups these identical operations together, allowing the GPU to handle predictions and copies more efficiently."
+    },
+    {
+      "type": "heading",
+      "text": "Real-World Performance Gains on Mobile Devices"
+    },
+    {
+      "type": "paragraph",
+      "text": "These architectural refinements translate into substantial performance improvements, especially on mobile GPUs like the PowerVR series. Testing on a Pixel 10 Pro XL demonstrated that the character status screen in Star Ocean opened significantly faster when using the optimized shaders. Specifically, the Single 2x shader saw a 3.5x speed increase, while the Single 4x shader performed 6x faster than before. Even the more complex Multi 4x variant showed a 1.25x improvement. These gains mean that players can enjoy high-quality upscaling without the stuttering or long loading times previously associated with neural filters. The optimization effectively reduces the computational weight of the shader, making high-end upscaling viable on a broader range of mobile hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and Future Hardware Compatibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "The impact of these changes is most visible when using the NNEDI3 upscaling options in the post-processing shader settings. Players can verify the improvements by monitoring frame times or observing the responsiveness of UI elements that utilize texture upscaling. While the performance jump is most dramatic on specific mobile architectures like PowerVR, the variance-based early exit provides a universal benefit across all platforms by reducing the total number of floating-point operations required for flat textures. Future development may continue to leverage automated analysis tools to find similar bottlenecks in other post-processing effects. For now, these optimizations ensure that one of the most advanced upscaling methods in the emulator is more accessible to the general user base."
+    }
+  ]
+}

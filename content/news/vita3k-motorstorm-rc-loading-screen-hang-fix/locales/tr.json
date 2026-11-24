@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, MotorStorm RC Yükleme Donmasını Ticaret ve Ses Zamanlayıcı Değişiklikleriyle Düzeltiyor",
+  "summary": "MotorStorm RC'deki iki kilitlenme kaynağı çözüldü: asla başarısız olmayan bir ticaret oturumu ve oyun hala kilidini tutarken çalışan bir ses geri çağrısı. Oyun artık eğiticiye ulaşıyor.",
+  "heroAlt": "Koyu bir yüzeyde dinlenen bir PlayStation Vita el konsolu, OLED ekranını ve çift analog kolunu gösteriyor",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulator",
+    "emülatör",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "compatibility": "Uyumluluk"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4416",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Neden oyun yükleme ekranında dondu"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014), başlangıç mağazası kontrolü sırasında dondu çünkü emüle edilen `sceNpCommerce2CreateSessionStart` hiçbir çıktı alanını doldurmadan başarı döndürdü. Oyun daha sonra başlatılmamış bir öğe sayısını okudu ve asla gelmeyecek veriyi beklerken sonsuza kadar döngüye girdi. Aynı anda, `sceNgsVoiceKeyOff` sesin bitiş geri çağrısını arayan iş parçacığında hemen çağırdığında ses alt sistemi kilitlendi. Oyun, KeyOff çağrısı etrafında kendi ses kilidini tutar ve geri çağrı aynı kilidi edinmeye çalışarak, eğitim başlayabilmeden ilerlemeyi durduran klasik bir döngüsel bekleme yarattı."
+    },
+    {
+      "type": "heading",
+      "text": "Ticaret ve ses düzeltmeleri kilitlenmeleri nasıl çözüyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ticaret modülü artık `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) tanımlıyor ve bunu `sceNpCommerce2CreateSessionStart` fonksiyonundan döndürüyor, bu da PlayStation Network sunucusunun mevcut olmadığını belirtiyor. Oyun bunu oturum kapatılmış durumu olarak yorumluyor ve mağaza kontrolünü tamamen atlıyor. NGS ses zamanlayıcısında, `sceNgsVoiceKeyOff` artık bitiş geri çağrısını doğrudan çalıştırmıyor. Bunun yerine sesi `FINALIZING` olarak işaretliyor ve temizlemeyi bir sonraki `sceNgsSystemUpdate` çağrısına devrediyor; bu çağrı oyun ses kilidini serbest bıraktıktan sonra farklı bir iş parçacığında çalışıyor. `play`, `pause` ve `resume` fonksiyonlarına da zamanlayıcının dahili deque'sunu korumak için mutex koruyucuları eklendi."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuncular MotorStorm RC'de ne fark edecek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Her iki değişiklik birleştirildikten sonra, MotorStorm RC yükleme ekranının ötesine geçiyor ve ilk açılış eğiticisine ulaşıyor, kontrolcü girişlerini normal şekilde kabul ediyor. Raporlayan, eğitim sırasında Windows'ta Vulkan arka ucu ile saniyede yaklaşık 27 kare ölçtü. Eğitimden sonraki ana menü doğrulanmadı ve oyun içinde görülen 3D işleme artefaktları, bu donma düzeltmesiyle ilgili olmayan ayrı bir sorun olarak takip ediliyor."
+    },
+    {
+      "type": "heading",
+      "text": "Kalan iş ve düzeltmeyi doğrulama yöntemi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ticaret hatası için kullanılan hata kodu donanımla doğrulanmamıştır; oyununun beklediği oturum kapatılmış koşulu ile eşleştiği için seçilmiştir. Gelecekteki PSN sunucu emülasyonu farklı bir kod yolu gerektirebilir. NGS zamanlayıcı değişikliği, oyunun `sceNgsSystemUpdate` fonksiyonunu düzenli olarak çağırdığını varsayar; bu standart bir uygulamadır. Düzeltmeyi doğrulamak için, PCSC00014'ü güncel bir Vita3K yapısında başlatın ve eğitimin göründüğünü ve girişlere yanıt verdiğini onaylayın. Regresyon testleri, `sceNpCommerce2` oturum oluşturma veya özel ses kilitleriyle `sceNgsVoiceKeyOff` kullanan diğer başlıkları kapsamalıdır."
+    }
+  ]
+}

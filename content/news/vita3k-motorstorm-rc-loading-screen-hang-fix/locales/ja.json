@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3Kがコマースとオーディオスケジューラの変更でMotorStorm RCの読み込みハングを修正",
+  "summary": "MotorStorm RCの2つのデッドロック原因が解決されました：決して失敗しないコマースセッションと、ゲームがまだロックを保持している間に実行されるオーディオコールバックです。ゲームがチュートリアルに到達するようになりました。",
+  "heroAlt": "暗い表面の上に置かれたPlayStation Vita携帯ゲーム機で、OLED画面とデュアルアナログスティックが見えています",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "エミュレータ",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "エミュレーション",
+    "compatibility": "互換性"
+  },
+  "sourceLabels": {
+    "change": "Vita3K プルリクエスト #4416",
+    "implementation": "パッチとレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ゲームが読み込み画面で停止した理由"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) は、エミュレートされた `sceNpCommerce2CreateSessionStart` が出力フィールドを一切設定せずに成功を返したため、初期ストアチェック中にフリーズしました。ゲームは未初期化のアイテム数を読み取り、決して到着しないデータを永遠に待ち続けるループに入りました。同時に、`sceNgsVoiceKeyOff` が呼び出し元のスレッドでボイスの完了コールバックを即座に呼び出したため、オーディオサブシステムがデッドロックしました。ゲームは KeyOff 呼び出しの周辺で独自のオーディオロックを保持しており、コールバックが同じロックの取得を試みたため、チュートリアルが始まる前に進行を停止させる典型的な循環待ちが発生しました。"
+    },
+    {
+      "type": "heading",
+      "text": "コマースとオーディオの修正がデッドロックを解決する仕組み"
+    },
+    {
+      "type": "paragraph",
+      "text": "コマースモジュールは `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) を定義し、これを `sceNpCommerce2CreateSessionStart` から返すようになりました。これにより PlayStation Network サーバーが利用できないことを通知します。ゲームはこれをサインアウト状態と解釈し、ストアチェックを完全にスキップします。NGS オーディオスケジューラでは、`sceNgsVoiceKeyOff` が完了コールバックを直接実行しなくなりました。代わりにボイスを `FINALIZING` 状態にマークし、クリーンアップを次の `sceNgsSystemUpdate` 呼び出しに委任します。これはゲームがオーディオロックを解放した後に別のスレッドで実行されます。また、`play`、`pause`、`resume` にミューテックスガードが追加され、スケジューラの内部 deque を保護するようになりました。"
+    },
+    {
+      "type": "heading",
+      "text": "プレイヤーが MotorStorm RC で気づくこと"
+    },
+    {
+      "type": "paragraph",
+      "text": "両方の変更がマージされたことで、MotorStorm RC は読み込み画面を通過し、初回起動時のチュートリアルに到達し、コントローラー入力を正常に受け付けるようになりました。報告者はチュートリアル中に Windows で Vulkan バックエンドを使用して約 27 フレーム/秒を測定しました。チュートリアル以降のメインメニューは検証されておらず、ゲーム内で見える 3D レンダリングアーティファクトは、このハング修正とは無関係な別の問題として追跡されています。"
+    },
+    {
+      "type": "heading",
+      "text": "残作業と修正の検証方法"
+    },
+    {
+      "type": "paragraph",
+      "text": "コマース失敗に使用されるエラーコードはハードウェアで検証されたものではなく、ゲームが期待するサインアウト条件と一致するため選ばれました。将来的な PSN サーバーエミュレーションでは異なるコードパスが必要になる可能性があります。NGS スケジューラの変更は、ゲームが `sceNgsSystemUpdate` を定期的に呼び出すことを前提としていますが、これは標準的な慣習です。修正を検証するには、最新の Vita3K ビルドで PCSC00014 を起動し、チュートリアルが表示され入力に応答することを確認してください。回帰テストでは、`sceNpCommerce2` セッション作成やカスタムオーディオロックを伴う `sceNgsVoiceKeyOff` を使用する他のタイトルも対象にする必要があります。"
+    }
+  ]
+}

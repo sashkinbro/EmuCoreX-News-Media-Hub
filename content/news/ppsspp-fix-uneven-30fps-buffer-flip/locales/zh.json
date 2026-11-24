@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 修复了游戏在缓冲区半区切换时 30 fps 帧率不稳的问题",
+  "summary": "一个帧率平滑（frame-pacing）错误导致《Silent Hill: Shattered Memories》等游戏在 30 fps 下出现卡顿，原因是模拟器将一个缓冲区的两半视为独立的帧。该修复方案通过计算实际的帧缓冲区切换次数，而非依赖脏标记（dirty flags）来解决此问题。",
+  "heroAlt": "一台银色的 PlayStation Portable 手持设备放置在深色表面上，其宽屏 LCD 在柔和的室内光线下显示着暂停的游戏菜单。",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing",
+    "帧率平滑",
+    "30 fps",
+    "framebuffer",
+    "帧缓冲区",
+    "Silent Hill Shattered Memories",
+    "寂静岭：破碎记忆",
+    "emulation accuracy",
+    "模拟精度"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "为什么 30 fps 限制在某些游戏中会出现卡顿"
+    },
+    {
+      "type": "paragraph",
+      "text": "《Silent Hill: Shattered Memories》及类似游戏将每一帧绘制到一个 1024 像素宽缓冲区的其中一半，然后在下一次 vblank 时将显示指针切换到另一半。两半部分共享同一个 VirtualFramebuffer 对象，但只有左半部分与其地址完全匹配。右半部分在每次 vblank 时都会呈现，而左半部分则依赖于一个已被下一帧绘制调用清除的脏标记（dirty flag）。因此，在启用 30 fps 限制器时，帧会停留一个 vblank，然后是三个，接着又是一个，导致 FPS 计数器上出现明显的 45/45 读数以及不均匀的运动感。在 60 fps 下，快速的半区切换掩盖了这个问题，因为每个 vblank 都能接收到一个新的半区缓冲区。"
+    },
+    {
+      "type": "heading",
+      "text": "计算真实的帧缓冲区切换而非依赖脏标记"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁修改了帧率平滑逻辑，使得在同一个后备缓冲区内，任何显示顶部地址（display top-address）的改变都被视为新的一帧。一个新的计数器 framebufChanges 仅在 sceDisplaySetFramebuf 接收到不同地址时才会增加；重新设置相同的地址（某些游戏在每个 vblank 都会这样做）则会被忽略。FramebufferManager 现在会跟踪 displaySwitched_ 和 displaySwitchedReally_ 标志，并在每次切换时重置检查计数器。GPUCommonHW 的 FramebufferDirty() 和 FramebufferReallyDirty() 现在都委托给一个新的 ConsumeDisplayDirty() 方法，该方法会消耗相应的标志，确保定速器（pacer）在游戏实际呈现新帧时能准确地看到它。"
+    },
+    {
+      "type": "heading",
+      "text": "玩家在实际使用中会注意到什么"
+    },
+    {
+      "type": "paragraph",
+      "text": "当启用限制器时，那些交替使用缓冲区一半的游戏现在能保持稳定的 30 fps，屏幕上的计数器会显示 30/30，而不是之前的 45/45。原本就在 30 fps 或以下运行的游戏不受影响，而 60 fps 的游戏则像以前一样在每个 vblank 进行切换。唯一剩下的盲点是那些从不切换显示指针而是重叠其显示列表（display lists）的游戏；这类游戏仍然会避开限制器。针对广泛游戏集的存档状态回归测试，以及现有的单元测试、pspautotests 和 frametests，在应用此更改后均已通过。"
+    },
+    {
+      "type": "heading",
+      "text": "Headless 帧统计现在可以显示游戏自身的帧率"
+    },
+    {
+      "type": "paragraph",
+      "text": "Headless 运行器的 --frame-stats 输出增加了一列 pageFlipsPerSecond，它报告了游戏每模拟秒切换到不同帧缓冲区地址的次数。这反映了游戏内部的帧率，而现有的 flipsPerSecond 列显示的是有多少 vblank 有新内容呈现——即 GUI FPS 计数器显示的数字。开发者现在可以通过比较这两列来验证 30 fps 限制器是否正常工作：当限制器激活时，pageFlipsPerSecond 应保持在 30 左右，而 flipsPerSecond 则与限制后的速率相匹配。"
+    }
+  ]
+}

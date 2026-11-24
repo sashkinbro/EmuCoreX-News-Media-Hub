@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP corrige ritmo irregular de 30 fps quando jogos alternam entre metades do buffer",
+  "summary": "Um bug de ritmo de quadros fazia jogos como Silent Hill: Shattered Memories travarem a 30 fps porque o emulador tratava duas metades de um buffer como quadros separados. A correção conta trocas reais de framebuffer em vez de depender de flags de sujeira.",
+  "heroAlt": "Um portátil PlayStation Portable prateado repousando sobre uma superfície escura, sua tela LCD widescreen exibindo um menu de jogo pausado sob iluminação interna suave.",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing",
+    "30 fps",
+    "framebuffer",
+    "Silent Hill Shattered Memories",
+    "emulation accuracy",
+    "ritmo de quadros",
+    "30 quadros por segundo",
+    "precisão de emulação"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Pull request #23160 do PPSSPP",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por que o limite de 30 fps travava em certos jogos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories e títulos semelhantes desenham cada quadro em uma metade de um único buffer de 1024 pixels de largura, depois invertem o ponteiro de exibição para a outra metade no próximo vblank. Ambas as metades compartilham o mesmo objeto VirtualFramebuffer, mas apenas a metade esquerda correspondia exatamente ao seu endereço. A metade direita era apresentada a cada vblank, enquanto a metade esquerda dependia de uma flag de sujeira que as chamadas de desenho do próximo quadro já haviam limpo. Com o limitador de 30 fps ativo, os quadros permaneciam por um vblank, depois três, depois um novamente, produzindo uma leitura visível de 45/45 no contador de FPS e movimento irregular. A 60 fps, as trocas rápidas de metade mascaravam o problema porque cada vblank recebia um meio-buffer novo."
+    },
+    {
+      "type": "heading",
+      "text": "Contando trocas reais de framebuffer em vez de flags de sujeira"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch altera a lógica de ritmo de quadros para que qualquer mudança do endereço superior de exibição dentro do mesmo buffer de apoio conte como um novo quadro. Um novo contador, framebufChanges, incrementa apenas quando sceDisplaySetFramebuf recebe um endereço diferente; redefinir o mesmo endereço (o que alguns jogos fazem a cada vblank) é ignorado. O FramebufferManager agora rastreia as flags displaySwitched_ e displaySwitchedReally_ e reinicia um contador de verificação a cada troca. FramebufferDirty() e FramebufferReallyDirty() do GPUCommonHW agora delegam para um novo método ConsumeDisplayDirty() que consome a flag apropriada, garantindo que o pacer veja um quadro novo exatamente quando o jogo realmente apresenta um."
+    },
+    {
+      "type": "heading",
+      "text": "O que os jogadores notarão na prática"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jogos que alternam metades de um buffer agora mantêm 30 fps estáveis quando o limitador está ativado, mostrando 30/30 no contador na tela em vez do 45/45 anterior. Títulos que já rodavam a 30 fps ou menos não são afetados, e jogos de 60 fps continuam a inverter a cada vblank como antes. O único ponto cego restante é um jogo que nunca inverte o ponteiro de exibição e, em vez disso, sobrepõe suas listas de exibição; esse título ainda escapa do limitador. Testes de regressão de savestate em um amplo conjunto de jogos, além de testes de unidade existentes, pspautotests e frametests, todos passam com a mudança."
+    },
+    {
+      "type": "heading",
+      "text": "Estatísticas de quadro headless agora expõem a taxa de quadros do próprio jogo"
+    },
+    {
+      "type": "paragraph",
+      "text": "A saída --frame-stats do runner headless ganha uma segunda coluna, pageFlipsPerSecond, que relata quantas vezes por segundo emulado o jogo trocou para um endereço de framebuffer diferente. Isso reflete a taxa de quadros interna do jogo, enquanto a coluna existente flipsPerSecond mostra quantos vblanks tinham conteúdo novo para apresentar — o número que o contador de FPS da GUI exibe. Desenvolvedores agora podem verificar se o limitador de 30 fps está funcionando comparando as duas colunas: quando o limitador está ativo, pageFlipsPerSecond deve permanecer próximo a 30 enquanto flipsPerSecond corresponde à taxa limitada."
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP memperbaiki pacing 30 fps yang tidak merata saat game beralih antara separuh buffer",
+  "summary": "Bug frame-pacing menyebabkan game seperti Silent Hill: Shattered Memories stutter di 30 fps karena emulator memperlakukan dua separuh satu buffer sebagai frame terpisah. Perbaikan ini menghitung perpindahan framebuffer aktual alih-alih mengandalkan dirty flag.",
+  "heroAlt": "Sebuah konsol PlayStation Portable berwarna perak beristirahat di permukaan gelap, layar LCD lebarnya menampilkan menu game yang dijeda di bawah pencahayaan ruangan yang lembut.",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing",
+    "pacing frame",
+    "30 fps",
+    "framebuffer",
+    "Silent Hill Shattered Memories",
+    "emulation accuracy",
+    "akurasi emulasi"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23160",
+    "implementation": "Patch dan review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa batas 30 fps stutter pada game tertentu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories dan judul serupa menggambar setiap frame ke satu separuh dari buffer tunggal lebar 1024 piksel, lalu memindahkan pointer tampilan ke separuh lain pada vblank berikutnya. Kedua separuh berbagi objek VirtualFramebuffer yang sama, namun hanya separuh kiri yang cocok dengan alamatnya persis. Separuh kanan ditampilkan pada setiap vblank, sedangkan separuh kiri bergantung pada dirty flag yang sudah dibersihkan oleh panggilan draw frame berikutnya. Dengan limiter 30 fps aktif, frame tersebut bertahan selama satu vblank, lalu tiga, lalu satu lagi, menghasilkan bacaan 45/45 yang terlihat pada counter FPS dan gerakan tidak merata. Pada 60 fps, perpindahan separuh yang cepat menyembunyikan masalah karena setiap vblank menerima separuh-buffer baru."
+    },
+    {
+      "type": "heading",
+      "text": "Menghitung perpindahan framebuffer nyata alih-alih dirty flag"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini mengubah logika frame-pacing sehingga setiap perubahan alamat atas tampilan di dalam backing buffer yang sama dihitung sebagai frame baru. Counter baru, framebufChanges, hanya bertambah ketika sceDisplaySetFramebuf menerima alamat yang berbeda; pengaturan ulang alamat yang sama (yang dilakukan beberapa game setiap vblank) diabaikan. FramebufferManager kini melacak flag displaySwitched_ dan displaySwitchedReally_ serta mereset counter pengecekan pada setiap perpindahan. FramebufferDirty() dan FramebufferReallyDirty() milik GPUCommonHW keduanya mendelegasikan ke metode ConsumeDisplayDirty() baru yang mengonsumsi flag yang sesuai, memastikan pacer melihat frame baru tepat saat game benar-benar mempresentasikannya."
+    },
+    {
+      "type": "heading",
+      "text": "Apa yang akan dirasakan pemain dalam praktiknya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game yang bergantian menggunakan separuh buffer kini menahan 30 fps stabil saat limiter aktif, menampilkan 30/30 pada counter di layar alih-alih 45/45 sebelumnya. Judul yang sudah berjalan di 30 fps atau di bawahnya tidak terpengaruh, dan game 60 fps terus flip setiap vblank seperti sebelumnya. Satu-satunya buta tersisa adalah game yang tidak pernah memflip pointer tampilan dan malah menumpangkan display list-nya; judul tersebut tetap menghindari limiter. Pengujian regresi savestate di seluruh set game yang luas, ditambah unit test existing, pspautotests, dan frametests, semuanya lulus dengan perubahan ini."
+    },
+    {
+      "type": "heading",
+      "text": "Statistik frame headless kini mengekspos frame rate game itu sendiri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Output --frame-stats runner headless mendapatkan kolom kedua, pageFlipsPerSecond, yang melaporkan berapa kali per detik yang diemulasi game beralih ke alamat framebuffer yang berbeda. Ini mencerminkan frame rate internal game, sedangkan kolom flipsPerSecond yang sudah ada menunjukkan berapa vblank yang memiliki konten baru untuk ditampilkan—angka yang ditampilkan counter FPS GUI. Pengembang kini dapat memverifikasi bahwa limiter 30 fps berfungsi dengan membandingkan kedua kolom: saat limiter aktif, pageFlipsPerSecond harus tetap di sekitar 30 sementara flipsPerSecond cocok dengan rate yang dibatasi."
+    }
+  ]
+}

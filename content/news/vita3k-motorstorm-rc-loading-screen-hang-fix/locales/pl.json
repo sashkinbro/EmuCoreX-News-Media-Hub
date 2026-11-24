@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K naprawia zawieszenie ładowania MotorStorm RC dzięki zmianom w handlu i planistie audio",
+  "summary": "Rozwiązano dwa źródła zakleszczenia w MotorStorm RC: sesję handlową, która nigdy nie kończyła się błędem, oraz wywołanie zwrotne audio, które uruchamiało się, gdy gra wciąż trzymała swoją blokadę. Gra teraz dociera do samouczka.",
+  "heroAlt": "Konsola przenośna PlayStation Vita spoczywająca na ciemnej powierzchni, pokazująca swój ekran OLED i dwa analogowe suwaki",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulator",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "compatibility": "Kompatybilność"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4416",
+    "implementation": "Poprawka i przegląd"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dlaczego gra zatrzymała się na ekranie ładowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) zamroził się podczas początkowej kontroli sklepu, ponieważ emulowana funkcja `sceNpCommerce2CreateSessionStart` zwróciła sukces bez wypełnienia żadnych pól wyjściowych. Gra następnie odczytała nieinicjalizowaną liczbę elementów i zapętliła się na zawsze, oczekując danych, które nigdy nie przyjdą. Jednocześnie podsystem audio zakleszczał się, gdy `sceNgsVoiceKeyOff` wywołało zwrotne zakończenia głosu natychmiast w wątku wywołującego. Gra trzyma własną blokadę audio wokół wywołania KeyOff, a wywołanie zwrotne próbowało zdobyć tę samą blokadę, tworząc klasyczne cykliczne oczekiwanie, które zatrzymało postęp zanim samouczek mógł się rozpocząć."
+    },
+    {
+      "type": "heading",
+      "text": "Jak naprawy handlu i audio rozwiązują zakleszczenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Moduł handlu definiuje teraz `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) i zwraca go z `sceNpCommerce2CreateSessionStart`, sygnalizując, że serwer PlayStation Network jest niedostępny. Gra interpretuje to jako stan wylogowania i całkowicie pomija kontrolę sklepu. W planiscie audio NGS, `sceNgsVoiceKeyOff` nie uruchamia już bezpośrednio wywołania zwrotnego zakończenia. Zamiast tego oznacza głos jako `FINALIZING` i deleguje czyszczenie do następnego wywołania `sceNgsSystemUpdate`, które działa w innym wątku po tym, jak gra zwolni swoją blokadę audio. Dodano również straże mutex do `play`, `pause` i `resume`, aby chronić wewnętrzną kolejkę dwukierunkową planisty."
+    },
+    {
+      "type": "heading",
+      "text": "Co gracze zauważą w MotorStorm RC"
+    },
+    {
+      "type": "paragraph",
+      "text": "Po scaleniu obu zmian, MotorStorm RC przechodzi ekran ładowania i osiąga samouczek przy pierwszym uruchomieniu, normalnie przyjmując dane wejściowe z kontrolera. Zgłaszający zmierzył około 27 klatek na sekundę na Windows z backendem Vulkan podczas samouczka. Główne menu po samouczku nie zostało zweryfikowane, a widoczne w grze artefakty renderowania 3D są śledzone jako oddzielny problem niezwiązany z tą naprawą zawieszenia."
+    },
+    {
+      "type": "heading",
+      "text": "Pozostała praca i jak zweryfikować naprawę"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kod błędu używany dla błędu handlu nie jest zweryfikowany sprzętowo; wybrano go, ponieważ odpowiada on warunkowi wylogowania, który gra oczekuje. Przyszła emulacja serwera PSN może wymagać innej ścieżki kodu. Zmiana w planiscie NGS zakłada, że gra regularnie wywołuje `sceNgsSystemUpdate`, co jest standardową praktyką. Aby zweryfikować naprawę, uruchom PCSC00014 na nowej wersji Vita3K i potwierdź, że samouczek pojawia się i reaguje na dane wejściowe. Testy regresji powinny obejmować inne tytuły korzystające z tworzenia sesji `sceNpCommerce2` lub `sceNgsVoiceKeyOff` z niestandardowymi blokadami audio."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-vulkan-surface-cast-synchronization-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Řešení grafického poškození na Steam Deck a GPU AMD",
+  "summary": "Nová oprava synchronizace pro Vita3K řeší duhový šum a artefakty typu ghosting na Steam Deck a hardwaru AMD, které byly způsobeny nesprávnými paměťovými bariérami Vulkan při přetypování formátu textur.",
+  "heroAlt": "Detailní záběr na kapesní konzoli PlayStation Vita zobrazující obrazovku a ovládací tlačítka.",
+  "searchKeywords": [
+    "Vita3K",
+    "Steam Deck",
+    "Vulkan",
+    "AMD RADV",
+    "Uncharted Golden Abyss",
+    "oprava grafiky",
+    "přesnost emulace",
+    "graphics fix",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4342",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifikace zdroje vizuálních artefaktů"
+    },
+    {
+      "type": "paragraph",
+      "text": "V určitých titulech pro PlayStation Vita, jako je Uncharted: Golden Abyss, se hráči na Steam Deck a dalších systémech Linux s hardwarem AMD setkávali se závažnými grafickými anomáliemi. Tyto problémy se projevovaly jako celoobrazovkový duhový šum nebo ghosting, kdy na obrazovce během pohybu kamery zůstávaly zbytky předchozích snímků. Hlavní příčina byla identifikována v rámci zpracování přetypování povrchů (surface casts) ve Vulkan rendereru. Když se hra pokusí vzorkovat render target pomocí formátu textury jiné velikosti – proces známý jako typeless copy – emulátor musí provést komplexní datový přechod. Bez řádné synchronizace se hardware pokusil číst data dříve, než byla plně zapsána, což vedlo k zobrazení neinicializované paměti uživateli."
+    },
+    {
+      "type": "heading",
+      "text": "Technická synchronizace ve Vulkan pipeline"
+    },
+    {
+      "type": "paragraph",
+      "text": "Technický rozbor odhaluje race condition ve funkci pro získávání barev v mezipaměti povrchů (surface cache). Emulátor využívá přechodový buffer k přesunu dat ze zdrojového obrázku do cílové textury, přičemž provádí kopii z obrázku do bufferu a následně kopii z tohoto bufferu do nového obrázku. Na ovladači RADV používaném v Steam Deck jsou tyto operace často odesílány jako překrývající se výpočetní úlohy. Protože mezi těmito dvěma kopiemi neexistovaly žádné paměťové bariéry Vulkan, druhá operace často začala číst z přechodového bufferu, zatímco první do něj stále zapisovala. Tento nedostatek serializace nutil ovladač zpracovávat neúplná nebo zastaralá data, což vedlo k pozorovanému poškození obrazu."
+    },
+    {
+      "type": "heading",
+      "text": "Implementace robustních paměťových bariér"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato aktualizace zavádí nezbytné paměťové bariéry, které zajišťují, že každý krok procesu přetypování povrchu bude dokončen dříve, než začne další. Kromě primární synchronizace kopírování mezi buffery řeší oprava také dvě další chybějící závislosti. Zajišťuje, že zápisy barev z dřívějších renderovacích průchodů jsou zpřístupněny pro fázi přenosu a správně převádí přetypovanou texturu do rozvržení vzorkovaného obrázku. Pro hráče to znamená výrazné zvýšení stability u titulů, které spoléhají na tyto specifické renderovací techniky. Blikání a vizuální šum, kvůli kterým byla hra Uncharted: Golden Abyss na kapesních zařízeních s Linuxem téměř nehratelná, jsou nyní vyřešeny, což poskytuje mnohem čistší a přesnější vizuální zážitek."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a hardwarová kompatibilita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ověření této opravy bylo provedeno na hardwaru Steam Deck OLED s využitím ovladače RADV. Rozsáhlé testování ukázalo, že zatímco předchozí master build trpěl poškozením téměř při každém spuštění, implementace těchto bariér snížila chybovost na nulu napříč několika testovacími cykly. Vývojáři také potvrdili, že tato změna je nezávislá na jiných nedávných opravách vykreslování, jako jsou ty, které řeší poškození při vysokém rozlišení. I když se tato konkrétní změna zaměřuje na synchronizaci na hardwaru AMD, lepší dodržování specifikace Vulkan prospívá celkové architektuře emulátoru. Hráči by měli zaznamenat okamžitá zlepšení v konzistenci vykreslování bez jakéhokoli negativního dopadu na výkon nebo kompatibilitu se stávajícími funkcemi škálování rozlišení."
+    }
+  ]
+}

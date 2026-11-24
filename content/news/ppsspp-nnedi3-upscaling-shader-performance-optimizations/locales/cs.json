@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimalizace NNEDI3 upscaling shaderů pro mobilní grafický hardware",
+  "summary": "Nové optimalizace NNEDI3 upscaling shaderů v PPSSPP výrazně zlepšují výkon díky přeskakování redundantních výpočtů neuronové sítě v plochých oblastech obrazu a vylepšení seskupování GPU vláken.",
+  "heroAlt": "Detail kapesní konzole PlayStation Portable zobrazující obrazovku a směrový ovladač.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shadery",
+    "upscaling",
+    "převzorkování",
+    "GPU výkon",
+    "mobilní hraní",
+    "emulace"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Výpočetní náročnost neuronového upscalingu"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 je vysoce kvalitní algoritmus pro upscaling používaný v PPSSPP ke zvýšení vizuální věrnosti textur PSP v nízkém rozlišení. Na rozdíl od jednodušších bilineárních nebo bikubických filtrů využívá NNEDI3 neuronovou síť k predikci hodnot pixelů, což vede k ostřejším hranám a menšímu množství artefaktů. Tato kvalita je však vykoupena značnou výpočetní náročností, zejména na mobilním hardwaru, kde jsou zdroje GPU omezené. Dříve shader prováděl svou kompletní logiku neuronové sítě pro každý zpracovávaný pixel, bez ohledu na to, zda oblast obsahovala složité detaily nebo jednoduché ploché barvy. Tento jednotný přístup vedl k zbytečné režii ve scénách s velkými plochami jednolité barvy nebo průhlednosti, kde složité predikce neuronové sítě nepřinášejí oproti základnímu průměrování téměř žádný vizuální přínos."
+    },
+    {
+      "type": "heading",
+      "text": "Implementace předčasného ukončení a seskupování práce"
+    },
+    {
+      "type": "paragraph",
+      "text": "K vyřešení těchto neefektivit zavádějí nejnovější změny mechanismus předčasného ukončení založený na rozptylu pixelů. Shader již jako součást své standardní rutiny vypočítává průměr a rozptyl okolních pixelů. Kontrolou, zda rozptyl klesne pod určitou mez, může nyní engine určit, zda je příspěvek neuronové sítě nutný. Pokud je rozptyl nulový nebo blízký nule, shader jednoduše vrátí průměrnou barvu a zcela přeskočí náročný průchod neuronovou sítí. U shaderů s jedním průchodem navíc vývojář optimalizoval způsob seskupování práce v rámci dlaždic. Protože každý druhý řádek nebo sloupec v těchto operacích je často přímou kopií, shader nyní tyto identické operace seskupuje dohromady, což umožňuje GPU efektivněji zpracovávat predikce a kopie."
+    },
+    {
+      "type": "heading",
+      "text": "Reálné zvýšení výkonu na mobilních zařízeních"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato architektonická vylepšení se promítají do podstatného zvýšení výkonu, zejména u mobilních GPU, jako je řada PowerVR. Testování na Pixel 10 Pro XL ukázalo, že obrazovka stavu postavy ve hře Star Ocean se při použití optimalizovaných shaderů otevírala výrazně rychleji. Konkrétně shader Single 2x zaznamenal 3,5násobné zrychlení, zatímco shader Single 4x fungoval 6krát rychleji než dříve. I složitější varianta Multi 4x vykázala 1,25násobné zlepšení. Tato vylepšení znamenají, že si hráči mohou užívat vysoce kvalitní upscaling bez zadrhávání nebo dlouhých načítacích časů, které byly dříve s neuronovými filtry spojeny. Optimalizace efektivně snižuje výpočetní zátěž shaderu, díky čemuž je špičkový upscaling životaschopný na širší škále mobilního hardwaru."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a budoucí kompatibilita hardwaru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dopad těchto změn je nejvíce patrný při použití možností upscalingu NNEDI3 v nastavení post-processingu shaderů. Hráči mohou zlepšení ověřit sledováním času snímků nebo pozorováním odezvy prvků uživatelského rozhraní, které využívají upscaling textur. I když je skok ve výkonu nejdramatičtější u specifických mobilních architektur, jako je PowerVR, předčasné ukončení založené na rozptylu poskytuje univerzální výhodu napříč všemi platformami tím, že snižuje celkový počet operací s plovoucí řádovou čárkou potřebných pro ploché textury. Budoucí vývoj může nadále využívat automatizované analytické nástroje k hledání podobných úzkých hrdel u dalších efektů post-processingu. Prozatím tyto optimalizace zajišťují, že jedna z nejpokročilejších metod upscalingu v emulátoru je přístupnější běžné uživatelské základně."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-vulkan-surface-cast-synchronization-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Resolving Graphical Corruption on Steam Deck and AMD GPUs",
+  "summary": "A new synchronization fix for Vita3K addresses rainbow noise and ghosting artifacts on Steam Deck and AMD hardware caused by improper Vulkan memory barriers during texture format casting.",
+  "heroAlt": "A close-up of a PlayStation Vita handheld console showing the screen and control buttons.",
+  "searchKeywords": [
+    "Vita3K",
+    "Steam Deck",
+    "Vulkan",
+    "AMD RADV",
+    "Uncharted Golden Abyss",
+    "graphics fix",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4342",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifying the Source of Visual Artifacts"
+    },
+    {
+      "type": "paragraph",
+      "text": "In certain PlayStation Vita titles like Uncharted: Golden Abyss, players on Steam Deck and other AMD-based Linux systems encountered severe graphical anomalies. These issues manifested as full-screen rainbow noise or ghosting, where remnants of previous frames lingered on screen during camera movement. The root cause was identified within the Vulkan renderer's handling of surface casts. When the game attempts to sample a render target using a texture format of a different size—a process known as a typeless copy—the emulator must perform a complex data transition. Without proper synchronization, the hardware attempted to read data before it was fully written, leading to uninitialized memory being displayed to the user."
+    },
+    {
+      "type": "heading",
+      "text": "Technical Synchronization in the Vulkan Pipeline"
+    },
+    {
+      "type": "paragraph",
+      "text": "The technical breakdown reveals a race condition within the surface cache's color retrieval function. The emulator utilizes a transition buffer to move data from the source image to the destination texture, executing a copy from the image to a buffer followed by a copy from that buffer to the new image. On the RADV driver used by the Steam Deck, these operations are often dispatched as overlapping compute tasks. Because there were no Vulkan memory barriers between these two copies, the second operation frequently began reading from the transition buffer while the first was still writing to it. This lack of serialization forced the driver to process incomplete or stale data, resulting in the observed corruption."
+    },
+    {
+      "type": "heading",
+      "text": "Implementing Robust Memory Barriers"
+    },
+    {
+      "type": "paragraph",
+      "text": "This update introduces the necessary memory barriers to ensure that each step of the surface casting process completes before the next begins. Beyond the primary buffer-to-copy synchronization, the fix also addresses two other missing dependencies. It ensures that color writes from earlier render passes are made available to the transfer stage and correctly transitions the casted texture to a sampled image layout. For players, this means a significant stability boost in titles that rely on these specific rendering techniques. The flickering and visual noise that previously made Uncharted: Golden Abyss nearly unplayable on handheld Linux devices are now resolved, providing a much cleaner and more accurate visual experience."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and Hardware Compatibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verification of this fix was conducted on Steam Deck OLED hardware using the RADV driver. Extensive testing showed that while the previous master build suffered from corruption in nearly every run, the implementation of these barriers reduced the error rate to zero across multiple test cycles. Developers also confirmed that this change is independent of other recent rendering fixes, such as those addressing corruption at high resolutions. While this specific change targets synchronization on AMD hardware, the improved adherence to the Vulkan specification benefits the emulator's overall architecture. Players should see immediate improvements in rendering consistency without any negative impact on performance or compatibility with existing resolution scaling features."
+    }
+  ]
+}

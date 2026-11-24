@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-vulkan-surface-cast-synchronization-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Steam Deck ve AMD GPU'larda Grafiksel Bozulmaların Giderilmesi",
+  "summary": "Vita3K için geliştirilen yeni bir senkronizasyon düzeltmesi, doku formatı dönüştürme sırasındaki hatalı Vulkan bellek bariyerlerinden kaynaklanan Steam Deck ve AMD donanımlarındaki gökkuşağı gürültüsü ve hayalet görüntü sorunlarını çözüyor.",
+  "heroAlt": "Ekranı ve kontrol düğmeleri görünen bir PlayStation Vita el konsolunun yakın çekimi.",
+  "searchKeywords": [
+    "Vita3K",
+    "Steam Deck",
+    "Vulkan",
+    "AMD RADV",
+    "Uncharted Golden Abyss",
+    "graphics fix",
+    "grafik düzeltmesi",
+    "emulation accuracy",
+    "emülasyon doğruluğu"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4342",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Görsel Hataların Kaynağını Belirleme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uncharted: Golden Abyss gibi belirli PlayStation Vita oyunlarında, Steam Deck ve diğer AMD tabanlı Linux sistemlerini kullanan oyuncular ciddi grafiksel anormalliklerle karşılaştı. Bu sorunlar, tam ekran gökkuşağı gürültüsü veya kamera hareketi sırasında önceki karelerden kalan kalıntıların ekranda belirdiği hayalet görüntüler şeklinde ortaya çıkıyordu. Temel neden, Vulkan oluşturucunun (renderer) yüzey dönüştürme işlemlerini ele alma biçiminde tespit edildi. Oyun, farklı boyuttaki bir doku formatını kullanarak bir render hedefini örneklemeye çalıştığında (tipik olmayan kopyalama olarak bilinen bir işlem), emülatörün karmaşık bir veri geçişi gerçekleştirmesi gerekir. Uygun bir senkronizasyon olmadığında, donanım veriyi tamamen yazılmadan önce okumaya çalışıyor ve bu da başlatılmamış belleğin kullanıcıya görüntülenmesine yol açıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Vulkan İşlem Hattında Teknik Senkronizasyon"
+    },
+    {
+      "type": "paragraph",
+      "text": "Teknik analiz, yüzey önbelleğinin renk alma işlevindeki bir yarış durumunu (race condition) ortaya koyuyor. Emülatör, verileri kaynak görüntüden hedef dokuya taşımak için bir geçiş arabelleği kullanır; görüntüden arabelleğe bir kopyalama ve ardından bu arabellekten yeni görüntüye bir kopyalama gerçekleştirir. Steam Deck'te kullanılan RADV sürücüsünde, bu işlemler genellikle çakışan hesaplama görevleri olarak gönderilir. Bu iki kopyalama arasında Vulkan bellek bariyerleri bulunmadığından, ikinci işlem genellikle ilki hala yazma yaparken geçiş arabelleğinden okumaya başlıyordu. Bu serileştirme eksikliği, sürücüyü eksik veya eski verileri işlemeye zorlayarak gözlemlenen bozulmaya neden oluyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Güçlü Bellek Bariyerlerinin Uygulanması"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu güncelleme, yüzey dönüştürme sürecinin her adımının bir sonrakine geçilmeden önce tamamlanmasını sağlamak için gerekli bellek bariyerlerini getiriyor. Birincil arabellekten kopyalamaya senkronizasyonunun ötesinde, düzeltme eksik olan iki bağımlılığı daha ele alıyor. Önceki render geçişlerinden gelen renk yazımlarının transfer aşaması için kullanılabilir olmasını sağlıyor ve dönüştürülen dokuyu doğru şekilde örneklenmiş bir görüntü düzenine geçiriyor. Oyuncular için bu, bu özel render tekniklerine dayanan oyunlarda önemli bir kararlılık artışı anlamına geliyor. Uncharted: Golden Abyss'i el tipi Linux cihazlarda neredeyse oynanamaz hale getiren titreme ve görsel gürültü artık çözüldü; bu da çok daha temiz ve daha doğru bir görsel deneyim sağlıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Donanım Uyumluluğu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu düzeltmenin doğrulaması, RADV sürücüsü kullanılarak Steam Deck OLED donanımı üzerinde gerçekleştirildi. Kapsamlı testler, önceki ana sürümün neredeyse her çalışmada bozulma yaşadığını, ancak bu bariyerlerin uygulanmasının hata oranını birden fazla test döngüsünde sıfıra indirdiğini gösterdi. Geliştiriciler ayrıca bu değişikliğin, yüksek çözünürlüklerdeki bozulmaları ele alanlar gibi diğer yakın tarihli render düzeltmelerinden bağımsız olduğunu doğruladı. Bu özel değişiklik AMD donanımındaki senkronizasyonu hedeflese de, Vulkan spesifikasyonuna daha iyi uyum sağlanması emülatörün genel mimarisine fayda sağlıyor. Oyuncular, performans veya mevcut çözünürlük ölçeklendirme özellikleriyle uyumluluk üzerinde herhangi bir olumsuz etki olmaksızın render tutarlılığında anında iyileşmeler görmelidir."
+    }
+  ]
+}

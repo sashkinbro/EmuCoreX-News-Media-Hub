@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corrige el bloqueo de carga de MotorStorm RC con cambios en comercio y programador de audio",
+  "summary": "Se resuelven dos fuentes de interbloqueo en MotorStorm RC: una sesión de comercio que nunca fallaba y una devolución de llamada de audio que se ejecutaba mientras el juego aún mantenía su bloqueo. El juego ahora llega al tutorial.",
+  "heroAlt": "Una consola portátil PlayStation Vita reposando sobre una superficie oscura, mostrando su pantalla OLED y palancas analógicas duales",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulador",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "compatibility": "Compatibilidad"
+  },
+  "sourceLabels": {
+    "change": "Solicitud de extracción #4416 de Vita3K",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por qué el juego se bloqueaba en la pantalla de carga"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) se congelaba durante su comprobación inicial de la tienda porque la función emulada `sceNpCommerce2CreateSessionStart` devolvía éxito sin rellenar ningún campo de salida. El juego leía entonces un recuento de elementos sin inicializar y entraba en un bucle infinito esperando datos que nunca llegarían. Al mismo tiempo, el subsistema de audio sufría un interbloqueo cuando `sceNgsVoiceKeyOff` invocaba la devolución de llamada de finalización de la voz inmediatamente en el hilo del llamador. El juego mantiene su propio bloqueo de audio alrededor de la llamada KeyOff, y la devolución de llamada intentaba adquirir el mismo bloqueo, creando una espera circular clásica que detenía el progreso antes de que pudiera comenzar el tutorial."
+    },
+    {
+      "type": "heading",
+      "text": "Cómo las correcciones de comercio y audio resuelven los interbloqueos"
+    },
+    {
+      "type": "paragraph",
+      "text": "El módulo de comercio ahora define `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) y lo devuelve desde `sceNpCommerce2CreateSessionStart`, indicando que no hay ningún servidor de PlayStation Network disponible. El juego interpreta esto como un estado de sesión no iniciada y omite por completo la comprobación de la tienda. En el programador de audio NGS, `sceNgsVoiceKeyOff` ya no ejecuta la devolución de llamada de finalización directamente. En su lugar, marca la voz como `FINALIZING` y delega la limpieza a la siguiente llamada a `sceNgsSystemUpdate`, que se ejecuta en un hilo diferente después de que el juego haya liberado su bloqueo de audio. También se añadieron guardas de mutex a `play`, `pause` y `resume` para proteger la cola de doble extremo interna del programador."
+    },
+    {
+      "type": "heading",
+      "text": "Qué notarán los jugadores en MotorStorm RC"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con ambos cambios fusionados, MotorStorm RC avanza más allá de la pantalla de carga y llega al tutorial de primer arranque, aceptando la entrada del mando normalmente. El informador midió aproximadamente 27 fotogramas por segundo en Windows con el backend Vulkan durante el tutorial. El menú principal más allá del tutorial no ha sido validado, y los artefactos de renderizado 3D visibles en el juego se rastrean como un problema separado no relacionado con esta corrección del bloqueo."
+    },
+    {
+      "type": "heading",
+      "text": "Trabajo restante y cómo verificar la corrección"
+    },
+    {
+      "type": "paragraph",
+      "text": "El código de error utilizado para el fallo de comercio no está verificado por hardware; se eligió porque coincide con la condición de sesión no iniciada que el juego espera. La futura emulación de servidores PSN puede requerir una ruta de código diferente. El cambio en el programador NGS asume que el juego llama a `sceNgsSystemUpdate` regularmente, lo cual es una práctica estándar. Para verificar la corrección, inicie PCSC00014 en una compilación reciente de Vita3K y confirme que aparece el tutorial y responde a la entrada. Las pruebas de regresión deben cubrir otros títulos que usen la creación de sesión `sceNpCommerce2` o `sceNgsVoiceKeyOff` con bloqueos de audio personalizados."
+    }
+  ]
+}

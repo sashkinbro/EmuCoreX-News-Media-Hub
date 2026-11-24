@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP naprawia nierówny rytm 30 klatek na sekundę, gdy gry przełączają się między połówkami bufora",
+  "summary": "Błąd w tempie klatek sprawiał, że gry takie jak Silent Hill: Shattered Memories tknęły przy 30 klatkach na sekundę, ponieważ emulator traktował dwie połówki jednego bufora jako oddzielne klatki. Poprawka liczy rzeczywiste przełączenia bufora klatek zamiast polegać na flagach brudnych.",
+  "heroAlt": "Srebrna konsola PlayStation Portable spoczywająca na ciemnej powierzchni, jej panoramiczny ekran LCD wyświetla wstrzymane menu gry w miękkim oświetleniu wnętrza.",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing, tempo klatek",
+    "30 fps, 30 klatek na sekundę",
+    "framebuffer, bufor klatek",
+    "Silent Hill Shattered Memories, Silent Hill: Shattered Memories",
+    "emulation accuracy, dokładność emulacji"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dlaczego limit 30 klatek na sekundę powodował tkanie w niektórych grach"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories i podobne tytuły rysują każdą klatkę w jednej połowie pojedynczego bufora o szerokości 1024 pikseli, a następnie przełączają wskaźnik wyświetlania na drugą połowę w następnym vblanku. Obie połówki współdzielą ten sam obiekt VirtualFramebuffer, jednak tylko lewa połówka dokładnie odpowiadała jej adresowi. Prawa połówka była prezentowana w każdym vblanku, podczas gdy lewa zależała od flagi brudnej, którą wywołania rysowania następnej klatki już wyczyściły. Z aktywnym limitem 30 klatek na sekundę, klatki w efekcie trwały przez jeden vblank, potem trzy, potem znowu jeden, co dawało widoczny odczyt 45/45 na liczniku FPS i nierówny ruch. Przy 60 klatkach na sekundę szybkie przełączanie połówek maskowało problem, ponieważ każdy vblank otrzymywał świeżą pół-bufor."
+    },
+    {
+      "type": "heading",
+      "text": "Liczenie rzeczywistych przełączeń bufora klatek zamiast flag brudnych"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poprawka zmienia logikę tempowania klatek tak, aby każda zmiana adresu górnego wyświetlania wewnątrz tego samego bufora zapasowego liczyła się jako nowa klatka. Nowy licznik, framebufChanges, inkrementowany jest tylko wtedy, gdy sceDisplaySetFramebuf otrzymuje inny adres; ponowne ustawienie tego samego adresu (co robią niektóre gry co vblank) jest ignorowane. FramebufferManager teraz śledzi flagi displaySwitched_ i displaySwitchedReally_ oraz resetuje licznik sprawdzania przy każdym przełączeniu. Metody FramebufferDirty() i FramebufferReallyDirty() z GPUCommonHW obie delegują do nowej metody ConsumeDisplayDirty(), która zużywa odpowiednią flagę, gwarantując, że pacer widzi świeżą klatkę dokładnie wtedy, gdy gra faktycznie ją prezentuje."
+    },
+    {
+      "type": "heading",
+      "text": "Co gracze zauważą w praktyce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gry, które na przemiennie używają połówek jednego bufora, teraz utrzymują stabilne 30 klatek na sekundę, gdy limiter jest włączony, pokazując 30/30 na liczniku na ekranie zamiast poprzednich 45/45. Tytuły, które już działały przy 30 klatkach na sekundę lub mniej, nie są dotknięte, a gry 60 FPS nadal przełączają się co vblank jak wcześniej. Jedynym pozostałym punktem ślepym jest gra, która nigdy nie przełącza wskaźnika wyświetlania, a zamiast tego nakłada swoje listy wyświetlania; ten tytuł wciąż omija limiter. Testy regresji stanów zapisu w szerokim zestawie gier, a także istniejące testy jednostkowe, pspautotesty i frametesty, wszystkie przechodzą z tą zmianą."
+    },
+    {
+      "type": "heading",
+      "text": "Statystyki klatek w trybie headless teraz ujawniają własny rytm klatek gry"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wyjście --frame-stats w trybie headless zyskuje drugą kolumnę, pageFlipsPerSecond, która raportuje, ile razy na emulowaną sekundę gra przełączyła się na inny adres bufora klatek. Odbija to wewnętrzny rytm klatek gry, podczas gdy istniejąca kolumna flipsPerSecond pokazuje, ile vblanków miało nową treść do zaprezentowania – liczbę, którą wyświetla licznik FPS w GUI. Programiści mogą teraz zweryfikować, czy limiter 30 klatek na sekundę działa, porównując obie kolumny: gdy limiter jest aktywny, pageFlipsPerSecond powinno oscylować wokół 30, a flipsPerSecond powinno odpowiadać ograniczonemu tempowi."
+    }
+  ]
+}

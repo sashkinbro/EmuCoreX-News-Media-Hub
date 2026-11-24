@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Fixes MotorStorm RC Loading Hang With Commerce and Audio Scheduler Changes",
+  "summary": "Two deadlock sources in MotorStorm RC are resolved: a commerce session that never failed and an audio callback that ran while the game still held its lock. The game now reaches the tutorial.",
+  "heroAlt": "A PlayStation Vita handheld console resting on a dark surface, showing its OLED screen and dual analog sticks",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulator",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "compatibility": "Compatibility"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4416",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Why the game stalled on the loading screen"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) froze during its initial store check because the emulated `sceNpCommerce2CreateSessionStart` returned success without populating any output fields. The game then read an uninitialized item count and looped forever waiting for data that would never arrive. At the same time, the audio subsystem deadlocked when `sceNgsVoiceKeyOff` invoked the voice's finished callback immediately on the caller's thread. The game holds its own audio lock around the KeyOff call, and the callback attempted to acquire the same lock, creating a classic circular wait that halted progress before the tutorial could start."
+    },
+    {
+      "type": "heading",
+      "text": "How the commerce and audio fixes resolve the deadlocks"
+    },
+    {
+      "type": "paragraph",
+      "text": "The commerce module now defines `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) and returns it from `sceNpCommerce2CreateSessionStart`, signaling that no PlayStation Network server is available. The game interprets this as a signed-out state and skips the store check entirely. In the NGS audio scheduler, `sceNgsVoiceKeyOff` no longer runs the finished callback directly. Instead it marks the voice as `FINALIZING` and delegates cleanup to the next `sceNgsSystemUpdate` call, which runs on a different thread after the game has released its audio lock. Mutex guards were also added to `play`, `pause`, and `resume` to protect the scheduler's internal deque."
+    },
+    {
+      "type": "heading",
+      "text": "What players will notice in MotorStorm RC"
+    },
+    {
+      "type": "paragraph",
+      "text": "With both changes merged, MotorStorm RC advances past the loading screen and reaches the first-boot tutorial, accepting controller input normally. The reporter measured roughly 27 frames per second on Windows with the Vulkan backend during the tutorial. The main menu beyond the tutorial has not been validated, and the 3D rendering artifacts visible in-game are tracked as a separate issue unrelated to this hang fix."
+    },
+    {
+      "type": "heading",
+      "text": "Remaining work and how to verify the fix"
+    },
+    {
+      "type": "paragraph",
+      "text": "The error code used for the commerce failure is not hardware-verified; it was chosen because it matches the signed-out condition the game expects. Future PSN server emulation may require a different code path. The NGS scheduler change assumes the game calls `sceNgsSystemUpdate` regularly, which is standard practice. To verify the fix, launch PCSC00014 on a recent Vita3K build and confirm the tutorial appears and responds to input. Regression testing should cover other titles that use `sceNpCommerce2` session creation or `sceNgsVoiceKeyOff` with custom audio locks."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mobil Grafik Donanımları için NNEDI3 Ölçeklendirme Shader'larını Optimize Etme",
+  "summary": "PPSSPP'deki NNEDI3 ölçeklendirme shader'larına getirilen yeni optimizasyonlar, düz görüntü alanlarındaki gereksiz sinir ağı hesaplamalarını atlayarak ve GPU iş parçacığı gruplandırmasını iyileştirerek performansı önemli ölçüde artırıyor.",
+  "heroAlt": "Ekranı ve yön tuşlarını gösteren bir PlayStation Portable el konsolunun yakın plan görüntüsü.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shader'lar",
+    "ölçeklendirme",
+    "upscaling",
+    "GPU performansı",
+    "mobil oyun",
+    "emülasyon",
+    "emülatör"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sinirsel Ölçeklendirmenin Hesaplama Maliyeti"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3, düşük çözünürlüklü PSP dokularının görsel kalitesini artırmak için PPSSPP'de kullanılan yüksek kaliteli bir ölçeklendirme algoritmasıdır. Daha basit bilineer veya bikübik filtrelerin aksine NNEDI3, piksel değerlerini tahmin etmek için bir sinir ağı kullanır; bu da daha keskin kenarlar ve daha az bozulma ile sonuçlanır. Ancak bu kalite, özellikle GPU kaynaklarının sınırlı olduğu mobil donanımlarda önemli bir hesaplama maliyeti getirir. Daha önce shader, alanın karmaşık detaylar mı yoksa basit düz renkler mi içerdiğine bakılmaksızın, işlenen her piksel için tam sinir ağı mantığını yürütüyordu. Bu tek tip yaklaşım, sinir ağının karmaşık tahminlerinin temel bir ortalamaya göre çok az veya hiç görsel fayda sağlamadığı geniş düz renk veya şeffaflık alanlarına sahip sahnelerde gereksiz bir yük oluşturuyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Erken Çıkış ve İş Gruplandırmasının Uygulanması"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu verimsizlikleri gidermek için yapılan son değişiklikler, piksel varyansına dayalı bir erken çıkış mekanizması getiriyor. Shader, standart rutinlerinin bir parçası olarak zaten çevreleyen piksellerin ortalamasını ve varyansını hesaplıyordu. Varyansın belirli bir sınırın altına düşüp düşmediğini kontrol ederek, motor artık bir sinir ağı katkısının gerekli olup olmadığını belirleyebiliyor. Varyans sıfır veya sıfıra yakınsa, shader sadece ortalama rengi döndürüyor ve maliyetli sinir ağı geçişini tamamen atlıyor. Ek olarak, tek geçişli shader'lar için geliştirici, işlerin döşemeler (tiles) içinde nasıl gruplandırıldığını optimize etti. Bu işlemlerdeki her bir satır veya sütun genellikle doğrudan bir kopyalama olduğundan, shader artık bu özdeş işlemleri gruplandırarak GPU'nun tahminleri ve kopyalamaları daha verimli bir şekilde yönetmesini sağlıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Mobil Cihazlarda Gerçek Dünya Performans Kazanımları"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu mimari iyileştirmeler, özellikle PowerVR serisi gibi mobil GPU'larda önemli performans artışlarına dönüşüyor. Pixel 10 Pro XL üzerinde yapılan testler, optimize edilmiş shader'lar kullanıldığında Star Ocean oyunundaki karakter durum ekranının önemli ölçüde daha hızlı açıldığını gösterdi. Özellikle Single 2x shader 3,5 kat hız artışı sağlarken, Single 4x shader eskisinden 6 kat daha hızlı çalıştı. Daha karmaşık olan Multi 4x varyantı bile 1,25 kat iyileşme gösterdi. Bu kazanımlar, oyuncuların daha önce sinirsel filtrelerle ilişkilendirilen takılmalar veya uzun yükleme süreleri olmadan yüksek kaliteli ölçeklendirmenin keyfini çıkarabileceği anlamına geliyor. Optimizasyon, shader'ın hesaplama ağırlığını etkili bir şekilde azaltarak üst düzey ölçeklendirmeyi daha geniş bir mobil donanım yelpazesinde uygulanabilir kılıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Gelecekteki Donanım Uyumluluğu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu değişikliklerin etkisi, en çok işlem sonrası (post-processing) shader ayarlarındaki NNEDI3 ölçeklendirme seçenekleri kullanıldığında görülüyor. Oyuncular, kare sürelerini izleyerek veya doku ölçeklendirmesi kullanan arayüz öğelerinin yanıt verebilirliğini gözlemleyerek iyileştirmeleri doğrulayabilirler. Performans sıçraması PowerVR gibi belirli mobil mimarilerde en dramatik seviyede olsa da, varyans tabanlı erken çıkış, düz dokular için gereken toplam kayan nokta işlemi sayısını azaltarak tüm platformlarda evrensel bir fayda sağlıyor. Gelecekteki geliştirmeler, diğer işlem sonrası efektlerde benzer darboğazları bulmak için otomatik analiz araçlarından yararlanmaya devam edebilir. Şimdilik bu optimizasyonlar, emülatördeki en gelişmiş ölçeklendirme yöntemlerinden birinin genel kullanıcı kitlesi için daha erişilebilir olmasını sağlıyor."
+    }
+  ]
+}

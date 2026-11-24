@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-vulkan-surface-cast-synchronization-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "解决 Steam Deck 和 AMD GPU 上的图形损坏问题",
+  "summary": "Vita3K 的一项新同步修复解决了 Steam Deck 和 AMD 硬件上因纹理格式转换期间 Vulkan 内存屏障不当而导致的彩虹噪点和重影伪影问题。",
+  "heroAlt": "PlayStation Vita 手持游戏机的特写，展示了屏幕和控制按钮。",
+  "searchKeywords": [
+    "Vita3K",
+    "Steam Deck",
+    "Vulkan",
+    "AMD RADV",
+    "Uncharted Golden Abyss",
+    "图形修复",
+    "graphics fix",
+    "模拟精度",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4342",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "识别视觉伪影的来源"
+    },
+    {
+      "type": "paragraph",
+      "text": "在《神秘海域：黄金深渊》(Uncharted: Golden Abyss) 等部分 PlayStation Vita 游戏中，Steam Deck 和其他基于 AMD 的 Linux 系统用户遇到了严重的图形异常。这些问题表现为全屏彩虹噪点或重影，即在摄像机移动时，前几帧的残留图像会留在屏幕上。根本原因在于 Vulkan 渲染器对表面转换 (surface casts) 的处理。当游戏尝试使用不同大小的纹理格式对渲染目标进行采样（这一过程称为无类型复制）时，模拟器必须执行复杂的数据转换。由于缺乏适当的同步，硬件会在数据完全写入之前尝试读取，导致未初始化的内存显示给用户。"
+    },
+    {
+      "type": "heading",
+      "text": "Vulkan 流水线中的技术同步"
+    },
+    {
+      "type": "paragraph",
+      "text": "技术分析揭示了表面缓存颜色检索函数中存在竞争条件。模拟器利用转换缓冲区将数据从源图像移动到目标纹理，执行从图像到缓冲区的复制，随后执行从该缓冲区到新图像的复制。在 Steam Deck 使用的 RADV 驱动程序上，这些操作通常作为重叠的计算任务进行调度。由于这两次复制之间没有 Vulkan 内存屏障，第二个操作经常在第一个操作仍在写入时就开始从转换缓冲区读取数据。这种缺乏序列化的行为迫使驱动程序处理不完整或过时的数据，从而导致了观察到的损坏。"
+    },
+    {
+      "type": "heading",
+      "text": "实现稳健的内存屏障"
+    },
+    {
+      "type": "paragraph",
+      "text": "此更新引入了必要的内存屏障，以确保表面转换过程的每一步在下一步开始前完成。除了主要的缓冲区到复制同步外，该修复还解决了另外两个缺失的依赖项。它确保了来自早期渲染通道的颜色写入可用于传输阶段，并正确地将转换后的纹理过渡到采样图像布局。对于玩家而言，这意味着在依赖这些特定渲染技术的游戏中，稳定性得到了显著提升。此前导致《神秘海域：黄金深渊》在 Linux 手持设备上几乎无法游玩的闪烁和视觉噪点现已解决，提供了更清晰、更准确的视觉体验。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与硬件兼容性"
+    },
+    {
+      "type": "paragraph",
+      "text": "此修复的验证是在使用 RADV 驱动程序的 Steam Deck OLED 硬件上进行的。广泛的测试表明，虽然之前的 master 版本在几乎每次运行中都会出现损坏，但实现这些屏障后，在多个测试周期内错误率降至零。开发人员还确认，此更改独立于最近的其他渲染修复（例如解决高分辨率下损坏的修复）。虽然此特定更改针对的是 AMD 硬件上的同步问题，但对 Vulkan 规范的更好遵循也有益于模拟器的整体架构。玩家应该能立即看到渲染一致性的改进，且不会对性能或现有分辨率缩放功能的兼容性产生负面影响。"
+    }
+  ]
+}

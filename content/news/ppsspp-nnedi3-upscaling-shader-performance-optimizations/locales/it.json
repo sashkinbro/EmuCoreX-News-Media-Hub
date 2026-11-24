@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Ottimizzazione degli shader di upscaling NNEDI3 per hardware grafico mobile",
+  "summary": "Le nuove ottimizzazioni agli shader di upscaling NNEDI3 in PPSSPP migliorano significativamente le prestazioni, saltando i calcoli ridondanti della rete neurale nelle aree piatte dell'immagine e migliorando il raggruppamento dei thread della GPU.",
+  "heroAlt": "Un primo piano di una console portatile PlayStation Portable che mostra lo schermo e il pad direzionale.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shader",
+    "upscaling",
+    "prestazioni GPU",
+    "mobile gaming",
+    "emulazione"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "graphics": "Grafica"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Il costo computazionale dell'upscaling neurale"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 è un algoritmo di upscaling di alta qualità utilizzato in PPSSPP per migliorare la fedeltà visiva delle texture PSP a bassa risoluzione. A differenza dei filtri bilineari o bicubici più semplici, NNEDI3 utilizza una rete neurale per prevedere i valori dei pixel, ottenendo bordi più nitidi e meno artefatti. Tuttavia, questa qualità comporta un costo computazionale significativo, in particolare sull'hardware mobile dove le risorse della GPU sono limitate. In precedenza, lo shader eseguiva la sua logica di rete neurale completa per ogni pixel elaborato, indipendentemente dal fatto che l'area contenesse dettagli complessi o semplici colori piatti. Questo approccio uniforme portava a un sovraccarico non necessario in scene con ampie zone di colore solido o trasparenza, dove le previsioni complesse di una rete neurale offrono pochi o nessun beneficio visivo rispetto a una semplice media."
+    },
+    {
+      "type": "heading",
+      "text": "Implementazione di uscite anticipate e raggruppamento del lavoro"
+    },
+    {
+      "type": "paragraph",
+      "text": "Per risolvere queste inefficienze, le ultime modifiche introducono un meccanismo di uscita anticipata basato sulla varianza dei pixel. Lo shader calcola già la media e la varianza dei pixel circostanti come parte della sua routine standard. Controllando se la varianza scende al di sotto di una soglia specifica, il motore può ora determinare se il contributo della rete neurale è necessario. Se la varianza è zero o vicina allo zero, lo shader restituisce semplicemente il colore medio e salta completamente il costoso passaggio della rete neurale. Inoltre, per gli shader a passaggio singolo, lo sviluppatore ha ottimizzato il modo in cui il lavoro viene raggruppato all'interno dei tile. Poiché ogni riga o colonna alternativa in queste operazioni è spesso una copia diretta, lo shader ora raggruppa queste operazioni identiche, consentendo alla GPU di gestire previsioni e copie in modo più efficiente."
+    },
+    {
+      "type": "heading",
+      "text": "Guadagni di prestazioni nel mondo reale su dispositivi mobili"
+    },
+    {
+      "type": "paragraph",
+      "text": "Questi perfezionamenti architetturali si traducono in sostanziali miglioramenti delle prestazioni, specialmente sulle GPU mobile come la serie PowerVR. I test su un Pixel 10 Pro XL hanno dimostrato che la schermata di stato del personaggio in Star Ocean si apriva significativamente più velocemente utilizzando gli shader ottimizzati. Nello specifico, lo shader Single 2x ha visto un aumento di velocità di 3,5 volte, mentre lo shader Single 4x ha funzionato 6 volte più velocemente di prima. Anche la variante più complessa Multi 4x ha mostrato un miglioramento di 1,25 volte. Questi guadagni significano che i giocatori possono godere di un upscaling di alta qualità senza i rallentamenti o i lunghi tempi di caricamento precedentemente associati ai filtri neurali. L'ottimizzazione riduce efficacemente il peso computazionale dello shader, rendendo l'upscaling di fascia alta praticabile su una gamma più ampia di hardware mobile."
+    },
+    {
+      "type": "heading",
+      "text": "Verifica e compatibilità futura dell'hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'impatto di queste modifiche è più visibile quando si utilizzano le opzioni di upscaling NNEDI3 nelle impostazioni degli shader di post-elaborazione. I giocatori possono verificare i miglioramenti monitorando i tempi dei fotogrammi o osservando la reattività degli elementi dell'interfaccia utente che utilizzano l'upscaling delle texture. Sebbene il salto di prestazioni sia più drammatico su specifiche architetture mobile come PowerVR, l'uscita anticipata basata sulla varianza fornisce un beneficio universale su tutte le piattaforme riducendo il numero totale di operazioni in virgola mobile richieste per le texture piatte. Lo sviluppo futuro potrebbe continuare a sfruttare strumenti di analisi automatizzati per trovare colli di bottiglia simili in altri effetti di post-elaborazione. Per ora, queste ottimizzazioni assicurano che uno dei metodi di upscaling più avanzati nell'emulatore sia più accessibile alla base di utenti generale."
+    }
+  ]
+}

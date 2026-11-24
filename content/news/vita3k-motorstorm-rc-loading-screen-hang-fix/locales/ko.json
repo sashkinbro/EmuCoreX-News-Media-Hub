@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, Commerce 및 오디오 스케줄러 변경으로 MotorStorm RC 로딩 멈춤 현상 수정",
+  "summary": "MotorStorm RC의 두 가지 데드락 원인이 해결되었습니다: 절대 실패하지 않는 커머스 세션과 게임이 여전히 락을 잡고 있는 동안 실행되던 오디오 콜백. 이제 게임이 튜토리얼에 도달합니다.",
+  "heroAlt": "어두운 표면 위에 놓인 PlayStation Vita 휴대용 콘솔, OLED 화면과 듀얼 아날로그 스틱이 보임",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulator",
+    "PlayStation Vita",
+    "비타3K",
+    "모터스톰 RC",
+    "에뮬레이터"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "compatibility": "호환성"
+  },
+  "sourceLabels": {
+    "change": "Vita3K 풀 리퀘스트 #4416",
+    "implementation": "패치 및 리뷰"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "게임이 로딩 화면에서 멈춘 이유"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014)는 초기 스토어 확인 중에 멈췄습니다. 에뮬레이션된 `sceNpCommerce2CreateSessionStart`가 출력 필드를 채우지 않고 성공을 반환했기 때문입니다. 게임은 초기화되지 않은 항목 수를 읽고, 결코 도착하지 않을 데이터를 무한히 기다리며 루프를 돌았습니다. 동시에, `sceNgsVoiceKeyOff`가 호출자의 스레드에서 음성의 완료 콜백을 즉시 호출하면서 오디오 서브시스템이 데드락에 걸렸습니다. 게임은 KeyOff 호출 주변에서 자체 오디오 락을 잡고 있었고, 콜백이 동일한 락을 획득하려고 시도하면서 튜토리얼이 시작되기 전에 진행을 멈추는 전형적인 순환 대기가 발생했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "커머스 및 오디오 수정이 데드락을 해결하는 방법"
+    },
+    {
+      "type": "paragraph",
+      "text": "이제 커머스 모듈은 `SCE_NP_ERROR_SIGNED_OUT` (0x80550006)을 정의하고 `sceNpCommerce2CreateSessionStart`에서 이를 반환하여 PlayStation Network 서버를 사용할 수 없음을 알립니다. 게임은 이를 로그아웃 상태로 해석하고 스토어 확인을 완전히 건너뜁니다. NGS 오디오 스케줄러에서 `sceNgsVoiceKeyOff`는 더 이상 완료 콜백을 직접 실행하지 않습니다. 대신 음성을 `FINALIZING` 상태로 표시하고 정리를 다음 `sceNgsSystemUpdate` 호출에 위임합니다. 이는 게임이 오디오 락을 해제한 후 다른 스레드에서 실행됩니다. 또한 `play`, `pause`, `resume`에 뮤텍스 가드가 추가되어 스케줄러의 내부 덱을 보호합니다."
+    },
+    {
+      "type": "heading",
+      "text": "플레이어가 MotorStorm RC에서 느낄 변화"
+    },
+    {
+      "type": "paragraph",
+      "text": "두 변경 사항이 병합되면서 MotorStorm RC가 로딩 화면을 지나 최초 부팅 튜토리얼에 도달하며, 컨트롤러 입력을 정상적으로 받아들입니다. 제보자는 튜토리얼 중 Windows에서 Vulkan 백엔드 사용 시 약 27 FPS를 측정했습니다. 튜토리얼 이후의 메인 메뉴는 검증되지 않았으며, 게임 내에 보이는 3D 렌더링 아티팩트는 이번 멈춤 수정과 무관한 별도 이슈로 추적되고 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "남은 작업 및 수정 검증 방법"
+    },
+    {
+      "type": "paragraph",
+      "text": "커머스 실패에 사용된 에러 코드는 하드웨어 검증되지 않았으며, 게임이 기대하는 로그아웃 조건과 일치하므로 선택되었습니다. 향후 PSN 서버 에뮬레이션에는 다른 코드 경로가 필요할 수 있습니다. NGS 스케줄러 변경은 게임이 `sceNgsSystemUpdate`를 정기적으로 호출한다고 가정하며, 이는 표준 관행입니다. 수정을 검증하려면 최신 Vita3K 빌드에서 PCSC00014를 실행하고 튜토리얼이 나타나고 입력에 반응하는지 확인하세요. 회귀 테스트는 `sceNpCommerce2` 세션 생성이나 커스텀 오디오 락과 함께 `sceNgsVoiceKeyOff`를 사용하는 다른 타이틀을 포함해야 합니다."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-vulkan-surface-cast-synchronization-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mengatasi Kerusakan Grafis pada Steam Deck dan GPU AMD",
+  "summary": "Perbaikan sinkronisasi baru untuk Vita3K mengatasi noise pelangi dan artefak ghosting pada Steam Deck dan perangkat keras AMD yang disebabkan oleh penghalang memori Vulkan yang tidak tepat selama casting format tekstur.",
+  "heroAlt": "Tampilan jarak dekat konsol genggam PlayStation Vita yang memperlihatkan layar dan tombol kontrol.",
+  "searchKeywords": [
+    "Vita3K",
+    "Steam Deck",
+    "Vulkan",
+    "AMD RADV",
+    "Uncharted Golden Abyss",
+    "perbaikan grafis",
+    "graphics fix",
+    "akurasi emulasi",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4342",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengidentifikasi Sumber Artefak Visual"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dalam judul-judul PlayStation Vita tertentu seperti Uncharted: Golden Abyss, pemain di Steam Deck dan sistem Linux berbasis AMD lainnya mengalami anomali grafis yang parah. Masalah ini muncul sebagai noise pelangi layar penuh atau ghosting, di mana sisa-sisa frame sebelumnya tertinggal di layar selama pergerakan kamera. Akar penyebabnya diidentifikasi dalam penanganan surface cast oleh renderer Vulkan. Ketika game mencoba mengambil sampel target render menggunakan format tekstur dengan ukuran berbeda—proses yang dikenal sebagai typeless copy—emulator harus melakukan transisi data yang kompleks. Tanpa sinkronisasi yang tepat, perangkat keras mencoba membaca data sebelum ditulis sepenuhnya, yang menyebabkan memori yang belum diinisialisasi ditampilkan kepada pengguna."
+    },
+    {
+      "type": "heading",
+      "text": "Sinkronisasi Teknis dalam Pipeline Vulkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Analisis teknis mengungkapkan race condition dalam fungsi pengambilan warna surface cache. Emulator menggunakan buffer transisi untuk memindahkan data dari gambar sumber ke tekstur tujuan, menjalankan penyalinan dari gambar ke buffer yang diikuti dengan penyalinan dari buffer tersebut ke gambar baru. Pada driver RADV yang digunakan oleh Steam Deck, operasi ini sering dikirim sebagai tugas komputasi yang tumpang tindih. Karena tidak ada penghalang memori Vulkan di antara kedua penyalinan ini, operasi kedua sering kali mulai membaca dari buffer transisi saat operasi pertama masih menulis ke dalamnya. Kurangnya serialisasi ini memaksa driver untuk memproses data yang tidak lengkap atau usang, yang mengakibatkan kerusakan visual yang teramati."
+    },
+    {
+      "type": "heading",
+      "text": "Menerapkan Penghalang Memori yang Tangguh"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembaruan ini memperkenalkan penghalang memori yang diperlukan untuk memastikan bahwa setiap langkah proses surface casting selesai sebelum langkah berikutnya dimulai. Di luar sinkronisasi buffer-ke-salin utama, perbaikan ini juga mengatasi dua dependensi lain yang hilang. Pembaruan ini memastikan bahwa penulisan warna dari render pass sebelumnya tersedia untuk tahap transfer dan mentransisikan tekstur yang di-cast ke tata letak gambar yang disampel dengan benar. Bagi pemain, ini berarti peningkatan stabilitas yang signifikan dalam judul-judul yang mengandalkan teknik rendering khusus ini. Kedipan dan noise visual yang sebelumnya membuat Uncharted: Golden Abyss hampir tidak dapat dimainkan di perangkat Linux genggam kini telah teratasi, memberikan pengalaman visual yang jauh lebih bersih dan akurat."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Kompatibilitas Perangkat Keras"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verifikasi perbaikan ini dilakukan pada perangkat keras Steam Deck OLED menggunakan driver RADV. Pengujian ekstensif menunjukkan bahwa sementara build master sebelumnya mengalami kerusakan di hampir setiap pengoperasian, penerapan penghalang ini mengurangi tingkat kesalahan menjadi nol di berbagai siklus pengujian. Pengembang juga mengonfirmasi bahwa perubahan ini independen dari perbaikan rendering terbaru lainnya, seperti yang mengatasi kerusakan pada resolusi tinggi. Meskipun perubahan khusus ini menargetkan sinkronisasi pada perangkat keras AMD, kepatuhan yang lebih baik terhadap spesifikasi Vulkan memberikan manfaat bagi arsitektur emulator secara keseluruhan. Pemain akan melihat peningkatan langsung dalam konsistensi rendering tanpa dampak negatif pada kinerja atau kompatibilitas dengan fitur penskalaan resolusi yang ada."
+    }
+  ]
+}

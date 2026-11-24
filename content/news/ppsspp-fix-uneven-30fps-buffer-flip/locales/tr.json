@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP, oyunlar tampon yarıları arasında geçiş yaptığında düzensiz 30 fps tempolamasını düzeltiyor",
+  "summary": "Bir kare tempolama hatası, Silent Hill: Shattered Memories gibi oyunların 30 fps'de takılmasına neden oldu çünkü emülatör tek bir tamponun iki yarısını ayrı kareler olarak ele alıyordu. Düzeltme, kirli bayraklara güvenmek yerine gerçek çerçeve tamponu geçişlerini sayıyor.",
+  "heroAlt": "Koyu bir yüzeyde dinlenen gümüş renkli bir PlayStation Portable el cihazı, geniş ekranlı LCD'si yumuşak iç mekan ışığında duraklatılmış bir oyun menüsünü gösteriyor.",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing",
+    "30 fps",
+    "framebuffer",
+    "Silent Hill Shattered Memories",
+    "emulation accuracy",
+    "kare tempolama",
+    "çerçeve tamponu",
+    "emülasyon doğruluğu"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Neden 30 fps sınırı belirli oyunlarda takıldı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories ve benzeri başlıklar her kareyi tek bir 1024 piksel genişliğinde tamponun bir yarısına çizer, ardından bir sonraki vblank'te görüntü işaretçisini diğer yarına çevirir. Her iki yarım aynı VirtualFramebuffer nesnesini paylaşır, ancak sadece sol yarım adresiyle tam olarak eşleşir. Sağ yarım her vblank'te sunulurken, sol yarım bir sonraki karenin çizim çağrıları tarafından zaten temizlenmiş bir kirli bayrağa bağlıydı. 30 fps sınırlayıcı etkin olduğunda, kareler bu nedenle bir vblank boyunca kaldı, sonra üç, sonra tekrar bir, FPS sayacında görünür bir 45/45 okuması ve düzensiz hareket üreterek. 60 fps'de hızlı yarım geçişler, her vblank'in yeni bir yarım tampon alması nedeniyle sorunu maskeleyerek."
+    },
+    {
+      "type": "heading",
+      "text": "Gerçek çerçeve tamponu geçişlerini kirli bayraklar yerine saymak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yama, kare tempolama mantığını değiştirerek, aynı destekleyici tampon içindeki görüntü üst adresindeki herhangi bir değişikliği yeni bir kare olarak sayar. Yeni bir sayaç olan framebufChanges, sceDisplaySetFramebuf farklı bir adres aldığında artar; aynı adresin yeniden ayarlanması (bazı oyunlar bunu her vblank'te yapar) göz ardı edilir. FramebufferManager artık displaySwitched_ ve displaySwitchedReally_ bayraklarını izler ve her geçişte bir kontrol sayacını sıfırlar. GPUCommonHW'nin FramebufferDirty() ve FramebufferReallyDirty() yöntemleri her ikisi de uygun bayrağı tüketen yeni bir ConsumeDisplayDirty() yöntemine delege eder, bu da tempolayıcının, oyun gerçekten bir kare sunduğunda tam olarak o anda taze bir kare görmesini sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuncular pratikte ne fark edecek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tek bir tamponun yarıları arasında geçiş yapan oyunlar, sınırlayıcı etkin olduğunda artık ekrandaki sayaçta önceki 45/45 yerine 30/30 göstererek sabit 30 fps tutuyor. Zaten 30 fps veya altında çalışan başlıklar etkilenmiyor ve 60 fps oyunlar öncedenki gibi her vblank'te çevrilmeye devam ediyor. Kalan tek kör nokta, görüntü işaretçisini asla çevirmeyen ve yerine görüntü listelerini üst üste koyan bir oyun; o başlık yine de sınırlayıcıyı kaçırıyor. Geniş bir oyun seti boyunca savestate regresyon testleri, mevcut birim testleri, pspautotests ve frametests, değişiklikle hepsi geçiyor."
+    },
+    {
+      "type": "heading",
+      "text": "Başlıksız kare istatistikleri artık oyunun kendi kare hızını ortaya çıkarıyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Başlıksız çalıştırıcının --frame-stats çıktısı, emüle edilen saniyede oyunun kaç kez farklı bir çerçeve tamponu adresine geçtiğini rapor eden ikinci bir sütun olan pageFlipsPerSecond kazanıyor. Bu, oyunun dahili kare hızını yansıtırken, mevcut flipsPerSecond sütunu yeni içerik sunan vblank sayısını gösterir—GUI FPS sayacının görüntülediği sayı. Geliştiriciler artık iki sütunu karşılaştırarak 30 fps sınırlayıcısının çalışıp çalışmadığını doğrulayabilir: sınırlayıcı etkin olduğunda, pageFlipsPerSecond 30 civarında kalmalıyken flipsPerSecond sınırlanmış hızı eşleşmelidir."
+    }
+  ]
+}

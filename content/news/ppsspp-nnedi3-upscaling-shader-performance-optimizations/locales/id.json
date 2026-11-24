@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mengoptimalkan Shader Upscaling NNEDI3 untuk Perangkat Keras Grafis Seluler",
+  "summary": "Optimasi baru pada shader upscaling NNEDI3 di PPSSPP secara signifikan meningkatkan performa dengan melewati kalkulasi jaringan saraf yang redundan di area gambar datar dan meningkatkan pengelompokan thread GPU.",
+  "heroAlt": "Tampilan jarak dekat konsol genggam PlayStation Portable yang memperlihatkan layar dan tombol arah.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shaders",
+    "upscaling",
+    "peningkatan skala",
+    "GPU performance",
+    "performa GPU",
+    "mobile gaming",
+    "game seluler",
+    "emulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Biaya Komputasi Neural Upscaling"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 adalah algoritma upscaling berkualitas tinggi yang digunakan di PPSSPP untuk meningkatkan fidelitas visual tekstur PSP beresolusi rendah. Berbeda dengan filter bilinear atau bicubic yang lebih sederhana, NNEDI3 menggunakan jaringan saraf untuk memprediksi nilai piksel, yang menghasilkan tepi yang lebih tajam dan lebih sedikit artefak. Namun, kualitas ini memerlukan biaya komputasi yang signifikan, terutama pada perangkat keras seluler di mana sumber daya GPU terbatas. Sebelumnya, shader akan menjalankan logika jaringan saraf lengkapnya untuk setiap piksel yang diproses, terlepas dari apakah area tersebut berisi detail kompleks atau warna datar yang sederhana. Pendekatan seragam ini menyebabkan overhead yang tidak perlu pada adegan dengan bagian besar berwarna solid atau transparan, di mana prediksi kompleks dari jaringan saraf memberikan sedikit atau hampir tidak ada manfaat visual dibandingkan rata-rata dasar."
+    },
+    {
+      "type": "heading",
+      "text": "Menerapkan Early Exit dan Pengelompokan Kerja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk mengatasi inefisiensi ini, perubahan terbaru memperkenalkan mekanisme early-exit berdasarkan varians piksel. Shader tersebut sudah menghitung rata-rata dan varians dari piksel di sekitarnya sebagai bagian dari rutinitas standarnya. Dengan memeriksa apakah varians berada di bawah batas tertentu, mesin sekarang dapat menentukan apakah kontribusi jaringan saraf diperlukan. Jika variansnya nol atau mendekati nol, shader cukup mengembalikan warna rata-rata dan melewati pass jaringan saraf yang berat sepenuhnya. Selain itu, untuk shader single-pass, pengembang mengoptimalkan cara kerja dikelompokkan dalam tile. Karena setiap baris atau kolom lainnya dalam operasi ini sering kali merupakan salinan langsung, shader sekarang mengelompokkan operasi identik ini bersama-sama, yang memungkinkan GPU menangani prediksi dan salinan dengan lebih efisien."
+    },
+    {
+      "type": "heading",
+      "text": "Peningkatan Performa Dunia Nyata pada Perangkat Seluler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penyempurnaan arsitektur ini menghasilkan peningkatan performa yang substansial, terutama pada GPU seluler seperti seri PowerVR. Pengujian pada Pixel 10 Pro XL menunjukkan bahwa layar status karakter di Star Ocean terbuka jauh lebih cepat saat menggunakan shader yang dioptimalkan. Secara spesifik, shader Single 2x mengalami peningkatan kecepatan 3,5x, sementara shader Single 4x berkinerja 6x lebih cepat dari sebelumnya. Bahkan varian Multi 4x yang lebih kompleks menunjukkan peningkatan 1,25x. Peningkatan ini berarti pemain dapat menikmati upscaling berkualitas tinggi tanpa stuttering atau waktu pemuatan lama yang sebelumnya dikaitkan dengan filter saraf. Optimasi ini secara efektif mengurangi beban komputasi shader, membuat upscaling kelas atas dapat digunakan pada jangkauan perangkat keras seluler yang lebih luas."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Kompatibilitas Perangkat Keras di Masa Depan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dampak dari perubahan ini paling terlihat saat menggunakan opsi upscaling NNEDI3 di pengaturan shader pasca-pemrosesan. Pemain dapat memverifikasi peningkatan dengan memantau waktu bingkai atau mengamati responsivitas elemen UI yang menggunakan upscaling tekstur. Meskipun lonjakan performa paling dramatis pada arsitektur seluler tertentu seperti PowerVR, early exit berbasis varians memberikan manfaat universal di semua platform dengan mengurangi jumlah total operasi floating-point yang diperlukan untuk tekstur datar. Pengembangan di masa depan mungkin terus memanfaatkan alat analisis otomatis untuk menemukan hambatan serupa pada efek pasca-pemrosesan lainnya. Untuk saat ini, optimasi ini memastikan bahwa salah satu metode upscaling tercanggih di emulator lebih mudah diakses oleh basis pengguna umum."
+    }
+  ]
+}

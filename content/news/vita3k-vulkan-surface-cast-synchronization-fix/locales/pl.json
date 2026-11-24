@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-vulkan-surface-cast-synchronization-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Rozwiązywanie problemów z artefaktami graficznymi na Steam Deck i GPU AMD",
+  "summary": "Nowa poprawka synchronizacji dla Vita3K eliminuje tęczowe szumy i artefakty typu ghosting na Steam Deck oraz sprzęcie AMD, spowodowane niewłaściwymi barierami pamięci Vulkan podczas rzutowania formatów tekstur.",
+  "heroAlt": "Zbliżenie na konsolę przenośną PlayStation Vita, pokazujące ekran i przyciski sterujące.",
+  "searchKeywords": [
+    "Vita3K",
+    "Steam Deck",
+    "Vulkan",
+    "AMD RADV",
+    "Uncharted Golden Abyss",
+    "naprawa grafiki",
+    "poprawka graficzna",
+    "dokładność emulacji"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4342",
+    "implementation": "Poprawka i weryfikacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identyfikacja źródła artefaktów wizualnych"
+    },
+    {
+      "type": "paragraph",
+      "text": "W niektórych tytułach na PlayStation Vita, takich jak Uncharted: Golden Abyss, gracze korzystający ze Steam Deck oraz innych systemów Linux opartych na AMD napotykali poważne anomalie graficzne. Problemy te objawiały się jako pełnoekranowe tęczowe szumy lub efekt ghostingu, w którym pozostałości poprzednich klatek utrzymywały się na ekranie podczas ruchu kamery. Przyczynę źródłową zidentyfikowano w sposobie obsługi rzutowania powierzchni przez renderer Vulkan. Gdy gra próbuje próbkować cel renderowania przy użyciu formatu tekstury o innym rozmiarze – proces znany jako typeless copy – emulator musi wykonać złożone przejście danych. Bez odpowiedniej synchronizacji sprzęt próbował odczytać dane, zanim zostały one w pełni zapisane, co prowadziło do wyświetlania użytkownikowi niezainicjalizowanej pamięci."
+    },
+    {
+      "type": "heading",
+      "text": "Synchronizacja techniczna w potoku Vulkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Analiza techniczna ujawnia wyścig (race condition) w funkcji pobierania koloru z pamięci podręcznej powierzchni (surface cache). Emulator wykorzystuje bufor przejściowy do przenoszenia danych z obrazu źródłowego do tekstury docelowej, wykonując kopiowanie z obrazu do bufora, a następnie z bufora do nowego obrazu. W sterowniku RADV używanym przez Steam Deck operacje te są często wysyłane jako nakładające się zadania obliczeniowe. Ponieważ między tymi dwoma kopiami nie było barier pamięci Vulkan, druga operacja często zaczynała odczyt z bufora przejściowego, podczas gdy pierwsza wciąż do niego zapisywała. Ten brak serializacji zmuszał sterownik do przetwarzania niekompletnych lub nieaktualnych danych, co skutkowało zaobserwowanymi uszkodzeniami obrazu."
+    },
+    {
+      "type": "heading",
+      "text": "Wdrażanie solidnych barier pamięci"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta aktualizacja wprowadza niezbędne bariery pamięci, aby zapewnić, że każdy krok procesu rzutowania powierzchni zakończy się przed rozpoczęciem kolejnego. Poza główną synchronizacją kopiowania bufora, poprawka rozwiązuje również dwie inne brakujące zależności. Zapewnia ona, że zapisy kolorów z wcześniejszych przebiegów renderowania są udostępniane dla etapu transferu i poprawnie przekształca rzutowaną teksturę w układ obrazu próbkowanego (sampled image layout). Dla graczy oznacza to znaczący wzrost stabilności w tytułach, które polegają na tych konkretnych technikach renderowania. Migotanie i szumy wizualne, które wcześniej czyniły Uncharted: Golden Abyss niemal niegrywalnym na przenośnych urządzeniach z systemem Linux, zostały teraz wyeliminowane, zapewniając znacznie czystsze i dokładniejsze wrażenia wizualne."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i kompatybilność sprzętowa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Weryfikacja tej poprawki została przeprowadzona na sprzęcie Steam Deck OLED przy użyciu sterownika RADV. Szeroko zakrojone testy wykazały, że podczas gdy poprzednia wersja master cierpiała na uszkodzenia obrazu w niemal każdym uruchomieniu, wdrożenie tych barier zredukowało wskaźnik błędów do zera w wielu cyklach testowych. Deweloperzy potwierdzili również, że ta zmiana jest niezależna od innych niedawnych poprawek renderowania, takich jak te rozwiązujące problemy z uszkodzeniami przy wysokich rozdzielczościach. Choć ta konkretna zmiana dotyczy synchronizacji na sprzęcie AMD, lepsze przestrzeganie specyfikacji Vulkan przynosi korzyści ogólnej architekturze emulatora. Gracze powinni zauważyć natychmiastową poprawę spójności renderowania bez żadnego negatywnego wpływu na wydajność lub kompatybilność z istniejącymi funkcjami skalowania rozdzielczości."
+    }
+  ]
+}

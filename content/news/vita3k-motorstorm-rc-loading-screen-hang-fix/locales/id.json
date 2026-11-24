@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Memperbaiki Hang Loading MotorStorm RC Dengan Perubahan Commerce dan Audio Scheduler",
+  "summary": "Dua sumber deadlock di MotorStorm RC telah diselesaikan: sesi commerce yang tidak pernah gagal dan callback audio yang berjalan saat game masih memegang kunci-nya. Game kini mencapai tutorial.",
+  "heroAlt": "Konsol genggam PlayStation Vita beristirahat di permukaan gelap, menampilkan layar OLED dan dual analog stick-nya",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulator",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "compatibility": "Kompatibilitas"
+  },
+  "sourceLabels": {
+    "change": "Pull request Vita3K #4416",
+    "implementation": "Patch dan review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa game macet di layar loading"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) macet selama pemeriksaan toko awal karena `sceNpCommerce2CreateSessionStart` yang diemulasi mengembalikan sukses tanpa mengisi field output apa pun. Game kemudian membaca jumlah item yang tidak terinisialisasi dan melakukan loop selamanya menunggu data yang tidak akan pernah tiba. Pada saat yang sama, subsistem audio mengalami deadlock ketika `sceNgsVoiceKeyOff` memanggil callback selesai suara segera pada thread pemanggil. Game memegang kunci audio-nya sendiri di sekitar pemanggilan KeyOff, dan callback mencoba mendapatkan kunci yang sama, menciptakan circular wait klasik yang menghentikan kemajuan sebelum tutorial bisa dimulai."
+    },
+    {
+      "type": "heading",
+      "text": "Bagaimana perbaikan commerce dan audio menyelesaikan deadlock"
+    },
+    {
+      "type": "paragraph",
+      "text": "Modul commerce kini mendefinisikan `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) dan mengembalikannya dari `sceNpCommerce2CreateSessionStart`, menandakan bahwa tidak ada server PlayStation Network yang tersedia. Game menafsirkan ini sebagai kondisi signed-out dan melewati pemeriksaan toko sepenuhnya. Di penjadwal audio NGS, `sceNgsVoiceKeyOff` tidak lagi menjalankan callback selesai secara langsung. Sebaliknya, ia menandai suara sebagai `FINALIZING` dan mendelegasikan pembersihan ke pemanggilan `sceNgsSystemUpdate` berikutnya, yang berjalan pada thread berbeda setelah game melepaskan kunci audio-nya. Mutex guard juga ditambahkan ke `play`, `pause`, dan `resume` untuk melindungi deque internal penjadwal."
+    },
+    {
+      "type": "heading",
+      "text": "Apa yang akan pemain perhatikan di MotorStorm RC"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dengan kedua perubahan digabungkan, MotorStorm RC melangkah melewati layar loading dan mencapai tutorial first-boot, menerima input controller secara normal. Pelapor mengukur sekitar 27 frame per detik di Windows dengan backend Vulkan selama tutorial. Menu utama setelah tutorial belum divalidasi, dan artefak rendering 3D yang terlihat di dalam game dilacak sebagai masalah terpisah yang tidak terkait dengan perbaikan hang ini."
+    },
+    {
+      "type": "heading",
+      "text": "Pekerjaan tersisa dan cara memverifikasi perbaikan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kode error yang digunakan untuk kegagalan commerce tidak diverifikasi perangkat keras; dipilih karena cocok dengan kondisi signed-out yang diharapkan game. Emulasi server PSN di masa depan mungkin memerlukan jalur kode yang berbeda. Perubahan penjadwal NGS mengasumsikan game memanggil `sceNgsSystemUpdate` secara teratur, yang merupakan praktik standar. Untuk memverifikasi perbaikan, luncurkan PCSC00014 pada build Vita3K terbaru dan konfirmasi tutorial muncul dan merespons input. Pengujian regresi harus mencakup judul lain yang menggunakan pembuatan sesi `sceNpCommerce2` atau `sceNgsVoiceKeyOff` dengan kunci audio kustom."
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP fixes uneven 30 fps pacing when games flip between buffer halves",
+  "summary": "A frame-pacing bug caused games like Silent Hill: Shattered Memories to stutter at 30 fps because the emulator treated two halves of one buffer as separate frames. The fix counts actual framebuffer switches instead of relying on dirty flags.",
+  "heroAlt": "A silver PlayStation Portable handheld resting on a dark surface, its widescreen LCD showing a paused game menu under soft indoor lighting.",
+  "searchKeywords": [
+    "PPSSPP",
+    "frame pacing",
+    "30 fps",
+    "framebuffer",
+    "Silent Hill Shattered Memories",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Why the 30 fps limit stuttered on certain games"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories and similar titles draw each frame into one half of a single 1024-pixel-wide buffer, then flip the display pointer to the other half on the next vblank. Both halves share the same VirtualFramebuffer object, yet only the left half matched its address exactly. The right half was presented on every vblank, while the left half depended on a dirty flag that the next frame's draw calls had already cleared. With the 30 fps limiter active, frames therefore lingered for one vblank, then three, then one again, producing a visible 45/45 reading on the FPS counter and uneven motion. At 60 fps the rapid half-switches masked the problem because every vblank received a fresh half-buffer."
+    },
+    {
+      "type": "heading",
+      "text": "Counting real framebuffer switches instead of dirty flags"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch changes the frame-pacing logic so that any change of the display top-address inside the same backing buffer counts as a new frame. A new counter, framebufChanges, increments only when sceDisplaySetFramebuf receives a different address; re-setting the same address (which some games do every vblank) is ignored. The FramebufferManager now tracks displaySwitched_ and displaySwitchedReally_ flags and resets a check counter on each switch. GPUCommonHW's FramebufferDirty() and FramebufferReallyDirty() both delegate to a new ConsumeDisplayDirty() method that consumes the appropriate flag, ensuring the pacer sees a fresh frame exactly when the game actually presents one."
+    },
+    {
+      "type": "heading",
+      "text": "What players will notice in practice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Games that alternate halves of one buffer now hold a steady 30 fps when the limiter is enabled, showing 30/30 on the on-screen counter instead of the previous 45/45. Titles that already ran at 30 fps or below are unaffected, and 60 fps games continue to flip every vblank as before. The only remaining blind spot is a game that never flips the display pointer and instead overlaps its display lists; that title still evades the limiter. Savestate regression testing across a broad game set, plus existing unit tests, pspautotests, and frametests, all pass with the change."
+    },
+    {
+      "type": "heading",
+      "text": "Headless frame stats now expose the game's own frame rate"
+    },
+    {
+      "type": "paragraph",
+      "text": "The headless runner's --frame-stats output gains a second column, pageFlipsPerSecond, which reports how many times per emulated second the game switched to a different framebuffer address. This reflects the game's internal frame rate, whereas the existing flipsPerSecond column shows how many vblanks had new content to present—the number the GUI FPS counter displays. Developers can now verify that the 30 fps limiter is working by comparing the two columns: when the limiter is active, pageFlipsPerSecond should stay near 30 while flipsPerSecond matches the capped rate."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimización de shaders de escalado NNEDI3 para hardware gráfico móvil",
+  "summary": "Las nuevas optimizaciones en los shaders de escalado NNEDI3 en PPSSPP mejoran significativamente el rendimiento al omitir cálculos redundantes de redes neuronales en áreas de imagen planas y mejorar la agrupación de hilos de la GPU.",
+  "heroAlt": "Un primer plano de una consola portátil PlayStation Portable mostrando la pantalla y la cruceta direccional.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shaders",
+    "escalado",
+    "upscaling",
+    "rendimiento de GPU",
+    "GPU performance",
+    "juegos móviles",
+    "mobile gaming",
+    "emulación"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23132",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El coste computacional del escalado neuronal"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 es un algoritmo de escalado de alta calidad utilizado en PPSSPP para mejorar la fidelidad visual de las texturas de baja resolución de PSP. A diferencia de los filtros bilineales o bicúbicos más simples, NNEDI3 utiliza una red neuronal para predecir los valores de los píxeles, lo que resulta en bordes más nítidos y menos artefactos. Sin embargo, esta calidad conlleva un coste computacional significativo, particularmente en hardware móvil donde los recursos de la GPU son limitados. Anteriormente, el shader ejecutaba su lógica completa de red neuronal para cada píxel procesado, independientemente de si el área contenía detalles complejos o colores planos simples. Este enfoque uniforme generaba una sobrecarga innecesaria en escenas con grandes parches de color sólido o transparencia, donde las complejas predicciones de una red neuronal aportan poco o ningún beneficio visual en comparación con un promedio básico."
+    },
+    {
+      "type": "heading",
+      "text": "Implementación de salidas tempranas y agrupación de trabajo"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para abordar estas ineficiencias, los cambios más recientes introducen un mecanismo de salida temprana basado en la varianza de los píxeles. El shader ya calcula el promedio y la varianza de los píxeles circundantes como parte de su rutina estándar. Al verificar si la varianza cae por debajo de un límite específico, el motor ahora puede determinar si la contribución de la red neuronal es necesaria. Si la varianza es cero o cercana a cero, el shader simplemente devuelve el color promedio y omite por completo la costosa pasada de la red neuronal. Además, para los shaders de una sola pasada, el desarrollador optimizó cómo se agrupa el trabajo dentro de los mosaicos. Dado que cada dos filas o columnas en estas operaciones suelen ser una copia directa, el shader ahora agrupa estas operaciones idénticas, permitiendo que la GPU maneje las predicciones y copias de manera más eficiente."
+    },
+    {
+      "type": "heading",
+      "text": "Ganancias de rendimiento en el mundo real en dispositivos móviles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Estas mejoras arquitectónicas se traducen en mejoras sustanciales de rendimiento, especialmente en GPUs móviles como la serie PowerVR. Las pruebas en un Pixel 10 Pro XL demostraron que la pantalla de estado del personaje en Star Ocean se abría significativamente más rápido al usar los shaders optimizados. Específicamente, el shader Single 2x experimentó un aumento de velocidad de 3.5x, mientras que el shader Single 4x funcionó 6 veces más rápido que antes. Incluso la variante más compleja Multi 4x mostró una mejora de 1.25x. Estas ganancias significan que los jugadores pueden disfrutar de un escalado de alta calidad sin los tirones o los largos tiempos de carga asociados anteriormente con los filtros neuronales. La optimización reduce efectivamente el peso computacional del shader, haciendo que el escalado de alta gama sea viable en una gama más amplia de hardware móvil."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y compatibilidad futura con hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "El impacto de estos cambios es más visible cuando se utilizan las opciones de escalado NNEDI3 en la configuración de shaders de post-procesamiento. Los jugadores pueden verificar las mejoras monitoreando los tiempos de fotograma u observando la capacidad de respuesta de los elementos de la interfaz de usuario que utilizan el escalado de texturas. Si bien el salto de rendimiento es más dramático en arquitecturas móviles específicas como PowerVR, la salida temprana basada en la varianza proporciona un beneficio universal en todas las plataformas al reducir el número total de operaciones de punto flotante requeridas para texturas planas. El desarrollo futuro puede continuar aprovechando herramientas de análisis automatizado para encontrar cuellos de botella similares en otros efectos de post-procesamiento. Por ahora, estas optimizaciones aseguran que uno de los métodos de escalado más avanzados en el emulador sea más accesible para la base general de usuarios."
+    }
+  ]
+}

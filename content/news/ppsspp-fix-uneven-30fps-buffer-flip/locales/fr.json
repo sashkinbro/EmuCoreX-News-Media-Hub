@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP corrige le pacing inégal à 30 fps lorsque les jeux basculent entre les moitiés de tampon",
+  "summary": "Un bug de cadencement d'images a provoqué des saccades à 30 fps dans des jeux comme Silent Hill: Shattered Memories, car l'émulateur traitait les deux moitiés d'un même tampon comme des images distinctes. La correction compte les changements réels de framebuffer au lieu de se fier aux dirty flags.",
+  "heroAlt": "Une console PlayStation Portable argentée posée sur une surface sombre, son écran LCD large affichant un menu de jeu en pause sous un éclairage intérieur doux.",
+  "searchKeywords": [
+    "PPSSPP",
+    "cadencement d'images",
+    "30 fps",
+    "framebuffer",
+    "Silent Hill Shattered Memories",
+    "précision de l'émulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23160",
+    "implementation": "Correctif et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pourquoi la limite à 30 fps provoquait des saccades sur certains jeux"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories et des titres similaires dessinent chaque image dans une moitié d'un unique tampon large de 1024 pixels, puis basculent le pointeur d'affichage vers l'autre moitié au vblank suivant. Les deux moitiés partagent le même objet VirtualFramebuffer, pourtant seule la moitié gauche correspondait exactement à son adresse. La moitié droite était présentée à chaque vblank, tandis que la moitié gauche dépendait d'un dirty flag que les appels de dessin de l'image suivante avaient déjà effacé. Avec le limiteur à 30 fps actif, les images restaient donc pendant un vblank, puis trois, puis à nouveau un, produisant une lecture visible 45/45 sur le compteur FPS et un mouvement irrégulier. À 60 fps, les basculements rapides de moitié masquaient le problème car chaque vblank recevait une demi-tampon fraîche."
+    },
+    {
+      "type": "heading",
+      "text": "Compter les vrais changements de framebuffer au lieu des dirty flags"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif modifie la logique de cadencement d'images de sorte que tout changement de l'adresse supérieure d'affichage à l'intérieur du même tampon de support compte comme une nouvelle image. Un nouveau compteur, framebufChanges, s'incrémente uniquement lorsque sceDisplaySetFramebuf reçoit une adresse différente ; la réinitialisation de la même adresse (ce que certains jeux font à chaque vblank) est ignorée. Le FramebufferManager suit désormais les indicateurs displaySwitched_ et displaySwitchedReally_ et réinitialise un compteur de vérification à chaque changement. Les méthodes FramebufferDirty() et FramebufferReallyDirty() de GPUCommonHW délèguent toutes deux à une nouvelle méthode ConsumeDisplayDirty() qui consomme l'indicateur approprié, garantissant que le pacer voit une image fraîche exactement lorsque le jeu en présente réellement une."
+    },
+    {
+      "type": "heading",
+      "text": "Ce que les joueurs constateront en pratique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les jeux qui alternent les moitiés d'un même tampon maintiennent désormais un 30 fps stable lorsque le limiteur est activé, affichant 30/30 sur le compteur à l'écran au lieu du 45/45 précédent. Les titres qui tournaient déjà à 30 fps ou moins ne sont pas affectés, et les jeux à 60 fps continuent de basculer à chaque vblank comme auparavant. Le seul point aveugle restant est un jeu qui ne bascule jamais le pointeur d'affichage et chevauche plutôt ses listes d'affichage ; ce titre échappe toujours au limiteur. Les tests de régression par savestate sur un large ensemble de jeux, ainsi que les tests unitaires existants, pspautotests et frametests, passent tous avec ce changement."
+    },
+    {
+      "type": "heading",
+      "text": "Les statistiques d'images en mode headless exposent désormais le taux d'images propre au jeu"
+    },
+    {
+      "type": "paragraph",
+      "text": "La sortie --frame-stats du runner headless gagne une seconde colonne, pageFlipsPerSecond, qui indique combien de fois par seconde émulée le jeu a basculé vers une adresse de framebuffer différente. Cela reflète le taux d'images interne du jeu, alors que la colonne existante flipsPerSecond montre combien de vblanks avaient du nouveau contenu à présenter — le nombre affiché par le compteur FPS de l'interface graphique. Les développeurs peuvent désormais vérifier que le limiteur à 30 fps fonctionne en comparant les deux colonnes : lorsque le limiteur est actif, pageFlipsPerSecond doit rester proche de 30 tandis que flipsPerSecond correspond au taux plafonné."
+    }
+  ]
+}

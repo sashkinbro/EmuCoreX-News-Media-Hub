@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-fix-uneven-30fps-buffer-flip",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP behebt ungleichmäßiges 30-fps-Pacing, wenn Spiele zwischen Buffer-Hälften umschalten",
+  "summary": "Ein Frame-Pacing-Bug verursachte bei Spielen wie Silent Hill: Shattered Memories Ruckeln bei 30 fps, weil der Emulator zwei Hälften eines Buffers als separate Frames behandelte. Die Korrektur zählt tatsächliche Framebuffer-Umschaltungen statt sich auf Dirty-Flags zu verlassen.",
+  "heroAlt": "Ein silberner PlayStation Portable Handheld ruht auf einer dunklen Oberfläche, sein Breitbild-LCD zeigt ein pausiertes Spielmenü unter weichem Innenlicht.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Frame-Pacing",
+    "30 fps",
+    "Framebuffer",
+    "Silent Hill Shattered Memories",
+    "Emulationsgenauigkeit"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP Pull Request #23160",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warum das 30-fps-Limit bei bestimmten Spielen ruckelte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Shattered Memories und ähnliche Titel zeichnen jeden Frame in eine Hälfte eines einzelnen 1024 Pixel breiten Buffers und schalten dann den Display-Zeiger beim nächsten Vblank auf die andere Hälfte um. Beide Hälften teilen sich dasselbe VirtualFramebuffer-Objekt, doch nur die linke Hälfte stimmte exakt mit ihrer Adresse überein. Die rechte Hälfte wurde bei jedem Vblank präsentiert, während die linke Hälfte von einem Dirty-Flag abhing, das die Draw-Calls des nächsten Frames bereits gelöscht hatten. Mit dem aktiven 30-fps-Limiter verharrten Frames daher für einen Vblank, dann drei, dann wieder einen, was eine sichtbare 45/45-Anzeige auf dem FPS-Zähler und ungleichmäßige Bewegung erzeugte. Bei 60 fps maskierten die schnellen Halbseiten-Umschaltungen das Problem, da jeder Vblank eine frische Halbseiten-Hälfte erhielt."
+    },
+    {
+      "type": "heading",
+      "text": "Zählen echter Framebuffer-Umschaltungen statt Dirty-Flags"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch ändert die Frame-Pacing-Logik so, dass jede Änderung der Display-Top-Adresse innerhalb desselben Backing-Buffers als neuer Frame gezählt wird. Ein neuer Zähler, framebufChanges, wird nur inkrementiert, wenn sceDisplaySetFramebuf eine andere Adresse erhält; das erneute Setzen derselben Adresse (was einige Spiele bei jedem Vblank tun) wird ignoriert. Der FramebufferManager verfolgt nun die Flags displaySwitched_ und displaySwitchedReally_ und setzt einen Prüfzähler bei jedem Wechsel zurück. GPUCommonHWs FramebufferDirty() und FramebufferReallyDirty() delegieren beide an eine neue ConsumeDisplayDirty()-Methode, die das entsprechende Flag verbraucht, sodass der Pacer genau dann einen frischen Frame sieht, wenn das Spiel tatsächlich einen präsentiert."
+    },
+    {
+      "type": "heading",
+      "text": "Was Spieler in der Praxis bemerken werden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spiele, die zwischen den Hälften eines Buffers wechseln, halten nun bei aktiviertem Limiter ein stabiles 30 fps und zeigen 30/30 auf dem On-Screen-Zähler statt der bisherigen 45/45. Titel, die bereits mit 30 fps oder darunter liefen, sind unbeeinflusst, und 60-fps-Spiele schalten weiterhin bei jedem Vblank um wie zuvor. Der einzige verbleibende blinde Fleck ist ein Spiel, das den Display-Zeiger nie umschaltet, sondern stattdessen seine Display-Listen überlappt; dieser Titel entgeht dem Limiter weiterhin. Savestate-Regressionstests über einen breiten Spielesatz sowie bestehende Unit-Tests, pspautotests und Frametests bestehen alle mit der Änderung."
+    },
+    {
+      "type": "heading",
+      "text": "Headless-Frame-Statistiken geben nun die eigene Frame-Rate des Spiels aus"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die --frame-stats-Ausgabe des Headless-Runners erhält eine zweite Spalte, pageFlipsPerSecond, die angibt, wie oft pro emulierter Sekunde das Spiel zu einer anderen Framebuffer-Adresse wechselte. Dies spiegelt die interne Frame-Rate des Spiels wider, während die bestehende flipsPerSecond-Spalte anzeigt, wie viele Vblanks neuen Inhalt zur Präsentation hatten – die Zahl, die der GUI-FPS-Zähler anzeigt. Entwickler können nun überprüfen, ob der 30-fps-Limiter funktioniert, indem sie die beiden Spalten vergleichen: Wenn der Limiter aktiv ist, sollte pageFlipsPerSecond nahe 30 bleiben, während flipsPerSecond der begrenzten Rate entspricht."
+    }
+  ]
+}

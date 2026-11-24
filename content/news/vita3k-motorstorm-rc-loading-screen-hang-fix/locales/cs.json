@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-motorstorm-rc-loading-screen-hang-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K opravuje zaseknutí načítání MotorStorm RC pomocí změn v commerce a audio scheduleru",
+  "summary": "Vyřešeny jsou dva zdroje deadlocků v MotorStorm RC: commerce session, která nikdy neselhala, a audio callback, který běžel, zatímco hra stále držela svůj lock. Hra nyní dosahuje tutoriálu.",
+  "heroAlt": "Rukojmí konzole PlayStation Vita ležící na tmavém povrchu, ukazující jeho OLED obrazovku a dual analogové joysticky",
+  "searchKeywords": [
+    "Vita3K",
+    "MotorStorm RC",
+    "PCSC00014",
+    "sceNpCommerce2",
+    "sceNgsVoiceKeyOff",
+    "emulátor",
+    "PlayStation Vita"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "compatibility": "Kompatibilita"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4416",
+    "implementation": "Patch a review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč hra zasekla na načítací obrazovce"
+    },
+    {
+      "type": "paragraph",
+      "text": "MotorStorm RC (PCSC00014) zamrzl během počátečního ověření obchodu, protože emulované `sceNpCommerce2CreateSessionStart` vrátilo úspěch bez vyplnění jakýchkoli výstupních polí. Hra pak četla neinicializovaný počet položek a smyčka běžela donekonečna v čekání na data, která nikdy nepřijde. Ve stejnou chvíli audio subsystém deadlocknul, když `sceNgsVoiceKeyOff` vyvolal finished callback hlasu okamžitě na vláknu volajícího. Hra drží svůj vlastní audio lock kolem volání KeyOff, a callback se pokusil získat stejný lock, čímž vznikl klasický kruhový wait, který zastavil pokrok dřív, než mohl tutoriál začít."
+    },
+    {
+      "type": "heading",
+      "text": "Jak opravy commerce a audio řeší deadlocky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Commerce modul nyní definuje `SCE_NP_ERROR_SIGNED_OUT` (0x80550006) a vrací ho z `sceNpCommerce2CreateSessionStart`, signalizuje, že žádný PlayStation Network server není dostupný. Hra to interpretuje jako signed-out stav a zcela přeskočí ověření obchodu. V NGS audio scheduleru `sceNgsVoiceKeyOff` již nespouští finished callback přímo. Místo toho označí hlas jako `FINALIZING` a deleguje čištění na další volání `sceNgsSystemUpdate`, které běží na jiném vláknu po uvolnění audio locku hrou. Mutex guardy byly také přidány do `play`, `pause` a `resume` pro ochranu interního deque scheduleru."
+    },
+    {
+      "type": "heading",
+      "text": "Co hráči povšimnou v MotorStorm RC"
+    },
+    {
+      "type": "paragraph",
+      "text": "S oběma změnami sloučenými, MotorStorm RC pokročí přes načítací obrazovku a dosáhne first-boot tutoriálu, přijímajíc controller input normálně. Reportér změřil zhruba 27 snímků za sekundu na Windows s Vulkan backendem během tutoriálu. Hlavní menu za tutoriálem nebylo validováno, a 3D rendering artefakty viditelné ve hře jsou sledovány jako samostatný issue nesouvisející s touto opravou zaseknutí."
+    },
+    {
+      "type": "heading",
+      "text": "Zbývající práce a jak ověřit opravu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Error kód použitý pro commerce failure není ověřený na hardwaru; byl vybrán, protože odpovídá signed-out podmínce, kterou hra očekává. Budoucí PSN server emulace může vyžadovat jinou cestu kódu. Změna NGS scheduleru předpokládá, že hra volá `sceNgsSystemUpdate` pravidelně, což je standardní praxe. Pro ověření opravy spusťte PCSC00014 na nedávném Vita3K buildu a potvrďte, že se tutoriál zobrazí a reaguje na input. Regresní testování by mělo pokrýtit další tituly, které používají `sceNpCommerce2` session creation nebo `sceNgsVoiceKeyOff` s vlastními audio locky."
+    }
+  ]
+}

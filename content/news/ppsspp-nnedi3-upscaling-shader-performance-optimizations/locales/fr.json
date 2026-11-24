@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-nnedi3-upscaling-shader-performance-optimizations",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimisation des shaders de mise à l'échelle NNEDI3 pour le matériel graphique mobile",
+  "summary": "De nouvelles optimisations des shaders de mise à l'échelle NNEDI3 dans PPSSPP améliorent considérablement les performances en ignorant les calculs de réseau neuronal redondants dans les zones d'image plates et en améliorant le regroupement des threads GPU.",
+  "heroAlt": "Un gros plan d'une console portable PlayStation Portable montrant l'écran et la croix directionnelle.",
+  "searchKeywords": [
+    "PPSSPP",
+    "NNEDI3",
+    "shaders",
+    "mise à l'échelle",
+    "upscaling",
+    "performance GPU",
+    "jeu mobile",
+    "émulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23132",
+    "implementation": "Correctif et examen"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le coût computationnel de la mise à l'échelle neuronale"
+    },
+    {
+      "type": "paragraph",
+      "text": "NNEDI3 est un algorithme de mise à l'échelle de haute qualité utilisé dans PPSSPP pour améliorer la fidélité visuelle des textures PSP basse résolution. Contrairement aux filtres bilinéaires ou bicubiques plus simples, NNEDI3 utilise un réseau neuronal pour prédire les valeurs des pixels, ce qui donne des bords plus nets et moins d'artefacts. Cependant, cette qualité a un coût computationnel important, en particulier sur le matériel mobile où les ressources GPU sont limitées. Auparavant, le shader exécutait sa logique de réseau neuronal complète pour chaque pixel traité, indépendamment du fait que la zone contienne des détails complexes ou de simples couleurs unies. Cette approche uniforme entraînait une surcharge inutile dans les scènes comportant de grandes zones de couleur unie ou de transparence, où les prédictions complexes d'un réseau neuronal n'apportent que peu ou pas d'avantage visuel par rapport à une moyenne de base."
+    },
+    {
+      "type": "heading",
+      "text": "Mise en œuvre de sorties anticipées et de regroupement de travail"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour remédier à ces inefficacités, les derniers changements introduisent un mécanisme de sortie anticipée basé sur la variance des pixels. Le shader calcule déjà la moyenne et la variance des pixels environnants dans le cadre de sa routine standard. En vérifiant si la variance tombe en dessous d'un seuil spécifique, le moteur peut désormais déterminer si une contribution du réseau neuronal est nécessaire. Si la variance est nulle ou proche de zéro, le shader renvoie simplement la couleur moyenne et ignore complètement la passe coûteuse du réseau neuronal. De plus, pour les shaders à passe unique, le développeur a optimisé la manière dont le travail est regroupé au sein des tuiles. Étant donné qu'une ligne ou une colonne sur deux dans ces opérations est souvent une copie directe, le shader regroupe désormais ces opérations identiques, permettant au GPU de gérer les prédictions et les copies plus efficacement."
+    },
+    {
+      "type": "heading",
+      "text": "Gains de performance réels sur les appareils mobiles"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ces raffinements architecturaux se traduisent par des améliorations de performance substantielles, en particulier sur les GPU mobiles comme la série PowerVR. Les tests sur un Pixel 10 Pro XL ont démontré que l'écran de statut des personnages dans Star Ocean s'ouvrait beaucoup plus rapidement lors de l'utilisation des shaders optimisés. Plus précisément, le shader Single 2x a vu une augmentation de vitesse de 3,5x, tandis que le shader Single 4x était 6x plus rapide qu'auparavant. Même la variante plus complexe Multi 4x a montré une amélioration de 1,25x. Ces gains signifient que les joueurs peuvent profiter d'une mise à l'échelle de haute qualité sans les saccades ou les longs temps de chargement précédemment associés aux filtres neuronaux. L'optimisation réduit efficacement le poids computationnel du shader, rendant la mise à l'échelle haut de gamme viable sur une plus large gamme de matériel mobile."
+    },
+    {
+      "type": "heading",
+      "text": "Vérification et compatibilité matérielle future"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'impact de ces changements est plus visible lors de l'utilisation des options de mise à l'échelle NNEDI3 dans les paramètres des shaders de post-traitement. Les joueurs peuvent vérifier les améliorations en surveillant les temps d'image ou en observant la réactivité des éléments de l'interface utilisateur qui utilisent la mise à l'échelle des textures. Bien que le saut de performance soit le plus spectaculaire sur des architectures mobiles spécifiques comme PowerVR, la sortie anticipée basée sur la variance offre un avantage universel sur toutes les plateformes en réduisant le nombre total d'opérations en virgule flottante requises pour les textures plates. Le développement futur pourrait continuer à tirer parti des outils d'analyse automatisés pour trouver des goulots d'étranglement similaires dans d'autres effets de post-traitement. Pour l'instant, ces optimisations garantissent que l'une des méthodes de mise à l'échelle les plus avancées de l'émulateur est plus accessible à la base d'utilisateurs générale."
+    }
+  ]
+}
