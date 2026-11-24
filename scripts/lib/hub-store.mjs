@@ -27,6 +27,9 @@ export function collectStore() {
 
   for (const [kind, spec] of Object.entries(extraKinds)) {
     const kindRoot = path.join(storeRoot, kind);
+    // A kind is published only when it is marked ready (store/<kind>/publish.json), so content that
+    // is still being generated or translated never breaks a release.
+    if (!fs.existsSync(path.join(kindRoot, "publish.json"))) continue;
     const kindCategories = readCategories(kind, path.join(kindRoot, "categories.json"), errors);
     const categoryIds = new Set(kindCategories.map((category) => category.id));
     categories.push(...kindCategories);
