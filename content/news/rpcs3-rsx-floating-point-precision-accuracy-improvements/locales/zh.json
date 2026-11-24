@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "改进 RSX 浮点精度与精度处理",
+  "summary": "RPCS3 现在能更准确地还原 PS3 RSX GPU 独特的浮点行为，通过优化着色器处理非规格化数、溢出和量化的方式，解决了长期存在的渲染错误。",
+  "heroAlt": "PlayStation 3 主机内部 RSX Reality Synthesizer 芯片的特写。",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "浮点",
+    "shader precision",
+    "着色器精度",
+    "emulation accuracy",
+    "模拟准确性",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "非标准硬件的挑战"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation 3 的 RSX GPU 并不严格遵循现代 PC 硬件所依赖的 IEEE-754 浮点运算标准。虽然在大多数情况下它与标准行为一致，但 RSX 在处理非规格化数、NaN 编码和数值钳位等边缘情况时表现出特定的怪癖。例如，RSX 在 65536 时达到溢出条件，而不是 PC 硬件所使用的标准 65504。此外，它将 32 位浮点值缩减为 16 位存储的方式涉及特定的指数调整和尾数截断。这些差异往往会导致游戏出现细微的渲染伪影或视觉特效错误，因为这些游戏依赖于原始主机的数学行为。"
+    },
+    {
+      "type": "heading",
+      "text": "实现精确的精度逻辑"
+    },
+    {
+      "type": "paragraph",
+      "text": "为了弥补这一差距，模拟器的着色器反编译器已更新，以更好地还原 RSX 特有的逻辑。新的实现引入了一种更强大的“Ultra”着色器精度模式，专门针对这些硬件边缘情况。这包括匹配 RSX 的行为，即在 32 位寄存器量化期间将非规格化数归零，但在 16 位寄存器中保留它们。此次更新还优化了光栅化操作（ROP）阶段，确保帧缓冲区的缩减规则遵循原始硬件的逻辑。在后端，模拟器现在利用 SPIR-V 内在函数和特定的 Vulkan 扩展在受支持的硬件上保留非规格化数，确保宿主 GPU 执行的数学运算尽可能接近 PS3。"
+    },
+    {
+      "type": "heading",
+      "text": "对性能和兼容性的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "这些更改直接解决了几个长期存在的问题，即游戏因精度相关错误而受损的情况。通过选择“Ultra”着色器质量设置，玩家可以解决之前被认为无法修复的特定渲染错误。对于优先考虑性能的玩家，“High”设置已得到优化，尽可能使用原生硬件 16 位浮点运算，在提供速度提升的同时，仍保持比“Low”设置更好的准确性。这种分级方法允许玩家在针对问题游戏追求最大准确性，或在对浮点漂移不敏感的游戏中追求更高帧率之间进行选择。测试表明，AMD 硬件在这些新规则下实现了与原始硬件近乎完美的对等。"
+    },
+    {
+      "type": "heading",
+      "text": "硬件细节与验证"
+    },
+    {
+      "type": "paragraph",
+      "text": "这些改进的验证是使用专门的浮点测试套件进行的，该套件将模拟器的输出与真实的 PS3 硬件进行了比较。虽然 AMD GPU 在新逻辑下取得了立竿见影的成功，但由于驱动程序处理非规格化数的方式不同，NVIDIA 硬件需要额外的变通方法。在实施这些变通方法后，NVIDIA 硬件现在也达到了高水平的准确性。玩家可以在之前标记有“着色器精度问题”的游戏中验证这些更改的影响，特别是那些涉及复杂光照或透明效果的游戏。随着通过针对原始 RSX 芯片进行严格测试发现更多特定于硬件的行为，未来的开发将继续监测这些边缘情况。"
+    }
+  ]
+}

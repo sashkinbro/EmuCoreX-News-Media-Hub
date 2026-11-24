@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Poprawa dokładności obliczeń zmiennoprzecinkowych i precyzji RSX",
+  "summary": "RPCS3 teraz dokładniej odwzorowuje unikalne zachowanie obliczeń zmiennoprzecinkowych procesora graficznego RSX konsoli PS3, rozwiązując długotrwałe błędy renderowania poprzez udoskonalenie sposobu obsługi liczb zdenormalizowanych, przepełnień i kwantyzacji przez shadery.",
+  "heroAlt": "Zbliżenie na układ RSX Reality Synthesizer znajdujący się wewnątrz konsoli PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "liczby zmiennoprzecinkowe",
+    "shader precision",
+    "precyzja shaderów",
+    "emulation accuracy",
+    "dokładność emulacji",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Wyzwanie niestandardowego sprzętu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Procesor graficzny RSX w konsoli PlayStation 3 nie stosuje się ściśle do standardu IEEE-754 dla arytmetyki zmiennoprzecinkowej, na którym polega nowoczesny sprzęt PC. Choć w większości scenariuszy zachowuje się zgodnie ze standardem, RSX wykazuje specyficzne dziwactwa podczas obsługi przypadków brzegowych, takich jak liczby zdenormalizowane, kodowanie NaN czy ograniczanie wartości (clamping). Na przykład RSX osiąga stan przepełnienia przy wartości 65536, zamiast standardowych 65504 używanych przez sprzęt PC. Dodatkowo sposób, w jaki zawęża on 32-bitowe wartości zmiennoprzecinkowe do 16-bitowego zapisu, wiąże się ze specyficznymi korektami wykładnika i obcinaniem mantysy. Te rozbieżności często prowadzą do subtelnych artefaktów renderowania lub błędów efektów wizualnych w grach, które oczekują matematycznego zachowania oryginalnej konsoli."
+    },
+    {
+      "type": "heading",
+      "text": "Wdrażanie dokładnej logiki precyzji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby wypełnić tę lukę, dekompilator shaderów emulatora został zaktualizowany, aby lepiej odwzorowywać logikę specyficzną dla RSX. Nowa implementacja wprowadza bardziej niezawodny tryb precyzji shaderów „Ultra”, który jest skierowany bezpośrednio na te sprzętowe przypadki brzegowe. Obejmuje to dopasowanie zachowania RSX, w którym liczby zdenormalizowane są zerowane podczas kwantyzacji rejestrów 32-bitowych, ale zachowywane dla rejestrów 16-bitowych. Aktualizacja udoskonala również etap operacji rastrowych (ROP), zapewniając, że zasady zawężania dla buforów ramki są zgodne z logiką oryginalnego sprzętu. Po stronie backendu emulator wykorzystuje teraz funkcje wewnętrzne SPIR-V oraz specyficzne rozszerzenia Vulkan, aby zachować liczby zdenormalizowane na wspieranym sprzęcie, zapewniając, że obliczenia wykonywane przez host GPU są jak najbardziej zbliżone do PS3."
+    },
+    {
+      "type": "heading",
+      "text": "Wpływ na wydajność i kompatybilność"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiany te bezpośrednio rozwiązują szereg długotrwałych problemów, w których gry cierpiały z powodu błędów związanych z precyzją. Wybierając ustawienie jakości shaderów „Ultra”, gracze mogą wyeliminować konkretne błędy renderowania, które wcześniej uważano za niemożliwe do naprawienia. Dla osób stawiających na wydajność, ustawienie „High” zostało zoptymalizowane pod kątem wykorzystania natywnych sprzętowych operacji zmiennoprzecinkowych 16-bitowych tam, gdzie to możliwe, zapewniając wzrost prędkości przy jednoczesnym zachowaniu lepszej dokładności niż w ustawieniu „Low”. To warstwowe podejście pozwala graczom wybierać między maksymalną dokładnością w problematycznych tytułach a wyższą liczbą klatek na sekundę w grach mniej wrażliwych na dryft zmiennoprzecinkowy. Testy pokazują, że sprzęt AMD osiąga niemal idealną zgodność z oryginalnym sprzętem przy zastosowaniu tych nowych zasad."
+    },
+    {
+      "type": "heading",
+      "text": "Specyfika sprzętowa i weryfikacja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Weryfikację tych ulepszeń przeprowadzono przy użyciu specjalistycznego zestawu testów zmiennoprzecinkowych, który porównał wynik emulatora z rzeczywistym sprzętem PS3. Podczas gdy procesory graficzne AMD odniosły natychmiastowy sukces dzięki nowej logice, sprzęt NVIDIA wymagał dodatkowych obejść ze względu na różnice w sposobie obsługi liczb zdenormalizowanych przez ich sterowniki. Po wdrożeniu tych obejść, sprzęt NVIDIA również osiąga teraz wysoki poziom dokładności. Gracze mogą zweryfikować wpływ tych zmian w tytułach wcześniej oznaczonych jako mające problemy z precyzją shaderów, szczególnie tych obejmujących złożone oświetlenie lub efekty przezroczystości. Przyszłe prace rozwojowe będą nadal monitorować te przypadki brzegowe w miarę odkrywania kolejnych zachowań specyficznych dla sprzętu poprzez rygorystyczne testy z oryginalnym krzemem RSX."
+    }
+  ]
+}

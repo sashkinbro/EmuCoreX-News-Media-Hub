@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Meningkatkan Akurasi Floating Point dan Penanganan Presisi RSX",
+  "summary": "RPCS3 kini mereproduksi perilaku floating-point unik dari GPU RSX PS3 dengan lebih akurat, mengatasi bug rendering yang sudah lama ada dengan menyempurnakan cara shader menangani denormal, overflow, dan kuantisasi.",
+  "heroAlt": "Tampilan jarak dekat chip RSX Reality Synthesizer yang ditemukan di dalam konsol PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "titik mengambang",
+    "shader precision",
+    "presisi shader",
+    "emulation accuracy",
+    "akurasi emulasi",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Patch dan peninjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tantangan Perangkat Keras Non-Standar"
+    },
+    {
+      "type": "paragraph",
+      "text": "GPU RSX PlayStation 3 tidak secara ketat mengikuti standar IEEE-754 untuk aritmatika floating-point yang diandalkan oleh perangkat keras PC modern. Meskipun cocok dengan perilaku standar dalam sebagian besar skenario, RSX menunjukkan keunikan spesifik saat menangani kasus tepi seperti angka denormal, pengodean NaN, dan clamping nilai. Sebagai contoh, RSX mencapai kondisi overflow pada 65536, bukan 65504 standar yang digunakan oleh perangkat keras PC. Selain itu, cara ia mempersempit nilai floating-point 32-bit ke penyimpanan 16-bit melibatkan penyesuaian eksponen dan pemotongan mantissa yang spesifik. Perbedaan ini sering menyebabkan artefak rendering yang halus atau efek visual yang rusak pada game yang mengharapkan perilaku matematis konsol aslinya."
+    },
+    {
+      "type": "heading",
+      "text": "Menerapkan Logika Presisi yang Akurat"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk menjembatani kesenjangan ini, decompiler shader emulator telah diperbarui agar lebih baik dalam mereproduksi logika spesifik RSX. Implementasi baru ini memperkenalkan mode presisi shader 'Ultra' yang lebih tangguh, yang secara khusus menargetkan kasus tepi perangkat keras ini. Ini termasuk mencocokkan perilaku RSX di mana denormal dinolkan selama kuantisasi register 32-bit tetapi dipertahankan untuk register 16-bit. Pembaruan ini juga menyempurnakan tahap Raster Operations (ROP), memastikan bahwa aturan penyempitan untuk framebuffer mengikuti logika perangkat keras aslinya. Pada backend, emulator kini memanfaatkan intrinsik SPIR-V dan ekstensi Vulkan tertentu untuk mempertahankan denormal pada perangkat keras yang didukung, memastikan matematika yang dilakukan oleh GPU host mencerminkan PS3 sedekat mungkin."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak pada Performa dan Kompatibilitas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan ini secara langsung mengatasi beberapa masalah lama di mana game mengalami bug terkait presisi. Dengan memilih pengaturan kualitas shader 'Ultra', pemain dapat menyelesaikan kesalahan rendering spesifik yang sebelumnya dianggap tidak dapat diperbaiki. Bagi mereka yang memprioritaskan performa, pengaturan 'High' telah dioptimalkan untuk menggunakan operasi floating-point 16-bit perangkat keras asli jika memungkinkan, memberikan peningkatan kecepatan sambil tetap mempertahankan akurasi yang lebih baik daripada pengaturan 'Low'. Pendekatan bertingkat ini memungkinkan pemain untuk memilih antara akurasi maksimum untuk judul yang bermasalah atau frame rate yang lebih tinggi dalam game yang kurang sensitif terhadap pergeseran floating-point. Pengujian menunjukkan bahwa perangkat keras AMD mencapai paritas yang hampir sempurna dengan perangkat keras asli di bawah aturan baru ini."
+    },
+    {
+      "type": "heading",
+      "text": "Spesifikasi Perangkat Keras dan Verifikasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verifikasi peningkatan ini dilakukan menggunakan rangkaian pengujian floating-point khusus, yang membandingkan output emulator dengan perangkat keras PS3 asli. Meskipun GPU AMD menunjukkan keberhasilan langsung dengan logika baru ini, perangkat keras NVIDIA memerlukan solusi tambahan karena perbedaan dalam cara driver mereka menangani angka denormalisasi. Setelah menerapkan solusi ini, perangkat keras NVIDIA kini juga mencapai tingkat akurasi yang tinggi. Pemain dapat memverifikasi dampak perubahan ini pada judul yang sebelumnya ditandai dengan masalah presisi shader, terutama yang melibatkan efek pencahayaan atau transparansi yang kompleks. Pengembangan di masa depan akan terus memantau kasus tepi ini seiring dengan ditemukannya perilaku spesifik perangkat keras lainnya melalui pengujian ketat terhadap silikon RSX asli."
+    }
+  ]
+}

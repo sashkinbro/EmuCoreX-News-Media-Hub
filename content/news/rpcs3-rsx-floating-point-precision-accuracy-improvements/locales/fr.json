@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Amélioration de la précision et de la gestion des nombres à virgule flottante du RSX",
+  "summary": "RPCS3 reproduit désormais plus fidèlement le comportement unique des nombres à virgule flottante du GPU RSX de la PS3, corrigeant des bugs de rendu persistants en affinant la manière dont les shaders gèrent les nombres dénormalisés, les dépassements de capacité et la quantification.",
+  "heroAlt": "Un gros plan sur la puce Reality Synthesizer RSX présente à l'intérieur d'une console PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "virgule flottante",
+    "shader precision",
+    "précision des shaders",
+    "emulation accuracy",
+    "précision de l'émulation",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Correctif et revue"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le défi du matériel non standard"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le GPU RSX de la PlayStation 3 ne suit pas strictement la norme IEEE-754 pour l'arithmétique en virgule flottante sur laquelle s'appuie le matériel PC moderne. Bien qu'il corresponde au comportement standard dans la plupart des scénarios, le RSX présente des particularités spécifiques lors de la gestion de cas limites tels que les nombres dénormalisés, l'encodage NaN et le bridage des valeurs. Par exemple, le RSX atteint une condition de dépassement de capacité à 65536 au lieu des 65504 standard utilisés par le matériel PC. De plus, la manière dont il réduit les valeurs en virgule flottante 32 bits vers un stockage 16 bits implique des ajustements d'exposant et une troncature de mantisse spécifiques. Ces divergences conduisent souvent à des artefacts de rendu subtils ou à des effets visuels corrompus dans les jeux qui attendent le comportement mathématique de la console originale."
+    },
+    {
+      "type": "heading",
+      "text": "Mise en œuvre d'une logique de précision précise"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour combler cet écart, le décompilateur de shaders de l'émulateur a été mis à jour afin de mieux reproduire la logique spécifique au RSX. La nouvelle implémentation introduit un mode de précision de shader 'Ultra' plus robuste qui cible spécifiquement ces cas limites matériels. Cela inclut la correspondance avec le comportement du RSX où les nombres dénormalisés sont mis à zéro lors de la quantification des registres 32 bits, mais préservés pour les registres 16 bits. La mise à jour affine également l'étape des opérations raster (ROP), garantissant que les règles de réduction pour les framebuffers suivent la logique du matériel original. En backend, l'émulateur utilise désormais des intrinsèques SPIR-V et des extensions Vulkan spécifiques pour préserver les nombres dénormalisés sur le matériel pris en charge, garantissant que les calculs effectués par le GPU hôte reflètent le plus fidèlement possible ceux de la PS3."
+    },
+    {
+      "type": "heading",
+      "text": "Impact sur les performances et la compatibilité"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ces changements traitent directement plusieurs problèmes de longue date où les jeux souffraient de bugs liés à la précision. En sélectionnant le réglage de qualité de shader 'Ultra', les joueurs peuvent résoudre des erreurs de rendu spécifiques qui étaient auparavant considérées comme irréparables. Pour ceux qui privilégient les performances, le réglage 'High' a été optimisé pour utiliser les opérations natives en virgule flottante 16 bits du matériel lorsque cela est possible, offrant un gain de vitesse tout en conservant une meilleure précision que le réglage 'Low'. Cette approche par paliers permet aux joueurs de choisir entre une précision maximale pour les titres problématiques ou des fréquences d'images plus élevées dans les jeux moins sensibles à la dérive des nombres à virgule flottante. Les tests montrent que le matériel AMD atteint une parité quasi parfaite avec le matériel original sous ces nouvelles règles."
+    },
+    {
+      "type": "heading",
+      "text": "Spécificités matérielles et vérification"
+    },
+    {
+      "type": "paragraph",
+      "text": "La vérification de ces améliorations a été effectuée à l'aide d'une suite de tests spécialisée en virgule flottante, qui a comparé la sortie de l'émulateur avec le matériel PS3 réel. Alors que les GPU AMD ont montré un succès immédiat avec la nouvelle logique, le matériel NVIDIA a nécessité des solutions de contournement supplémentaires en raison des différences dans la manière dont leurs pilotes gèrent les nombres dénormalisés. Après la mise en œuvre de ces solutions, le matériel NVIDIA atteint désormais également des niveaux de précision élevés. Les joueurs peuvent vérifier l'impact de ces changements dans les titres précédemment signalés comme ayant des problèmes de précision de shader, en particulier ceux impliquant des effets d'éclairage ou de transparence complexes. Le développement futur continuera de surveiller ces cas limites à mesure que davantage de comportements spécifiques au matériel seront découverts grâce à des tests rigoureux sur le silicium RSX original."
+    }
+  ]
+}

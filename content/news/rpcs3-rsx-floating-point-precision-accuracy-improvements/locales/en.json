@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Improving RSX Floating Point Accuracy and Precision Handling",
+  "summary": "RPCS3 now more accurately reproduces the unique floating-point behavior of the PS3's RSX GPU, addressing long-standing rendering bugs by refining how shaders handle denormals, overflows, and quantization.",
+  "heroAlt": "A close-up of the RSX Reality Synthesizer chip found inside a PlayStation 3 console.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "shader precision",
+    "emulation accuracy",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Challenge of Non-Standard Hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "The PlayStation 3's RSX GPU does not strictly follow the IEEE-754 standard for floating-point arithmetic that modern PC hardware relies on. While it matches standard behavior in most scenarios, the RSX exhibits specific quirks when handling edge cases like denormal numbers, NaN encoding, and value clamping. For instance, the RSX reaches an overflow condition at 65536 instead of the standard 65504 used by PC hardware. Additionally, the way it narrows 32-bit floating-point values into 16-bit storage involves specific exponent adjustments and mantissa truncation. These discrepancies often lead to subtle rendering artifacts or broken visual effects in games that expect the original console's mathematical behavior."
+    },
+    {
+      "type": "heading",
+      "text": "Implementing Accurate Precision Logic"
+    },
+    {
+      "type": "paragraph",
+      "text": "To bridge this gap, the emulator's shader decompiler has been updated to better reproduce RSX-specific logic. The new implementation introduces a more robust 'Ultra' shader precision mode that specifically targets these hardware edge cases. This includes matching the RSX's behavior where denormals are zeroed during 32-bit register quantization but preserved for 16-bit registers. The update also refines the Raster Operations (ROP) stage, ensuring that narrowing rules for framebuffers follow the original hardware's logic. On the backend, the emulator now utilizes SPIR-V intrinsics and specific Vulkan extensions to preserve denormals on supported hardware, ensuring the math performed by the host GPU mirrors the PS3 as closely as possible."
+    },
+    {
+      "type": "heading",
+      "text": "Impact on Performance and Compatibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "These changes directly address several long-standing issues where games suffered from precision-related bugs. By selecting the 'Ultra' shader quality setting, players can resolve specific rendering errors that were previously considered unfixable. For those prioritizing performance, the 'High' setting has been optimized to use native hardware 16-bit floating-point operations where possible, providing a speed boost while still maintaining better accuracy than the 'Low' setting. This tiered approach allows players to choose between maximum accuracy for problematic titles or higher frame rates in games that are less sensitive to floating-point drift. Testing shows that AMD hardware achieves near-perfect parity with the original hardware under these new rules."
+    },
+    {
+      "type": "heading",
+      "text": "Hardware Specifics and Verification"
+    },
+    {
+      "type": "paragraph",
+      "text": "Verification of these improvements was conducted using a specialized floating-point test suite, which compared the emulator's output against real PS3 hardware. While AMD GPUs showed immediate success with the new logic, NVIDIA hardware required additional workarounds due to differences in how their drivers handle denormalized numbers. After implementing these workarounds, NVIDIA hardware now also achieves high levels of accuracy. Players can verify the impact of these changes in titles previously flagged with shader precision issues, particularly those involving complex lighting or transparency effects. Future development will continue to monitor these edge cases as more hardware-specific behaviors are discovered through rigorous testing against the original RSX silicon."
+    }
+  ]
+}

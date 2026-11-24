@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mejora de la precisión de punto flotante y el manejo de la precisión en el RSX",
+  "summary": "RPCS3 ahora reproduce con mayor precisión el comportamiento único de punto flotante de la GPU RSX de PS3, solucionando errores de renderizado de larga data al refinar cómo los shaders manejan los números desnormalizados, desbordamientos y cuantización.",
+  "heroAlt": "Un primer plano del chip RSX Reality Synthesizer que se encuentra dentro de una consola PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "punto flotante",
+    "shader precision",
+    "precisión de shader",
+    "emulation accuracy",
+    "precisión de emulación",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "El desafío del hardware no estándar"
+    },
+    {
+      "type": "paragraph",
+      "text": "La GPU RSX de la PlayStation 3 no sigue estrictamente el estándar IEEE-754 para la aritmética de punto flotante en el que se basa el hardware de PC moderno. Aunque coincide con el comportamiento estándar en la mayoría de los escenarios, el RSX exhibe peculiaridades específicas al manejar casos límite como números desnormalizados, codificación NaN y limitación de valores (clamping). Por ejemplo, el RSX alcanza una condición de desbordamiento en 65536 en lugar del estándar 65504 utilizado por el hardware de PC. Además, la forma en que reduce los valores de punto flotante de 32 bits al almacenamiento de 16 bits implica ajustes de exponente y truncamiento de mantisa específicos. Estas discrepancias a menudo conducen a artefactos de renderizado sutiles o efectos visuales rotos en juegos que esperan el comportamiento matemático de la consola original."
+    },
+    {
+      "type": "heading",
+      "text": "Implementación de lógica de precisión precisa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para cerrar esta brecha, el descompilador de shaders del emulador se ha actualizado para reproducir mejor la lógica específica del RSX. La nueva implementación introduce un modo de precisión de shader 'Ultra' más robusto que se dirige específicamente a estos casos límite del hardware. Esto incluye igualar el comportamiento del RSX donde los números desnormalizados se ponen a cero durante la cuantización de registros de 32 bits, pero se conservan para los registros de 16 bits. La actualización también refina la etapa de Operaciones de Rasterización (ROP), asegurando que las reglas de reducción para los framebuffers sigan la lógica del hardware original. En el backend, el emulador ahora utiliza intrínsecos de SPIR-V y extensiones específicas de Vulkan para preservar los números desnormalizados en el hardware compatible, asegurando que las matemáticas realizadas por la GPU anfitriona reflejen a la PS3 lo más fielmente posible."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto en el rendimiento y la compatibilidad"
+    },
+    {
+      "type": "paragraph",
+      "text": "Estos cambios abordan directamente varios problemas de larga data donde los juegos sufrían errores relacionados con la precisión. Al seleccionar la configuración de calidad de shader 'Ultra', los jugadores pueden resolver errores de renderizado específicos que anteriormente se consideraban imposibles de arreglar. Para aquellos que priorizan el rendimiento, la configuración 'High' se ha optimizado para utilizar operaciones de punto flotante de 16 bits nativas del hardware siempre que sea posible, proporcionando un aumento de velocidad mientras se mantiene una mejor precisión que la configuración 'Low'. Este enfoque escalonado permite a los jugadores elegir entre la máxima precisión para títulos problemáticos o mayores tasas de fotogramas en juegos que son menos sensibles a la deriva de punto flotante. Las pruebas muestran que el hardware AMD logra una paridad casi perfecta con el hardware original bajo estas nuevas reglas."
+    },
+    {
+      "type": "heading",
+      "text": "Especificaciones del hardware y verificación"
+    },
+    {
+      "type": "paragraph",
+      "text": "La verificación de estas mejoras se llevó a cabo utilizando un conjunto de pruebas de punto flotante especializado, que comparó la salida del emulador con el hardware real de PS3. Mientras que las GPU AMD mostraron un éxito inmediato con la nueva lógica, el hardware NVIDIA requirió soluciones adicionales debido a las diferencias en cómo sus controladores manejan los números desnormalizados. Después de implementar estas soluciones, el hardware NVIDIA ahora también logra altos niveles de precisión. Los jugadores pueden verificar el impacto de estos cambios en títulos previamente marcados con problemas de precisión de shader, particularmente aquellos que involucran iluminación compleja o efectos de transparencia. El desarrollo futuro continuará monitoreando estos casos límite a medida que se descubran más comportamientos específicos del hardware a través de pruebas rigurosas contra el silicio RSX original."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Verbesserung der RSX-Gleitkomma-Genauigkeit und Präzisionsverarbeitung",
+  "summary": "RPCS3 reproduziert nun das einzigartige Gleitkomma-Verhalten der PS3 RSX GPU präziser und behebt langjährige Rendering-Fehler durch eine Verfeinerung der Shader-Verarbeitung von Denormalen, Überläufen und Quantisierung.",
+  "heroAlt": "Eine Nahaufnahme des RSX Reality Synthesizer Chips aus einer PlayStation 3 Konsole.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "Gleitkomma",
+    "shader precision",
+    "Shader-Präzision",
+    "emulation accuracy",
+    "Emulationsgenauigkeit",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 Pull Request #20078",
+    "implementation": "Patch und Überprüfung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die Herausforderung nicht standardisierter Hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die RSX GPU der PlayStation 3 folgt nicht strikt dem IEEE-754-Standard für Gleitkomma-Arithmetik, auf den sich moderne PC-Hardware stützt. Während sie in den meisten Szenarien dem Standardverhalten entspricht, weist die RSX spezifische Eigenheiten bei der Behandlung von Grenzfällen wie denormalen Zahlen, NaN-Kodierung und Werte-Clamping auf. Zum Beispiel erreicht die RSX einen Überlaufzustand bei 65536 anstelle der standardmäßigen 65504, die von PC-Hardware verwendet wird. Zusätzlich beinhaltet die Art und Weise, wie sie 32-Bit-Gleitkommawerte in 16-Bit-Speicher verkleinert, spezifische Exponentenanpassungen und Mantissenkürzungen. Diese Diskrepanzen führen oft zu subtilen Rendering-Artefakten oder fehlerhaften visuellen Effekten in Spielen, die das mathematische Verhalten der Originalkonsole erwarten."
+    },
+    {
+      "type": "heading",
+      "text": "Implementierung präziser Logik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um diese Lücke zu schließen, wurde der Shader-Decompiler des Emulators aktualisiert, um die RSX-spezifische Logik besser zu reproduzieren. Die neue Implementierung führt einen robusteren 'Ultra'-Shader-Präzisionsmodus ein, der gezielt auf diese Hardware-Grenzfälle ausgerichtet ist. Dies beinhaltet die Anpassung an das Verhalten der RSX, bei dem Denormale während der 32-Bit-Registerquantisierung auf Null gesetzt, aber für 16-Bit-Register beibehalten werden. Das Update verfeinert auch die Raster Operations (ROP)-Stufe und stellt sicher, dass die Verkleinerungsregeln für Framebuffer der Logik der Originalhardware folgen. Auf der Backend-Seite nutzt der Emulator nun SPIR-V Intrinsics und spezifische Vulkan-Erweiterungen, um Denormale auf unterstützter Hardware beizubehalten, wodurch sichergestellt wird, dass die von der Host-GPU durchgeführten Berechnungen die PS3 so genau wie möglich widerspiegeln."
+    },
+    {
+      "type": "heading",
+      "text": "Auswirkungen auf Leistung und Kompatibilität"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diese Änderungen beheben direkt mehrere langjährige Probleme, bei denen Spiele unter präzisionsbedingten Fehlern litten. Durch die Auswahl der 'Ultra'-Shader-Qualitätseinstellung können Spieler spezifische Rendering-Fehler beheben, die zuvor als unlösbar galten. Für diejenigen, die die Leistung priorisieren, wurde die 'High'-Einstellung optimiert, um nach Möglichkeit native 16-Bit-Gleitkommaoperationen der Hardware zu verwenden, was einen Geschwindigkeitsvorteil bietet und gleichzeitig eine bessere Genauigkeit als die 'Low'-Einstellung beibehält. Dieser abgestufte Ansatz ermöglicht es Spielern, zwischen maximaler Genauigkeit für problematische Titel oder höheren Bildraten in Spielen zu wählen, die weniger anfällig für Gleitkomma-Drift sind. Tests zeigen, dass AMD-Hardware unter diesen neuen Regeln eine nahezu perfekte Übereinstimmung mit der Originalhardware erreicht."
+    },
+    {
+      "type": "heading",
+      "text": "Hardware-Spezifika und Verifizierung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Verifizierung dieser Verbesserungen wurde mit einer spezialisierten Gleitkomma-Testsuite durchgeführt, die die Ausgabe des Emulators mit echter PS3-Hardware verglich. Während AMD-GPUs mit der neuen Logik sofortigen Erfolg zeigten, erforderte NVIDIA-Hardware zusätzliche Workarounds aufgrund von Unterschieden in der Art und Weise, wie deren Treiber mit denormalisierten Zahlen umgehen. Nach der Implementierung dieser Workarounds erreicht nun auch NVIDIA-Hardware ein hohes Maß an Genauigkeit. Spieler können die Auswirkungen dieser Änderungen in Titeln überprüfen, die zuvor als problematisch bei der Shader-Präzision markiert waren, insbesondere bei solchen mit komplexen Licht- oder Transparenzeffekten. Die zukünftige Entwicklung wird diese Grenzfälle weiterhin beobachten, während durch rigorose Tests gegen das originale RSX-Silizium weitere hardwarespezifische Verhaltensweisen entdeckt werden."
+    }
+  ]
+}

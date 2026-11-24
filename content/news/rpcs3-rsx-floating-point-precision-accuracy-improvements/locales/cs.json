@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zlepšení přesnosti a manipulace s pohyblivou řádovou čárkou v RSX",
+  "summary": "RPCS3 nyní přesněji reprodukuje unikátní chování pohyblivé řádové čárky GPU RSX v konzoli PS3, čímž řeší dlouhodobé chyby vykreslování díky vylepšenému způsobu, jakým shadery zpracovávají denormalizovaná čísla, přetečení a kvantování.",
+  "heroAlt": "Detailní záběr na čip RSX Reality Synthesizer, který se nachází uvnitř konzole PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "pohyblivá řádová čárka",
+    "shader precision",
+    "přesnost shaderů",
+    "emulation accuracy",
+    "přesnost emulace",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Výzva nestandardního hardwaru"
+    },
+    {
+      "type": "paragraph",
+      "text": "GPU RSX v konzoli PlayStation 3 striktně nedodržuje standard IEEE-754 pro aritmetiku s pohyblivou řádovou čárkou, na který spoléhá moderní PC hardware. Ačkoliv ve většině scénářů odpovídá standardnímu chování, RSX vykazuje specifické zvláštnosti při zpracování hraničních případů, jako jsou denormalizovaná čísla, kódování NaN a omezování hodnot (clamping). Například RSX dosahuje stavu přetečení při hodnotě 65536 namísto standardních 65504, které používá PC hardware. Způsob, jakým zužuje 32bitové hodnoty s pohyblivou řádovou čárkou na 16bitové úložiště, navíc zahrnuje specifické úpravy exponentu a zkrácení mantisy. Tyto nesrovnalosti často vedou k jemným artefaktům vykreslování nebo chybným vizuálním efektům ve hrách, které očekávají matematické chování původní konzole."
+    },
+    {
+      "type": "heading",
+      "text": "Implementace logiky přesné preciznosti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby se tato propast překlenula, byl dekompilátor shaderů emulátoru aktualizován tak, aby lépe reprodukoval logiku specifickou pro RSX. Nová implementace zavádí robustnější režim přesnosti shaderů 'Ultra', který se zaměřuje právě na tyto hardwarové hraniční případy. To zahrnuje shodu s chováním RSX, kde jsou denormalizovaná čísla během 32bitového kvantování registrů vynulována, ale pro 16bitové registry zachována. Aktualizace také vylepšuje fázi Raster Operations (ROP) a zajišťuje, že pravidla pro zužování framebufferů následují logiku původního hardwaru. Na backendu nyní emulátor využívá SPIR-V intrinsics a specifická rozšíření Vulkan k zachování denormalizovaných čísel na podporovaném hardwaru, čímž zajišťuje, že matematika prováděná hostitelským GPU co nejpřesněji zrcadlí PS3."
+    },
+    {
+      "type": "heading",
+      "text": "Dopad na výkon a kompatibilitu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tyto změny přímo řeší několik dlouhodobých problémů, u nichž hry trpěly chybami souvisejícími s přesností. Výběrem nastavení kvality shaderů 'Ultra' mohou hráči vyřešit specifické chyby vykreslování, které byly dříve považovány za neopravitelné. Pro ty, kteří upřednostňují výkon, bylo nastavení 'High' optimalizováno tak, aby pokud možno využívalo nativní 16bitové operace s pohyblivou řádovou čárkou, což poskytuje zvýšení rychlosti při zachování lepší přesnosti než nastavení 'Low'. Tento stupňovitý přístup umožňuje hráčům volit mezi maximální přesností u problematických titulů nebo vyšší snímkovou frekvencí ve hrách, které jsou méně citlivé na odchylky pohyblivé řádové čárky. Testování ukazuje, že hardware AMD dosahuje za těchto nových pravidel téměř dokonalé shody s původním hardwarem."
+    },
+    {
+      "type": "heading",
+      "text": "Hardwarová specifika a ověření"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ověření těchto vylepšení bylo provedeno pomocí specializované testovací sady pro pohyblivou řádovou čárku, která porovnávala výstup emulátoru se skutečným hardwarem PS3. Zatímco GPU AMD zaznamenala s novou logikou okamžitý úspěch, hardware NVIDIA vyžadoval další úpravy kvůli rozdílům v tom, jak jejich ovladače zpracovávají denormalizovaná čísla. Po implementaci těchto úprav nyní hardware NVIDIA dosahuje rovněž vysoké úrovně přesnosti. Hráči mohou ověřit dopad těchto změn v titulech, které byly dříve označeny problémy s přesností shaderů, zejména u těch, které zahrnují komplexní osvětlení nebo efekty průhlednosti. Budoucí vývoj bude nadále sledovat tyto hraniční případy, jak budou prostřednictvím důkladného testování proti původnímu křemíku RSX objevována další hardwarově specifická chování."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "rpcs3-rsx-floating-point-precision-accuracy-improvements",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Migliorare l'accuratezza in virgola mobile e la gestione della precisione dell'RSX",
+  "summary": "RPCS3 ora riproduce in modo più accurato il comportamento unico in virgola mobile della GPU RSX di PS3, risolvendo bug di rendering di lunga data perfezionando il modo in cui gli shader gestiscono denormali, overflow e quantizzazione.",
+  "heroAlt": "Un primo piano del chip RSX Reality Synthesizer presente all'interno di una console PlayStation 3.",
+  "searchKeywords": [
+    "RPCS3",
+    "RSX",
+    "floating point",
+    "virgola mobile",
+    "shader precision",
+    "precisione shader",
+    "emulation accuracy",
+    "accuratezza emulazione",
+    "Vulkan",
+    "GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "graphics": "Grafica"
+  },
+  "sourceLabels": {
+    "change": "RPCS3 pull request #20078",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La sfida dell'hardware non standard"
+    },
+    {
+      "type": "paragraph",
+      "text": "La GPU RSX della PlayStation 3 non segue rigorosamente lo standard IEEE-754 per l'aritmetica in virgola mobile su cui si basa l'hardware PC moderno. Sebbene corrisponda al comportamento standard nella maggior parte degli scenari, l'RSX mostra peculiarità specifiche quando gestisce casi limite come numeri denormali, codifica NaN e clamping dei valori. Ad esempio, l'RSX raggiunge una condizione di overflow a 65536 invece del valore standard 65504 utilizzato dall'hardware PC. Inoltre, il modo in cui restringe i valori in virgola mobile a 32-bit in un formato di archiviazione a 16-bit comporta specifici aggiustamenti dell'esponente e troncamento della mantissa. Queste discrepanze portano spesso a sottili artefatti di rendering o effetti visivi danneggiati nei giochi che si aspettano il comportamento matematico della console originale."
+    },
+    {
+      "type": "heading",
+      "text": "Implementazione di una logica di precisione accurata"
+    },
+    {
+      "type": "paragraph",
+      "text": "Per colmare questo divario, il decompiler di shader dell'emulatore è stato aggiornato per riprodurre meglio la logica specifica dell'RSX. La nuova implementazione introduce una modalità di precisione shader 'Ultra' più robusta che punta specificamente a questi casi limite hardware. Ciò include la corrispondenza del comportamento dell'RSX in cui i denormali vengono azzerati durante la quantizzazione dei registri a 32-bit, ma preservati per i registri a 16-bit. L'aggiornamento perfeziona anche lo stadio Raster Operations (ROP), assicurando che le regole di restringimento per i framebuffer seguano la logica dell'hardware originale. Sul backend, l'emulatore ora utilizza intrinseci SPIR-V ed estensioni Vulkan specifiche per preservare i denormali sull'hardware supportato, garantendo che la matematica eseguita dalla GPU host rispecchi il più fedelmente possibile quella di PS3."
+    },
+    {
+      "type": "heading",
+      "text": "Impatto su prestazioni e compatibilità"
+    },
+    {
+      "type": "paragraph",
+      "text": "Queste modifiche risolvono direttamente diversi problemi di lunga data in cui i giochi soffrivano di bug legati alla precisione. Selezionando l'impostazione di qualità shader 'Ultra', i giocatori possono risolvere specifici errori di rendering che in precedenza erano considerati irrisolvibili. Per coloro che danno priorità alle prestazioni, l'impostazione 'High' è stata ottimizzata per utilizzare operazioni in virgola mobile a 16-bit native dell'hardware ove possibile, fornendo un aumento di velocità pur mantenendo un'accuratezza migliore rispetto all'impostazione 'Low'. Questo approccio a livelli consente ai giocatori di scegliere tra la massima accuratezza per i titoli problematici o frame rate più elevati nei giochi meno sensibili alla deriva in virgola mobile. I test mostrano che l'hardware AMD raggiunge una parità quasi perfetta con l'hardware originale secondo queste nuove regole."
+    },
+    {
+      "type": "heading",
+      "text": "Specifiche hardware e verifica"
+    },
+    {
+      "type": "paragraph",
+      "text": "La verifica di questi miglioramenti è stata condotta utilizzando una suite di test specializzata in virgola mobile, che ha confrontato l'output dell'emulatore con l'hardware PS3 reale. Mentre le GPU AMD hanno mostrato un successo immediato con la nuova logica, l'hardware NVIDIA ha richiesto soluzioni alternative aggiuntive a causa delle differenze nel modo in cui i loro driver gestiscono i numeri denormalizzati. Dopo aver implementato queste soluzioni, anche l'hardware NVIDIA raggiunge ora alti livelli di accuratezza. I giocatori possono verificare l'impatto di queste modifiche nei titoli precedentemente segnalati con problemi di precisione degli shader, in particolare quelli che coinvolgono complessi effetti di illuminazione o trasparenza. Lo sviluppo futuro continuerà a monitorare questi casi limite man mano che verranno scoperti ulteriori comportamenti specifici dell'hardware attraverso test rigorosi contro il silicio RSX originale."
+    }
+  ]
+}
