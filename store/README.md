@@ -6,7 +6,7 @@ signed manifest, and package files pinned by commit + SHA-256. Old apps ignore i
 ```
 manifest.json  ──store──►  catalog/v1/store.json
                               ├─ categories[]   (per kind, 18-locale labels)
-                              └─ items[]        (themes, wallpapers, sounds, controls)
+                              └─ items[]        (themes, wallpapers, sounds, controls, fonts)
 ```
 
 ## Item (store.json → items[])
@@ -14,7 +14,7 @@ manifest.json  ──store──►  catalog/v1/store.json
 | Field | Notes |
 | --- | --- |
 | `id` | `[a-z0-9-]{3,48}`, unique across all kinds, stable forever |
-| `kind` | `theme` · `wallpaper` · `sounds` · `controls` |
+| `kind` | `theme` · `wallpaper` · `sounds` · `controls` · `font` |
 | `version` | positive int; a higher version shows "Update" |
 | `requiresPro` | Pro items can be previewed and installed by everyone, applied only with Pro |
 | `minAppVersionCode` | older apps show "Requires a newer app" |
@@ -53,10 +53,15 @@ CC0 photo/texture libraries — rights are recorded per item.
 ```json
 { "formatVersion": 1, "id": "chip-blips", "version": 1,
   "files": { "click": "click.ogg", "menu_open": "menu_open.ogg", "menu_close": "menu_close.ogg",
-             "menu_select": "menu_select.ogg", "music": "music.ogg" } }
+             "menu_select": "menu_select.ogg", "music": "music.ogg", "achievement": "achievement.ogg" } }
 ```
 Short sounds ≤ 2 s and ≤ 300 KB each (SoundPool), music optional, ≤ 6 MB, loopable. Formats: OGG
 Vorbis or WAV PCM. Applying selects the pack for the click and game-menu kinds (and music if present).
+`achievement` (optional, 1–3 s, peak ≤ −3 dBFS) is the sound played when an achievement unlocks; clients
+that do not know the key ignore it, and a pack without it keeps the app's default unlock sound. Every
+pack in the catalog now ships click, menu_open/menu_close/menu_select, a seamless `music` loop and
+`achievement`. The builder derives the listing tags `contains:click`, `contains:menu`, `contains:music`
+and `contains:achievement` from the real package contents (tag ids may contain `:`).
 
 ### `controls` — `.ecxcontrols`
 Two flavours in one format:
@@ -75,9 +80,26 @@ Two flavours in one format:
 - Skin fields: `tint` `#RRGGBB`/`#AARRGGBB`, `opacity` 0..1, `pressEffect` grow|shrink|spring|glow; images
   64–1024 px, aspect ≤ 1.5; `<id>_pressed` entries live in the same `images` map.
 
+### `font` — `.ecxfont`
+```json
+{ "formatVersion": 1, "id": "font-jetbrains-mono", "family": "JetBrains Mono", "file": "font.ttf",
+  "license": "OFL-1.1", "source": "https://raw.githubusercontent.com/google/fonts/main/ofl/jetbrainsmono/JetBrainsMono%5Bwght%5D.ttf",
+  "scripts": ["latin", "latin-ext", "cyrillic", "greek", "vietnamese"], "sizeScale": 1.0 }
+```
+Exactly three entries: `font.json`, one font file (`font.ttf`; `font.otf` only when no TTF exists; a variable font
+is fine — the app asks for the regular weight) and `LICENSE.txt` (the font's own license text). Package ≤ 4 MB.
+- `license` is `OFL-1.1` or `Apache-2.0` only; `source` is the exact `raw.githubusercontent.com/google/fonts/main/...`
+  URL the file was taken from (nothing else is accepted). `family` equals the English item name.
+- `scripts` lists the scripts the font actually covers, detected from its cmap: `latin`, `latin-ext`, `cyrillic`
+  (full Russian + Ukrainian alphabets), `greek`, `vietnamese`, `arabic`, `devanagari`, `cjk`. The catalog item carries
+  the same values as `script:<x>` tags (filter chips) plus `style:<x>` tags; key:value tags are allowed for all kinds.
+- `sizeScale` (0.9–1.25, default 1.0) nudges the UI text size for fonts with a small or large x-height.
+- Applying selects the font as the app UI font (the same path as the font inside a theme).
+- Builder: `python scripts/build-store-fonts.py` (`--fetch` downloads the files into `.workspace/fonts-cache/`).
+
 ## App side (EmuCoreX first, then all apps)
 
-- Store destination in the drawer with tabs Themes · Wallpapers · Sounds · Controls; featured row,
+- Store destination in the drawer with tabs Themes · Wallpapers · Sounds · Controls · Fonts; featured row,
   filters (Free / Pro / Installed), sorting (Featured, Newest, Name).
 - Item detail: gallery (schematic screens + real screenshots), description, size, version, Install /
   Update / Apply / Remove with download progress; Pro items without Pro open the Pro purchase sheet.

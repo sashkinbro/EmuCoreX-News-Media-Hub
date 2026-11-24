@@ -16,11 +16,11 @@ const requiredColors = [
   "surfaceVariant", "onBackground", "onSurface", "onSurfaceVariant", "outline", "error"
 ];
 const shapeStyles = new Set(["rounded", "cut", "cutDiagonal", "square"]);
-const fonts = new Set(["system", "rubik", "exo2", "monospace", "serif", "package"]);
+const fonts = new Set(["system", "rubik", "exo2", "monospace", "serif", "package", "pixel", "spacemono", "lora", "oswald"]);
 const decors = new Set(["none", "neon"]);
 const maxPackageBytes = 4 * 1024 * 1024;
 const maxImageBytes = 600 * 1024;
-const screenOrder = ["hub", "settings", "game", "ingame", "drawer", "store"];
+const screenOrder = ["hub", "settings", "game", "ingame", "store"];
 
 export function hasThemes() {
   return fs.existsSync(sourceRoot);

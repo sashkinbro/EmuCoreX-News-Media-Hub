@@ -5,15 +5,18 @@ import { collectThemes, idPattern, imageReference, requireLocales, validateListi
 
 // Store catalog: see store/README.md. Themes come from themes/{src,dist}; every other kind uses
 // store/<kind>/src/<id>/listing.json + store/<kind>/dist/<id>/{package, cover.webp, *.webp, build.json}.
-export const storeKinds = ["theme", "wallpaper", "sounds", "controls"];
+export const storeKinds = ["theme", "wallpaper", "sounds", "controls", "font"];
 const extraKinds = {
   wallpaper: { packageName: "item.ecxwall", maxPackageBytes: 8 * 1024 * 1024 },
   sounds: { packageName: "item.ecxsounds", maxPackageBytes: 4 * 1024 * 1024 },
-  controls: { packageName: "item.ecxcontrols", maxPackageBytes: 4 * 1024 * 1024 }
+  controls: { packageName: "item.ecxcontrols", maxPackageBytes: 4 * 1024 * 1024 },
+  font: { packageName: "item.ecxfont", maxPackageBytes: 4 * 1024 * 1024 }
 };
 const storeRoot = path.join(repositoryRoot, "store");
 const maxSwatch = 4;
 const hexPattern = /^#[0-9A-Fa-f]{6}$/;
+// Store tags may be plain ("pixel") or key:value ("script:cyrillic", "style:mono").
+const tagPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
 
 export function collectStore() {
   const errors = [];
@@ -48,7 +51,8 @@ export function collectStore() {
         continue;
       }
       if (!idPattern.test(id) || id.length < 3 || id.length > 48) errors.push(`${location}: id must match [a-z0-9-]{3,48}`);
-      validateListing(listing, categoryIds, location, errors);
+      validateListing({ ...listing, tags: [] }, categoryIds, location, errors);
+      for (const tag of listing.tags ?? []) if (!tagPattern.test(tag)) errors.push(`${location}: invalid tag ${tag}`);
       requireLocales(listing.name, `${location} name`, 40, errors);
       if (!Number.isInteger(listing.version) || listing.version < 1) errors.push(`${location}: version must be a positive integer`);
       if (listing.requiresPro !== undefined && typeof listing.requiresPro !== "boolean") errors.push(`${location}: requiresPro must be true or false`);
