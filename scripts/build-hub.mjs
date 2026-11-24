@@ -11,6 +11,7 @@ import {
   sortItems,
   writeJson
 } from "./lib/hub-content.mjs";
+import { collectStore, storeCatalog } from "./lib/hub-store.mjs";
 
 const collection = collectContent({ release: false });
 if (collection.errors.length > 0) {
@@ -65,6 +66,15 @@ writeJson(tombstonesPath, {
   releaseId: config.releaseId
 });
 
+const store = collectStore();
+if (store.errors.length > 0) {
+  process.stderr.write(`${store.errors.join("\n")}\n`);
+  process.exit(1);
+}
+const storePath = path.join(catalogRoot, "store.json");
+writeJson(storePath, storeCatalog(store));
+const storeReference = fileReference(storePath, { itemCount: store.items.length });
+
 const manifestPath = path.join(catalogRoot, "manifest.json");
 writeJson(manifestPath, {
   formatVersion: config.catalogSchemaVersion,
@@ -79,7 +89,8 @@ writeJson(manifestPath, {
   counts: Object.fromEntries(sectionNames.map((section) => [section, releasedItems.filter((item) => item.section === section).length])),
   indexes,
   assets: fileReference(assetsPath),
-  tombstones: fileReference(tombstonesPath)
+  tombstones: fileReference(tombstonesPath),
+  store: storeReference
 });
 
 for (const warning of collection.warnings) process.stderr.write(`warning: ${warning}\n`);
