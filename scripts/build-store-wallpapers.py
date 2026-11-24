@@ -8368,5 +8368,1717 @@ def main():
         contact_sheet(a.sheet, [e["id"] for e in E])
 
 
+#### ---- KITS BEGIN ----
+# ====================================================================================================================
+# Game-genre KITS: 39 original wallpapers (3 per genre) that match the controller skins of the same kit. They show a
+# genre MOOD only (colour, light, silhouettes): no logos, wordmarks, characters, costumes or franchise symbols.
+# This block is a pure insertion: kits_main() below hashes the file WITHOUT it, so older wallpapers never rebuild
+# when it changes; kit wallpapers also hash this block.
+# ====================================================================================================================
+CATEGORIES.append(("kits", "Kits"))
+NEW_CAT_LABELS["kits"] = {"ar": "مجموعات", "cs": "Sady", "de": "Kits", "es": "Kits", "fa": "کیت‌ها", "fr": "Kits", "hi": "किट", "id": "Kit",
+                          "it": "Kit", "ja": "キット", "ko": "키트", "pl": "Zestawy", "pt": "Kits", "ru": "Наборы", "tr": "Setler", "uk": "Набори", "zh": "主题套装"}
+
+
+def K(genre, id, name, desc, cat, pro, feat, dim, fn, **params):
+    item(id, name, desc, cat, pro, feat, None, dim, fn, **params)
+    E[-1]["kit"] = genre
+
+
+_listing_v1 = listing
+
+
+def listing(e):
+    lst = _listing_v1(e)
+    if e.get("kit"):
+        lst["categories"] = ["kits", e["cat"]]
+        lst["tags"] = ["kit:" + e["kit"]]
+    return lst
+
+
+# ---- shared helpers ------------------------------------------------------------------------------------------------
+def _dots(cell, ang, val, gain=1.0, ox=0.0, oy=0.0):
+    return halftone_layer(val, cell, ang, ox, oy, gain)
+
+
+def _leaf(d, p0, c, p1, wmax, ss, n=24):
+    L_, R_ = [], []
+    for i in range(n + 1):
+        t = i / n
+        x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * c[0] + t * t * p1[0]
+        y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * c[1] + t * t * p1[1]
+        dx = 2 * (1 - t) * (c[0] - p0[0]) + 2 * t * (p1[0] - c[0])
+        dy = 2 * (1 - t) * (c[1] - p0[1]) + 2 * t * (p1[1] - c[1])
+        ln = math.hypot(dx, dy) or 1.0
+        nx, ny = -dy / ln, dx / ln
+        w = wmax * math.sin(math.pi * min(1.0, t * 1.04)) ** 0.8 * (1.0 if i % 2 == 0 else 0.5)
+        L_.append(((x + nx * w) * ss, (y + ny * w) * ss))
+        R_.append(((x - nx * w) * ss, (y - ny * w) * ss))
+    d.polygon(L_ + R_[::-1], fill=255)
+
+
+def _palm(d, r, x, base, h, lean, ss, fronds=9):
+    pts = [(x + lean * h * (t ** 1.7), base - h * t) for t in np.linspace(0, 1, 16)]
+    left, right = [], []
+    for i, (px, py) in enumerate(pts):
+        w = 15 - 8 * i / 15.0
+        left.append(((px - w / 2) * ss, py * ss))
+        right.append(((px + w / 2) * ss, py * ss))
+    d.polygon(left + right[::-1], fill=255)
+    tx, ty = pts[-1]
+    for k in range(fronds):
+        a = -math.pi / 2 + (k - (fronds - 1) / 2.0) * 0.7 + r.uniform(-0.12, 0.12)
+        L = h * (0.4 + 0.14 * r.random())
+        tip = (tx + L * math.cos(a), ty + L * math.sin(a) + L * 0.5)
+        ctl = (tx + L * 0.55 * math.cos(a), ty + L * 0.55 * math.sin(a) - L * 0.25)
+        _leaf(d, (tx, ty), ctl, tip, h * 0.075, ss)
+
+
+def _city(img, seed, base, hr, wr, color, x0=-40, x1=W + 40, win=None, win_p=0.3, ws=(9, 14), gap=(0, 8), roofs=False, k=1.0):
+    """Building silhouettes with optional lit windows. Returns (mask, rects)."""
+    r = np.random.default_rng(seed)
+    rects = []
+    x = x0
+    while x < x1:
+        w = r.uniform(*wr)
+        h = r.uniform(*hr)
+        rects.append((x, base - h, x + w, base + 40))
+        x += w + r.uniform(*gap)
+
+    def f(d, ss):
+        for (a, b, c_, e) in rects:
+            d.rectangle([a * ss, b * ss, c_ * ss, e * ss], fill=255)
+            if roofs and r.random() < 0.4:
+                d.rectangle([(a + (c_ - a) * 0.3) * ss, (b - 40) * ss, (c_ - (c_ - a) * 0.3) * ss, b * ss], fill=255)
+                d.rectangle([(a + (c_ - a) * 0.5 - 2) * ss, (b - 110) * ss, (a + (c_ - a) * 0.5 + 2) * ss, (b - 40) * ss], fill=255)
+    m = draw_mask(f, 2)
+    over(img, m, color, k)
+    if win:
+        wm = np.zeros((H, W), np.float32)
+        im = Image.new("L", (W, H), 0)
+        dd = ImageDraw.Draw(im)
+        for (a, b, c_, e) in rects:
+            ww, wh = ws
+            y = b + 22
+            while y < base - 14:
+                xx = a + 12
+                while xx + ww < c_ - 8:
+                    if r.random() < win_p:
+                        dd.rectangle([xx, y, xx + ww, y + wh], fill=int(120 + 135 * r.random()))
+                    xx += ww + 9
+                y += wh + 12
+        wm = np.asarray(im, np.float32) / 255.0 * m
+        cols = win if isinstance(win, (list, tuple)) else [win]
+        if len(cols) == 1:
+            over(img, wm, cols[0], 0.95)
+            img += blur(wm, 7)[..., None] * C(cols[0]) * 0.55
+        else:
+            idx = noise(seed + 5, 40, 60)
+            for i, cc in enumerate(cols):
+                sel = wm * ((idx >= i / len(cols)) & (idx < (i + 1) / len(cols)))
+                over(img, sel, cc, 0.95)
+                img += blur(sel, 7)[..., None] * C(cc) * 0.5
+    return m, rects
+
+
+def _reflect(img, y, k=0.5, fade=420.0, bl=3.0, wob=6.0, seed=0):
+    rows = np.arange(y, H)
+    src = np.clip(2 * y - rows, 0, H - 1)
+    refl = img[src].copy()
+    xs = np.clip((np.arange(W)[None, :] + np.sin(rows[:, None] * 0.09 + seed) * wob * (1 + (rows[:, None] - y) / 500.0)).astype(np.int32), 0, W - 1)
+    refl = np.take_along_axis(refl, xs[..., None].repeat(3, 2), 1)
+    refl = blur(refl, bl)
+    f = (k * np.exp(-(rows - y) / fade))[:, None, None]
+    img[y:] = img[y:] * (1 - f) + refl * f
+
+
+def _tree(d, r, x, y, a, L, wd, dep, ss, spread=0.45):
+    if dep == 0 or L < 10:
+        return
+    x2, y2 = x + L * math.cos(a), y + L * math.sin(a)
+    d.line([(x * ss, y * ss), (x2 * ss, y2 * ss)], fill=255, width=max(1, int(wd * ss)))
+    _tree(d, r, x2, y2, a - spread + r.uniform(-0.2, 0.2), L * 0.76, wd * 0.68, dep - 1, ss, spread)
+    _tree(d, r, x2, y2, a + spread + r.uniform(-0.2, 0.2), L * 0.74, wd * 0.68, dep - 1, ss, spread)
+    if dep > 3 and r.random() < 0.5:
+        _tree(d, r, x2, y2, a + r.uniform(-0.2, 0.2), L * 0.7, wd * 0.6, dep - 2, ss, spread)
+
+
+def _embers(img, seed, n, region, colors=("#FFB040", "#FF6A20", "#FFE08A"), size=(1.2, 3.2), k=0.95):
+    r = np.random.default_rng(seed)
+    m = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(m)
+    pts = []
+    for _ in range(n):
+        x = region[0] + r.random() * (region[2] - region[0])
+        y = region[1] + r.random() ** 0.8 * (region[3] - region[1])
+        s = size[0] + (size[1] - size[0]) * r.random()
+        d.ellipse([x - s, y - s, x + s, y + s], fill=int(130 + 125 * r.random()))
+    a = np.asarray(m, np.float32) / 255.0
+    cl = [C(c_) for c_ in colors]
+    img += blur(a, 5)[..., None] * cl[0] * 1.6 * k
+    img += a[..., None] * cl[2] * k
+    return a
+
+
+def _rain(img, seed, n, color="#9FB8E8", k=0.25, ang=0.18, ln=(40, 110), region=(0, 0, W, H)):
+    r = np.random.default_rng(seed)
+    m = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(m)
+    for _ in range(n):
+        x = region[0] + r.random() * (region[2] - region[0])
+        y = region[1] + r.random() * (region[3] - region[1])
+        L = r.uniform(*ln)
+        d.line([(x, y), (x + math.sin(ang) * L, y + math.cos(ang) * L)], fill=int(90 + 150 * r.random()), width=2)
+    a = np.asarray(m, np.float32) / 255.0
+    img += a[..., None] * C(color) * k
+
+
+def _taper(d, p0, p1, wmax, ss, steps=16, pw=0.6):
+    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+    ln = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / ln, dx / ln
+    L_, R_ = [], []
+    for i in range(steps + 1):
+        t = i / steps
+        w = wmax * (math.sin(math.pi * t) ** pw) / 2.0
+        x, y = p0[0] + dx * t, p0[1] + dy * t
+        L_.append(((x + nx * w) * ss, (y + ny * w) * ss))
+        R_.append(((x - nx * w) * ss, (y - ny * w) * ss))
+    d.polygon(L_ + R_[::-1], fill=255)
+
+
+def _pointed_arch(d, cx, ys, a, h, ss, fill):
+    pts = [(cx + x, ys - h * (1 - abs(x) / a) ** 0.7) for x in np.linspace(-a, a, 60)]
+    d.polygon([(x * ss, y * ss) for x, y in pts] + [((cx + a) * ss, 9000), ((cx - a) * ss, 9000)], fill=fill)
+
+
+# ---- neon-vice ---------------------------------------------------------------------------------------------------
+def g_vice(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "sunset":
+        hz = 1440
+        img = vgrad([(0, "#1B0B40"), (0.22, "#5B1B7E"), (0.38, "#D8348A"), (0.49, "#FF7A5A"), (0.558, "#FFC06A"), (0.5585, "#14284A"), (1, "#0A1630")])
+        stars(img, seed, 700, 0, 700, size=0.8, big=3)
+        cy = 1230
+        dsk = np.hypot(XX - 720, YY - cy)
+        disc = 1 - smooth(398, 402, dsk)
+        for k in range(8):
+            yb = cy + 20 + k * 62
+            disc *= 1 - (np.abs(YY - yb) < 5 + k * 3.4).astype(np.float32)
+        sc = ramp(np.clip((YY - (cy - 400)) / 800, 0, 1), [(0, "#FFE98A"), (0.5, "#FF8A5E"), (1, "#E8308A")])
+        glow(img, 720, cy, 520, C("#FF4A9A"), 0.55, "exp")
+        img = img * (1 - disc[..., None]) + sc * disc[..., None]
+        _city(img, seed + 3, hz + 6, (60, 300), (50, 120), "#2A1054", x0=-20, x1=520, win=["#FF6AB0", "#5FF0E0"], win_p=0.25, ws=(6, 9), gap=(0, 6))
+        _city(img, seed + 4, hz + 6, (60, 260), (50, 120), "#2A1054", x0=930, x1=W + 20, win=["#FF6AB0", "#5FF0E0"], win_p=0.25, ws=(6, 9), gap=(0, 6))
+        # sea reflection
+        lay = np.zeros((H, W), np.float32)
+        lm = Image.new("L", (W, H), 0)
+        dd = ImageDraw.Draw(lm)
+        for i in range(46):
+            y = hz + 14 + (i ** 1.35) * 17
+            hw = 330 * (1 - i / 60.0) * (0.7 + 0.5 * r.random())
+            cxo = 720 + r.uniform(-30, 30)
+            dd.rectangle([cxo - hw, y, cxo + hw, y + 3 + i * 0.5], fill=int(150 + 100 * r.random()))
+        lay = np.asarray(lm, np.float32) / 255.0 * (YY > hz)
+        over(img, lay, "#FF7AA0", 0.6)
+        glow(img, 720, hz + 20, 300, C("#FF9A6A"), 0.18, "exp")
+        # palms
+        pm = draw_mask(lambda d, ss: [_palm(d, r, 150, 2380, 980, 0.2, ss, 10), _palm(d, r, 330, 2400, 640, 0.12, ss, 9),
+                                      _palm(d, r, 1300, 2390, 880, -0.2, ss, 10), _palm(d, r, 1120, 2400, 560, -0.14, ss, 9)], 2)
+        over(img, pm, "#0A0420", 1.0)
+        over(img, poly_mask([[(0, 2360), (W, 2330), (W, H), (0, H)]]), "#08031A", 1.0)
+        return img, 1.4, 0.3
+    if mode == "strip":
+        gy = 1900
+        img = vgrad([(0, "#0A0420"), (0.45, "#2B0B52"), (0.62, "#7A1A78"), (0.74, "#FF5A9A"), (1, "#150822")])
+        glow(img, 720, 1560, 620, C("#FF4A9A"), 0.55, "exp")
+        r2 = np.random.default_rng(seed + 9)
+        rects = []
+        x = -30
+        while x < W:
+            w = r2.uniform(230, 340)
+            h = r2.uniform(620, 1280)
+            rects.append((x, gy - h, x + w, gy, r2.integers(0, 2)))
+            x += w + r2.uniform(14, 40)
+        bm = poly_mask([[(a, b), (c_, b), (c_, e), (a, e)] for a, b, c_, e, _ in rects])
+        over(img, bm, "#140A2E", 1.0)
+        over(img, bm * smooth(0.0, 1.0, 1 - (YY - 700) / 1300).clip(0, 1) * 0.0, "#000000", 0.0)
+        lines = []
+        signs = []
+        for (a, b, c_, e, t) in rects:
+            lines.append([(a + 4, e), (a + 4, b), (c_ - 4, b), (c_ - 4, e)])
+            ncol = "#FF3E9A" if t else "#2EF0E0"
+            nm = line_mask([[(a + 4, e), (a + 4, b), (c_ - 4, b), (c_ - 4, e)]], 7)
+            neon(img, nm * 1.0, ncol, core=0.7, glows=((3, 1.0), (14, 0.8), (50, 0.4)), k=0.8)
+            # sign bars
+            for j in range(3):
+                sy = b + 120 + j * 150
+                if sy < gy - 200 and r2.random() < 0.75:
+                    sc_ = ["#FF3E9A", "#2EF0E0", "#FFC24A"][int(r2.integers(0, 3))]
+                    sm = line_mask([[(a + 26, sy), (c_ - 26, sy), (c_ - 26, sy + 70), (a + 26, sy + 70)]], 5, 2, True)
+                    neon(img, sm, sc_, core=0.6, glows=((3, 1.0), (12, 0.7), (40, 0.3)), k=0.7)
+        wm = Image.new("L", (W, H), 0)
+        wd = ImageDraw.Draw(wm)
+        for (a, b, c_, e, t) in rects:
+            for yy_ in np.arange(b + 40, gy - 30, 62):
+                for xx_ in np.arange(a + 22, c_ - 30, 40):
+                    if r2.random() < 0.28:
+                        wd.rectangle([xx_, yy_, xx_ + 16, yy_ + 24], fill=200)
+        wmask = np.asarray(wm, np.float32) / 255.0 * bm
+        over(img, wmask, "#FFC96A", 0.85)
+        # palms
+        pm = draw_mask(lambda d, ss: [_palm(d, r, 60, gy + 30, 900, 0.14, ss, 10), _palm(d, r, 1390, gy + 30, 820, -0.16, ss, 10), _palm(d, r, 720, gy + 30, 520, 0.05, ss, 9)], 2)
+        over(img, pm, "#07031A", 1.0)
+        # street
+        st = (YY >= gy).astype(np.float32)
+        sg = ramp(np.clip((YY - gy) / (H - gy), 0, 1), [(0, "#2A1250"), (1, "#0A0418")])
+        img = img * (1 - st[..., None]) + sg * st[..., None]
+        _reflect(img, gy, 0.7, 520.0, 6.0, 10.0, seed)
+        for k in range(5):
+            dy = gy + 120 + k ** 1.8 * 120
+            over(img, (np.abs(YY - dy) < 2 + k).astype(np.float32) * (YY > gy) * 0.5, "#FF7AB6", 0.35)
+        return img, 1.4, 0.35
+    # deco: pastel dusk
+    img = vgrad([(0, "#8ED8E6"), (0.35, "#CFE6EE"), (0.52, "#FFC8DC"), (0.62, "#FFE2C8"), (1, "#FFB7D2")])
+    circ(img, 720, 1320, 230, "#FFF6D2")
+    glow(img, 720, 1320, 520, C("#FFE0F0"), 0.45, "exp")
+    over(img, poly_mask([[(0, 1660), (W, 1660), (W, 1700), (0, 1700)]]), "#58C9D2", 1.0)
+    over(img, poly_mask([[(0, 1700), (W, 1700), (W, 1900), (0, 1900)]]), "#7FE0DC", 1.0)
+    tiers = [(1000, 1560, 1260, 520), (780, 1260, 920, 380), (580, 920, 640, 220), (380, 640, 440, 170)]
+    polys = [[(720 - hw, b), (720 + hw, b), (720 + hw, 1900), (720 - hw, 1900)] for hw, b, _, _ in []]
+    for hw, top, bot, _ in tiers:
+        pass
+    cx = 720
+    steps = [(430, 1900, 1480), (360, 1480, 1160), (290, 1160, 880), (220, 880, 660), (150, 660, 500), (80, 500, 330)]
+    for hw, yb, yt in steps:
+        over(img, poly_mask([[(cx - hw, yt), (cx + hw, yt), (cx + hw, yb), (cx - hw, yb)]]), "#FFF3E2")
+        over(img, poly_mask([[(cx + hw * 0.58, yt), (cx + hw, yt), (cx + hw, yb), (cx + hw * 0.58, yb)]]), "#F4C9D4")
+        over(img, poly_mask([[(cx - hw, yt), (cx + hw, yt), (cx + hw, yt + 16), (cx - hw, yt + 16)]]), "#3CC4C8")
+        for yy_ in np.arange(yt + 50, yb - 40, 66):
+            for xx_ in np.arange(cx - hw + 36, cx + hw * 0.5, 62):
+                over(img, poly_mask([[(xx_, yy_), (xx_ + 28, yy_), (xx_ + 28, yy_ + 40), (xx_, yy_ + 40)]]), "#59C7CF", 0.85)
+    over(img, poly_mask([[(cx - 8, 150), (cx + 8, 150), (cx + 14, 340), (cx - 14, 340)]]), "#FFF3E2")
+    ln = line_mask([[(cx - 80, 340), (cx - 80, 500)], [(cx + 80, 340), (cx + 80, 500)], [(cx - 150, 500), (cx - 150, 660)], [(cx + 150, 500), (cx + 150, 660)]], 10)
+    neon(img, ln, "#FF5AA8", core=0.5, glows=((3, 0.8), (14, 0.6), (36, 0.3)), k=0.7)
+    pm = draw_mask(lambda d, ss: [_palm(d, r, 110, 2160, 980, 0.16, ss, 10), _palm(d, r, 300, 2180, 600, 0.1, ss, 9), _palm(d, r, 1330, 2170, 920, -0.18, ss, 10), _palm(d, r, 1150, 2180, 560, -0.1, ss, 9)], 2)
+    over(img, pm, "#1B6E78", 1.0)
+    gr = ramp(np.clip((YY - 1900) / 660, 0, 1), [(0, "#FFA7C8"), (1, "#FF7FB0")])
+    gm = (YY >= 1900).astype(np.float32)[..., None]
+    img = img * (1 - gm) + gr * gm
+    for k in range(6):
+        over(img, (np.abs(YY - (1990 + k ** 1.7 * 60)) < 3 + k).astype(np.float32) * (YY > 1900), "#FFF3E2", 0.6)
+    return img, 1.0, 0.15
+
+
+reg("vice", g_vice)
+
+
+# ---- night-hero --------------------------------------------------------------------------------------------------
+def g_hero(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "rooftop":
+        img = vgrad([(0, "#050B2A"), (0.4, "#12307A"), (0.7, "#2B6FD0"), (0.86, "#6FA8F0"), (1, "#0B1740")])
+        ht = _dots(24, 0.785, np.clip(1 - YY / 1500.0, 0, 1) ** 0.8, 1.4)
+        over(img, ht * (YY < 1700), "#4A86F0", 0.55)
+        mx, my, mr = 1000, 760, 340
+        glow(img, mx, my, 520, C("#9FC8FF"), 0.5, "exp")
+        circ(img, mx, my, mr, "#EAF3FF")
+        dm = _dots(14, 0.785, np.clip(((XX - (mx - mr)) / (2 * mr)) * 0.9, 0, 1) ** 1.2, 1.2) * (1 - smooth(mr - 4, mr, np.hypot(XX - mx, YY - my)))
+        over(img, dm, "#9DBBEF", 0.8)
+        for cy_, cl_ in ((560, "#0E2A6E"), (1020, "#12347C"), (1320, "#1B4799")):
+            cm = fbm(seed + int(cy_), 2.4, 5, cy=10) * np.exp(-(((YY - cy_) / 90.0) ** 2))
+            over(img, smooth(0.45, 0.62, cm), cl_, 0.6)
+        _city(img, seed + 1, 1700, (200, 620), (80, 150), "#0F2A66", win="#BFD8FF", win_p=0.12, gap=(0, 5))
+        _city(img, seed + 2, 1900, (240, 760), (110, 190), "#091B4A", win="#DDEBFF", win_p=0.16, gap=(0, 8), roofs=True)
+        # foreground rooftop
+        def fg(d, ss):
+            d.polygon([(0, 2160 * ss), (W * ss, 2120 * ss), (W * ss, H * ss), (0, H * ss)], fill=255)
+            d.rectangle([0, 2110 * ss, W * ss, 2160 * ss], fill=255)
+            # water tower on left
+            for lx in (150, 230, 310, 390):
+                d.line([(lx * ss, 2150 * ss), ((lx + (150 - lx) * 0.0) * ss, 1700 * ss)], fill=255, width=12 * ss)
+            d.rectangle([110 * ss, 1500 * ss, 430 * ss, 1730 * ss], fill=255)
+            d.polygon([(100 * ss, 1500 * ss), (440 * ss, 1500 * ss), (270 * ss, 1380 * ss)], fill=255)
+            d.rectangle([115 * ss, 1740 * ss, 425 * ss, 1760 * ss], fill=255)
+            # antenna
+            d.rectangle([1230 * ss, 1450 * ss, 1244 * ss, 2150 * ss], fill=255)
+            d.rectangle([1170 * ss, 1560 * ss, 1304 * ss, 1572 * ss], fill=255)
+            d.rectangle([1190 * ss, 1640 * ss, 1284 * ss, 1650 * ss], fill=255)
+        fm = draw_mask(fg, 2)
+        over(img, fm, "#020712", 1.0)
+        edge = np.clip(fm - np.roll(fm, 6, 0), 0, 1)
+        over(img, edge, "#7FB0FF", 0.55)
+        circ(img, 1237, 1448, 9, "#FF4A4A")
+        glow(img, 1237, 1448, 40, C("#FF4A4A"), 0.5, "exp")
+        return img, 1.3, 0.3
+    if mode == "burst":
+        cx, cy = 720, 1040
+        img = vgrad([(0, "#0A1A5A"), (1, "#1C3FA8")])
+        ang = np.arctan2(YY - cy, XX - cx)
+        n = 90
+        edges = np.sort(r.random(n)) * 2 * math.pi - math.pi
+        bands = np.searchsorted(edges, ang) % 2
+        dist = np.hypot(XX - cx, YY - cy)
+        ray = bands.astype(np.float32) * smooth(150, 900, dist)
+        over(img, ray, "#EAF4FF", 0.82)
+        over(img, (1 - bands.astype(np.float32)) * smooth(300, 1200, dist), "#0A1E70", 0.55)
+        glow(img, cx, cy, 380, C("#FFFFFF"), 0.9, "exp")
+        # starburst bubble
+        pts = []
+        for i in range(36):
+            a = math.radians(i * 10)
+            rr = (430 if i % 2 == 0 else 270) * (0.92 + 0.12 * r.random())
+            pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
+        shadow = poly_mask([[(x + 22, y + 26) for x, y in pts]])
+        over(img, shadow, "#070C28", 1.0)
+        big = poly_mask([[(cx + (x - cx) * 1.045, cy + (y - cy) * 1.045) for x, y in pts]])
+        over(img, big, "#070C28", 1.0)
+        body = poly_mask([pts])
+        over(img, body, "#E8F6FF", 1.0)
+        hm = _dots(16, 0.785, np.clip(0.2 + dist / 700.0, 0, 1) ** 1.2, 1.3) * body
+        over(img, hm, "#7FB4FF", 0.75)
+        # skyline
+        _city(img, seed + 4, 2300, (160, 640), (110, 200), "#050A28", win="#DDEBFF", win_p=0.12, gap=(0, 6))
+        ht = _dots(26, 0.52, np.clip((YY - 1600) / 800.0, 0, 1) * 0.9, 1.3)
+        over(img, ht * (YY > 1560), "#3F6FE0", 0.5)
+        over(img, poly_mask([[(0, 2330), (W, 2330), (W, H), (0, H)]]), "#030624", 1.0)
+        return img, 1.2, 0.25
+    # beams
+    img = vgrad([(0, "#03061C"), (0.4, "#0B1C4E"), (0.68, "#244A9A"), (1, "#08102E")])
+    stars(img, seed, 500, 0, 900, size=0.8, big=2)
+    cumulus(img, seed + 1, 1050, 340, "#7FA2E8", "#2A4A96", "#0E1A44", thr=0.44, k=0.95)
+    cumulus(img, seed + 2, 1500, 300, "#5F86D6", "#203E86", "#0A1438", thr=0.46, k=0.9)
+    for (bx, ang_, wd) in ((330, -0.42, 0.075), (1120, 0.5, 0.07)):
+        a = np.arctan2(YY - 2300, XX - bx) + math.pi / 2
+        dd = np.abs(a - ang_)
+        bm = (1 - smooth(wd * 0.6, wd, dd)) * (YY < 2300) * np.clip((2300 - YY) / 900, 0, 1) ** 0.5 * 0.5
+        img += bm[..., None] * C("#CFE4FF") * 0.55
+        glow(img, bx, 2300, 120, C("#CFE4FF"), 0.8, "exp")
+    _city(img, seed + 3, 2420, (160, 560), (100, 190), "#050A24", win="#BFD8FF", win_p=0.12, gap=(0, 6), roofs=True)
+    over(img, poly_mask([[(0, 2420), (W, 2420), (W, H), (0, H)]]), "#030616", 1.0)
+    return img, 1.3, 0.35
+
+
+reg("hero", g_hero)
+
+
+# ---- steel-claws -------------------------------------------------------------------------------------------------
+def _slash_mask(strokes, wmax):
+    def f(d, ss):
+        for (p0, p1, w) in strokes:
+            _taper(d, p0, p1, w, ss, 20, 0.5)
+    return draw_mask(f, 2)
+
+
+def g_claws(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "plate":
+        n = noise(seed + 1, 3, 900)
+        img = ramp(np.clip(n * 0.55 + fbm(seed + 2, 3, 4) * 0.35, 0, 1), [(0, "#20242C"), (1, "#7C838F")])
+        for x in (480, 960):
+            over(img, np.exp(-(((XX - x) / 3.0) ** 2)), "#0C0E12", 0.8)
+        for y in (860, 1700):
+            over(img, np.exp(-(((YY - y) / 3.0) ** 2)), "#0C0E12", 0.8)
+        for (bx, by) in [(60, 60), (W - 60, 60), (60, H - 60), (W - 60, H - 60), (480, 860), (960, 860), (480, 1700), (960, 1700)]:
+            circ(img, bx, by, 20, "#3A3F48")
+            circ(img, bx - 3, by - 3, 11, "#9AA1AD", 0.8)
+        sc = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sc)
+        for _ in range(260):
+            x, y = r.random() * W, r.random() * H
+            L = r.uniform(30, 230)
+            a = r.uniform(-0.6, -0.2)
+            d.line([(x, y), (x + L * math.cos(a), y + L * math.sin(a))], fill=int(60 + 120 * r.random()), width=1)
+        img += np.asarray(sc, np.float32)[..., None] / 255.0 * 0.35
+        strokes = [((1120 - k * 150, 380 + k * 40), (330 - k * 110, 2260 + k * 40), 84 - abs(k - 1) * 18) for k in range(3)]
+        gm = _slash_mask(strokes, 90)
+        img += blur(gm, 60)[..., None] * C("#FF2A1A") * 0.55
+        img += blur(gm, 22)[..., None] * C("#FF3A2A") * 0.5
+        over(img, gm, "#1A0204", 1.0)
+        inner = _slash_mask([(a, b, w * 0.38) for a, b, w in strokes], 40)
+        over(img, inner, "#FF3A2C", 0.95)
+        over(img, inner * 0.0 + np.clip(inner - np.roll(inner, 8, 0), 0, 1), "#FFD0B0", 0.8)
+        edge = np.clip(np.roll(gm, -5, 1) - gm, 0, 1) + np.clip(np.roll(gm, -5, 0) - gm, 0, 1)
+        over(img, np.clip(edge, 0, 1), "#D8DCE4", 0.55)
+        return img, 1.6, 0.45
+    if mode == "forest":
+        img = vgrad([(0, "#0A0204"), (0.4, "#3A0A0E"), (0.62, "#9A1E1E"), (0.8, "#2A0608"), (1, "#050102")])
+        glow(img, 720, 900, 520, C("#FF3A2A"), 0.6, "exp")
+        circ(img, 720, 900, 300, "#FFB09A")
+        circ(img, 720, 900, 300, "#E2402C", 0.45)
+        dd = _dots(16, 0.785, np.clip(1 - np.hypot(XX - 720, YY - 900) / 320.0, 0, 1) * 0.0 + 0.1, 1.0)
+        for i, (base, hr, col_) in enumerate(((1700, (500, 860), "#2A0A0E"), (1960, (620, 1000), "#160508"), (2300, (760, 1200), "#07020A"))):
+            fm = forest_mask(seed + i, lambda x, b=base: b, 26 + i * 6, hr, 0.3 + 0.04 * i)
+            over(img, fm, col_, 1.0)
+            fog(img, base - hr[1] * 0.2, 160, "#8A1A1E", k=0.25, seed=seed + i * 3)
+        _rain(img, seed + 6, 800, "#FFB0A0", 0.22)
+        strokes = [((1000 - k * 170, 420 + k * 20), (240 - k * 130, 2000 + k * 30), 86 - abs(k - 1) * 20) for k in range(3)]
+        gm = _slash_mask(strokes, 90)
+        img *= (1 - gm[..., None] * 0.9)
+        img += blur(gm, 26)[..., None] * C("#FF2A1A") * 0.6
+        inner = _slash_mask([(a, b, w * 0.4) for a, b, w in strokes], 40)
+        over(img, inner, "#FF5A44", 0.95)
+        return img, 1.5, 0.5
+    # cage
+    img = vgrad([(0, "#06070A"), (0.5, "#14171E"), (1, "#0A0B10")])
+    for lx, lw in ((300, 1.0), (1140, 1.0), (720, 1.3)):
+        cone = np.clip(1 - np.abs(XX - lx) / (140 + (YY) * 0.34), 0, 1) ** 1.6 * np.clip(YY / 1800, 0, 1) * (YY < 2000)
+        img += cone[..., None] * C("#FFB070") * 0.22 * lw
+        glow(img, lx, 40, 90, C("#FFE0B0"), 0.9, "exp")
+    bokeh(img, seed + 2, 40, ["#FF8A3A", "#FFD08A", "#C23A22"], 20, 70, (0.04, 0.16), ring=0.3)
+    u = (XX + YY) / 38.0
+    v = (XX - YY) / 38.0
+    wire = np.maximum(1 - smooth(0.0, 0.11, np.minimum(u % 1, 1 - u % 1)), 1 - smooth(0.0, 0.11, np.minimum(v % 1, 1 - v % 1)))
+    wire = wire * (0.6 + 0.4 * fbm(seed + 3, 4, 4))
+    sh = np.roll(np.roll(wire, 4, 0), 5, 1)
+    img *= (1 - sh[..., None] * 0.55)
+    img += wire[..., None] * C("#9AA2B0") * (0.35 + 0.5 * np.clip(1 - YY / 2600, 0, 1))[..., None]
+    rust = smooth(0.58, 0.75, fbm(seed + 4, 5, 5))
+    over(img, wire * rust, "#7A3A1A", 0.6)
+    over(img, poly_mask([[(0, 0), (60, 0), (60, H), (0, H)], [(W - 60, 0), (W, 0), (W, H), (W - 60, H)]]), "#070809", 1.0)
+    sp = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(sp)
+    for _ in range(90):
+        x, y = r.uniform(300, 1140), r.uniform(1500, 2400)
+        a = r.uniform(-2.4, -0.7)
+        L = r.uniform(30, 150)
+        d.line([(x, y), (x + L * math.cos(a), y + L * math.sin(a))], fill=int(120 + 135 * r.random()), width=3)
+    spa = np.asarray(sp, np.float32) / 255.0
+    img += blur(spa, 4)[..., None] * C("#FF8A2A") * 1.4 + spa[..., None] * C("#FFE0A0") * 0.8
+    return img, 1.6, 0.5
+
+
+reg("claws", g_claws)
+
+
+# ---- souls-dark --------------------------------------------------------------------------------------------------
+def _bonfire(img, seed, x, y, s=1.0):
+    r = np.random.default_rng(seed)
+    glow(img, x, y - 80 * s, 360 * s, C("#FF7A2A"), 0.6, "exp")
+    glow(img, x, y - 40 * s, 150 * s, C("#FFC070"), 0.7, "exp")
+
+    def f(d, ss):
+        for i in range(7):
+            ox = (i - 3) * 26 * s
+            hh = (150 - abs(i - 3) * 30) * s * (0.8 + 0.4 * r.random())
+            d.polygon([((x + ox - 26 * s) * ss, y * ss), ((x + ox) * ss, (y - hh) * ss), ((x + ox + 26 * s) * ss, y * ss)], fill=255)
+    fm = blur(draw_mask(f, 2), 3)
+    over(img, fm, "#FF8A2A", 0.9)
+    over(img, fm * smooth(0.5, 1.0, fm), "#FFE08A", 0.7)
+    d2 = draw_mask(lambda d, ss: [d.line([((x - 120 * s) * ss, (y + 8 * s) * ss), ((x + 120 * s) * ss, (y - 6 * s) * ss)], fill=255, width=int(16 * s * ss)),
+                                  d.line([((x - 110 * s) * ss, (y - 8 * s) * ss), ((x + 110 * s) * ss, (y + 12 * s) * ss)], fill=255, width=int(16 * s * ss))], 2)
+    over(img, d2, "#120806", 1.0)
+
+
+def g_souls(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "ruin":
+        img = vgrad([(0, "#06090E"), (0.35, "#16212C"), (0.6, "#33454F"), (1, "#0B1014")])
+        stars(img, seed, 400, 0, 800, size=0.7)
+        glow(img, 940, 520, 360, C("#BFD8E8"), 0.35, "exp")
+        circ(img, 940, 520, 120, "#E8F0F4")
+        # receding arches
+        for i, (cxo, ys, a, h, col_, kf) in enumerate(((720, 1500, 150, 330, "#2A3A46", 0.55), (720, 1560, 220, 480, "#1E2C36", 0.4), (720, 1640, 320, 700, "#121C24", 0.25))):
+            def f(d, ss, cxo=cxo, ys=ys, a=a, h=h):
+                d.rectangle([(cxo - a - 70) * ss, (ys - h - 120) * ss, (cxo + a + 70) * ss, 2600 * ss], fill=255)
+                _pointed_arch(d, cxo, ys, a, h, ss, 0)
+            over(img, draw_mask(f, 2), col_, 1.0)
+            fog(img, ys, 220, "#5A7080", k=0.3, seed=seed + i)
+        def f(d, ss):
+            d.rectangle([-10 * ss, -10 * ss, 1450 * ss, 2600 * ss], fill=255)
+            _pointed_arch(d, 720, 1760, 520, 1000, ss, 0)
+        fgm = draw_mask(f, 2)
+        n = fbm(seed + 3, 8, 5, cy=14)
+        over(img, fgm, "#05080B", 1.0)
+        img += (n * fgm)[..., None] * C("#3A4A58") * 0.22
+        edge = np.clip(np.roll(fgm, 6, 1) - fgm, 0, 1) + np.clip(np.roll(fgm, -6, 1) - fgm, 0, 1)
+        over(img, np.clip(edge, 0, 1), "#8FB0C4", 0.25)
+        _bonfire(img, seed + 4, 720, 2050, 1.3)
+        over(img, poly_mask([[(0, 2090), (W, 2060), (W, H), (0, H)]]), "#06090C", 0.0)
+        gl = np.exp(-(((YY - 2060) / 260.0) ** 2)) * np.exp(-(((XX - 720) / 480.0) ** 2))
+        img += gl[..., None] * C("#FF7A2A") * 0.12
+        _embers(img, seed + 5, 160, (380, 700, 1060, 2000))
+        fog(img, 2080, 180, "#43586A", k=0.35, seed=seed + 8)
+        return img, 1.5, 0.5
+    if mode == "keep":
+        img = vgrad([(0, "#0A0808"), (0.35, "#2A1A1A"), (0.58, "#7A4A3A"), (0.7, "#D6955A"), (1, "#1A0E0C")])
+        glow(img, 520, 1300, 700, C("#FFB26A"), 0.4, "exp")
+        circ(img, 520, 1320, 180, "#FFD8A0", 0.9)
+        cumulus(img, seed + 1, 800, 300, "#8A5A4A", "#3A2220", "#140C0C", thr=0.45, k=0.9)
+        hills_layer(img, seed + 2, 1800, 160, "#2A1A18", "#120A0A", freq=1.4, fade=500)
+
+        def f(d, ss):
+            d.polygon([(560 * ss, 2560 * ss), (700 * ss, 1750 * ss), (900 * ss, 1500 * ss), (1180 * ss, 1480 * ss), (1440 * ss, 1380 * ss),
+                       (1440 * ss, 2560 * ss)], fill=255)
+            for (x, b, w, h) in ((1000, 1500, 140, 500), (1160, 1480, 110, 640), (1300, 1400, 130, 420), (900, 1520, 90, 320), (1230, 1500, 260, 260)):
+                d.rectangle([(x - w / 2) * ss, (b - h) * ss, (x + w / 2) * ss, b * ss], fill=255)
+                d.polygon([((x - w / 2 - 12) * ss, (b - h) * ss), ((x + w / 2 + 12) * ss, (b - h) * ss), (x * ss, (b - h - w * 1.5) * ss)], fill=255)
+            for x in np.arange(860, 1440, 34):
+                d.rectangle([x * ss, 1460 * ss, (x + 18) * ss, 1490 * ss], fill=255)
+        cm = draw_mask(f, 2)
+        over(img, cm, "#0B0606", 1.0)
+        for (wx, wy) in ((1000, 1180), (1160, 1060), (1300, 1250)):
+            over(img, poly_mask([[(wx - 6, wy), (wx + 6, wy), (wx + 6, wy + 34), (wx - 6, wy + 34)]]), "#FFB040", 0.9)
+            glow(img, wx, wy + 16, 30, C("#FFB040"), 0.5, "exp")
+        over(img, poly_mask([[(0, 2150), (W, 2100), (W, H), (0, H)]]), "#070404", 1.0)
+        fog(img, 1900, 240, "#8A5A4A", k=0.3, seed=seed + 5)
+        _embers(img, seed + 6, 360, (0, 1100, W, 2300))
+        _rain(img, seed + 7, 120, "#FFC08A", 0.1, ang=0.5, ln=(10, 30))
+        return img, 1.5, 0.5
+    # path of lanterns through dead woods
+    img = vgrad([(0, "#06080C"), (0.4, "#101A22"), (0.7, "#26343A"), (1, "#070A0C")])
+    glow(img, 720, 1500, 700, C("#9AB4B8"), 0.18, "exp")
+    for i, (xx_, yb, L, wd) in enumerate(((120, 2300, 800, 64), (1320, 2300, 880, 70), (340, 2100, 560, 40), (1120, 2100, 600, 44), (560, 1850, 360, 26), (900, 1850, 380, 26))):
+        tm = draw_mask(lambda d, ss, xx_=xx_, yb=yb, L=L, wd=wd, i=i: _tree(d, np.random.default_rng(seed + i), xx_, yb, -math.pi / 2 + (0.15 if xx_ < 720 else -0.15), L, wd, 8, ss, 0.5), 2)
+        over(img, tm, "#04070A" if yb > 2000 else "#0C151A", 1.0)
+        fog(img, yb - 300, 200, "#5A7378", k=0.14, seed=seed + 10 + i)
+    pm = draw_mask(lambda d, ss: d.polygon([(640 * ss, 1700 * ss), (800 * ss, 1700 * ss), (1160 * ss, 2560 * ss), (280 * ss, 2560 * ss)], fill=255), 2)
+    over(img, pm, "#1A2428", 0.8)
+    for (lx, ly, s) in ((720, 1840, 1.0), (470, 2150, 1.5), (980, 2260, 1.8)):
+        glow(img, lx, ly, 150 * s, C("#FFA23A"), 0.6, "exp")
+        over(img, poly_mask([[(lx - 14 * s, ly - 18 * s), (lx + 14 * s, ly - 18 * s), (lx + 12 * s, ly + 22 * s), (lx - 12 * s, ly + 22 * s)]]), "#FFD08A", 0.95)
+        over(img, poly_mask([[(lx - 2 * s, ly - 90 * s), (lx + 2 * s, ly - 90 * s), (lx + 2 * s, ly - 18 * s), (lx - 2 * s, ly - 18 * s)]]), "#050709", 1.0)
+    _embers(img, seed + 9, 110, (300, 1300, 1140, 2400))
+    fog(img, 2050, 250, "#4A6064", k=0.3, seed=seed + 11)
+    return img, 1.5, 0.5
+
+
+reg("souls", g_souls)
+
+
+# ---- zombie-outbreak ---------------------------------------------------------------------------------------------
+def _quad(img, pts, color, k=1.0):
+    over(img, poly_mask([pts]), color, k)
+
+
+def g_zombie(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "street":
+        vx, vy = 720, 1180
+        img = vgrad([(0, "#050D08"), (0.25, "#1A3220"), (0.42, "#5F7C4E"), (0.47, "#B7C79A"), (0.5, "#2A3A2C"), (1, "#0A120C")])
+        glow(img, vx, vy - 60, 420, C("#C9D8A8"), 0.5, "exp")
+        px = lambda z, side: vx + side * 800 / z
+        top = lambda z, hb: vy - hb / z
+        bot = lambda z: vy + 560 / z
+        for side in (-1, 1):
+            z = 1.0
+            i = 0
+            while z < 9:
+                z1 = z * r.uniform(1.25, 1.7)
+                hb = r.uniform(1000, 1900)
+                tone = max(0.0, min(1.0, 1 - 0.18 * i))
+                col_ = mixc_hex("#0C1710", "#243A2A", 1 - tone)
+                _quad(img, [(px(z, side), top(z, hb)), (px(z1, side), top(z1, hb)), (px(z1, side), bot(z1)), (px(z, side), bot(z))], col_)
+                for rr in range(int(hb / 150)):
+                    for cc in range(3):
+                        u0, u1 = z + (z1 - z) * (0.12 + cc * 0.3), z + (z1 - z) * (0.3 + cc * 0.3)
+                        yh = vy - hb * (0.9 - rr * 0.14)
+                        a0, a1 = yh / 1.0, yh + 70
+                        if r.random() < 0.8:
+                            xa, xb = px(u0, side), px(u1, side)
+                            ya0 = vy + (yh - vy) / u0
+                            ya1 = vy + (yh + 80 - vy) / u0
+                            yb0 = vy + (yh - vy) / u1
+                            yb1 = vy + (yh + 80 - vy) / u1
+                            lit = r.random() < 0.06
+                            _quad(img, [(xa, ya0), (xb, yb0), (xb, yb1), (xa, ya1)], "#C8D68A" if lit else "#050B07", 0.9 if lit else 0.8)
+                z = z1
+                i += 1
+        road = [(vx - 40, vy + 6), (vx + 40, vy + 6), (W + 300, H), (-300, H)]
+        _quad(img, road, "#101812")
+        for k in range(14):
+            z = 1.0 + k * 0.7
+            y0, y1 = vy + 560 / (z + 0.35), vy + 560 / z
+            w0, w1 = 10 / (z + 0.35), 10 / z
+            _quad(img, [(vx - w0, y0), (vx + w0, y0), (vx + w1, y1), (vx - w1, y1)], "#7A8A62", 0.55)
+        # cars
+        for (cz, side) in ((1.9, -0.35), (3.0, 0.45), (4.4, -0.15)):
+            cxp, cyb = vx + side * 800 / cz, vy + 560 / cz
+            wcar, hcar = 520 / cz, 190 / cz
+            _quad(img, [(cxp - wcar / 2, cyb), (cxp - wcar / 2, cyb - hcar * 0.5), (cxp - wcar * 0.3, cyb - hcar), (cxp + wcar * 0.2, cyb - hcar), (cxp + wcar / 2, cyb - hcar * 0.5), (cxp + wcar / 2, cyb)], "#060B07")
+            circ(img, cxp - wcar * 0.3, cyb, hcar * 0.22, "#020403")
+            circ(img, cxp + wcar * 0.3, cyb, hcar * 0.22, "#020403")
+        fog(img, 1380, 260, "#8FA878", k=0.5, seed=seed + 2)
+        fog(img, 1850, 360, "#5A7458", k=0.3, seed=seed + 3)
+        _rain(img, seed + 4, 220, "#B8D0A0", 0.1, ang=0.0, ln=(14, 40))
+        return img, 1.6, 0.55
+    if mode == "barricade":
+        n = fbm(seed + 1, 6, 6)
+        img = ramp(n, [(0, "#101410"), (1, "#3A4238")])
+        img *= (0.8 + 0.4 * fbm(seed + 2, 40, 3))[..., None]
+        win = [(260, 520), (1180, 520), (1180, 1700), (260, 1700)]
+        wm = poly_mask([win])
+        inner = ramp(np.clip((YY - 520) / 1180, 0, 1), [(0, "#C23A1E"), (0.5, "#7A1A12"), (1, "#240606")])
+        img = img * (1 - wm[..., None]) + inner * wm[..., None]
+        glow(img, 720, 1100, 700, C("#FF3A1A"), 0.35, "exp")
+        over(img, wm * 0.0, "#000000", 0)
+        # frame
+        frame = poly_mask([[(220, 480), (1220, 480), (1220, 1740), (220, 1740)]]) - wm
+        over(img, np.clip(frame, 0, 1), "#2A2620", 1.0)
+        # planks
+        def plank(cx, cy, L, wd, ang, col_, seed_):
+            ca, sa = math.cos(ang), math.sin(ang)
+            u = (XX - cx) * ca + (YY - cy) * sa
+            v = -(XX - cx) * sa + (YY - cy) * ca
+            m = (1 - smooth(L / 2 - 3, L / 2 + 3, np.abs(u))) * (1 - smooth(wd / 2 - 3, wd / 2 + 3, np.abs(v)))
+            gr = fbm(seed_, 30, 3, cy=3)
+            c = ramp(0.5 + 0.35 * np.sin(v * 0.4 + gr * 5.0) * 0.5 + gr * 0.2, [(0, "#2E2013"), (1, "#7A5A38")])
+            sh = np.exp(-np.clip(np.abs(v) - wd / 2, 0, None) / 12.0) * (np.abs(v) > wd / 2) * 0.0
+            nonlocal img
+            img = img * (1 - 0.5 * blur(m, 14)[..., None] * 0.7)
+            img = img * (1 - m[..., None]) + c * m[..., None]
+            for sgn in (-1, 1):
+                nx, ny = cx + sgn * (L / 2 - 50) * ca, cy + sgn * (L / 2 - 50) * sa
+                circ(img, nx, ny, 9, "#9AA0A8")
+                circ(img, nx - 2, ny - 2, 4, "#E8ECF0", 0.7)
+        plank(720, 780, 1500, 170, 0.32, 0, seed + 3)
+        plank(720, 1180, 1500, 160, -0.28, 0, seed + 4)
+        plank(720, 1560, 1500, 160, 0.06, 0, seed + 5)
+        # hazard tape
+        tm = np.abs(-(XX - 720) * math.sin(-0.5) + (YY - 1330) * math.cos(-0.5)) < 62
+        sx = (((XX - 720) * math.cos(-0.5) + (YY - 1330) * math.sin(-0.5)) / 52.0 + ((-(XX - 720) * math.sin(-0.5) + (YY - 1330) * math.cos(-0.5)) / 52.0)) % 1.0
+        tape = np.where((sx < 0.5)[..., None], C("#F2C40E"), C("#14120E"))
+        tmf = tm.astype(np.float32)
+        img = img * (1 - 0.5 * blur(tmf, 12)[..., None] * 0.6)
+        img = img * (1 - tmf[..., None]) + tape * tmf[..., None] * (0.82 + 0.2 * fbm(seed + 6, 20, 3))[..., None]
+        # claw scratches in the wall
+        sc = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sc)
+        for k in range(4):
+            d.line([(300 + k * 46, 1780 + k * 10), (400 + k * 52, 2300 + k * 18)], fill=210, width=7)
+        s = np.asarray(sc, np.float32) / 255.0
+        over(img, s, "#B8B4A6", 0.6)
+        over(img, np.roll(s, 3, 1) * 0.0 + blur(s, 3), "#000000", 0.5)
+        sp = Image.new("L", (W, H), 0)
+        sd = ImageDraw.Draw(sp)
+        for _ in range(60):
+            x, y, rr = r.uniform(0, W), r.uniform(1700, 2500), r.uniform(2, 9)
+            sd.ellipse([x - rr, y - rr, x + rr, y + rr], fill=255)
+        over(img, np.asarray(sp, np.float32) / 255.0, "#5A0E10", 0.7)
+        return img, 1.6, 0.5
+    # flare
+    img = vgrad([(0, "#050304"), (0.4, "#1A0E0C"), (0.62, "#5A2216"), (0.7, "#1A0C0A"), (1, "#050303")])
+    sm = fbm(seed + 1, 2.4, 6, cy=5)
+    over(img, smooth(0.45, 0.8, sm) * np.exp(-(((YY - 800) / 700.0) ** 2)), "#3A1A12", 0.9)
+    fx, fy = 520, 2020
+    glow(img, fx, fy, 520, C("#FF2A1A"), 0.75, "exp")
+    glow(img, fx, fy, 160, C("#FF7A4A"), 0.9, "exp")
+    glow(img, fx, fy, 36, C("#FFE0C0"), 1.0, "exp")
+    # overpass ruin
+    def f(d, ss):
+        d.polygon([(0, 1500 * ss), (W * ss, 1380 * ss), (W * ss, 1500 * ss), (900 * ss, 1560 * ss), (700 * ss, 1500 * ss), (0, 1620 * ss)], fill=255)
+        for x in (160, 760, 1260):
+            d.rectangle([x * ss, 1500 * ss, (x + 90) * ss, 2150 * ss], fill=255)
+        for x in range(940, 1440, 55):
+            d.line([(x * ss, 1500 * ss), ((x + r.uniform(-30, 30)) * ss, 1640 * ss)], fill=255, width=7 * ss)
+    om = draw_mask(f, 2)
+    over(img, om, "#0A0504", 1.0)
+    over(img, np.clip(om - np.roll(om, -8, 0), 0, 1), "#FF5A2A", 0.25)
+    over(img, poly_mask([[(0, 2150), (W, 2150), (W, H), (0, H)]]), "#0A0605", 1.0)
+    glow(img, fx, 2160, 520, C("#FF3A1A"), 0.3, "exp")
+    cm = draw_mask(lambda d, ss: d.polygon([(x * ss, y * ss) for x, y in [(960, 2180), (960, 2060), (1060, 2010), (1220, 2000), (1320, 2060), (1400, 2090), (1400, 2180)]], fill=255), 2)
+    over(img, cm, "#030202", 1.0)
+    over(img, np.clip(cm - np.roll(cm, -5, 0), 0, 1), "#FF5A2A", 0.4)
+    _embers(img, seed + 3, 200, (200, 900, 900, 2050), ("#FF6A2A", "#FF3A1A", "#FFB070"))
+    fog(img, 2000, 180, "#6A2A20", k=0.35, seed=seed + 4)
+    return img, 1.6, 0.55
+
+
+def mixc_hex(a, b, t):
+    return tuple(float(x) for x in (col(a) * (1 - t) + col(b) * t))
+
+
+reg("zombie", g_zombie)
+
+
+# ---- battle-royale -----------------------------------------------------------------------------------------------
+def _chute(d, cx, cy, s, ss, cols_pil, panels=6):
+    wd, ht = 120 * s, 74 * s
+    for i in range(panels):
+        a0 = math.pi + math.pi * i / panels
+        a1 = math.pi + math.pi * (i + 1) / panels
+        pts = [(cx + wd * math.cos(a0), cy + ht * math.sin(a0))]
+        for t in np.linspace(a0, a1, 6):
+            pts.append((cx + wd * math.cos(t), cy + ht * math.sin(t)))
+        pts.append((cx + wd * math.cos(a1), cy + 8 * s))
+        pts.append((cx + wd * math.cos(a0), cy + 8 * s))
+        d.polygon([(x * ss, y * ss) for x, y in pts], fill=cols_pil[i % len(cols_pil)])
+    for i in range(panels + 1):
+        x = cx + wd * math.cos(math.pi + math.pi * i / panels)
+        d.line([(x * ss, (cy + 8 * s) * ss), (cx * ss, (cy + 190 * s) * ss)], fill=(30, 30, 40), width=max(1, int(1.6 * s * ss)))
+    d.rounded_rectangle([(cx - 12 * s) * ss, (cy + 186 * s) * ss, (cx + 12 * s) * ss, (cy + 240 * s) * ss], radius=int(8 * s * ss), fill=(20, 22, 30))
+
+
+def g_royale(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "map":
+        yy, xx = YY, XX
+        n = fbm(seed + 1, 2.6, 6)
+        fall = 1 - np.clip(np.hypot((xx - 760) / 640.0, (yy - 1240) / 940.0), 0, 1.3)
+        L = n * 0.7 + fall * 0.55
+        img = ramp(np.clip(L, 0, 1), [(0, "#0A2C4A"), (0.40, "#0F4A74"), (0.52, "#2C8AA0"), (0.56, "#D8C890"), (0.62, "#7FA862"), (0.74, "#4A7A44"), (0.86, "#6A6A5A"), (1, "#C8C8C0")])
+        cont = np.abs(np.sin(L * 52.0)) < 0.07
+        img = img * (1 - 0.25 * (cont & (L > 0.56))[..., None])
+        for gx in range(0, W + 1, 240):
+            over(img, (np.abs(XX - gx) < 1.5).astype(np.float32), "#FFFFFF", 0.22)
+        for gy in range(0, H + 1, 240):
+            over(img, (np.abs(YY - gy) < 1.5).astype(np.float32), "#FFFFFF", 0.22)
+        zc, zr = (900.0, 1200.0), 560.0
+        dist = np.hypot(XX - zc[0], YY - zc[1])
+        out = smooth(zr - 3, zr + 3, dist)
+        sc = np.array(col("#7B2CFF"))
+        img = img * (1 - 0.5 * out[..., None]) + sc * 0.5 * out[..., None]
+        img += (np.sin((XX + YY) / 14.0) * 0.5 + 0.5)[..., None] * out[..., None] * sc * 0.05
+        ringm = np.exp(-(((dist - zr) / 4.0) ** 2))
+        img += blur(ringm, 12)[..., None] * C("#C08AFF") * 0.9
+        over(img, ringm, "#FFFFFF", 0.95)
+        z2 = np.hypot(XX - 880, YY - 1180)
+        dash = ((np.arctan2(YY - 1180, XX - 880) * 60) % 1.0) < 0.5
+        over(img, np.exp(-(((z2 - 240) / 2.5) ** 2)) * dash, "#FFFFFF", 0.85)
+        lm = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(lm)
+        p0, p1 = (-40, 300), (1500, 2200)
+        L_ = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+        for t in np.arange(0, 1, 0.014):
+            if int(t / 0.014) % 2 == 0:
+                d.line([(p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t), (p0[0] + (p1[0] - p0[0]) * (t + 0.008), p0[1] + (p1[1] - p0[1]) * (t + 0.008))], fill=255, width=7)
+        lmm = np.asarray(lm, np.float32) / 255.0
+        img += blur(lmm, 6)[..., None] * C("#FFE08A") * 0.7
+        over(img, lmm, "#FFE9A8", 0.95)
+        for (px_, py_) in ((420, 1000), (1100, 700), (700, 1700), (1180, 1650), (300, 1500)):
+            ring(img, px_, py_, 22, 5, "#FFFFFF", 0.8)
+            circ(img, px_, py_, 6, "#FFD23F")
+        return img, 1.3, 0.3
+    if mode == "drop":
+        img = vgrad([(0, "#2468C8"), (0.35, "#5AA4EC"), (0.62, "#B4DCF8"), (0.8, "#EAF4FF"), (1, "#8CB4D8")])
+        for yy_, a in ((1700, 0.9), (2100, 0.9), (2400, 0.95)):
+            cumulus(img, seed + int(yy_), yy_, 260, "#FFFFFF", "#DCEBFA", "#8FB0D6", thr=0.42, k=a)
+        cumulus(img, seed + 3, 600, 220, "#FFFFFF", "#CFE2F6", "#7FA6D6", thr=0.52, k=0.5)
+        glow(img, 1100, 200, 300, C("#FFFFFF"), 0.35, "exp")
+        pal = [(236, 70, 70), (255, 178, 40), (60, 170, 255), (90, 210, 110), (190, 90, 235), (245, 245, 250)]
+        items = []
+        for i in range(15):
+            s = 0.3 + 1.7 * r.random() ** 1.7
+            items.append((r.uniform(120, 1320), 300 + (s - 0.3) * 520 + r.uniform(-120, 500), s, i))
+        items.sort(key=lambda t: t[2])
+        for (cx, cy, s, i) in items:
+            im = Image.new("RGBA", (W * 2, H * 2), (0, 0, 0, 0))
+            dd = ImageDraw.Draw(im)
+            cols_ = [pal[(i + j) % len(pal)] + (255,) for j in range(2)]
+            _chute(dd, cx, cy, s, 2, cols_, 6)
+            arr = np.asarray(im.resize((W, H), Image.BOX), np.float32) / 255.0
+            a = arr[..., 3]
+            haze = 0.45 * (1 - min(1.0, s / 1.2))
+            sh = np.roll(np.roll(a, 36, 0), 20, 1) * 0.0
+            img = img * (1 - a[..., None]) + (arr[..., :3] * (1 - haze) + np.array(col("#CFE2F6")) * haze) * a[..., None]
+        return img, 1.0, 0.1
+    img = vgrad([(0, "#04060E"), (0.5, "#0C1426"), (0.76, "#142238"), (1, "#050810")])
+    stars(img, seed, 500, 0, 1300, size=0.8, big=2)
+    gm = (YY > 1900).astype(np.float32)
+    gc = ramp(np.clip((YY - 1900) / 660, 0, 1), [(0, "#14202E"), (1, "#070C14")])
+    img = img * (1 - gm[..., None]) + gc * gm[..., None]
+    hx = smooth(0.0, 1.0, 1 - np.abs(((XX + YY * 0.58) / 70.0) % 1 - 0.5) * 2) * 0.0
+    for i, (bx, bcol) in enumerate(((280, "#FFFFFF"), (560, "#5CE06C"), (860, "#4AA0FF"), (1130, "#B45AFF"), (720, "#FFB62A"))):
+        by = 2020 + (i % 2) * 120 + (60 if i == 4 else 0)
+        wbeam = 50 if i != 4 else 74
+        beam = np.exp(-(((XX - bx) / wbeam) ** 2)) * np.clip((by - YY) / 1600.0, 0, 1) ** 0.6 * (YY < by)
+        img += beam[..., None] * C(bcol) * 0.55
+        img += blur(beam, 20)[..., None] * C(bcol) * 0.5
+        glow(img, bx, by, 160, C(bcol), 0.6, "exp")
+        top = [(bx, by - 66), (bx + 90, by - 28), (bx, by + 8), (bx - 90, by - 28)]
+        left = [(bx - 90, by - 28), (bx, by + 8), (bx, by + 120), (bx - 90, by + 84)]
+        right = [(bx + 90, by - 28), (bx, by + 8), (bx, by + 120), (bx + 90, by + 84)]
+        _quad(img, left, "#101A2A")
+        _quad(img, right, "#1A2A44")
+        _quad(img, top, bcol, 0.9)
+        over(img, line_mask([top + [top[0]]], 4), "#FFFFFF", 0.7)
+        sp = np.random.default_rng(seed + i)
+        for _ in range(26):
+            sx_, sy_ = bx + sp.normal(0, 60), by - sp.uniform(80, 900)
+            circ(img, sx_, sy_, sp.uniform(2, 5), bcol, 0.9)
+    return img, 1.3, 0.4
+
+
+reg("royale", g_royale)
+
+
+# ---- ronin -------------------------------------------------------------------------------------------------------
+def _bamboo(d, r, x, y0, y1, wd, ss, lean=0.0):
+    nodes = list(np.arange(y1, y0, -r.uniform(170, 260)))
+    pts = lambda y: (x + lean * (y1 - y), y)
+    d.polygon([((pts(y1)[0] - wd / 2) * ss, y1 * ss), ((pts(y1)[0] + wd / 2) * ss, y1 * ss), ((pts(y0)[0] + wd * 0.3) * ss, y0 * ss), ((pts(y0)[0] - wd * 0.3) * ss, y0 * ss)], fill=255)
+    for yn in nodes:
+        px = pts(yn)[0]
+        d.rectangle([(px - wd * 0.62) * ss, (yn - 5) * ss, (px + wd * 0.62) * ss, (yn + 5) * ss], fill=255)
+        if r.random() < 0.7:
+            sgn = r.choice((-1, 1))
+            for k in range(3):
+                a = (-0.5 + k * 0.3) * sgn + (0.0 if sgn > 0 else math.pi)
+                L = r.uniform(100, 190)
+                tip = (px + L * math.cos(a), yn + L * math.sin(a) * 0.5 + 40)
+                _leaf(d, (px, yn - 4), ((px + tip[0]) / 2, (yn - 4 + tip[1]) / 2 - 24), tip, 12, ss, 14)
+
+
+def g_ronin(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "bamboo":
+        img = vgrad([(0, "#B9C0B6"), (0.45, "#DCDDD2"), (0.8, "#EFEBE0"), (1, "#C9C8BC")])
+        img *= (0.94 + 0.1 * fbm(seed + 1, 80, 3))[..., None]
+        glow(img, 760, 820, 560, C("#FFFFFF"), 0.4, "exp")
+        circ(img, 760, 820, 300, "#FBF8EF")
+        ring(img, 760, 820, 300, 4, "#9AA096", 0.35)
+        for (b, amp, col_, kk) in ((1500, 120, "#9AA49C", 0.7), (1800, 150, "#76837B", 0.8)):
+            pr_ = profile(seed + int(b), b, amp, 1.4, 5, 0.5, 0.2)
+            ridge(img, pr_, col_, "#C9CEC4", fade_y=500)
+            fog(img, b + 40, 120, "#EEEBE0", k=0.7, seed=seed + int(b))
+        for i, (xx_, wd, y1, tone, lean) in enumerate(((140, 54, 2560, "#1A1F1C", 0.04), (360, 34, 2300, "#4A544E", -0.02), (1180, 60, 2560, "#1A1F1C", -0.04), (1330, 38, 2400, "#3A443E", 0.03), (980, 24, 2000, "#7C877F", 0.0), (540, 22, 1900, "#8E988F", 0.02))):
+            bm = draw_mask(lambda d, ss, xx_=xx_, wd=wd, y1=y1, lean=lean, i=i: _bamboo(d, np.random.default_rng(seed + i), xx_, -20, y1, wd, ss, lean), 2)
+            over(img, bm, tone, 1.0)
+        fog(img, 2150, 200, "#EFEBE0", k=0.55, seed=seed + 7)
+        over(img, poly_mask([[(1080, 2260), (1190, 2260), (1190, 2370), (1080, 2370)]]), "#B22A2E", 0.92)
+        sp = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sp)
+        for _ in range(5):
+            x, y = r.uniform(400, 1000), r.uniform(1000, 1500)
+            d.arc([x, y, x + 56, y + 30], 200, 330, fill=255, width=4)
+            d.arc([x + 50, y, x + 106, y + 30], 210, 340, fill=255, width=4)
+        over(img, np.asarray(sp, np.float32) / 255.0, "#2A302C", 0.8)
+        return img, 1.4, 0.2
+    if mode == "mountains":
+        img = vgrad([(0, "#D8D6CA"), (0.4, "#E8E4D6"), (0.7, "#F0EBDC"), (1, "#C9C4B4")])
+        img *= (0.95 + 0.08 * fbm(seed + 1, 60, 3))[..., None]
+        circ(img, 980, 700, 150, "#D8503A", 0.85)
+        glow(img, 980, 700, 420, C("#F0B8A0"), 0.25, "exp")
+        for i, (b, amp, top_, bot_) in enumerate(((1100, 360, "#B4BBB4", "#E4E2D6"), (1380, 400, "#8C9892", "#D8D8CC"), (1700, 440, "#5E6C68", "#C4C8BC"), (2080, 400, "#323E3E", "#A0A8A0"), (2420, 300, "#10181A", "#303A38"))):
+            pr_ = profile(seed + i * 11, b, amp, 1.1 + i * 0.2, 6, 0.55, 0.45)
+            ridge(img, pr_, top_, bot_, fade_y=620)
+            fog(img, b + 120, 170, "#EEEADC", k=0.6, seed=seed + i)
+        # pagoda on a hill
+        def f(d, ss):
+            bx, by = 1050, 1560
+            for t_, (w, h) in enumerate(((150, 70), (124, 66), (98, 62), (72, 58))):
+                y = by - t_ * 96
+                d.polygon([((bx - w - 30) * ss, y * ss), ((bx + w + 30) * ss, y * ss), ((bx + w) * ss, (y - 22) * ss), ((bx - w) * ss, (y - 22) * ss)], fill=255)
+                d.rectangle([(bx - w * 0.7) * ss, (y - h) * ss, (bx + w * 0.7) * ss, y * ss], fill=255)
+            d.polygon([((bx - 36) * ss, (by - 4 * 96) * ss), ((bx + 36) * ss, (by - 4 * 96) * ss), (bx * ss, (by - 4 * 96 - 110) * ss)], fill=255)
+        pm = draw_mask(f, 2)
+        over(img, pm * 0.0 + pm, "#3A4644", 0.9)
+        sp = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sp)
+        for _ in range(7):
+            x, y = r.uniform(200, 900), r.uniform(450, 900)
+            d.arc([x, y, x + 50, y + 26], 200, 330, fill=255, width=4)
+            d.arc([x + 44, y, x + 94, y + 26], 210, 340, fill=255, width=4)
+        over(img, np.asarray(sp, np.float32) / 255.0, "#2A302C", 0.8)
+        return img, 1.3, 0.2
+    # dojo at night
+    hall = 1350
+    img = vgrad([(0, "#0A0806"), (1, "#16100C")])
+    wall = (YY < hall)
+    wp = ramp(np.clip(fbm(seed + 1, 30, 3, cy=2), 0, 1), [(0, "#1E1610"), (1, "#3A2A1C")])
+    img = np.where(wall[..., None], wp * (0.7 + 0.3 * (np.floor(XX / 120.0) % 2)[..., None]), img)
+    over(img, poly_mask([[(420, 260), (1020, 260), (1020, 1150), (420, 1150)]]), "#BFD6EE", 1.0)
+    glow(img, 720, 700, 620, C("#9AB8E0"), 0.35, "exp")
+    lat = np.zeros((H, W), np.float32)
+    for x in range(420, 1021, 100):
+        lat += np.exp(-(((XX - x) / 4.0) ** 2))
+    for y in range(260, 1151, 148):
+        lat += np.exp(-(((YY - y) / 4.0) ** 2))
+    over(img, np.clip(lat, 0, 1) * ((XX > 410) & (XX < 1030) & (YY > 250) & (YY < 1160)), "#1A120C", 1.0)
+    over(img, poly_mask([[(400, 240), (1040, 240), (1040, 260), (400, 260)], [(400, 1150), (1040, 1150), (1040, 1170), (400, 1170)], [(400, 240), (420, 240), (420, 1170), (400, 1170)], [(1020, 240), (1040, 240), (1040, 1170), (1020, 1170)]]), "#120C08", 1.0)
+    # branch silhouette in moonlight
+    bm = draw_mask(lambda d, ss: _tree(d, np.random.default_rng(seed + 5), 1030, 1000, math.pi + 0.3, 300, 14, 7, ss, 0.5), 2) * ((XX > 420) & (XX < 1020) & (YY > 260) & (YY < 1150))
+    over(img, bm, "#2A3A52", 0.8)
+    for x in (80, 1360):
+        over(img, poly_mask([[(x - 26, 0), (x + 26, 0), (x + 26, hall), (x - 26, hall)]]), "#0A0604", 1.0)
+    over(img, poly_mask([[(0, 220), (W, 220), (W, 262), (0, 262)]]), "#0A0604", 1.0)
+    t = np.clip((YY - hall) / (H - hall), 0, 1)
+    uu = (XX - 720) / (0.2 + 1.3 * t) / 160.0
+    plank = np.floor(uu + 0.5)
+    pw = (uu + 0.5) % 1.0
+    base = ramp(fbm(seed + 2, 6, 4, cy=40), [(0, "#3A2414"), (1, "#7A5030")]) * (0.8 + 0.25 * ((plank * 0.37) % 1.0))[..., None]
+    seam = np.exp(-((pw * 160) / 3.0) ** 2) + np.exp(-(((1 - pw) * 160) / 3.0) ** 2)
+    fl = base * (1 - np.clip(seam, 0, 1)[..., None] * 0.6)
+    fl = fl * (0.28 + 0.72 * t[..., None] ** 0.6)
+    refl = np.exp(-(((XX - 720) / (200 + 500 * t)) ** 2)) * (1 - t) * 0.0
+    img = np.where((YY >= hall)[..., None], fl, img)
+    glow(img, 720, 1500, 520, C("#9AB8E0"), 0.18, "exp")
+    for (lx, ly) in ((260, 560), (1180, 640)):
+        over(img, line_mask([[(lx, 0), (lx, ly - 90)]], 4), "#0A0604", 1.0)
+        glow(img, lx, ly, 260, C("#FF8A2A"), 0.55, "exp")
+        lamp = poly_mask([[(lx - 60, ly - 80), (lx + 60, ly - 80), (lx + 74, ly + 20), (lx + 40, ly + 90), (lx - 40, ly + 90), (lx - 74, ly + 20)]])
+        over(img, lamp, "#FF9A3A", 0.95)
+        over(img, lamp * np.exp(-(((XX - lx) / 50.0) ** 2) * 0.0), "#FFD08A", 0.35)
+        over(img, line_mask([[(lx - 62, ly - 20), (lx + 62, ly - 20)], [(lx - 60, ly + 30), (lx + 60, ly + 30)]], 4), "#5A2A10", 0.7)
+    return img, 1.4, 0.45
+
+
+reg("ronin", g_ronin)
+
+
+# ---- wasteland ---------------------------------------------------------------------------------------------------
+def g_waste(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "dunes":
+        img = vgrad([(0, "#7A4A2A"), (0.3, "#C28A52"), (0.55, "#E6B070"), (0.7, "#D79A5E"), (1, "#5A3418")])
+        dust = fbm(seed + 1, 2.6, 6, cy=7)
+        over(img, smooth(0.35, 0.8, dust) * np.exp(-(((YY - 1000) / 900.0) ** 2)), "#E8B880", 0.5)
+        circ(img, 560, 900, 200, "#FFE2B0", 0.85)
+        glow(img, 560, 900, 700, C("#FFC890"), 0.45, "exp")
+        for i, (b, amp, top_, bot_) in enumerate(((1380, 160, "#C48C58", "#8A5A34"), (1620, 220, "#A86E40", "#6E4426"), (1960, 280, "#7C4A28", "#4A2A16"))):
+            pr_ = profile(seed + i * 5, b, amp, 1.2 + i * 0.3, 5, 0.5, 0.6)
+            ridge(img, pr_, top_, bot_, fade_y=520, lit="#F0B878", shade="#3A2010", lit_k=0.55)
+            fog(img, b + 40, 150, "#D8A070", k=0.35, seed=seed + i)
+
+        def f(d, ss):
+            # rusted radio tower
+            bx = 1090
+            d.polygon([((bx - 70) * ss, 1900 * ss), ((bx + 70) * ss, 1900 * ss), ((bx + 8) * ss, 1060 * ss), ((bx - 8) * ss, 1060 * ss)], fill=255)
+            for y in range(1100, 1900, 70):
+                d.line([((bx - 8 - (y - 1060) * 0.075) * ss, y * ss), ((bx + 8 + (y - 1060) * 0.075) * ss, (y + 70) * ss)], fill=0, width=3 * ss)
+            d.rectangle([(bx - 3) * ss, 940 * ss, (bx + 3) * ss, 1070 * ss], fill=255)
+            # car wreck
+            d.polygon([(250 * ss, 2100 * ss), (250 * ss, 2040 * ss), (330 * ss, 2030 * ss), (390 * ss, 1970 * ss), (520 * ss, 1970 * ss), (570 * ss, 2030 * ss), (640 * ss, 2040 * ss), (640 * ss, 2100 * ss)], fill=255)
+            d.ellipse([290 * ss, 2070 * ss, 360 * ss, 2140 * ss], fill=255)
+            d.ellipse([530 * ss, 2070 * ss, 600 * ss, 2140 * ss], fill=255)
+        fm = draw_mask(f, 2)
+        over(img, fm, "#2A160C", 1.0)
+        over(img, poly_mask([[(0, 2170), (W, 2150), (W, H), (0, H)]]), "#2A180E", 1.0)
+        fog(img, 2150, 140, "#D8A070", k=0.4, seed=seed + 8)
+        sp = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sp)
+        for _ in range(500):
+            x, y = r.uniform(0, W), r.uniform(0, H)
+            d.line([(x, y), (x + r.uniform(30, 160), y + r.uniform(-8, 8))], fill=int(60 + 140 * r.random()), width=2)
+        img += blur(np.asarray(sp, np.float32) / 255.0, 2)[..., None] * C("#FFE0B0") * 0.25
+        return img, 1.6, 0.4
+    if mode == "highway":
+        img = vgrad([(0, "#3A1A12"), (0.3, "#8A4A28"), (0.5, "#E2994E"), (0.62, "#F2C07A"), (1, "#3A2012")])
+        sm = fbm(seed + 1, 2.2, 6, cy=6)
+        over(img, smooth(0.4, 0.8, sm) * np.exp(-(((YY - 700) / 700.0) ** 2)), "#5A2A1A", 0.7)
+        circ(img, 900, 1260, 150, "#FFEAC0", 0.9)
+        glow(img, 900, 1260, 600, C("#FFB070"), 0.5, "exp")
+        _city(img, seed + 2, 1600, (160, 640), (90, 190), "#4A2A1A", win=None, gap=(0, 20), k=0.8)
+        fog(img, 1560, 160, "#E0A070", k=0.5, seed=seed + 3)
+
+        def f(d, ss):
+            d.polygon([(0, 1500 * ss), (W * ss, 1420 * ss), (W * ss, 1540 * ss), (860 * ss, 1580 * ss), (780 * ss, 1500 * ss), (560 * ss, 1560 * ss), (0, 1620 * ss)], fill=255)
+            d.rectangle([0, 1470 * ss, W * ss, 1490 * ss], fill=0)
+            for x, w in ((120, 120), (640, 110), (1200, 110)):
+                d.rectangle([x * ss, 1560 * ss, (x + w) * ss, 2300 * ss], fill=255)
+            for x in range(860, 1440, 46):
+                d.line([(x * ss, 1530 * ss), ((x + r.uniform(-60, 60)) * ss, (1530 + r.uniform(100, 280)) * ss)], fill=255, width=6 * ss)
+            d.polygon([(420 * ss, 1620 * ss), (780 * ss, 1580 * ss), (790 * ss, 1700 * ss), (520 * ss, 1760 * ss)], fill=255)
+        hm = draw_mask(f, 2)
+        over(img, hm, "#1C0E08", 1.0)
+        over(img, np.clip(hm - np.roll(hm, -7, 0), 0, 1), "#F2A060", 0.35)
+        over(img, poly_mask([[(0, 2300), (W, 2260), (W, H), (0, H)]]), "#140A06", 1.0)
+        for k in range(8):
+            _quad(img, [(120 + k * 160, 2300 + k * 2), (180 + k * 160, 2300 + k * 2), (170 + k * 160, 2330 + k * 2), (110 + k * 160, 2330 + k * 2)], "#6A5A4A", 0.0)
+        _embers(img, seed + 4, 90, (0, 1500, W, 2400), ("#FFB070", "#FFD090", "#FFE8C0"), k=0.5)
+        return img, 1.6, 0.4
+    # salvage yard
+    img = vgrad([(0, "#5A2E1E"), (0.3, "#B8683A"), (0.5, "#F0A860"), (0.65, "#F6C888"), (1, "#3A200E")])
+    circ(img, 1000, 1340, 210, "#FFF0C8", 0.9)
+    glow(img, 1000, 1340, 720, C("#FFC080"), 0.5, "exp")
+    over(img, smooth(0.45, 0.8, fbm(seed + 1, 2.4, 6, cy=6)) * np.exp(-(((YY - 800) / 800.0) ** 2)), "#7A4020", 0.5)
+    cols_ = ["#A8442A", "#C2812E", "#3A6A7A", "#6A7A4A", "#8A5236", "#B8A06A"]
+    cm = np.zeros((H, W, 3), np.float32)
+    boxes = []
+    for row, (yb, h, w) in enumerate(((2200, 190, 420), (2010, 190, 420), (1820, 190, 420))):
+        x = -80 + row * 130
+        while x < W:
+            if r.random() < 0.9 - row * 0.12:
+                c_ = cols_[int(r.integers(0, len(cols_)))]
+                bm = poly_mask([[(x, yb - h), (x + w, yb - h), (x + w, yb), (x, yb)]])
+                tex = 0.7 + 0.5 * fbm(seed + int(x) + row, 14, 3, cy=2)
+                cm = cm * (1 - bm[..., None]) + C(c_) * tex[..., None] * (0.5 + 0.12 * row) * bm[..., None]
+                rib = (np.sin((XX - x) / 11.0) * 0.5 + 0.5) * bm
+                cm *= (1 - 0.18 * rib[..., None])
+                boxes.append((x, yb - h, w, h, bm))
+            x += w + 14
+    allm = np.zeros((H, W), np.float32)
+    for b in boxes:
+        allm = np.maximum(allm, b[4])
+    img = img * (1 - allm[..., None]) + cm * allm[..., None]
+    over(img, np.clip(allm - np.roll(allm, 7, 1), 0, 1), "#FFD090", 0.28)
+    cr = draw_mask(lambda d, ss: [d.rectangle([1160 * ss, 1100 * ss, 1200 * ss, 1830 * ss], fill=255), d.rectangle([700 * ss, 1100 * ss, 1440 * ss, 1130 * ss], fill=255),
+                                  d.line([(740 * ss, 1130 * ss), (740 * ss, 1480 * ss)], fill=255, width=6 * ss), d.rectangle([700 * ss, 1480 * ss, 790 * ss, 1520 * ss], fill=255)], 2)
+    over(img, cr, "#1E120A", 1.0)
+    over(img, poly_mask([[(0, 2290), (W, 2270), (W, H), (0, H)]]), "#2A180C", 1.0)
+    fog(img, 2280, 140, "#D8A06A", k=0.35, seed=seed + 5)
+    sp = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(sp)
+    for _ in range(400):
+        x, y = r.uniform(0, W), r.uniform(1300, H)
+        d.line([(x, y), (x + r.uniform(30, 140), y + r.uniform(-6, 6))], fill=int(60 + 140 * r.random()), width=2)
+    img += blur(np.asarray(sp, np.float32) / 255.0, 2)[..., None] * C("#FFE0B0") * 0.2
+    return img, 1.6, 0.4
+
+
+reg("waste", g_waste)
+
+
+# ---- space-marine ------------------------------------------------------------------------------------------------
+def g_space(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "orbit":
+        img = vgrad([(0, "#010308"), (0.6, "#050C1E"), (1, "#0A1A3A")])
+        stars(img, seed, 1800, 0, 1900, size=0.8, big=4)
+        pcx, pcy, pr_ = 760, 3300, 1950
+        d = np.hypot(XX - pcx, YY - pcy)
+        pm = 1 - smooth(pr_ - 1.5, pr_ + 1.5, d)
+        n = fbm(seed + 2, 7, 6)
+        lightk = np.clip(1 - (d / pr_), 0, 1)
+        pc = ramp(np.clip(n * 0.7 + 0.1, 0, 1), [(0, "#0C2A52"), (0.5, "#2A6AA0"), (1, "#DCE8F0")]) * (0.35 + 0.8 * np.clip((pcy - YY) / 800.0, 0, 1) ** 0.5)[..., None]
+        img = img * (1 - pm[..., None]) + pc * pm[..., None]
+        rim = np.exp(-(((d - pr_) / 26.0) ** 2))
+        img += rim[..., None] * C("#7FC0FF") * 0.9 + np.exp(-np.clip(d - pr_, 0, None) / 120.0)[..., None] * (d > pr_)[..., None] * C("#3A7AD0") * 0.4
+        img += (np.exp(-(((d - pr_ + 40) / 60.0) ** 2)) * 0.25)[..., None] * C("#BFE0FF")
+        lm = Image.new("L", (W, H), 0)
+        dd = ImageDraw.Draw(lm)
+        pods = [(300, 520, 0.28), (700, 380, 0.2), (1060, 640, 0.34), (520, 1060, 0.24), (900, 1180, 0.3), (180, 1300, 0.18)]
+        for (x, y, s) in pods:
+            L_ = 560 * s * 2.2
+            dd.polygon([(x - 7 * s * 3, y - L_), (x + 7 * s * 3, y - L_), (x + 2, y), (x - 2, y)], fill=255)
+        tr = np.asarray(lm, np.float32) / 255.0
+        trg = np.clip(1 - (np.asarray(YY) - 0) / 1600.0, 0, 1)
+        img += blur(tr, 8)[..., None] * C("#FF9A3A") * 0.9
+        img += tr[..., None] * C("#FFE2B0") * 0.7
+        for (x, y, s) in pods:
+            glow(img, x, y, 70 * s * 3, C("#FF7A2A"), 0.9, "exp")
+            pm_ = draw_mask(lambda d_, ss, x=x, y=y, s=s: d_.polygon([((x - 20 * s * 3) * ss, (y - 40 * s * 3) * ss), ((x + 20 * s * 3) * ss, (y - 40 * s * 3) * ss), ((x + 26 * s * 3) * ss, (y + 10 * s * 3) * ss), ((x - 26 * s * 3) * ss, (y + 10 * s * 3) * ss)], fill=255), 2)
+            over(img, pm_, "#C8D0DC", 1.0)
+            over(img, np.clip(pm_ - np.roll(pm_, 4, 1), 0, 1), "#FFFFFF", 0.4)
+        return img, 1.3, 0.3
+    if mode == "plates":
+        n = fbm(seed + 1, 5, 6)
+        img = ramp(np.clip(n * 0.5 + 0.25, 0, 1), [(0, "#2A3240"), (1, "#566274")])
+        img *= (0.92 + 0.14 * noise(seed + 2, 3, 200))[..., None]
+        panels = [(0, 0, 720, 900), (720, 0, 1440, 640), (0, 900, 520, 1700), (520, 900, 1440, 1700), (0, 1700, 1440, 2560)]
+        for (x0, y0, x1, y1) in panels:
+            seam = (np.abs(XX - x0) < 3) * (YY >= y0) * (YY <= y1) + (np.abs(YY - y0) < 3) * (XX >= x0) * (XX <= x1)
+            img *= (1 - 0.6 * np.clip(seam, 0, 1)[..., None])
+            img += np.clip(np.roll(seam.astype(np.float32), 4, 0) - seam, 0, 1)[..., None] * 0.1
+            inner = poly_mask([[(x0 + 36, y0 + 36), (x1 - 36, y0 + 36), (x1 - 36, y1 - 36), (x0 + 36, y1 - 36)]])
+            ed = np.clip(inner - np.roll(inner, 5, 0), 0, 1)
+            img *= (1 - 0.3 * ed[..., None])
+            for (bx, by) in ((x0 + 70, y0 + 70), (x1 - 70, y0 + 70), (x0 + 70, y1 - 70), (x1 - 70, y1 - 70)):
+                if 0 < bx < W and 0 < by < H:
+                    circ(img, bx, by, 15, "#202630")
+                    circ(img, bx - 3, by - 3, 8, "#8A96A8", 0.8)
+        chip = smooth(0.62, 0.72, fbm(seed + 3, 24, 4)) * np.exp(-np.minimum(np.minimum(XX % 520, 520 - XX % 520), 200) / 40.0)
+        over(img, chip * 0.6, "#8E98A6", 0.35)
+        # hazard band
+        band = (YY > 1560) & (YY < 1700)
+        st = (((XX + YY) / 60.0) % 1.0) < 0.5
+        hz = np.where(st[..., None], C("#F2A81A"), C("#16181C")) * (0.8 + 0.25 * fbm(seed + 4, 30, 3))[..., None]
+        img = np.where(band[..., None], hz, img)
+        # stencil bars + orange marks
+        for k, (x, w) in enumerate(((140, 220), (400, 60), (500, 140), (680, 60), (780, 280))):
+            over(img, poly_mask([[(x, 1930), (x + w, 1930), (x + w, 2030), (x, 2030)]]), "#FF7A1A", 0.9)
+        ringm = np.exp(-(((np.hypot(XX - 1120, YY - 2230) - 130) / 9.0) ** 2))
+        over(img, ringm, "#FF7A1A", 0.9)
+        over(img, poly_mask([[(1110, 2100), (1130, 2100), (1130, 2360), (1110, 2360)], [(990, 2220), (1250, 2220), (1250, 2240), (990, 2240)]]), "#FF7A1A", 0.9)
+        wear = smooth(0.55, 0.75, fbm(seed + 5, 12, 5)) * 0.0
+        sc = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(sc)
+        for _ in range(200):
+            x, y = r.uniform(0, W), r.uniform(0, H)
+            d.line([(x, y), (x + r.uniform(20, 160), y + r.uniform(-30, 30))], fill=int(40 + 110 * r.random()), width=1)
+        img += np.asarray(sc, np.float32)[..., None] / 255.0 * 0.22
+        return img, 1.6, 0.45
+    # hangar bay
+    vx, vy = 720, 1180
+    img = vgrad([(0, "#05070C"), (1, "#0C1018")])
+    for k in range(9):
+        z = 1 + k * 0.62
+        hw, hh = 760 / z, 1020 / z
+        rib = poly_mask([[(vx - hw, vy - hh), (vx + hw, vy - hh), (vx + hw, vy + hh * 0.55), (vx - hw, vy + hh * 0.55)]])
+        inner = poly_mask([[(vx - hw + 56 / z, vy - hh + 56 / z), (vx + hw - 56 / z, vy - hh + 56 / z), (vx + hw - 56 / z, vy + hh * 0.55), (vx - hw + 56 / z, vy + hh * 0.55)]])
+        ribm = np.clip(rib - inner, 0, 1)
+        tone = 0.2 + 0.55 / z
+        over(img, ribm, mixc_hex("#101820", "#4A5870", min(1, tone)), 1.0)
+        glow(img, vx, vy - hh + 28 / z, 160 / z, C("#CFE8FF"), 0.35 / (1 + k * 0.2), "exp")
+    glow(img, vx, vy, 300, C("#9AD0FF"), 0.6, "exp")
+    over(img, poly_mask([[(vx - 50, vy + 20), (vx + 50, vy + 20), (W + 400, H), (-400, H)]]), "#10161E", 1.0)
+    for k in range(10):
+        z = 1 + k * 0.6
+        y = vy + 600 / z
+        over(img, (np.abs(YY - y) < 3 + 14 / z).astype(np.float32) * (YY > vy), "#F2A81A", 0.4)
+    for sx in (-1, 1):
+        lm = line_mask([[(vx + sx * 30, vy + 22), (vx + sx * 640, H)]], 6)
+        over(img, lm, "#F2A81A", 0.8)
+    fog(img, vy + 80, 260, "#6A8AB0", k=0.3, seed=seed + 3)
+    return img, 1.5, 0.4
+
+
+reg("space", g_space)
+
+
+# ---- street-racer ------------------------------------------------------------------------------------------------
+def _streaks(img, seed, vx, vy, n, cols, r0=(60, 400), r1=(700, 1900), ang=(0, 2 * math.pi), wd=(2, 7), k=0.9, vmask=None):
+    r = np.random.default_rng(seed)
+    lm = Image.new("RGB", (W, H), (0, 0, 0))
+    d = ImageDraw.Draw(lm)
+    for _ in range(n):
+        a = r.uniform(*ang)
+        a0, a1 = r.uniform(*r0), r.uniform(*r1)
+        c_ = cols[int(r.integers(0, len(cols)))]
+        cc = tuple(int(v * 255) for v in col(c_))
+        w = int(r.uniform(*wd))
+        d.line([(vx + a0 * math.cos(a), vy + a0 * math.sin(a)), (vx + a1 * math.cos(a), vy + a1 * math.sin(a))], fill=cc, width=w)
+    arr = np.asarray(lm, np.float32) / 255.0
+    if vmask is not None:
+        arr *= vmask[..., None]
+    img += blur(arr, 6) * 1.3 * k + arr * k
+
+
+def g_racer(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "highway":
+        vx, vy = 720, 1260
+        img = vgrad([(0, "#02040C"), (0.35, "#08132E"), (0.5, "#1A3A7A"), (0.51, "#04060E"), (1, "#02030A")])
+        glow(img, vx, vy, 520, C("#3A8AFF"), 0.55, "exp")
+        bokeh(img, seed + 1, 50, ["#FFB05A", "#FF5A4A", "#9AD0FF", "#FFFFFF"], 5, 22, (0.15, 0.6), ring=0.2, region=(0, 1160, W, 1260))
+        _quad(img, [(vx - 24, vy), (vx + 24, vy), (W + 700, H), (-700, H)], "#0A0E18")
+        for k in range(18):
+            z = 1 + k * 0.5
+            y0, y1 = vy + 1300 / (z + 0.3), vy + 1300 / z
+            for sx in (-1, 1):
+                for off in (0.0,):
+                    xa0, xa1 = vx + sx * 520 / (z + 0.3), vx + sx * 520 / z
+                    w0, w1 = 8 / (z + 0.3), 8 / z
+                    _quad(img, [(xa0 - w0, y0), (xa0 + w0, y0), (xa1 + w1, y1), (xa1 - w1, y1)], "#C8D8F0", 0.55 if k % 2 == 0 else 0.0)
+        _quad(img, [(vx - 24, vy), (vx - 34, vy), (-700, H), (-560, H)], "#1A2A4A", 0.8)
+        _quad(img, [(vx + 24, vy), (vx + 34, vy), (W + 700, H), (W + 560, H)], "#1A2A4A", 0.8)
+        gm = (YY > vy).astype(np.float32)
+        _streaks(img, seed + 2, vx, vy, 150, ["#2E9AFF", "#9AD0FF", "#FFFFFF", "#2E6AFF"], (80, 360), (800, 1700), (0.05, math.pi - 0.05), (2, 6), 0.8, gm)
+        _streaks(img, seed + 3, vx, vy, 90, ["#FF3A3A", "#FF7A4A"], (80, 360), (700, 1500), (0.2, math.pi - 0.2), (2, 5), 0.7, gm)
+        sm = (YY <= vy).astype(np.float32)
+        _streaks(img, seed + 4, vx, vy, 60, ["#6AB0FF", "#FFFFFF"], (100, 500), (800, 1700), (math.pi + 0.15, 2 * math.pi - 0.15), (1, 3), 0.35, sm)
+        glow(img, vx, vy, 130, C("#FFFFFF"), 0.85, "exp")
+        # rear of a low car
+        cm = draw_mask(lambda d, ss: [d.polygon([(x * ss, y * ss) for x, y in [(420, 2200), (440, 2070), (540, 1990), (900, 1990), (1000, 2070), (1020, 2200)]], fill=255),
+                                      d.rectangle([380 * ss, 1960 * ss, 1060 * ss, 1985 * ss], fill=255), d.rectangle([450 * ss, 1985 * ss, 470 * ss, 2060 * ss], fill=255), d.rectangle([970 * ss, 1985 * ss, 990 * ss, 2060 * ss], fill=255)], 2)
+        over(img, cm, "#05070C", 1.0)
+        for tx in (500, 940):
+            over(img, poly_mask([[(tx - 70, 2090), (tx + 70, 2090), (tx + 60, 2120), (tx - 60, 2120)]]), "#FF2A2A", 1.0)
+            glow(img, tx, 2105, 110, C("#FF2A2A"), 0.8, "exp")
+        over(img, poly_mask([[(420, 2200), (1020, 2200), (1060, 2300), (380, 2300)]]), "#020308", 1.0)
+        glow(img, 720, 2260, 380, C("#2E9AFF"), 0.4, "exp")
+        return img, 1.4, 0.4
+    if mode == "garage":
+        img = vgrad([(0, "#05070C"), (1, "#0A0E16")])
+        u = (XX + YY * 0.0)
+        wall = (YY < 1500)
+        cf = 0.5 + 0.5 * np.sin((XX + YY) / 12.0) * np.sin((XX - YY) / 12.0)
+        wc = ramp(cf, [(0, "#06080C"), (1, "#222834")]) * (0.7 + 0.3 * np.clip(1 - np.abs(YY - 700) / 900.0, 0, 1))[..., None]
+        img = np.where(wall[..., None], wc, img)
+        for (y, wl, col_, th) in ((300, 1200, "#FFFFFF", 14), (560, 1000, "#2E9AFF", 10), (1500, 1300, "#2E9AFF", 8)):
+            bar = line_mask([[(720 - wl / 2, y), (720 + wl / 2, y)]], th)
+            neon(img, bar, col_, core=0.8, glows=((3, 1.0), (16, 0.8), (70, 0.5)), k=0.9)
+        gf = ramp(np.clip((YY - 1500) / 1060, 0, 1), [(0, "#10141C"), (1, "#05070B")])
+        img = np.where((YY >= 1500)[..., None], gf, img)
+        img[1500:] += img[:1500][::-1][:H - 1500] * 0.0
+        _reflect(img, 1500, 0.8, 600.0, 10.0, 14.0, seed)
+        for k in range(8):
+            y = 1560 + k ** 1.7 * 60
+            over(img, (np.abs(YY - y) < 1.5 + k * 0.4).astype(np.float32) * (YY > 1500), "#2E6AFF", 0.12)
+        band = (YY > 2280) & (YY < 2360)
+        stp = (((XX + YY) / 50.0) % 1.0) < 0.5
+        hz = np.where(stp[..., None], C("#F2C40E"), C("#14161A")) * 0.7
+        img = np.where(band[..., None], hz, img)
+        glow(img, 720, 2000, 520, C("#2E6AFF"), 0.22, "exp")
+        return img, 1.5, 0.5
+    img = vgrad([(0, "#040612"), (0.4, "#0E1A40"), (0.56, "#3A2A6A"), (0.58, "#080A14"), (1, "#020309")])
+    glow(img, 720, 1350, 700, C("#FF6A3A"), 0.22, "exp")
+    _city(img, seed + 1, 1400, (120, 520), (70, 150), "#0A0F26", win=["#FFB060", "#9AD0FF"], win_p=0.2, ws=(7, 10), gap=(0, 6))
+    over(img, poly_mask([[(0, 1400), (W, 1400), (W, H), (0, H)]]), "#07090F", 1.0)
+    lt = Image.new("RGB", (W, H), (0, 0, 0))
+    d = ImageDraw.Draw(lt)
+    for i in range(90):
+        y = 1500 + r.random() ** 0.7 * 900
+        s = 6 + (y - 1400) * 0.05
+        x = r.uniform(0, W)
+        c_ = ((255, 40, 40), (255, 120, 60), (255, 255, 255), (60, 150, 255))[int(r.integers(0, 4))]
+        d.ellipse([x - s, y - s, x + s, y + s], fill=tuple(int(v * 0.8) for v in c_))
+    arr = np.asarray(lt, np.float32) / 255.0
+    img += blur(arr, 12) * 1.6 + arr * 0.7
+    # overpass beams
+    over(img, poly_mask([[(0, 0), (W, 0), (W, 360), (0, 420)]]), "#05060C", 1.0)
+    for x in range(120, W, 300):
+        over(img, poly_mask([[(x, 380), (x + 50, 380), (x + 50, 700), (x, 700)]]), "#05060C", 1.0)
+        circ(img, x + 25, 700, 10, "#FFD9A0")
+        glow(img, x + 25, 700, 130, C("#FFB060"), 0.5, "exp")
+    _reflect(img, 1400, 0.75, 700.0, 14.0, 16.0, seed)
+    img += np.maximum(0, np.roll(img, 0, 0) * 0.0)
+    return img, 1.5, 0.45
+
+
+reg("racer", g_racer)
+
+
+# ---- cyber-merc --------------------------------------------------------------------------------------------------
+def _holo(img, x0, y0, x1, y1, color, seed):
+    r = np.random.default_rng(seed)
+    m = poly_mask([[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]])
+    img += m[..., None] * C(color) * 0.12
+    lm = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(lm)
+    for y in np.arange(y0 + 16, y1 - 10, 20):
+        d.rectangle([x0 + 14, y, x0 + 14 + (x1 - x0 - 28) * r.uniform(0.3, 0.95), y + 6], fill=int(110 + 140 * r.random()))
+    bars = np.asarray(lm, np.float32) / 255.0 * m
+    neon(img, bars, color, core=0.5, glows=((2, 0.8), (10, 0.5)), k=0.6)
+    neon(img, line_mask([[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]], 4, 2, True), color, core=0.7, glows=((3, 1.0), (14, 0.6)), k=0.7)
+
+
+def g_cyber(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "alley":
+        img = vgrad([(0, "#06020E"), (0.4, "#1A0A3A"), (0.6, "#5A1A6A"), (0.72, "#FF3AA0"), (1, "#0A0414")])
+        glow(img, 720, 1520, 500, C("#FF4AA8"), 0.5, "exp")
+        _city(img, seed + 1, 1900, (400, 1300), (90, 200), "#12082A", x0=380, x1=1080, win=["#FF4AA8", "#4AF0FF"], win_p=0.22, ws=(7, 12), gap=(0, 6))
+        for side, x0_, x1_ in ((-1, 0, 400), (1, W - 400, W)):
+            m = poly_mask([[(x0_, 0), (x1_, 0), (x1_, 2200), (x0_, 2200)]])
+            over(img, m, "#0A0618", 1.0)
+            for j in range(7):
+                sx = x0_ + 30 + j * 52 + r.uniform(-6, 6) if side < 0 else x1_ - 30 - j * 52
+                sy0 = r.uniform(100, 700)
+                sy1 = sy0 + r.uniform(500, 1300)
+                sc_ = ["#FF3AA0", "#2EF0FF", "#B04AFF", "#FF7A3A"][int(r.integers(0, 4))]
+                sm = poly_mask([[(sx - 16, sy0), (sx + 16, sy0), (sx + 16, sy1), (sx - 16, sy1)]])
+                neon(img, line_mask([[(sx, sy0), (sx, sy1)]], 12), sc_, core=0.7, glows=((3, 1.0), (14, 0.8), (50, 0.4)), k=0.9)
+                for q in range(int((sy1 - sy0) / 90)):
+                    over(img, (np.abs(XX - sx) < 16) * (np.abs(YY - (sy0 + q * 90 + 45)) < 5), "#0A0618", 0.6)
+            for y in np.arange(120, 2100, 130):
+                for x in np.arange(x0_ + 10, x1_ - 10, 54):
+                    if r.random() < 0.18:
+                        over(img, poly_mask([[(x, y), (x + 22, y), (x + 22, y + 34), (x, y + 34)]]), "#FFC060", 0.8)
+        gm = (YY >= 1960).astype(np.float32)
+        gc = ramp(np.clip((YY - 1960) / 600, 0, 1), [(0, "#1A0E32"), (1, "#05030C")])
+        img = img * (1 - gm[..., None]) + gc * gm[..., None]
+        _reflect(img, 1960, 0.85, 560.0, 7.0, 10.0, seed)
+        _rain(img, seed + 2, 900, "#C0A8FF", 0.3, 0.1, (60, 160))
+        return img, 1.5, 0.45
+    if mode == "canyon":
+        vx, vy = 720, 560
+        img = vgrad([(0, "#04020C"), (0.2, "#1A0A3E"), (1, "#0A0418")])
+        glow(img, vx, vy, 520, C("#C04AFF"), 0.5, "exp")
+        glow(img, vx, vy, 140, C("#FFFFFF"), 0.5, "exp")
+        for side in (-1, 1):
+            for k in range(7):
+                z = 1 + k * 0.55
+                x_in = vx + side * 120 / z * (2 + k * 0.0)
+                xo = vx + side * 900 / z
+                top = vy - 20 - 90 / z
+                bot = vy + 2200 / z
+                tone = mixc_hex("#2A3050", "#080A18", min(1, k / 6))
+                over(img, poly_mask([[(xo, top - 100), (vx + side * 900 / (z * 1.55), top - 100), (vx + side * 900 / (z * 1.55), bot), (xo, bot)]]), tone, 1.0)
+                over(img, line_mask([[(xo, top - 100), (xo, bot)]], 5 + 18 / z), "#9AC8FF", 0.7)
+                over(img, line_mask([[(xo, top - 100), (xo, bot)]], 2), "#FFFFFF", 0.9)
+        for (a, b, c_, d_, colr) in ((250, 700, 520, 1000, "#2EF0FF"), (900, 560, 1190, 900, "#FF3AA0"), (180, 1500, 460, 1840, "#B04AFF"), (960, 1400, 1250, 1760, "#2EF0FF")):
+            _holo(img, a, b, c_, d_, colr, seed + a)
+        _streaks(img, seed + 3, vx, vy, 40, ["#FFFFFF", "#FF3AA0", "#2EF0FF"], (60, 200), (500, 1400), (0.4, math.pi - 0.4), (2, 4), 0.55)
+        _rain(img, seed + 4, 500, "#C8B0FF", 0.18, 0.05, (60, 150))
+        return img, 1.5, 0.4
+    # chrome horizon with target lock
+    hz = 1450
+    img = vgrad([(0, "#05030E"), (0.4, "#1C0A44"), (0.56, "#7A1A9A"), (0.58, "#FF3AA0"), (0.5801, "#080614"), (1, "#05030C")])
+    stars(img, seed, 300, 0, 800, size=0.7)
+    _city(img, seed + 1, hz, (260, 1000), (70, 170), "#1A1236", win="#2EF0FF", win_p=0.12, gap=(0, 8), roofs=True)
+    edge = np.zeros((H, W), np.float32)
+    lm = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(lm)
+    for y in range(hz, H, 1):
+        pass
+    for k in range(34):
+        y = hz + (k ** 1.7) * 9
+        over(img, (np.abs(YY - y) < 1.5 + k * 0.08).astype(np.float32) * (YY > hz), "#B04AFF", 0.6)
+    for k in range(-30, 31):
+        x2 = 720 + k * 480
+        over(img, line_mask([[(720 + k * 20, hz), (x2, H)]], 2), "#B04AFF", 0.5)
+    _reflect(img, hz, 0.5, 400.0, 8.0, 8.0, seed)
+    cx_, cy_ = 720, 1000
+    hud = np.zeros((H, W), np.float32)
+    def f(d, ss):
+        for rr, wd in ((220, 5), (290, 3)):
+            d.ellipse([(cx_ - rr) * ss, (cy_ - rr) * ss, (cx_ + rr) * ss, (cy_ + rr) * ss], outline=255, width=wd * ss)
+        for a in range(0, 360, 90):
+            ca, sa = math.cos(math.radians(a)), math.sin(math.radians(a))
+            d.line([((cx_ + ca * 160) * ss, (cy_ + sa * 160) * ss), ((cx_ + ca * 360) * ss, (cy_ + sa * 360) * ss)], fill=255, width=4 * ss)
+        for (px, py, sx, sy) in ((400, 600, 1, 1), (1040, 600, -1, 1), (400, 1400, 1, -1), (1040, 1400, -1, -1)):
+            d.line([(px * ss, (py + sy * 90) * ss), (px * ss, py * ss), ((px + sx * 90) * ss, py * ss)], fill=255, width=6 * ss)
+        for q in range(36):
+            a = math.radians(q * 10)
+            d.line([((cx_ + 300 * math.cos(a)) * ss, (cy_ + 300 * math.sin(a)) * ss), ((cx_ + (320 if q % 3 else 340) * math.cos(a)) * ss, (cy_ + (320 if q % 3 else 340) * math.sin(a)) * ss)], fill=255, width=3 * ss)
+    hud = draw_mask(f, 2)
+    neon(img, hud, "#2EF0FF", core=0.6, glows=((3, 1.0), (14, 0.7), (50, 0.35)), k=0.85)
+    glow(img, cx_, cy_, 14, C("#FF3AA0"), 1.2, "exp")
+    scan = (np.sin(YY / 3.0) * 0.5 + 0.5)
+    img *= (1 - 0.06 * scan)[..., None]
+    return img, 1.4, 0.4
+
+
+reg("cyber", g_cyber)
+
+
+# ---- pirate-cove -------------------------------------------------------------------------------------------------
+def _ship(d, x, y, s, ss):
+    d.polygon([((x - 300 * s) * ss, (y - 40 * s) * ss), ((x + 280 * s) * ss, (y - 70 * s) * ss), ((x + 340 * s) * ss, (y - 130 * s) * ss), ((x + 230 * s) * ss, y * ss), ((x + 150 * s) * ss, (y + 40 * s) * ss), ((x - 200 * s) * ss, (y + 40 * s) * ss)], fill=255)
+    d.rectangle([(x + 180 * s) * ss, (y - 160 * s) * ss, (x + 330 * s) * ss, (y - 70 * s) * ss], fill=255)
+    for (mx, mh, sw) in ((-170, 680, 150), (10, 800, 170), (190, 620, 130)):
+        d.rectangle([(x + mx * s - 5 * s) * ss, (y - mh * s) * ss, (x + mx * s + 5 * s) * ss, (y - 40 * s) * ss], fill=255)
+        for (j, (top, bot)) in enumerate(((mh * 0.96, mh * 0.62), (mh * 0.56, mh * 0.2))):
+            d.polygon([((x + mx * s - sw * s) * ss, (y - top * s) * ss), ((x + mx * s + sw * s) * ss, (y - top * s) * ss),
+                       ((x + mx * s + sw * 1.1 * s) * ss, (y - (top + bot) / 2 * s) * ss), ((x + mx * s + sw * 0.9 * s) * ss, (y - bot * s) * ss), ((x + mx * s - sw * 0.9 * s) * ss, (y - bot * s) * ss),
+                       ((x + mx * s - sw * 1.1 * s) * ss, (y - (top + bot) / 2 * s) * ss)], fill=255)
+        d.line([((x + mx * s) * ss, (y - mh * s) * ss), ((x + mx * s + 40 * s) * ss, (y - (mh + 60) * s) * ss)], fill=255, width=int(4 * s * ss))
+    d.line([((x - 300 * s) * ss, (y - 40 * s) * ss), ((x - 460 * s) * ss, (y - 160 * s) * ss)], fill=255, width=int(8 * s * ss))
+
+
+def g_pirate(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "map":
+        img = parchment(seed)
+        ink = "#47290F"
+        # sea hatching and islands
+        for (cx_, cy_, R_) in ((420, 700, 250), (980, 1200, 300), (520, 1900, 260), (1130, 1950, 140)):
+            pts = blob_poly(cx_, cy_, R_, seed + int(cx_), 90)
+            m = poly_mask([pts])
+            img = img * (1 - 0.35 * m[..., None]) + C("#A8B070") * 0.35 * m[..., None]
+            over(img, np.clip(np.clip(blur(m, 3) - m, 0, 1) * 4 + np.clip(m - blur(m, 3), 0, 1) * 4, 0, 1), ink, 0.8)
+            for k in range(1, 5):
+                over(img, np.clip(1 - np.abs(blur(m, 14 * k) - 0.5) * 20, 0, 1) * (1 - m), ink, 0.18)
+            hills = Image.new("L", (W, H), 0)
+            d = ImageDraw.Draw(hills)
+            for _ in range(5):
+                hx, hy = cx_ + r.uniform(-R_ * 0.4, R_ * 0.4), cy_ + r.uniform(-R_ * 0.3, R_ * 0.3)
+                d.line([(hx - 40, hy + 24), (hx, hy - 30), (hx + 40, hy + 24)], fill=255, width=5, joint="curve")
+            over(img, np.asarray(hills, np.float32) / 255.0, ink, 0.8)
+        # route
+        pts = [(1200, 380), (900, 520), (760, 760), (880, 1000), (1060, 1280), (880, 1560), (640, 1780), (520, 1900)]
+        lm = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(lm)
+        path = []
+        for t in np.linspace(0, 1, 400):
+            i = min(int(t * (len(pts) - 1)), len(pts) - 2)
+            u = t * (len(pts) - 1) - i
+            p0, p1 = pts[i], pts[i + 1]
+            path.append((p0[0] + (p1[0] - p0[0]) * u + 30 * math.sin(t * 40), p0[1] + (p1[1] - p0[1]) * u))
+        for i in range(0, len(path) - 6, 12):
+            d.line([path[i], path[i + 5]], fill=255, width=7)
+        over(img, np.asarray(lm, np.float32) / 255.0, "#8A1C14", 0.9)
+        xm = line_mask([[(540, 1840), (640, 1950)], [(640, 1840), (540, 1950)]], 22)
+        over(img, xm, "#A01E14", 0.95)
+        # compass
+        cx_, cy_ = 1130, 2280
+        ring(img, cx_, cy_, 130, 6, ink, 0.9)
+        ring(img, cx_, cy_, 100, 3, ink, 0.8)
+        for a in range(0, 360, 45):
+            L_ = 190 if a % 90 == 0 else 110
+            ca, sa = math.cos(math.radians(a - 90)), math.sin(math.radians(a - 90))
+            n_ = (-sa, ca)
+            over(img, poly_mask([[(cx_ + ca * L_, cy_ + sa * L_), (cx_ + n_[0] * 18, cy_ + n_[1] * 18), (cx_ - n_[0] * 18, cy_ - n_[1] * 18)]]), ink, 0.9)
+        # border + waves
+        for inset, wd in ((70, 8), (96, 3)):
+            over(img, line_mask([[(inset, inset), (W - inset, inset), (W - inset, H - inset), (inset, H - inset)]], wd, 2, True), ink, 0.85)
+        wv = Image.new("L", (W, H), 0)
+        d = ImageDraw.Draw(wv)
+        for _ in range(40):
+            x, y = r.uniform(150, 1300), r.uniform(150, 2400)
+            d.arc([x, y, x + 60, y + 24], 200, 340, fill=255, width=4)
+            d.arc([x + 50, y, x + 110, y + 24], 200, 340, fill=255, width=4)
+        over(img, np.asarray(wv, np.float32) / 255.0, ink, 0.45)
+        return img, 1.4, 0.3
+    if mode == "cove":
+        img = vgrad([(0, "#2A1A4A"), (0.25, "#8A3A6A"), (0.42, "#F0824A"), (0.52, "#FFC070"), (0.5201, "#1A2A4A"), (0.7, "#0A1A34"), (1, "#050B18")])
+        circ(img, 880, 1180, 130, "#FFF0C0", 0.95)
+        glow(img, 880, 1180, 600, C("#FFA860"), 0.5, "exp")
+        cumulus(img, seed + 1, 700, 220, "#FFA880", "#7A3A5A", "#2A1A3A", thr=0.5, k=0.8)
+        for yy_ in range(1360, 2000, 26):
+            over(img, (np.abs(YY - yy_) < 2.5).astype(np.float32) * np.exp(-(((XX - 880) / (60 + (yy_ - 1330) * 0.5)) ** 2)), "#FFC070", 0.55)
+        sm = draw_mask(lambda d, ss: _ship(d, 760, 1330, 0.6, ss), 2)
+        over(img, sm, "#0A0614", 1.0)
+        def f(d, ss):
+            d.polygon([(0, 1000 * ss), (160 * ss, 900 * ss), (320 * ss, 1100 * ss), (420 * ss, 1500 * ss), (520 * ss, 2100 * ss), (500 * ss, 2560 * ss), (0, 2560 * ss)], fill=255)
+            d.polygon([(W * ss, 1200 * ss), (1280 * ss, 1180 * ss), (1160 * ss, 1500 * ss), (1100 * ss, 1900 * ss), (1160 * ss, 2560 * ss), (W * ss, 2560 * ss)], fill=255)
+        cm = draw_mask(f, 2)
+        n = fbm(seed + 2, 9, 5, cy=14)
+        over(img, cm, "#06050E", 1.0)
+        img += (n * cm)[..., None] * C("#5A3A4A") * 0.18
+        over(img, np.clip(cm - np.roll(cm, -8, 1), 0, 1) + np.clip(cm - np.roll(cm, 8, 1), 0, 1), "#FF9A5A", 0.18)
+        over(img, poly_mask([[(480, 2240), (1160, 2200), (1200, 2300), (440, 2330)]]), "#150A06", 1.0)
+        for (lx, ly) in ((620, 2150), (980, 2120)):
+            over(img, line_mask([[(lx, ly - 180), (lx, ly - 30)]], 4), "#0A0604", 1.0)
+            glow(img, lx, ly, 160, C("#FFA23A"), 0.7, "exp")
+            over(img, poly_mask([[(lx - 16, ly - 30), (lx + 16, ly - 30), (lx + 12, ly + 20), (lx - 12, ly + 20)]]), "#FFD08A", 0.95)
+        _reflect(img, 1330 + 6, 0.0, 300.0, 4.0, 4.0, seed)
+        return img, 1.4, 0.4
+    # captain's cabin
+    img = vgrad([(0, "#1A0E08"), (1, "#0A0604")])
+    for y in range(0, H, 150):
+        tone = 0.6 + 0.5 * ((y // 150) % 3) / 3.0
+        pl = ramp(fbm(seed + y, 20, 3, cy=2), [(0, "#2A1810"), (1, "#5A3A22")]) * tone
+        m = ((YY >= y) & (YY < y + 150)).astype(np.float32)[..., None]
+        img = img * (1 - m) + pl * m
+        over(img, (np.abs(YY - y) < 3).astype(np.float32), "#0A0504", 0.9)
+    px_, py_ = 720, 1100
+    d = np.hypot(XX - px_, YY - py_)
+    view = 1 - smooth(338, 342, d)
+    sea = vgrad([(0, "#050A22"), (0.4, "#143A6A"), (0.55, "#2A6A9A"), (0.56, "#0A2244"), (1, "#050C24")])
+    sky = view
+    circ(sea, 880, 900, 70, "#F4F0D8", 1.0)
+    glow(sea, 880, 900, 320, C("#9AB8E0"), 0.4, "exp")
+    for k in range(14):
+        over(sea, (np.abs(YY - (1050 + k ** 1.6 * 16)) < 2.4).astype(np.float32) * np.exp(-(((XX - 880) / (50 + k * 10)) ** 2)), "#E8F0F8", 0.5)
+    img = img * (1 - sky[..., None]) + sea * sky[..., None]
+    brass = grad_ring = (d > 336) & (d < 400)
+    bz = ramp(np.clip((XX - px_) / 800.0 + 0.5 + (YY - py_) / 1200.0, 0, 1), [(0, "#F0D07A"), (0.5, "#B07A2A"), (1, "#4A300E")])
+    bm = ((d > 338) & (d < 396)).astype(np.float32)
+    bm = blur(bm, 1.2)
+    img = img * (1 - bm[..., None]) + bz * bm[..., None]
+    over(img, np.exp(-(((d - 368) / 4.0) ** 2)), "#2A1A06", 0.5)
+    for a in range(0, 360, 30):
+        bx, by = px_ + 368 * math.cos(math.radians(a)), py_ + 368 * math.sin(math.radians(a))
+        circ(img, bx, by, 15, "#8A5A1A")
+        circ(img, bx - 3, by - 3, 8, "#FFE8A8", 0.8)
+    glow(img, 1300, 200, 700, C("#FF8A2A"), 0.35, "exp")
+    lamp = poly_mask([[(1240, 120), (1360, 120), (1400, 240), (1360, 330), (1240, 330), (1200, 240)]])
+    over(img, line_mask([[(1300, 0), (1300, 120)]], 5), "#0A0604", 1.0)
+    over(img, lamp, "#FF9A3A", 0.95)
+    over(img, lamp * 0.0 + blur(lamp, 10) * 0.0, "#FFE08A", 0.0)
+    # rope coil
+    for k in range(5):
+        ring(img, 300, 2120, 150 - k * 6, 20, "#B89A62" if k % 2 == 0 else "#8A6C40", 0.95)
+    img *= (1 - 0.5 * np.clip(np.hypot((XX - 720) / 900.0, (YY - 1280) / 1500.0) - 0.4, 0, 1))[..., None]
+    return img, 1.5, 0.5
+
+
+def shrink_m(m):
+    return m
+
+
+reg("pirate", g_pirate)
+
+
+# ---- frontier ----------------------------------------------------------------------------------------------------
+def g_frontier(seed, mode):
+    r = np.random.default_rng(seed)
+    if mode == "mesa":
+        img = vgrad([(0, "#2A1A4A"), (0.25, "#8A3A6A"), (0.42, "#F0824A"), (0.52, "#FFC070"), (1, "#5A2A1A")])
+        circ(img, 560, 1230, 170, "#FFF0C0", 0.95)
+        glow(img, 560, 1230, 650, C("#FFA860"), 0.5, "exp")
+        cumulus(img, seed + 1, 650, 200, "#FFA880", "#8A3A5A", "#3A1A3A", thr=0.52, k=0.6)
+        for i, (b, col_, hh, sc_) in enumerate(((1500, "#8A3A3A", 260, 1.0), (1700, "#6A2A30", 320, 1.2), (1950, "#4A1E26", 380, 1.4))):
+            def f(d, ss, b=b, hh=hh, sc_=sc_, i=i):
+                rr = np.random.default_rng(seed + i)
+                x = -100
+                while x < W + 100:
+                    w = rr.uniform(220, 520) * sc_
+                    h = rr.uniform(0.4, 1.0) * hh
+                    d.polygon([(x * ss, (b + 60) * ss), ((x + w * 0.1) * ss, (b - h * 0.6) * ss), ((x + w * 0.16) * ss, (b - h) * ss), ((x + w * 0.84) * ss, (b - h) * ss), ((x + w * 0.9) * ss, (b - h * 0.6) * ss), ((x + w) * ss, (b + 60) * ss)], fill=255)
+                    x += w + rr.uniform(-40, 160)
+            mm = draw_mask(f, 2)
+            over(img, mm, col_, 1.0)
+            fn_ = fbm(seed + i + 3, 6, 4, cy=18)
+            img += (fn_ * mm)[..., None] * C("#FFB070") * 0.07
+            fog(img, b + 40, 140, "#F0A070", k=0.28, seed=seed + i)
+        over(img, poly_mask([[(0, 2200), (W, 2170), (W, H), (0, H)]]), "#2A1218", 1.0)
+        def cactus(d, ss, x, base, h, w):
+            def rr(x0, y0, x1, y1):
+                d.rounded_rectangle([x0 * ss, y0 * ss, x1 * ss, y1 * ss], radius=(x1 - x0) / 2 * ss, fill=255)
+            rr(x - w / 2, base - h, x + w / 2, base)
+            rr(x - w * 2.0, base - h * 0.62, x - w * 1.0, base - h * 0.3)
+            rr(x - w * 2.0, base - h * 0.34, x - w * 0.2, base - h * 0.28)
+            rr(x + w * 1.0, base - h * 0.75, x + w * 2.0, base - h * 0.42)
+            rr(x + w * 0.2, base - h * 0.5, x + w * 2.0, base - h * 0.44)
+        for (x, b, h, w) in ((200, 2240, 760, 64), (1140, 2260, 520, 48), (1320, 2200, 300, 34)):
+            over(img, draw_mask(lambda d, ss, x=x, b=b, h=h, w=w: cactus(d, ss, x, b, h, w), 2), "#10060A", 1.0)
+        dd = fbm(seed + 8, 3, 5, cy=8)
+        over(img, smooth(0.5, 0.85, dd) * np.exp(-(((YY - 2150) / 200.0) ** 2)), "#E89A6A", 0.2)
+        return img, 1.5, 0.4
+    if mode == "town":
+        img = vgrad([(0, "#3A2A5A"), (0.3, "#B0506A"), (0.48, "#FF9A5A"), (0.58, "#FFD090"), (1, "#3A1E14")])
+        circ(img, 980, 1380, 130, "#FFF0C8", 0.9)
+        glow(img, 980, 1380, 620, C("#FFB070"), 0.5, "exp")
+        gy = 2000
+        hills_layer(img, seed + 1, 1520, 90, "#6A2A3A", "#3A1A24", freq=1.4, fade=300)
+
+        def f(d, ss):
+            x = -60
+            rr = np.random.default_rng(seed + 4)
+            while x < W:
+                w = rr.uniform(300, 420)
+                h = rr.uniform(520, 760)
+                d.rectangle([x * ss, (gy - h) * ss, (x + w) * ss, gy * ss], fill=255)
+                ft = rr.integers(0, 3)
+                top = gy - h
+                if ft == 0:
+                    d.polygon([((x - 14) * ss, (top) * ss), ((x + w + 14) * ss, top * ss), ((x + w + 14) * ss, (top - 70) * ss), ((x + w * 0.62) * ss, (top - 70) * ss), ((x + w * 0.5) * ss, (top - 130) * ss), ((x + w * 0.38) * ss, (top - 70) * ss), ((x - 14) * ss, (top - 70) * ss)], fill=255)
+                elif ft == 1:
+                    d.polygon([((x - 14) * ss, top * ss), ((x + w + 14) * ss, top * ss), ((x + w + 14) * ss, (top - 90) * ss), ((x - 14) * ss, (top - 90) * ss)], fill=255)
+                else:
+                    d.polygon([((x - 14) * ss, top * ss), ((x + w + 14) * ss, top * ss), ((x + w * 0.5) * ss, (top - 160) * ss)], fill=255)
+                d.rectangle([(x - 30) * ss, (gy - 230) * ss, (x + w + 30) * ss, (gy - 200) * ss], fill=255)
+                for px_ in np.arange(x - 20, x + w + 30, 120):
+                    d.rectangle([px_ * ss, (gy - 230) * ss, (px_ + 12) * ss, gy * ss], fill=255)
+                x += w + rr.uniform(10, 60)
+        bm = draw_mask(f, 2)
+        over(img, bm, "#140808", 1.0)
+        rr_ = np.random.default_rng(seed + 5)
+        wm = Image.new("L", (W, H), 0)
+        wd = ImageDraw.Draw(wm)
+        for _ in range(26):
+            x, y = rr_.uniform(40, W - 80), rr_.uniform(gy - 640, gy - 300)
+            wd.rectangle([x, y, x + 36, y + 56], fill=255)
+        wmk = np.asarray(wm, np.float32) / 255.0 * bm
+        over(img, wmk, "#FFC060", 0.9)
+        img += blur(wmk, 8)[..., None] * C("#FFA040") * 0.4
+        over(img, poly_mask([[(0, gy), (W, gy), (W, H), (0, H)]]), "#5A3018", 1.0)
+        gr = ramp(np.clip((YY - gy) / (H - gy), 0, 1), [(0, "#C07A4A"), (1, "#3A2010")])
+        img = np.where((YY >= gy)[..., None], gr * (0.8 + 0.3 * fbm(seed + 6, 8, 4))[..., None], img)
+        # long shadows
+        for k in range(1, 60):
+            pass
+        shd = np.roll(bm, 0, 0)
+        sh = np.zeros((H, W), np.float32)
+        for k in range(0, 220, 4):
+            sh = np.maximum(sh, np.roll(np.roll(bm, int(k * 0.35), 0), -k, 1))
+        img *= (1 - 0.45 * (sh * (YY > gy))[..., None])
+        tw = draw_mask(lambda d, ss: [d.ellipse([(760 - 80) * ss, (2300 - 80) * ss, (760 + 80) * ss, (2300 + 80) * ss], outline=255, width=3 * ss),
+                                      d.ellipse([(760 - 55) * ss, (2300 - 70) * ss, (760 + 60) * ss, (2300 + 60) * ss], outline=255, width=3 * ss),
+                                      d.line([(690 * ss, 2290 * ss), (830 * ss, 2300 * ss)], fill=255, width=3 * ss)], 2)
+        over(img, tw, "#1A0C06", 0.9)
+        fog(img, 2060, 120, "#E0A070", k=0.28, seed=seed + 9)
+        return img, 1.5, 0.4
+    # saddle leather
+    n = fbm(seed + 1, 5, 6)
+    img = ramp(np.clip(n * 0.6 + 0.2, 0, 1), [(0, "#4A2610"), (1, "#9A5A2A")])
+    img *= (0.92 + 0.16 * fbm(seed + 2, 120, 2))[..., None]
+    sc = Image.new("L", (W, H), 0)
+    d = ImageDraw.Draw(sc)
+    for row in range(3):
+        for col_i in range(2):
+            cx, cy = 360 + col_i * 720, 640 + row * 640
+            for sg in (-1, 1):
+                pts = []
+                for i in range(70):
+                    th = i * 0.18
+                    rr = 8 + th * 22
+                    pts.append((cx + sg * 90 + sg * math.cos(th * sg + (math.pi if sg > 0 else 0)) * rr, cy + math.sin(th + (math.pi if sg > 0 else 0)) * rr))
+                d.line(pts, fill=255, width=9, joint="curve")
+            d.line([(cx - 150, cy + 160), (cx, cy + 210), (cx + 150, cy + 160)], fill=255, width=8, joint="curve")
+    carve = np.asarray(sc, np.float32) / 255.0
+    over(img, np.clip(np.roll(carve, 4, 0) - carve, 0, 1), "#E8B880", 0.45)
+    over(img, carve, "#2A1206", 0.7)
+    edge = np.minimum(np.minimum(XX, W - XX), np.minimum(YY, H - YY))
+    over(img, np.exp(-edge / 90.0), "#1A0A04", 0.6)
+    st = Image.new("L", (W, H), 0)
+    sd = ImageDraw.Draw(st)
+    ins = 64
+    for (a, b, c_, e) in ((ins, ins, W - ins, ins), (W - ins, ins, W - ins, H - ins), (W - ins, H - ins, ins, H - ins), (ins, H - ins, ins, ins)):
+        L_ = math.hypot(c_ - a, e - b)
+        for t in np.arange(0, L_, 34):
+            x0, y0 = a + (c_ - a) * t / L_, b + (e - b) * t / L_
+            x1, y1 = a + (c_ - a) * (t + 20) / L_, b + (e - b) * (t + 20) / L_
+            sd.line([(x0, y0), (x1, y1)], fill=255, width=6)
+    stm = np.asarray(st, np.float32) / 255.0
+    over(img, np.roll(stm, 3, 0), "#1A0A04", 0.5)
+    over(img, stm, "#EBD7A8", 0.95)
+    for (sx_, sy_) in ((120, 280), (1320, 280), (120, 2280), (1320, 2280), (720, 130), (720, 2430)):
+        circ(img, sx_ + 4, sy_ + 7, 36, "#1A0A04", 0.5)
+        circ(img, sx_, sy_, 34, "#8A6A2A")
+        circ(img, sx_, sy_, 28, "#C9A24A")
+        circ(img, sx_ - 7, sy_ - 8, 12, "#FFF0B0", 0.8)
+        ring(img, sx_, sy_, 22, 3, "#6A4A18", 0.7)
+    return img, 1.4, 0.4
+
+
+reg("frontier", g_frontier)
+
+
+# ---- the 39 wallpapers -----------------------------------------------------------------------------------------------
+K("neon-vice", "neon-vice-sunset-bay", "Sunset Bay Drive", "A striped sun melts into a calm bay behind a teal skyline and black palm silhouettes.", "retro", False, True, 0.12, "vice", mode="sunset")
+K("neon-vice", "neon-vice-boulevard", "Neon Boulevard", "A wet night street of low buildings outlined in pink and teal neon, with palms and glowing signs.", "urban", True, False, 0.12, "vice", mode="strip")
+K("neon-vice", "neon-vice-pastel-deco", "Pastel Deco Dusk", "A stepped art-deco tower in cream and pink at a mint-coloured dusk, framed by palm trees.", "retro", False, False, 0.2, "vice", mode="deco")
+K("night-hero", "night-hero-rooftop-moon", "Rooftop Moon", "A halftone moon over a blue skyline, seen from a rooftop with a water tower and antenna.", "urban", False, False, 0.12, "hero", mode="rooftop")
+K("night-hero", "night-hero-halftone-impact", "Halftone Impact", "Comic speed lines, a bold ink starburst and halftone dots above a dark skyline.", "abstract", True, False, 0.15, "hero", mode="burst")
+K("night-hero", "night-hero-searchlights", "Searchlight Sky", "Two searchlight beams sweep a stormy night sky over lit rooftops.", "urban", False, False, 0.12, "hero", mode="beams")
+K("steel-claws", "steel-claws-slashed-plate", "Slashed Steel Plate", "Three deep slashes tear through a bolted steel plate and glow rage-red inside.", "gaming", False, False, 0.15, "claws", mode="plate")
+K("steel-claws", "steel-claws-blood-moon", "Blood Moon Forest", "A blood-red moon rises over black pines, torn open by three glowing slashes.", "landscapes", True, False, 0.15, "claws", mode="forest")
+K("steel-claws", "steel-claws-cage-sparks", "Cage Sparks", "Rusty chain-link, hot arena lamps and flying orange sparks in a dark fight cage.", "gaming", False, False, 0.15, "claws", mode="cage")
+K("souls-dark", "souls-dark-ruined-arch", "Bonfire in the Ruins", "A lone bonfire burns beneath a giant broken gothic arch, with embers rising into the fog.", "gaming", False, False, 0.1, "souls", mode="ruin")
+K("souls-dark", "souls-dark-ashen-keep", "Ashen Keep", "A castle on a cliff against a dying ember sky, with ash and sparks drifting past.", "landscapes", True, False, 0.12, "souls", mode="keep")
+K("souls-dark", "souls-dark-lantern-path", "Lantern Path", "A foggy trail between bare dead trees, marked only by a few warm lanterns.", "landscapes", True, False, 0.1, "souls", mode="path")
+K("zombie-outbreak", "zombie-outbreak-dead-street", "Dead Street Fog", "An abandoned street in sickly green fog, with wrecked cars and dark empty windows.", "urban", False, False, 0.12, "zombie", mode="street")
+K("zombie-outbreak", "zombie-outbreak-boarded-up", "Boarded Up", "Nailed planks, hazard tape and claw marks over a window glowing red from within.", "gaming", True, False, 0.15, "zombie", mode="barricade")
+K("zombie-outbreak", "zombie-outbreak-flare-night", "Flare Night", "A road flare burns red under a collapsed overpass, with smoke and drifting sparks.", "urban", False, False, 0.12, "zombie", mode="flare")
+K("battle-royale", "battle-royale-storm-zone", "Storm Zone Map", "A top-down island map with grid lines, a dashed flight path and a violet storm closing in.", "gaming", False, False, 0.15, "royale", mode="map")
+K("battle-royale", "battle-royale-drop-zone", "Drop Zone Skies", "Colourful parachutes drift through bright clouds as squads descend toward the island.", "landscapes", True, False, 0.2, "royale", mode="drop")
+K("battle-royale", "battle-royale-loot-beams", "Loot Beams", "Crates at night send up white, green, blue, purple and gold beams of rarity light.", "gaming", False, False, 0.12, "royale", mode="loot")
+K("ronin", "ronin-moon-bamboo", "Moon and Bamboo", "Ink-wash bamboo stalks against a pale moon and misty hills on rice paper, with a red seal.", "landscapes", False, True, 0.15, "ronin", mode="bamboo")
+K("ronin", "ronin-misty-peaks", "Misty Peaks", "Layered ink-wash mountains fade into mist around a pagoda and a faint red sun.", "landscapes", True, False, 0.15, "ronin", mode="mountains")
+K("ronin", "ronin-moonlit-dojo", "Moonlit Dojo", "A dark wooden dojo with a moonlit paper window, a branch shadow and two glowing lanterns.", "gaming", False, False, 0.15, "ronin", mode="dojo")
+K("wasteland", "wasteland-dust-dunes", "Dust Storm Dunes", "A hazy ochre dust storm over wind-carved dunes, a rusty radio tower and a car wreck.", "landscapes", False, False, 0.12, "waste", mode="dunes")
+K("wasteland", "wasteland-broken-overpass", "Broken Overpass", "A collapsed highway with exposed rebar against a burnt-orange sky and a hazy dead skyline.", "urban", True, False, 0.12, "waste", mode="highway")
+K("wasteland", "wasteland-salvage-yard", "Salvage Yard", "Stacked rusty shipping containers and a crane silhouette in the low light of a dusty sunset.", "urban", False, False, 0.12, "waste", mode="salvage")
+K("space-marine", "space-marine-drop-pods", "Drop Pods Inbound", "Glowing re-entry trails of drop pods streak toward the sunlit edge of a blue planet.", "space", False, False, 0.1, "space", mode="orbit")
+K("space-marine", "space-marine-armor-plating", "Armor Plating", "Scratched gunmetal armour panels with rivets, a hazard band and orange stencil marks.", "patterns", True, False, 0.2, "space", mode="plates")
+K("space-marine", "space-marine-hangar-bay", "Hangar Bay", "A vast hangar corridor of steel ribs and floodlights, with orange guide lines on the deck.", "space", False, False, 0.12, "space", mode="hangar")
+K("street-racer", "street-racer-nitrous-run", "Nitrous Run", "A night highway at full speed: nitrous-blue light streaks rush past a low car's red tail lights.", "urban", True, False, 0.12, "racer", mode="highway")
+K("street-racer", "street-racer-neon-garage", "Neon Garage", "A carbon-walled tuning garage lit by blue and white neon bars on a mirror-black floor.", "gaming", True, False, 0.15, "racer", mode="garage")
+K("street-racer", "street-racer-taillight-overpass", "Taillight Overpass", "Warm tail-light bokeh and wet asphalt reflections under a night city overpass.", "urban", False, False, 0.12, "racer", mode="overpass")
+K("cyber-merc", "cyber-merc-rain-alley", "Rain Alley Signs", "A rainy neon alley of tall vertical signs in magenta and cyan, reflected in the wet street.", "urban", False, False, 0.12, "cyber", mode="alley")
+K("cyber-merc", "cyber-merc-chrome-canyon", "Chrome Canyon", "Looking up between chrome towers lined with holographic ads and streaking air traffic.", "urban", True, False, 0.12, "cyber", mode="canyon")
+K("cyber-merc", "cyber-merc-target-lock", "Target Lock", "A neon skyline over a chrome grid floor, caught in a glowing cyan targeting reticle.", "gaming", True, False, 0.12, "cyber", mode="grid")
+K("pirate-cove", "pirate-cove-treasure-map", "Treasure Map", "An aged parchment map with islands, a dashed route, a red X and a compass.", "gaming", False, True, 0.2, "pirate", mode="map")
+K("pirate-cove", "pirate-cove-smugglers-cove", "Smugglers' Cove", "A tall ship waits in a hidden cove at sunset, with dock lanterns glowing between dark cliffs.", "landscapes", True, False, 0.12, "pirate", mode="cove")
+K("pirate-cove", "pirate-cove-captains-porthole", "Captain's Porthole", "A brass porthole shows a moonlit sea on a plank cabin wall, with a coil of rope and a lantern.", "cozy", False, False, 0.15, "pirate", mode="cabin")
+K("frontier", "frontier-mesa-sundown", "Mesa Sundown", "Layered red mesas and tall cacti under a huge desert sunset sky.", "landscapes", False, False, 0.12, "frontier", mode="mesa")
+K("frontier", "frontier-dusty-main-street", "Dusty Main Street", "False-front wooden buildings with lit windows, long shadows and a tumbleweed at dusk.", "urban", True, False, 0.12, "frontier", mode="town")
+K("frontier", "frontier-saddle-leather", "Saddle Leather", "Tooled brown leather with carved scrolls, cream stitching and brass studs.", "patterns", False, False, 0.2, "frontier", mode="leather")
+
+_KB, _KE = "#### ---- KITS " + "BEGIN ----", "#### ---- KITS " + "END ----"
+
+
+def kits_main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--force", action="store_true")
+    ap.add_argument("--only", default="")
+    ap.add_argument("--sheet", default="")
+    ap.add_argument("--jobs", type=int, default=6)
+    a = ap.parse_args()
+    ROOT.mkdir(parents=True, exist_ok=True)
+    (ROOT / "categories.json").write_text(json.dumps(keep_label_locales([{"id": i, "labels": {"en": n, **NEW_CAT_LABELS.get(i, {})}} for i, n in CATEGORIES], ROOT / "categories.json"), indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    raw = Path(__file__).read_text(encoding="utf-8")
+    ka = raw.find(_KB)
+    kb = raw.find("\n", raw.find(_KE)) + 1
+    kit_src = raw[ka:kb]
+    full_src = raw[:ka] + raw[kb:]
+    w2_a, w2_b = full_src.find("#### ---- WAVE2 BEGIN ----"), full_src.find("#### ---- WAVE2 END ----")
+    w2_src = full_src[w2_a:w2_b] if w2_a >= 0 else ""
+    script_hash = hashlib.sha256((full_src[:w2_a] + full_src[w2_b:] if w2_a >= 0 else full_src).encode()).hexdigest()
+    w2_hash = hashlib.sha256(w2_src.encode()).hexdigest()
+    kit_hash = hashlib.sha256(kit_src.encode()).hexdigest()
+    only = set(x for x in a.only.split(",") if x)
+    todo = [(e, script_hash + (w2_hash if e.get("w2") else "") + (kit_hash if e.get("kit") else ""), a.force) for e in E if not only or e["id"] in only]
+    assert len({e["id"] for e in E}) == len(E)
+    for e in E:
+        assert len(e["name"]) <= 40 and len(e["desc"]) <= 160, e["id"]
+    if a.jobs > 1 and len(todo) > 1:
+        with ProcessPoolExecutor(a.jobs) as ex:
+            for id, st, sz in ex.map(build_one, todo):
+                print(f"{st:6} {id} {sz // 1024} KB", flush=True)
+    else:
+        for t in todo:
+            id, st, sz = build_one(t)
+            print(f"{st:6} {id} {sz // 1024} KB", flush=True)
+    if a.sheet:
+        contact_sheet(a.sheet, [e["id"] for e in E])
+
+
+main = kits_main
+#### ---- KITS END ----
 if __name__ == "__main__":
     main()

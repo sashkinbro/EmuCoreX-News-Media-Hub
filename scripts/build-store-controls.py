@@ -5561,6 +5561,888 @@ def contact_sheet(skins, path):
     sheet.save(path)
 
 
+#### ---- KITS BEGIN ----
+# ====================================================================================================================
+# Game-genre KITS (wave 3): 26 original controller skins (one free + one PRO per genre). They capture the mood of a
+# genre only (colour, material, texture); there are no logos, names, characters, costumes or franchise symbols.
+# This block is a pure insertion: digest_of() below hashes the file WITHOUT it, so older skins never rebuild when it
+# changes; kit skins also hash this block.
+# ====================================================================================================================
+
+KIT_CAT_LABELS = {
+    "kits": {"en": "Kits", "ar": "حقائب الأنماط", "cs": "Sady", "de": "Kits", "es": "Kits", "fa": "کیت‌ها", "fr": "Kits", "hi": "किट",
+             "id": "Kit", "it": "Kit", "ja": "キット", "ko": "키트", "pl": "Zestawy", "pt": "Kits", "ru": "Наборы", "tr": "Setler",
+             "uk": "Набори", "zh": "主题套装"},
+}
+if not any(k == "kits" for k, _ in CATEGORIES):
+    CATEGORIES.append(("kits", "Kits"))
+
+_keep_label_locales_v1 = keep_label_locales
+
+
+def keep_label_locales(cats, path):
+    cats = _keep_label_locales_v1(cats, path)
+    for cat in cats:
+        for loc, txt in KIT_CAT_LABELS.get(cat["id"], {}).items():
+            cat["labels"].setdefault(loc, txt)
+    return cats
+
+
+_KB, _KE = "#### ---- KITS " + "BEGIN ----", "#### ---- KITS " + "END ----"
+
+
+def _kits_split():
+    raw = Path(__file__).read_bytes().replace(b"\r\n", b"\n")
+    a = raw.find(_KB.encode())
+    b = raw.find(_KE.encode())
+    if a < 0 or b < 0:
+        return raw, b""
+    b = raw.find(b"\n", b) + 1
+    return raw[:a] + raw[b:], raw[a:b]
+
+
+def digest_of(listing_text):
+    base, block = _kits_split()
+    h = hashlib.sha256()
+    h.update(b"listing.json\0" + listing_text.replace("\r\n", "\n").encode("utf-8") + b"\0")
+    h.update(base)
+    if '"kit:' in listing_text:
+        h.update(block)
+    return h.hexdigest()
+
+
+def kit(genre, id, name, desc, cats2, pro, **kw):
+    tags = ["kit:" + genre] + list(kw.pop("tags", []))
+    return form(id=id, name=name, desc=desc, cats=["kits"] + cats2, pro=pro, tags=tags, **kw)
+
+
+# ---- new shapes -----------------------------------------------------------------------------------------------------
+_KIT_FACE = ("slash", "claw", "ragged", "plate", "crest", "dome")
+_face_shape_v2 = face_shape
+
+
+def face_shape(c, name, R):
+    if name not in _KIT_FACE:
+        return _face_shape_v2(c, name, R)
+    m = c.new()
+    if R <= 0:
+        return m
+    d = ImageDraw.Draw(m)
+    cx = cy = 128.0
+    if name == "slash":
+        k, s = R * 0.88, R * 0.34
+        return poly_mask(c, [(cx - k + s, cy - k), (cx + k + s, cy - k), (cx + k - s, cy + k), (cx - k - s, cy + k)], 6)
+    if name == "claw":
+        d.ellipse([(cx - R) * S, (cy - R) * S, (cx + R) * S, (cy + R) * S], fill=255)
+        cut = c.new()
+        cd = ImageDraw.Draw(cut)
+        for k in (-1, 0, 1):
+            x0 = cx + k * R * 0.34
+            cd.line([((x0 + R * 0.5) * S, (cy - R * 0.62) * S), ((x0 - R * 0.5) * S, (cy + R * 0.62) * S)], fill=255, width=int(R * 0.075 * S))
+        return ImageChops.subtract(m, soften(cut, 1.0))
+    if name == "ragged":
+        rnd = random.Random(41)
+        pts = []
+        for i in range(44):
+            a = math.radians(i * 360.0 / 44)
+            rr = R * (1.02 if i % 2 == 0 else 0.84) * (0.94 + 0.08 * rnd.random())
+            pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
+        return poly_mask(c, pts, 1.6)
+    if name == "plate":
+        k, b, s = R * 0.92, R * 0.46, R * 0.14
+        return poly_mask(c, [(cx - k + b, cy - k), (cx + k - s, cy - k), (cx + k, cy - k + s), (cx + k, cy + k - b),
+                             (cx + k - b, cy + k), (cx - k + s, cy + k), (cx - k, cy + k - s), (cx - k, cy - k + b)], 3)
+    if name == "crest":
+        return poly_mask(c, [(cx, cy - R * 1.12), (cx + R * 0.96, cy - R * 0.4), (cx + R * 0.8, cy + R * 0.9), (cx - R * 0.8, cy + R * 0.9),
+                             (cx - R * 0.96, cy - R * 0.4)], 8)
+    pts = [(cx + R * 1.04 * math.cos(math.radians(a)), cy + R * 0.2 + R * 1.0 * math.sin(math.radians(a))) for a in range(180, 361, 6)]
+    pts += [(cx + R * 1.04, cy + R * 0.9), (cx - R * 1.04, cy + R * 0.9)]
+    return poly_mask(c, pts, 5)
+
+
+_KIT_DPAD = ("blade", "fang", "clip", "spike")
+_dpad_shape_v2 = dpad_shape
+
+
+def dpad_shape(c, form, inset=0):
+    if form not in _KIT_DPAD:
+        return _dpad_shape_v2(c, form, inset)
+    pts = {"blade": [(128, 12), (176, 62), (162, 216), (94, 216), (80, 62)],
+           "fang": [(128, 18), (222, 214), (128, 172), (34, 214)],
+           "clip": [(88, 40), (168, 40), (192, 66), (192, 214), (64, 214), (64, 66)],
+           "spike": [(128, 12), (194, 100), (160, 100), (160, 214), (96, 214), (96, 100), (62, 100)]}[form]
+    m = poly_mask(c, pts, 7)
+    if inset:
+        m = shrink(m, inset)
+    return c.rotate(m)
+
+
+ARROW.update({"blade": (70, 134, 24), "fang": (100, 162, 26), "clip": (84, 146, 26), "spike": (60, 120, 24)})
+
+_rect_shape_v2 = rect_shape
+
+
+def rect_shape(c, name, inset=0):
+    if name not in ("diag", "notched", "ears"):
+        return _rect_shape_v2(c, name, inset)
+    x0, y0, x1, y1 = c.rect_box()
+    h = y1 - y0
+    k = 0.36 * h
+    if name == "diag":
+        m = poly_mask(c, [(x0 + k, y0), (x1, y0), (x1, y1 - k), (x1 - k, y1), (x0, y1), (x0, y0 + k)], 3)
+    elif name == "notched":
+        m = poly_mask(c, [(x0, y0), (x1, y0), (x1, y1), ((x0 + x1) / 2 + k * 0.9, y1), ((x0 + x1) / 2, y1 - k * 0.75),
+                          ((x0 + x1) / 2 - k * 0.9, y1), (x0, y1)], 4)
+    else:
+        e = k * 0.6
+        m = poly_mask(c, [(x0, y0 - e * 0.0), (x0 + k * 1.2, y0), (x0 + k * 1.2 + e, y0 + e), (x1 - k * 1.2 - e, y0 + e), (x1 - k * 1.2, y0),
+                          (x1, y0), (x1, y1), (x0, y1)], 4)
+    return shrink(m, inset) if inset else m
+
+
+# ---- new glyph styles ------------------------------------------------------------------------------------------------
+
+
+def g_glitch(sk, c, m, col):
+    out = paint(shift(m, -2.6, 0), (0, 232, 255), 0.85)
+    out = over(out, paint(shift(m, 2.6, 0.6), (255, 40, 160), 0.85))
+    out = over(out, paint(m, col))
+    cut = c.new()
+    d = ImageDraw.Draw(cut)
+    for fy in (0.42, 0.6):
+        d.rectangle([0, fy * c.h - 1.4 * S, c.w, fy * c.h + 1.4 * S], fill=255)
+    out.putalpha(ImageChops.subtract(out.getchannel("A"), cut))
+    return out
+
+
+def g_slashed(sk, c, m, col):
+    cut = c.new()
+    d = ImageDraw.Draw(cut)
+    d.line([(c.w * 0.36, c.h * 0.9), (c.w * 0.66, c.h * 0.1)], fill=255, width=int(3.4 * S))
+    out = paint(blur(m, 3.0), col, 0.35)
+    return over(out, paint(ImageChops.subtract(m, cut), col))
+
+
+def g_heat(sk, c, m, col):
+    fill = grad(c.w, c.h, [(0, (255, 238, 150)), (0.5, col), (1, darkc(col, 0.5))], 90)
+    out = paint(blur(m, 5), col, 0.55)
+    return over(out, clip(fill, m))
+
+
+GLYPHS_STYLE.update({"glitch": g_glitch, "slashed": g_slashed, "heat": g_heat})
+
+# ---- helpers ---------------------------------------------------------------------------------------------------------
+
+
+def _vg(c, M, stops, ang=0.0):
+    """Array gradient across the shape's bounding box; ang 0 = top to bottom, 90 = left to right."""
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    a = math.radians(ang)
+    ext = abs((x1 - x0) * math.sin(a)) + abs((y1 - y0) * math.cos(a))
+    t = ((xx - cx) * math.sin(a) + (yy - cy) * math.cos(a)) / max(1.0, ext) + 0.5
+    return _cmap(t, stops)
+
+
+def _L(mask):
+    return A(mask)
+
+
+def _acc(sk, dflt):
+    return sk.acc or dflt
+
+
+def _edges(idx, k=3):
+    return ((idx != np.roll(idx, k, 0)) | (idx != np.roll(idx, k, 1))).astype(np.float32)
+
+
+def _poly_line(d, p0, p1, wmax, steps=14, pw=0.7):
+    pts_l, pts_r = [], []
+    dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+    ln = math.hypot(dx, dy) or 1.0
+    nx, ny = -dy / ln, dx / ln
+    for i in range(steps + 1):
+        t = i / steps
+        w = wmax * (math.sin(math.pi * t) ** pw) / 2.0
+        x, y = p0[0] + dx * t, p0[1] + dy * t
+        pts_l.append((x + nx * w, y + ny * w))
+        pts_r.append((x - nx * w, y - ny * w))
+    d.polygon(pts_l + pts_r[::-1], fill=255)
+
+
+# ---- new materials ---------------------------------------------------------------------------------------------------
+
+
+def mat_sunset(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    v = np.clip((yy - y0) / max(1.0, y1 - y0), 0, 1)
+    arr = _cmap(v, [(0, lighten(hi, 0.4)), (0.4, hi), (0.64, mixc(hi, lo, 0.55)), (1, lo)])
+    gap = np.zeros_like(v)
+    for k in range(5):
+        gap = np.maximum(gap, (np.abs(v - (0.5 + k * 0.095)) < 0.007 + k * 0.01).astype(np.float32))
+    gap = A(blur(LI(gap), 0.5))[..., None]
+    arr = arr * (1 - gap * 0.72) + np.array(darkc(lo, 0.7), np.float32) * gap * 0.72
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.5, 3.0), rim=0.8)
+    out = over(out, paint(ring_of(shrink(M, 6), 1.8), _acc(sk, (40, 230, 210)), 0.95))
+    return over(out, gloss_top(c, M, 0.2))
+
+
+def mat_palmfrond(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    arr = _vg(c, M, [(0, lighten(hi, 0.3)), (0.55, hi), (1, lo)], 25)
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.5, 3.0), rim=0.8)
+    sun = c.new()
+    r = min(w, h) * 0.17
+    ImageDraw.Draw(sun).ellipse([x0 + w * 0.32 - r, y0 + h * 0.36 - r, x0 + w * 0.32 + r, y0 + h * 0.36 + r], fill=255)
+    out = over(out, paint(blur(ImageChops.multiply(sun, M), 6), (255, 150, 90), 0.5))
+    out = over(out, paint(ImageChops.multiply(blur(sun, 0.8), M), (255, 214, 150), 0.95))
+    fr = c.new()
+    d = ImageDraw.Draw(fr)
+    ox, oy = x1 - w * 0.04, y1 + h * 0.04
+    rnd = random.Random(_pseed(c, 31))
+    for i in range(4):
+        a = math.radians(196 + i * 24)
+        L = min(w, h) * (0.86 + 0.14 * rnd.random())
+        pts = [(ox + math.cos(a + 0.45 * (t / 12.0) ** 2) * L * t / 12.0, oy + math.sin(a + 0.45 * (t / 12.0) ** 2) * L * t / 12.0) for t in range(13)]
+        d.line(pts, fill=255, width=int(3.0 * S))
+        for j in range(3, 13):
+            ang = a + 0.45 * (j / 12.0) ** 2
+            ll = L * 0.3 * math.sin(math.pi * (j - 2) / 12.0) ** 0.7 + L * 0.04
+            for sg in (-1, 1):
+                la = ang + sg * 1.05
+                px, py = pts[j]
+                tip = (px + math.cos(la) * ll, py + math.sin(la) * ll + ll * 0.35)
+                nx, ny = -math.sin(la), math.cos(la)
+                d.polygon([(px + nx * 3.4 * S, py + ny * 3.4 * S), tip, (px - nx * 3.4 * S, py - ny * 3.4 * S)], fill=255)
+    out = over(out, paint(ImageChops.multiply(fr, shrink(M, 3)), darkc(lo, 0.6), 0.88))
+    out = over(out, paint(ring_of(shrink(M, 6), 1.6), _acc(sk, (255, 120, 190)), 0.9))
+    return over(out, gloss_top(c, M, 0.18))
+
+
+def mat_comicsky(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    out = paint(shift(M, 0 if c.p else 5, 0 if c.p else 5), (8, 8, 16), 1.0)
+    out = over(out, clip(_img(_vg(c, M, [(0, hi), (1, lo)], 0)), M))
+    rays = c.new()
+    d = ImageDraw.Draw(rays)
+    rnd = random.Random(_pseed(c, 51))
+    R = max(w, h)
+    for i in range(54):
+        a = math.radians(i * 360 / 54 + rnd.uniform(-2, 2))
+        wd = math.radians(1.0 + 2.6 * rnd.random())
+        r0 = R * (0.16 + 0.18 * rnd.random())
+        d.polygon([(cx + math.cos(a) * r0, cy + math.sin(a) * r0), (cx + math.cos(a - wd) * R, cy + math.sin(a - wd) * R),
+                   (cx + math.cos(a + wd) * R, cy + math.sin(a + wd) * R)], fill=255)
+    out = over(out, paint(ImageChops.multiply(rays, M), lighten(hi, 0.5), 0.3))
+    dm = ImageChops.multiply(ImageChops.multiply(dots_mask(c, 11, 3.2), M), lin_l(c.w, c.h).point(lambda v: min(255, int(v * 1.5))))
+    out = over(out, paint(dm, lighten(hi, 0.6), 0.75))
+    out = over(out, paint(ring_of(M, 5.0), (8, 8, 16), 1.0))
+    return out
+
+
+def mat_ripstop(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    arr = _vg(c, M, [(0, lighten(hi, 0.12)), (1, lo)], 30)
+    th = np.maximum(((xx / S) % 20 < 1.7), ((yy / S) % 20 < 1.7)).astype(np.float32)
+    weave = ((np.floor(xx / S / 2.2) + np.floor(yy / S / 2.2)) % 2).astype(np.float32)
+    arr = arr * (1 + 0.2 * th[..., None] - 0.05 * weave[..., None]) * (0.94 + 0.1 * _n(sk, c, 2, _pseed(c, 61), 1.5))[..., None]
+    sheen = np.exp(-((((xx - x0) + (yy - y0)) / S - 0.7 * ((x1 - x0) + (y1 - y0)) / S * 0.5) / 22.0) ** 2)
+    arr = arr + sheen[..., None] * 34
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.35, 0.5, 3.0), rim=0.8)
+    pipe = ring_of(shrink(M, 9), 2.3)
+    out = over(out, paint(shift(pipe, 0, 1.5), (0, 0, 0), 0.4))
+    return over(out, paint(pipe, _acc(sk, (206, 216, 232)), 0.95))
+
+
+def mat_gouged(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    st = A(streak_noise(c.w, c.h, 2, _pseed(c, 71)))
+    arr = _cmap(0.25 + st * 0.55, [(0, lo), (1, hi)]) * (0.9 + 0.2 * _n(sk, c, 18, _pseed(c, 72), 1.4))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.45, 0.55, 3.2), rim=0.85)
+    gm = c.new()
+    d = ImageDraw.Draw(gm)
+    for k in range(3):
+        o = (k - 1) * 0.24
+        _poly_line(d, (cx + w * (0.3 + o), y0 + h * 0.06), (cx + w * (-0.28 + o), y1 - h * 0.06), 9 * S, 16, 0.6)
+    gm = ImageChops.multiply(gm, shrink(M, 3))
+    rage = _acc(sk, (236, 40, 36))
+    if c.p:
+        rage = lighten(rage, 0.3)
+    out = over(out, paint(blur(grow(gm, 3), 4), rage, 0.55))
+    out = over(out, paint(gm, darkc(rage, 0.8), 1.0))
+    out = over(out, paint(shrink(gm, 2.0), rage, 0.9))
+    out = over(out, paint(ImageChops.subtract(shift(gm, -1.4, -1.4), gm), (255, 255, 255), 0.55))
+    return over(out, paint(ImageChops.subtract(shift(gm, 1.4, 1.4), gm), (0, 0, 0), 0.5))
+
+
+def mat_ashen(sk, c, M, hi, lo):
+    pts = _pts_in(M, 15, _pseed(c, 81))
+    idx, dist = _vor(c, pts)
+    crack = A(blur(LI(_edges(idx, 4)), 1.1)).clip(0, 1) ** 0.8
+    n = _n(sk, c, 10, _pseed(c, 82), 1.8)
+    arr = _cmap(n, [(0, lo), (1, hi)]) * (0.8 + 0.3 * np.clip(dist / 150.0, 0, 1))[..., None]
+    glowa = A(blur(LI(crack), 4))
+    ember = np.array(_acc(sk, (255, 120, 36)), np.float32)
+    arr = arr + glowa[..., None] * ember * 0.55 + crack[..., None] * np.array(lighten(ember, 0.45), np.float32) * 0.9
+    sp = (rng_noise(c.w, c.h, _pseed(c, 83)).point(lambda v: 255 if v > 252 else 0))
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.3, 0.6, 3.2), rim=0.85)
+    out = over(out, paint(ImageChops.multiply(blur(sp, 0.8), M), lighten(ember, 0.5), 0.9))
+    return over(out, inner_shadow(M, 0, 5, 8, (0, 0, 0), 0.4))
+
+
+def mat_runic(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    n = _n(sk, c, 8, _pseed(c, 91), 1.7)
+    arr = _vg(c, M, [(0, lighten(hi, 0.18)), (1, lo)], 40) * (0.82 + 0.3 * n)[..., None]
+    arr[..., 1:] *= (0.93 + 0.1 * _n(sk, c, 30, _pseed(c, 92), 1.3))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.5, 0.55, 3.2), rim=0.85)
+    rm = c.new()
+    d = ImageDraw.Draw(rm)
+    rnd = random.Random(_pseed(c, 93))
+    wd = int(2.8 * S)
+    if c.round:
+        r = min(w, h) / 2.0 * 0.7
+        for i in range(14):
+            a = math.radians(i * 360 / 14)
+            ca, sa = math.cos(a), math.sin(a)
+            p0, p1 = (cx + ca * r * 0.88, cy + sa * r * 0.88), (cx + ca * r * 1.12, cy + sa * r * 1.12)
+            d.line([p0, p1], fill=255, width=wd)
+            tx, ty = -sa, ca
+            for f in (0.35, 0.8):
+                if rnd.random() < 0.7:
+                    q = (p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f)
+                    sg = rnd.choice((-1, 1))
+                    d.line([q, (q[0] + (tx * sg + ca * 0.7) * r * 0.12, q[1] + (ty * sg + sa * 0.7) * r * 0.12)], fill=255, width=wd)
+    else:
+        for i in range(6):
+            x = x0 + w * (0.17 + i * 0.13)
+            d.line([(x, cy - h * 0.2), (x, cy + h * 0.2)], fill=255, width=wd)
+            if rnd.random() < 0.8:
+                d.line([(x, cy - h * 0.05 * rnd.choice((-1, 1))), (x + w * 0.05, cy - h * 0.2 * rnd.choice((-1, 1)))], fill=255, width=wd)
+    rm = ImageChops.multiply(rm, shrink(M, 4))
+    amber = _acc(sk, (255, 150, 48))
+    if c.p:
+        amber = lighten(amber, 0.25)
+    out = over(out, paint(blur(rm, 5), amber, 0.7))
+    out = over(out, paint(rm, lighten(amber, 0.35), 1.0))
+    return over(out, paint(ring_of(shrink(M, 12), 1.4), darkc(lo, 0.5), 0.8))
+
+
+def mat_hazardtape(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    n = _n(sk, c, 9, _pseed(c, 101), 1.2)
+    arr = _cmap(0.35 + n * 0.5, [(0, lo), (1, hi)]) * (0.93 + 0.1 * _n(sk, c, 2, _pseed(c, 105), 1.5))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.3, 0.55, 3.2), rim=0.8)
+    a = math.radians(-24)
+    dist = (xx - cx) * math.sin(a) + (yy - cy) * math.cos(a)
+    band = (np.abs(dist - h * 0.12) < max(26 * S, h * 0.17)).astype(np.float32)
+    bm = ImageChops.multiply(blur(LI(band), 0.6), M)
+    tape = sk.acc or (240, 200, 22)
+    stripes = A(stripe_mask(c, 20, 0.5, 45))
+    tarr = np.where(stripes[..., None] > 0.5, np.array(tape, np.float32), np.array((28, 26, 22), np.float32))
+    tarr = tarr * (0.86 + 0.2 * _n(sk, c, 4, _pseed(c, 102), 1.6))[..., None]
+    out = over(out, paint(shift(bm, 0, 2.2), (0, 0, 0), 0.4))
+    out = over(out, clip(_img(tarr), bm))
+    rnd = random.Random(_pseed(c, 103))
+    sp = c.new()
+    d = ImageDraw.Draw(sp)
+    for _ in range(26):
+        px, py, r = rnd.uniform(x0, x1), rnd.uniform(y0, y1), rnd.uniform(1.2, 5.2) * S
+        d.ellipse([px - r, py - r, px + r, py + r], fill=255)
+    out = over(out, paint(ImageChops.multiply(blur(sp, 0.5), M), (110, 14, 18), 0.8))
+    gr = A_to_L(_n(sk, c, 5, _pseed(c, 104), 2.4), 0.55, 1.0)
+    return over(out, paint(ImageChops.multiply(gr, M), (14, 12, 8), 0.3))
+
+
+def mat_chainlink(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    back = _vg(c, M, [(0, mixc(sk.acc or (150, 40, 30), (255, 150, 60), 0.35)), (1, darkc(sk.acc or (150, 40, 30), 0.55))], 20)
+    back = back * (0.8 + 0.3 * _n(sk, c, 12, _pseed(c, 111), 1.6))[..., None]
+    out = fin(sk, c, M, _img(back), lo, bev=(0.3, 0.55, 3.2), rim=0.85)
+    wire = ImageChops.lighter(stripe_mask(c, 17, 0.17, 45), stripe_mask(c, 17, 0.17, -45))
+    wire = ImageChops.multiply(wire, shrink(M, 2))
+    rustn = A_to_L(_n(sk, c, 6, _pseed(c, 112), 2.0), 0.0, 1.0)
+    out = over(out, paint(shift(wire, 1.6, 2.4), (0, 0, 0), 0.55))
+    out = over(out, paint(wire, D(c, hi)))
+    out = over(out, paint(ImageChops.multiply(wire, rustn), (150, 78, 38), 0.55))
+    out = over(out, paint(ImageChops.multiply(wire, ImageChops.invert(top_fade(c, 1.2))), (255, 255, 255), 0.16))
+    return over(out, paint(ring_of(M, 6.0), D(c, lo), 0.95))
+
+
+def mat_rarity(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    arr = _vg(c, M, [(0, darkc(lo, 0.55)), (0.45, lo), (1, hi)], 0)
+    sweep = np.exp(-((((xx - x0) * 0.8 - (yy - y0)) / S - 0.15 * (x1 - x0) / S) / 20.0) ** 2) * 0.18
+    arr = arr + sweep[..., None] * 255
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.5, 0.5, 3.0), rim=0.85)
+    out = over(out, paint(ImageChops.multiply(blur(ring_of(shrink(M, 3), 6), 3), M), lighten(hi, 0.25), 0.55))
+    L = min(x1 - x0, y1 - y0) * 0.28
+    mk = c.new()
+    d = ImageDraw.Draw(mk)
+    ix = 12 * S
+    for (px, py, sx, sy) in ((x0 + ix, y0 + ix, 1, 1), (x1 - ix, y0 + ix, -1, 1), (x0 + ix, y1 - ix, 1, -1), (x1 - ix, y1 - ix, -1, -1)):
+        d.line([(px, py + sy * L), (px, py), (px + sx * L, py)], fill=255, width=int(2.4 * S), joint="curve")
+    out = over(out, paint(ImageChops.multiply(mk, M), lighten(hi, 0.6), 0.9))
+    return over(out, gloss_top(c, M, 0.22, 2.2))
+
+
+def mat_stormring(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w = x1 - x0
+    t = _n(sk, c, 34, _pseed(c, 121), 1.0)
+    arr = _cmap(t, [(0, lo), (1, hi)])
+    cl = (np.abs(np.sin(t * 34.0)) < 0.13).astype(np.float32)
+    arr = arr * (1 - 0.35 * cl[..., None]) + cl[..., None] * np.array(lighten(hi, 0.4), np.float32) * 0.35
+    zc = (cx + w * 0.1, cy - (y1 - y0) * 0.06)
+    rr = np.hypot(xx - zc[0], yy - zc[1])
+    zr = min(w, y1 - y0) * 0.36
+    outside = (rr > zr).astype(np.float32)
+    storm = np.array(_acc(sk, (150, 70, 255)), np.float32)
+    arr = arr * (1 - 0.55 * outside[..., None]) + storm * 0.55 * outside[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.55, 3.0), rim=0.85)
+    zring = c.new()
+    ImageDraw.Draw(zring).ellipse([zc[0] - zr, zc[1] - zr, zc[0] + zr, zc[1] + zr], outline=255, width=int(3.0 * S))
+    zring = ImageChops.multiply(zring, shrink(M, 3))
+    out = over(out, paint(blur(zring, 4), tuple(int(v) for v in storm), 0.8))
+    return over(out, paint(zring, (240, 232, 255), 0.95))
+
+
+def mat_sumi(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    paper = np.array(hi, np.float32) * (0.95 + 0.07 * _n(sk, c, 3, _pseed(c, 131), 1.3))[..., None]
+    st = A(streak_noise(c.w, c.h, 12, _pseed(c, 132)))
+    yc = cy + (xx - cx) * 0.2
+    dy = np.abs(yy - yc) / max(1.0, h * 0.5)
+    taper = 1.05 - np.clip((xx - x0) / max(1.0, w), 0, 1) * 0.75
+    ink = np.clip((0.46 * taper - dy + (st - 0.5) * 0.55) * 9.0, 0, 1) * (0.78 + 0.3 * st)
+    ink = np.clip(ink, 0, 1)[..., None]
+    inkc = np.array((22, 22, 28), np.float32)
+    arr = paper * (1 - ink * 0.96) + inkc * ink * 0.96
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.25, 0.4, 2.6), rim=0.8)
+    hk = c.new()
+    ImageDraw.Draw(hk).rounded_rectangle([x1 - w * 0.3, y1 - h * 0.34, x1 - w * 0.14, y1 - h * 0.14], radius=int(2.5 * S), fill=255)
+    out = over(out, paint(ImageChops.multiply(hk, shrink(M, 4)), _acc(sk, (190, 34, 40)), 0.92))
+    return over(out, paint(ring_of(shrink(M, 4), 1.4), darkc(lo, 0.5), 0.8))
+
+
+def mat_damascus(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    nw = _n(sk, c, 46, _pseed(c, 141), 1.0)
+    band = 0.5 + 0.5 * np.sin(((xx * 0.35 + yy) / S) * 0.2 + nw * 12.0)
+    band = np.clip(band + (0.5 + 0.5 * np.sin(((yy - xx * 0.2) / S) * 0.42 + nw * 5.0)) * 0.25, 0, 1)
+    arr = _cmap(0.25 + band * 0.55, [(0, darkc(lo, 0.1)), (0.5, mixc(lo, hi, 0.6)), (1, lighten(hi, 0.2))])
+    arr = arr * (0.94 + 0.1 * _n(sk, c, 2, _pseed(c, 142), 1.5))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.7, 0.6, 2.8), rim=0.9, sh=(6, 8, 0.5))
+    out = over(out, paint(ring_of(shrink(M, 8), 1.7), _acc(sk, (214, 168, 70)), 0.95))
+    return over(out, gloss_top(c, M, 0.2, 2.0))
+
+
+def mat_scrap(sk, c, M, hi, lo):
+    pts = _pts_in(M, 7, _pseed(c, 151))
+    idx, dist = _vor(c, pts)
+    pal = np.array([hi, lo, (158, 98, 60), (176, 156, 112), (96, 104, 88), (134, 76, 48), mixc(hi, lo, 0.5)], np.float32)
+    arr = pal[idx % len(pal)] * (0.82 + 0.3 * _n(sk, c, 5, _pseed(c, 152), 1.8))[..., None]
+    edge = A(blur(LI(_edges(idx, 3)), 0.7))
+    arr = arr * (1 - 0.7 * edge[..., None])
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.55, 3.2), rim=0.85)
+    ld = c.new()
+    d = ImageDraw.Draw(ld)
+    for (px, py) in pts:
+        d.ellipse([px - 4.4 * S, py - 4.4 * S, px + 4.4 * S, py + 4.4 * S], fill=255)
+    ld = ImageChops.multiply(ld, shrink(M, 3))
+    out = over(out, paint(ld, (40, 34, 30), 0.9))
+    out = over(out, paint(ImageChops.subtract(shift(ld, -0.9, -1.2), ld), (255, 255, 255), 0.4))
+    weld = ImageChops.multiply(ImageChops.multiply(blur(LI(_edges(idx, 6)), 0.6), stripe_mask(c, 6, 0.5, 45)), shrink(M, 3))
+    out = over(out, paint(weld, (210, 200, 180), 0.5))
+    return over(out, paint(ImageChops.multiply(M, A_to_L(_n(sk, c, 14, _pseed(c, 153), 2.0), 0.0, 0.7)), (214, 190, 140), 0.18))
+
+
+def mat_sandripple(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    nw = _n(sk, c, 28, _pseed(c, 161), 1.0)
+    rp = 0.5 + 0.5 * np.sin(((yy + xx * 0.25) / S) * 0.32 + nw * 9.0)
+    arr = _cmap(rp, [(0, lo), (0.5, mixc(lo, hi, 0.6)), (1, lighten(hi, 0.22))])
+    arr = arr * (0.93 + 0.12 * _n(sk, c, 2, _pseed(c, 162), 1.6))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.35, 0.5, 3.0), rim=0.8)
+    st = ImageChops.multiply(A_to_L(A(streak_noise(c.w, c.h, 30, _pseed(c, 163))), 0.6, 1.0).point(lambda v: 255 if v > 205 else 0), blur(M, 1.0))
+    out = over(out, paint(blur(st, 1.6), (255, 236, 196), 0.28))
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    rv = c.new()
+    d = ImageDraw.Draw(rv)
+    for px in (x0 + (x1 - x0) * 0.14, x1 - (x1 - x0) * 0.14):
+        d.ellipse([px - 5 * S, cy - 5 * S, px + 5 * S, cy + 5 * S], fill=255)
+    rv = ImageChops.multiply(rv, M)
+    out = over(out, paint(rv, _acc(sk, (120, 66, 38)), 0.9))
+    return over(out, paint(ImageChops.subtract(shift(rv, -0.8, -1.1), rv), (255, 255, 255), 0.35))
+
+
+def mat_armorplate(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    arr = _vg(c, M, [(0, lighten(hi, 0.22)), (0.5, hi), (1, lo)], 35)
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.6, 0.6, 3.6), rim=0.9)
+    chip = ImageChops.multiply(ring_of(M, 12), A_to_L(_n(sk, c, 4, _pseed(c, 171), 3.0), 0.0, 1.0).point(lambda v: 255 if v > 170 else 0))
+    out = over(out, paint(chip, (62, 66, 74), 0.95))
+    pan = ring_of(shrink(M, 17), 2.0)
+    out = over(out, paint(pan, darkc(lo, 0.65), 0.9))
+    out = over(out, paint(ImageChops.subtract(shift(pan, 0.8, 1.6), pan), (255, 255, 255), 0.35))
+    bars = c.new()
+    d = ImageDraw.Draw(bars)
+    by = y1 - h * 0.24
+    x = x0 + w * 0.3
+    for i, bw in enumerate((12, 5, 9, 5, 14, 5, 8)):
+        d.rectangle([x, by, x + bw * S * 0.7, by + h * 0.07], fill=255)
+        x += (bw + 5) * S * 0.7
+    out = over(out, paint(ImageChops.multiply(bars, shrink(M, 6)), _acc(sk, (255, 122, 24)), 0.92))
+    return out
+
+
+def mat_reentry(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    v = np.clip((yy - y0) / max(1.0, y1 - y0), 0, 1)
+    tile = np.floor(xx / S / 22.0) * 7 + np.floor(yy / S / 22.0) * 13
+    tv = (np.sin(tile * 12.9898) * 43758.5453) % 1.0
+    base = _cmap(tv, [(0, (24, 22, 24)), (1, (62, 54, 52))])
+    heat = np.clip((v - 0.35) / 0.65, 0, 1) ** 1.4
+    hot = np.array(hi, np.float32)
+    arr = base * (1 - heat[..., None] * 0.8) + (hot * (0.5 + 0.6 * tv[..., None])) * heat[..., None]
+    gm = grid_mask(c, 22, 2.6)
+    gridl = A(gm)[..., None]
+    arr = arr * (1 - gridl * 0.78) + np.array(lo, np.float32) * gridl * 0.55 * heat[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.35, 0.55, 3.0), rim=0.85)
+    sk_ = c.new()
+    ImageDraw.Draw(sk_).polygon([(x0 + (x1 - x0) * 0.1, y1), (x0 + (x1 - x0) * 0.3, y1), (x0 + (x1 - x0) * 0.62, y0), (x0 + (x1 - x0) * 0.44, y0)], fill=255)
+    out = over(out, paint(ImageChops.multiply(blur(sk_, 7), M), lighten(hi, 0.5), 0.34))
+    return over(out, inner_shadow(M, 0, 5, 8, (0, 0, 0), 0.35))
+
+
+def mat_tread(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    base = _vg(c, M, [(0, hi), (1, lo)], 0) * (0.85 + 0.25 * _n(sk, c, 2, _pseed(c, 181), 1.8))[..., None]
+    out = fin(sk, c, M, _img(base), lo, bev=(0.3, 0.5, 3.0), rim=0.85)
+    blk = ImageChops.multiply(stripe_mask(c, 24, 0.62, 58), stripe_mask(c, 30, 0.8, 0))
+    inner = shrink(M, 9)
+    blk = ImageChops.multiply(blk, inner)
+    out = over(out, paint(shift(blk, 0, 2.0), (0, 0, 0), 0.5))
+    out = over(out, paint(blk, lighten(hi, 0.16), 1.0))
+    out = over(out, paint(ImageChops.subtract(blk, shift(blk, 1.2, 1.8)), (255, 255, 255), 0.22))
+    out = over(out, paint(blur(ring_of(shrink(M, 5), 2.8), 3), _acc(sk, (40, 150, 255)), 0.55))
+    return over(out, paint(ring_of(shrink(M, 5), 2.0), lighten(_acc(sk, (40, 150, 255)), 0.45), 0.95))
+
+
+def mat_carbonblue(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    tex = carbon_tex(c.tw, c.th, 6).resize((c.w, c.h), Image.BILINEAR)
+    arr = _cmap(A(tex), [(0, (6, 6, 10)), (1, (78, 82, 96))])
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    sw = np.exp(-((((xx - x0) - (yy - y0) * 0.9) / S - 0.35 * (x1 - x0) / S) / 26.0) ** 2) * 0.3
+    arr = arr + sw[..., None] * 255
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.55, 3.0), rim=0.85, sh=(6, 8, 0.5))
+    blue = _acc(sk, (40, 160, 255))
+    if c.p:
+        blue = lighten(blue, 0.3)
+    r = ring_of(shrink(M, 8), 2.2)
+    out = over(out, paint(blur(r, 4), blue, 0.7))
+    out = over(out, paint(r, lighten(blue, 0.5)))
+    return over(out, gloss_top(c, M, 0.32, 1.8))
+
+
+def mat_holoplate(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    arr = _vg(c, M, [(0, hi), (1, lo)], 35)
+    arr = arr * (1 - 0.18 * (((yy / S) % 6) < 1.6)[..., None])
+    rnd = random.Random(_pseed(c, 191))
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    for _ in range(3):
+        sy = rnd.uniform(y0, y1 - 20 * S)
+        sh_ = rnd.uniform(5, 13) * S
+        sel = (yy > sy) & (yy < sy + sh_)
+        arr[sel] = arr[sel] * 1.0 + 38
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.3, 0.5, 3.0), rim=0.0, sh=(5, 7, 0.45))
+    rg = ring_of(M, 2.4)
+    out = over(out, paint(shift(rg, -1.8, 0), (0, 230, 255), 0.9))
+    out = over(out, paint(shift(rg, 1.8, 0), (255, 40, 170), 0.9))
+    L = min(x1 - x0, y1 - y0) * 0.22
+    mk = c.new()
+    d = ImageDraw.Draw(mk)
+    ix = 12 * S
+    for (px, py, sx, sy) in ((x0 + ix, y0 + ix, 1, 1), (x1 - ix, y1 - ix, -1, -1)):
+        d.line([(px, py + sy * L), (px, py), (px + sx * L, py)], fill=255, width=int(2.2 * S), joint="curve")
+    return over(out, paint(ImageChops.multiply(mk, M), (200, 250, 255), 0.85))
+
+
+def mat_mercchrome(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    yy, xx = _grid(c)
+    v = (yy - y0) / max(1.0, y1 - y0)
+    v = np.clip(v + 0.1 * np.sin((xx - cx) / max(1.0, x1 - x0) * 3.4) * (v - 0.5), 0, 1)
+    arr = _cmap(v, [(0, (236, 244, 255)), (0.36, hi), (0.49, (14, 10, 30)), (0.52, (255, 112, 212)), (0.8, (60, 222, 255)), (1, lo)])
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.6, 0.5, 2.6), rim=0.85, sh=(6, 8, 0.5))
+    ck = c.new()
+    d = ImageDraw.Draw(ck)
+    rnd = random.Random(_pseed(c, 201))
+    for _ in range(5):
+        px, py = rnd.uniform(x0 + 20, x1 - 20), rnd.uniform(cy, y1 - 20)
+        d.line([(px, py), (px + rnd.uniform(14, 40) * S, py), (px + rnd.uniform(40, 60) * S, py + rnd.uniform(-14, 14) * S)], fill=255, width=int(1.8 * S))
+    out = over(out, paint(ImageChops.multiply(ck, shrink(M, 5)), (20, 14, 40), 0.7))
+    sp = c.new()
+    ImageDraw.Draw(sp).ellipse([x0 + (x1 - x0) * 0.16, y0 + (y1 - y0) * 0.08, x0 + (x1 - x0) * 0.48, y0 + (y1 - y0) * 0.24], fill=255)
+    out = over(out, paint(blur(ImageChops.multiply(sp, M), 2.2), (255, 255, 255), 0.6 if not c.p else 0.35))
+    return over(out, paint(ring_of(M, 1.4), (255, 255, 255), 0.65))
+
+
+def mat_ropewood(sk, c, M, hi, lo):
+    seed = 5 + _pseed(c) % 9
+    dark, light = sk.wood
+    t = sk.cache(("kwood", c.tw, c.th, seed), lambda: wood_tex(c.tw, c.th, seed, dark, light)).resize((c.w, c.h), Image.BICUBIC)
+    shade = lit(c, (255, 250, 245), (150, 128, 112))
+    fill = ImageChops.multiply(t.convert("RGB"), shade.convert("RGB")).convert("RGBA")
+    out = shadow_of(c, M, 6, 7, 0.5, 0, (20, 8, 0))
+    out = over(out, clip(tone(fill, 0.8 if c.p else 1.0), M))
+    out = over(out, bevel(M, 3.2, 0.4, 0.5))
+    rope = ring_of(M, 15)
+    tw = ImageChops.multiply(rope, stripe_mask(c, 9, 0.56, 62))
+    out = over(out, paint(rope, (96, 74, 44), 1.0))
+    out = over(out, paint(tw, (214, 186, 130), 1.0))
+    out = over(out, paint(ImageChops.subtract(shift(tw, -0.8, -1.2), tw), (255, 244, 214), 0.45))
+    out = over(out, paint(ImageChops.multiply(blur(rope, 3), ImageChops.invert(blur(shrink(rope, 3), 2))), (0, 0, 0), 0.25))
+    out = over(out, paint(ring_of(shrink(M, 15), 2.4), (0, 0, 0), 0.5))
+    return over(out, paint(ring_of(M, 1.6), (40, 26, 12), 0.8))
+
+
+def mat_doubloon(sk, c, M, hi, lo):
+    yy, xx = _grid(c)
+    arr = _vg(c, M, [(0, lighten(hi, 0.5)), (0.45, hi), (1, lo)], 45)
+    arr = arr * (0.93 + 0.12 * _n(sk, c, 7, _pseed(c, 211), 1.4))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.7, 0.55, 2.8), rim=0.9, sh=(6, 8, 0.5))
+    rad, ang, bb = _polar(c, M)
+    tick = (np.sin(ang * 46.0) > 0.0).astype(np.float32)
+    zone = ImageChops.multiply(ring_of(M, 11), M)
+    tk = ImageChops.multiply(zone, LI(tick))
+    out = over(out, paint(tk, darkc(lo, 0.5), 0.8))
+    inner = ring_of(shrink(M, 15), 1.8)
+    out = over(out, paint(inner, darkc(lo, 0.55), 0.9))
+    out = over(out, paint(ImageChops.subtract(shift(inner, 0.8, 1.4), inner), (255, 246, 190), 0.55))
+    x0, y0, x1, y1, cx, cy = bb[0], bb[1], bb[2], bb[3], bb[4], bb[5]
+    sp = c.new()
+    ImageDraw.Draw(sp).ellipse([x0 + (x1 - x0) * 0.15, y0 + (y1 - y0) * 0.1, x0 + (x1 - x0) * 0.46, y0 + (y1 - y0) * 0.3], fill=255)
+    return over(out, paint(blur(ImageChops.multiply(sp, M), 3), (255, 255, 235), 0.5 if not c.p else 0.3))
+
+
+def mat_tooled(sk, c, M, hi, lo):
+    x0, y0, x1, y1, cx, cy = _bb(M)
+    w, h = x1 - x0, y1 - y0
+    n = _n(sk, c, 6, _pseed(c, 221), 1.1)
+    arr = _cmap(0.3 + n * 0.6, [(0, lo), (1, hi)]) * (0.95 + 0.07 * _n(sk, c, 1.6, _pseed(c, 222), 1.4))[..., None]
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.35, 0.55, 3.0), rim=0.85)
+    sp = c.new()
+    d = ImageDraw.Draw(sp)
+    for sg in (-1, 1):
+        sx = cx + sg * w * 0.2
+        pts = []
+        for i in range(40):
+            th = i * 0.17
+            rr = (1.5 + th * 3.4) * S * min(w, h) / 150.0
+            pts.append((sx + sg * math.cos(th * sg * 1.0 + (0 if sg < 0 else math.pi)) * rr * 1.0, cy + math.sin(th + (0 if sg < 0 else math.pi)) * rr * 1.0))
+        d.line(pts, fill=255, width=int(3.6 * S), joint="curve")
+    d.line([(x0 + w * 0.2, cy + h * 0.2), (cx, cy + h * 0.26), (x1 - w * 0.2, cy + h * 0.2)], fill=255, width=int(3.4 * S), joint="curve")
+    sp = ImageChops.multiply(sp, shrink(M, 15))
+    out = over(out, paint(ImageChops.subtract(shift(sp, 0.9, 1.4), sp), (255, 230, 190), 0.45))
+    out = over(out, paint(sp, darkc(lo, 0.5), 0.85))
+    out = over(out, paint(ring_of(M, 5), darkc(lo, 0.45), 0.55))
+    stc = ImageChops.multiply(ring_of(shrink(M, 7), 1.5), stripe_mask(c, 7, 0.55, 45))
+    out = over(out, paint(shift(stc, 0, 1.2), (0, 0, 0), 0.35))
+    return over(out, paint(stc, _acc(sk, (236, 216, 172)), 0.95))
+
+
+def mat_claycrack(sk, c, M, hi, lo):
+    pts = _pts_in(M, 20, _pseed(c, 231))
+    idx, dist = _vor(c, pts)
+    base = _vg(c, M, [(0, lighten(hi, 0.18)), (0.55, hi), (1, lo)], 0)
+    n = _n(sk, c, 5, _pseed(c, 232), 1.8)
+    arr = base * (0.86 + 0.26 * n)[..., None] * (0.88 + 0.16 * np.clip(dist / 70.0, 0, 1))[..., None]
+    crack = A(blur(LI(_edges(idx, 3)), 0.6))
+    arr = arr * (1 - 0.78 * crack[..., None])
+    out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.55, 3.0), rim=0.85)
+    cr = ImageChops.multiply(LI(crack), shrink(M, 2))
+    out = over(out, paint(ImageChops.subtract(shift(cr, 0.8, 1.2), cr), lighten(hi, 0.45), 0.4))
+    return over(out, paint(ImageChops.multiply(M, A_to_L(_n(sk, c, 10, _pseed(c, 233), 2.0), 0.0, 0.7)), (255, 226, 176), 0.14))
+
+
+MATS.update({k[4:]: v for k, v in list(globals().items()) if k.startswith("mat_") and callable(v)})
+
+# ---- the 26 skins ----------------------------------------------------------------------------------------------------
+# `P` holds (highlight, shadow) colour pairs per role (face buttons by name, everything else under "main").
+
+
+def _all(hi, lo, **extra):
+    d = {"main": (hi, lo)}
+    d.update(extra)
+    return d
+
+
+def _fc(cols, **kw):
+    return faces(cols, 0.0, 0.0, **kw)
+
+
+# 1 neon-vice ------------------------------------------------------------------------------------------------------
+kit("neon-vice", "pad-neon-vice", "Vice Sunset", "Striped retro sunsets in pink and orange with teal neon rims: an 80s coast-city mood.", ["neon", "retro"], False,
+    featured=True, press="glow", opacity=0.94, backdrop=((46, 12, 78), (255, 96, 120)), scene=0,
+    mat="sunset", face="dome", dpad="clip", sh="tab", small="tab", stick_shape="dome", stick_style="ring", base_shape="circle", base_style="ticks",
+    well_a=0.35, glyph="glow", sym_thick=0.9, acc=(40, 232, 214), P=_all((255, 120, 168), (96, 28, 140)),
+    sym_colors=scol(((60, 240, 226), (255, 236, 200), (255, 190, 90), (255, 255, 255))), mark_col=(80, 244, 230))
+
+kit("neon-vice", "pad-neon-vice-pro", "Palm Boulevard", "Teal-to-indigo glass with sun-lit palm fronds and two-tone neon symbols, like an ocean-drive night.", ["neon"], True,
+    press="glow", opacity=0.94, backdrop=((8, 22, 54), (20, 150, 160)), scene=1,
+    mat="palmfrond", face="crest", dpad="oct", sh="ears", small="ears", stick_shape="crest", stick_style="dome", base_shape="octagon", base_style="cross",
+    well_a=0.3, glyph="duo", sym_thick=0.95, duo=(255, 70, 170), acc=(255, 120, 190), P=_all((54, 214, 200), (16, 44, 118)), mark_col=(255, 244, 230))
+
+# 2 night-hero -----------------------------------------------------------------------------------------------------
+kit("night-hero", "pad-night-hero", "Rooftop Halftone", "Comic-book night sky: deep blue panels, halftone dots, speed lines and thick ink outlines.", ["playful"], False,
+    featured=True, press="spring", opacity=0.96, backdrop=((10, 14, 44), (40, 70, 160)), scene=2,
+    mat="comicsky", face="diamond", dpad="blade", sh="diag", small="diag", stick_shape="diamond", stick_style="ridges", base_shape="octagon", base_style="ticks",
+    well_a=0.4, glyph="pop", sym_thick=1.15, P=_all((92, 140, 250), (18, 28, 98)), mark_col=(255, 255, 255))
+
+kit("night-hero", "pad-night-hero-pro", "Night Shift", "Black ripstop fabric with a faint reflective grid, silver piping and sharp cut-out symbols.", ["material"], True,
+    press="shrink", opacity=0.95, backdrop=((6, 8, 18), (28, 36, 64)), scene=2,
+    mat="ripstop", face="hexf", dpad="fang", sh="trap", small="trap", stick_shape="hexf", stick_style="concave", base_shape="hexf", base_style="ticks",
+    well_a=0.5, glyph="shadow", sym_thick=1.0, acc=(196, 210, 232), P=_all((78, 92, 134), (14, 18, 36)), mark_col=(226, 236, 252))
+
+# 3 steel-claws ----------------------------------------------------------------------------------------------------
+kit("steel-claws", "pad-steel-claws", "Berserker Steel", "Raw brushed steel gouged by three deep slashes that glow rage-red from inside.", ["material"], False,
+    featured=True, press="grow", opacity=0.95, backdrop=((14, 14, 18), (60, 62, 74)), scene=3,
+    mat="gouged", face="claw", dpad="spike", sh="slant", small="slant", stick_shape="slash", stick_style="ridges", base_shape="hex", base_style="dots",
+    well_a=0.55, glyph="slashed", sym_thick=1.05, acc=(238, 44, 40), P=_all((190, 196, 208), (62, 66, 78)), mark_col=(244, 60, 52))
+
+kit("steel-claws", "pad-steel-claws-pro", "Rage Mode", "Blood-dark anodised metal ripped open by bright red gashes, with white-hot heat-gradient symbols.", ["neon"], True,
+    press="glow", opacity=0.95, backdrop=((20, 2, 4), (110, 14, 18)), scene=3,
+    mat="gouged", face="ragged", dpad="fang", sh="chamfer", small="chamfer", stick_shape="ragged", stick_style="grooves", base_shape="ragged", base_style="ticks",
+    well_a=0.6, glyph="heat", sym_thick=1.15, acc=(255, 70, 44), P=_all((168, 34, 38), (30, 4, 8)), mark_col=(255, 150, 70))
+
+# 4 souls-dark -----------------------------------------------------------------------------------------------------
+kit("souls-dark", "pad-souls-dark", "Ashen Bonfire", "Charred stone buttons with glowing ember cracks and carved, burning symbols.", ["ornate", "material"], False,
+    featured=True, press="glow", opacity=0.94, backdrop=((8, 6, 10), (60, 24, 12)), scene=3,
+    mat="ashen", face="gothic", dpad="bar", sh="arch", small="arch", stick_shape="gothic", stick_style="concave", base_shape="octagon", base_style="well",
+    well_a=0.6, glyph="glow", sym_thick=1.0, acc=(255, 122, 36), P=_all((84, 78, 84), (16, 14, 18)), mark_col=(255, 158, 70))
+
+kit("souls-dark", "pad-souls-dark-pro", "Runebound Silver", "Oxidised dark silver ringed with glowing amber runes and gilded engraved symbols.", ["ornate"], True,
+    press="glow", opacity=0.95, backdrop=((10, 10, 16), (56, 46, 40)), scene=3,
+    mat="runic", face="sparkle", dpad="house", sh="hexbar", small="hexbar", stick_shape="sparkle", stick_style="ring", base_shape="octagon", base_style="ticks",
+    well_a=0.55, glyph="gilt", sym_thick=1.0, acc=(255, 152, 50), P=_all((150, 154, 162), (28, 28, 38)), mark_col=(238, 200, 120))
+
+# 5 zombie-outbreak ------------------------------------------------------------------------------------------------
+kit("zombie-outbreak", "pad-zombie-outbreak", "Quarantine Tape", "Grimy olive plates banded with yellow-black hazard tape and dark red splatters.", ["material"], False,
+    featured=True, press="shrink", opacity=0.95, backdrop=((14, 18, 12), (58, 66, 40)), scene=1,
+    mat="hazardtape", face="tile", dpad="key", sh="notched", small="notched", stick_shape="tile", stick_style="grooves", base_shape="chamfer", base_style="cross",
+    well_a=0.55, glyph="stamp", sym_thick=1.1, acc=(244, 202, 22), P=_all((132, 142, 104), (38, 44, 32)), mark_col=(236, 232, 208))
+
+kit("zombie-outbreak", "pad-zombie-outbreak-pro", "Chainlink Siege", "Rusty chain-link fencing over a blood-lit wall, with sprayed-on warning symbols.", ["material"], True,
+    press="shrink", opacity=0.95, backdrop=((20, 8, 6), (90, 32, 22)), scene=3,
+    mat="chainlink", face="chamfer", dpad="arm", sh="rect", small="rect", stick_shape="chamfer", stick_style="reticle", base_shape="chamfer", base_style="dots",
+    well_a=0.5, glyph="spray", sym_thick=1.05, acc=(176, 44, 30), P=_all((176, 182, 184), (60, 64, 68)), mark_col=(236, 52, 44))
+
+# 6 battle-royale --------------------------------------------------------------------------------------------------
+kit("battle-royale", "pad-battle-royale", "Loot Rarity", "Glossy loot cells that glow up from the bottom in blue, gold, purple and green rarity colours.", ["playful", "neon"], False,
+    featured=True, press="spring", opacity=0.94, backdrop=((14, 20, 40), (44, 72, 120)), scene=4,
+    mat="rarity", face="tile", dpad="bar", sh="chamfer", small="chamfer", stick_shape="tile", stick_style="cap", base_shape="chamfer", base_style="ticks",
+    well_a=0.4, glyph="sticker", sym_thick=1.05,
+    P=_fc(((70, 150, 255), (255, 170, 40), (176, 88, 245), (88, 214, 104)), main=((92, 108, 138), (22, 28, 46))), sym_colors=scol(((255,) * 3,) * 4), mark_col=(255, 255, 255))
+
+kit("battle-royale", "pad-battle-royale-pro", "Storm Circle", "Topographic island map buttons with a glowing violet storm ring closing in from the edge.", ["neon", "material"], True,
+    press="glow", opacity=0.94, backdrop=((14, 26, 22), (70, 40, 120)), scene=1,
+    mat="stormring", face="octagon", dpad="capsule", sh="hexbar", small="hexbar", stick_shape="octagon", stick_style="reticle", base_shape="circle", base_style="cross",
+    well_a=0.45, glyph="hollow", sym_thick=1.1, acc=(156, 76, 255), P=_all((120, 160, 112), (22, 40, 38)), mark_col=(238, 230, 255))
+
+# 7 ronin ----------------------------------------------------------------------------------------------------------
+kit("ronin", "pad-ronin", "Sumi Ink", "Rice-paper discs swept by one bold ink stroke, with a small red seal and brush-painted symbols.", ["minimal", "ornate"], False,
+    featured=True, press="shrink", opacity=0.95, backdrop=((26, 26, 32), (126, 120, 108)), scene=2,
+    mat="sumi", face="circle", dpad="capsule", sh="leaf", small="leaf", stick_shape="circle", stick_style="ring", base_shape="circle", base_style="well",
+    well_a=0.3, glyph="brush", sym_thick=1.15, acc=(190, 34, 40), P=_all((242, 236, 220), (80, 74, 70)), mark_col=(214, 44, 48))
+
+kit("ronin", "pad-ronin-pro", "Folded Steel", "Wavy folded-steel grain polished like a sword blade, edged with a thin line of gold.", ["material", "ornate"], True,
+    press="shrink", opacity=0.95, backdrop=((14, 16, 22), (70, 78, 94)), scene=2,
+    mat="damascus", face="slash", dpad="blade", sh="slant", small="slant", stick_shape="slash", stick_style="dome", base_shape="octagon", base_style="ticks",
+    well_a=0.45, glyph="inlay", sym_thick=1.0, acc=(214, 168, 70), P=_all((206, 214, 226), (50, 56, 70)), mark_col=(238, 206, 128))
+
+# 8 wasteland ------------------------------------------------------------------------------------------------------
+kit("wasteland", "pad-wasteland", "Scrap Patchwork", "Mismatched salvaged plates welded together, with rivets, rust and stencilled faded symbols.", ["material"], False,
+    featured=True, press="grow", opacity=0.95, backdrop=((38, 24, 14), (150, 96, 50)), scene=3,
+    mat="scrap", face="plate", dpad="key", sh="diag", small="diag", stick_shape="plate", stick_style="grooves", base_shape="plate", base_style="dots",
+    well_a=0.5, glyph="stencil", sym_thick=1.15, P=_all((176, 134, 84), (82, 56, 40)), mark_col=(236, 224, 196))
+
+kit("wasteland", "pad-wasteland-pro", "Dust Storm", "Wind-rippled sand plates with blowing dust, rusty rivets and chalky hand-scrawled symbols.", ["material"], True,
+    press="grow", opacity=0.94, backdrop=((70, 44, 22), (214, 150, 84)), scene=3,
+    mat="sandripple", face="hex", dpad="oct", sh="ears", small="ears", stick_shape="hex", stick_style="ridges", base_shape="hex", base_style="well",
+    well_a=0.4, glyph="chalk", sym_thick=1.2, acc=(128, 70, 40), P=_all((226, 186, 124), (126, 84, 50)), mark_col=(72, 44, 28))
+
+# 9 space-marine ---------------------------------------------------------------------------------------------------
+kit("space-marine", "pad-space-marine", "Power Armor", "Layered gunmetal-blue armour plates with chipped paint, recessed panel seams and orange stencil bars.", ["material"], False,
+    featured=True, press="shrink", opacity=0.96, backdrop=((10, 14, 24), (60, 78, 110)), scene=2,
+    mat="armorplate", face="octagon", dpad="oct", sh="chamfer", small="hexbar", stick_shape="octagon", stick_style="cap", base_shape="octagon", base_style="cross",
+    well_a=0.5, glyph="engrave", sym_thick=1.1, acc=(255, 122, 24), P=_all((118, 142, 178), (30, 40, 62)), mark_col=(255, 150, 60))
+
+kit("space-marine", "pad-space-marine-pro", "Orbital Re-entry", "Charred heat-shield tiles glowing orange where the atmosphere burns, with hot cut-in symbols.", ["neon", "material"], True,
+    press="glow", opacity=0.95, backdrop=((8, 6, 8), (150, 54, 20)), scene=3,
+    mat="reentry", face="hexf", dpad="tri", sh="trap", small="trap", stick_shape="hexf", stick_style="concave", base_shape="hexf", base_style="ticks",
+    well_a=0.5, glyph="emboss", sym_thick=1.0, P=_all((255, 140, 50), (92, 24, 14)), mark_col=(255, 230, 190))
+
+# 10 street-racer --------------------------------------------------------------------------------------------------
+kit("street-racer", "pad-street-racer", "Tire Tread", "Black rubber with a chunky V-block tread and a bright nitrous-blue pinstripe around each button.", ["material"], False,
+    featured=True, press="grow", opacity=0.95, backdrop=((8, 10, 18), (26, 44, 88)), scene=2,
+    mat="tread", face="squircle", dpad="bar", sh="slant", small="slant", stick_shape="squircle", stick_style="dimples", base_shape="circle", base_style="ticks",
+    well_a=0.5, glyph="shadow", sym_thick=1.1, acc=(44, 156, 255), P=_all((70, 72, 80), (16, 16, 22)), mark_col=(236, 242, 255))
+
+kit("street-racer", "pad-street-racer-pro", "Carbon Nitrous", "Clear-coated carbon weave with a sweeping reflection and a glowing nitrous-blue ring.", ["neon", "material"], True,
+    press="glow", opacity=0.95, backdrop=((4, 6, 14), (18, 40, 96)), scene=2,
+    mat="carbonblue", face="kite", dpad="spike", sh="chamfer", small="slant", stick_shape="kite", stick_style="ring", base_shape="hex", base_style="cross",
+    well_a=0.5, glyph="glow", sym_thick=0.95, acc=(54, 170, 255), P=_all((60, 64, 76), (8, 8, 12)), mark_col=(120, 200, 255))
+
+# 11 cyber-merc ----------------------------------------------------------------------------------------------------
+kit("cyber-merc", "pad-cyber-merc", "Glitch Visor", "Dark smoked glass with scanlines, glitched slices and cyan-magenta split edges.", ["neon"], False,
+    featured=True, press="glow", opacity=0.93, backdrop=((8, 4, 28), (60, 10, 90)), scene=2,
+    mat="holoplate", face="slash", dpad="clip", sh="diag", small="diag", stick_shape="slash", stick_style="reticle", base_shape="chamfer", base_style="ticks",
+    well_a=0.5, glyph="glitch", sym_thick=0.95, P=_all((38, 22, 78), (8, 6, 24)), mark_col=(244, 244, 255))
+
+kit("cyber-merc", "pad-cyber-merc-pro", "Chrome Contract", "Mirror chrome that reflects a magenta and cyan neon skyline, edged with fine circuit scratches.", ["material", "neon"], True,
+    press="glow", opacity=0.95, backdrop=((14, 4, 36), (92, 16, 120)), scene=2,
+    mat="mercchrome", face="diamond", dpad="oct", sh="hexbar", small="hexbar", stick_shape="diamond", stick_style="dome", base_shape="diamond", base_style="cross",
+    well_a=0.45, glyph="duo", sym_thick=0.95, duo=(0, 226, 255), P=_all((150, 96, 220), (20, 24, 70)), mark_col=(255, 90, 210))
+
+# 12 pirate-cove ---------------------------------------------------------------------------------------------------
+kit("pirate-cove", "pad-pirate-cove", "Rope and Plank", "Weathered ship-deck planks framed by twisted hemp rope, with branded-in symbols.", ["material"], False,
+    featured=True, press="shrink", opacity=0.95, backdrop=((16, 30, 44), (60, 84, 92)), scene=1,
+    mat="ropewood", face="circle", dpad="key", sh="pill", small="pill", stick_shape="circle", stick_style="grooves", base_shape="circle", base_style="well",
+    well_a=0.55, glyph="engrave", sym_thick=1.1, wood=((92, 58, 30), (190, 138, 82)), P=_all((190, 138, 82), (92, 58, 30)), mark_col=(246, 232, 200))
+
+kit("pirate-cove", "pad-pirate-cove-pro", "Doubloon Gold", "Milled-edge gold coins with worn faces, a warm glint and gilded engraved symbols.", ["ornate", "material"], True,
+    press="spring", opacity=0.96, backdrop=((12, 24, 38), (42, 66, 74)), scene=1,
+    mat="doubloon", face="scallop", dpad="dot", sh="ticket", small="ticket", stick_shape="circle", stick_style="cap", base_shape="scallop", base_style="dots",
+    well_a=0.4, glyph="gilt", sym_thick=1.0, P=_all((240, 198, 84), (122, 80, 24)), mark_col=(250, 220, 130))
+
+# 13 frontier ------------------------------------------------------------------------------------------------------
+kit("frontier", "pad-frontier", "Saddle Leather", "Tooled saddle leather with carved scrolls, burnished edges and cream stitching, like a worn riding tack set.", ["material"], False,
+    featured=True, press="shrink", opacity=0.95, backdrop=((38, 20, 10), (130, 78, 40)), scene=3,
+    mat="tooled", face="scallop", dpad="arm", sh="tab", small="tab", stick_shape="scallop", stick_style="ridges", base_shape="scallop", base_style="well",
+    well_a=0.5, glyph="stitch", sym_thick=1.15, acc=(236, 216, 172), P=_all((176, 112, 62), (66, 34, 16)), mark_col=(246, 228, 190))
+
+kit("frontier", "pad-frontier-pro", "Dry Gulch Clay", "Sun-baked cracked clay glowing in desert sunset red, with deep-pressed symbols.", ["material"], True,
+    press="grow", opacity=0.95, backdrop=((60, 24, 20), (226, 126, 60)), scene=3,
+    mat="claycrack", face="arch", dpad="house", sh="arch", small="arch", stick_shape="arch", stick_style="dimples", base_shape="octagon", base_style="dots",
+    well_a=0.45, glyph="stamp", sym_thick=1.15, P=_all((232, 142, 78), (110, 40, 28)), mark_col=(66, 24, 16))
+#### ---- KITS END ----
 def main(argv):
     force = "--force" in argv
     sheet = None

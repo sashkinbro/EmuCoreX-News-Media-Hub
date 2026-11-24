@@ -10,6 +10,7 @@ const distRoot = path.join(themesRoot, "dist");
 const builderPath = path.join(repositoryRoot, "scripts", "build-themes.py");
 const packageFiles = ["theme.json", "font.ttf", "font.otf", "background.webp", "background.jpg", "background.png"];
 export const idPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const tagPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
 const hexPattern = /^#[0-9A-Fa-f]{6}$/;
 const requiredColors = [
   "primary", "onPrimary", "secondary", "tertiary", "background", "surface",
@@ -136,7 +137,7 @@ export function validateListing(listing, categoryIds, location, errors) {
   }
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(listing.publishedAt ?? "")) errors.push(`${location}: publishedAt must be an ISO UTC instant`);
   requireLocales(listing.description, `${location} description`, 160, errors);
-  for (const tag of listing.tags ?? []) if (!idPattern.test(tag)) errors.push(`${location}: invalid tag ${tag}`);
+  for (const tag of listing.tags ?? []) if (!tagPattern.test(tag)) errors.push(`${location}: invalid tag ${tag}`);
 }
 
 export function requireLocales(map, label, maxLength, errors) {

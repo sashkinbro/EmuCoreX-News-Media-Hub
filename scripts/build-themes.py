@@ -6,7 +6,7 @@ Input:  themes/src/<id>/theme.json      (the package's theme.json, format 1)
         themes/src/<id>/font.ttf|otf, background.webp|jpg|png   (optional package files)
 Output: themes/dist/<id>/theme.ecxtheme (deterministic ZIP)
         themes/dist/<id>/preview.webp   (rendered mock of the app in the theme)
-        themes/dist/<id>/screen-{hub,settings,game,ingame,store}.webp (gallery screens)
+        themes/dist/<id>/screen-{hub,settings,game,ingame,drawer,store}.webp (gallery screens)
 
 Run locally (needs Pillow) before `npm run build`; commit both src and dist.
 The Node build hashes dist files into catalog/v1/themes.json; the validator checks that dist matches src.
@@ -410,6 +410,7 @@ class Painter:
         self.lib = "grid3"
         self.center = False
         self.nav_h = 0
+        self.poster_name = (theme.get("name") or {}).get("en") or theme["id"]
 
 
     def _rad(self, r, h, kind):
@@ -1043,6 +1044,9 @@ class Painter:
             self.glyph(cx, cy, s * 0.9, 5, col)
         elif name == "chev":
             d.line([(p(cx - s * 0.3), p(cy - s * 0.6)), (p(cx + s * 0.3), p(cy)), (p(cx - s * 0.3), p(cy + s * 0.6))], fill=col, width=w, joint="curve")
+        elif name == "font":
+            d.line([(p(cx - s * 0.85), p(cy + s * 0.85)), (p(cx), p(cy - s * 0.95)), (p(cx + s * 0.85), p(cy + s * 0.85))], fill=col, width=w, joint="curve")
+            d.line([(p(cx - s * 0.45), p(cy + s * 0.25)), (p(cx + s * 0.45), p(cy + s * 0.25))], fill=col, width=w)
         else:
             self.glyph(cx, cy, s * 0.9, {"palette": 0, "image": 1, "sound": 3, "pad2": 4, "store": 1, "compass": 0}.get(name, 3), col)
 
@@ -1318,7 +1322,7 @@ class Painter:
         y = self._header("EmuCore - Hub", None, back=True, right=("search", "bookmark", "refresh"))
         self._seg(y, ["Discover", "Store"], 1, ["compass", "store"], h=50)
         y += 62
-        self._seg(y, ["Themes", "Wallpapers", "Sounds", "Controls"], 0, ["palette", "image", "sound", "pad2"], h=70, kind=True)
+        self._seg(y, ["Themes", "Wallpapers", "Sounds", "Controls", "Fonts"], 0, ["palette", "image", "sound", "pad2", "font"], h=70, kind=True)
         y += 84
         self.tx(20, y, "Featured", 17, self.on_bg, bold=True, title=True)
         y += 30
@@ -1350,6 +1354,82 @@ class Painter:
             if names[i][1]:
                 self.elem("chip", x + tw_ - 52, ny, 44, 24, 8, mix(self.accents[0], self.surface, 0.2), outline=self.accents[0], width=1, sel=True)
                 self.label(x + tw_ - 52, ny, 44, 24, "PRO", 10.5, self.txt, pad=2)
+        return self._finish()
+
+    def _zoomed(self, z, fn, x, y, *args, **kw):
+        """Draw a fixed-size component at (x, y) scaled by z (px() is multiplied for the call)."""
+        old = self.px
+        self.px = lambda v: old(v * z)
+        try:
+            fn(x / z, y / z, *args, **kw)
+        finally:
+            self.px = old
+
+    def poster(self):
+        """Store card cover: the theme name in its own header bar, then a few big components in the theme's style."""
+        W, H = PREVIEW_SIZE
+        self._page()
+        name = self.poster_name
+        ls = self.letter_spacing if self.title_upper else 0
+
+        def width(s_, size_):
+            return self.tw(s_.upper() if self.title_upper else s_, size_, True, ls)
+
+        inner = W - 100
+        size, lines = 60, [name]
+        while size > 30 and width(name, size) > inner:
+            size -= 2
+        if width(name, size) > inner or (size < 44 and " " in name):
+            words = name.split(" ")
+            best = None
+            for cut in range(1, len(words)):
+                a, b = " ".join(words[:cut]), " ".join(words[cut:])
+                if best is None or max(len(a), len(b)) < max(len(best[0]), len(best[1])):
+                    best = (a, b)
+            if best:
+                lines = list(best)
+                size = 58
+                while size > 28 and max(width(l_, size) for l_ in lines) > inner:
+                    size -= 2
+        hh = 150 if len(lines) == 1 else 220
+        y0 = 36
+        self.elem("header", 20, y0, W - 40, hh, 24, self.surface, outline=self.outline if not self.neon else self.accents[0], width=2)
+        total = len(lines) * size * 1.18
+        ty = y0 + (hh - total) / 2 + 2
+        for l_ in lines:
+            self.tx(W / 2, ty, l_, size, self.title_c, bold=True, align="c", title=True, maxw=W - 70)
+            ty += size * 1.18
+        y = y0 + hh + 34
+        # one big card in the card variant: icon tile, sample text, skeleton lines
+        ch = 270
+        self.elem("panel", 30, y, W - 60, ch, 26, self.surface, outline=self.outline, width=2)
+        self.icon(62, y + 34, 104, mix(self.primary, self.surface, 0.5), 1, True)
+        self.tx(200, y + 30, "Aa", 84, self.txt, bold=True)
+        self.elem("plain", 62, y + 176, 340, 26, 13, mix(self.txt, self.surface, 0.55))
+        self.elem("plain", 62, y + 218, 220, 20, 10, mix(self.txt2, self.surface, 0.5))
+        y += ch + 34
+        # large primary button
+        bh = 112
+        self.elem("button", 40, y, W - 80, bh, bh / 2, self.primary, outline=self.outline, width=2)
+        self.label(40, y, W - 80, bh, "PLAY", 44, self.btn_color(self.primary), bold=True, upper=self.title_upper, ls=ls)
+        y += bh + 30
+        # chips
+        cw, gap = 140, 20
+        for i, lab in enumerate(("ON", "NEW", "HD")):
+            x = 40 + i * (cw + gap)
+            on = i == 0
+            self.elem("chip", x, y, cw, 80, 22, mix(self.primary, self.surface, 0.55) if on else self.surface,
+                      outline=self.primary if on else self.outline, width=2, sel=on)
+            self.label(x, y, cw, 80, lab, 30, self.txt if on else self.txt2, bold=on, pad=6)
+        y += 80 + 36
+        # switches (zoomed) and accent swatches
+        self._zoomed(2.3, self._switch, 44, y, True)
+        self._zoomed(2.3, self._switch, 200, y, False)
+        cols = (self.primary, self.secondary, self.tertiary, self.accents[0])
+        for i, c_ in enumerate(cols):
+            cx = 400 + (i % 2) * 54
+            cy = y + 4 + (i // 2) * 54
+            self.d.ellipse((self.px(cx - 22), self.px(cy - 2), self.px(cx + 22), self.px(cy + 42)), fill=c_, outline=self.outline, width=self.px(1.5))
         return self._finish()
 
     def _mini(self, x, y, w, h, i):
@@ -1394,7 +1474,7 @@ def encode_webp(image):
 
 
 def render_preview(theme, theme_dir):
-    return encode_webp(Painter(theme, find_background(theme_dir), find_font(theme_dir)).render())
+    return encode_webp(Painter(theme, find_background(theme_dir), find_font(theme_dir)).poster())
 
 
 # Gallery screens shown on the theme detail page: output file -> Painter method.
@@ -1403,6 +1483,7 @@ SCREENS = {
     "screen-settings.webp": "screen_settings",
     "screen-game.webp": "screen_game",
     "screen-ingame.webp": "screen_ingame",
+    "screen-drawer.webp": "screen_drawer",
     "screen-store.webp": "screen_store",
 }
 MAX_SCREEN_BYTES = 512 * 1024
