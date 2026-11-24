@@ -5606,6 +5606,7 @@ def digest_of(listing_text):
     h = hashlib.sha256()
     h.update(b"listing.json\0" + listing_text.replace("\r\n", "\n").encode("utf-8") + b"\0")
     h.update(base)
+    h.update(GLYPH_FIX)
     if '"kit:' in listing_text:
         h.update(block)
     return h.hexdigest()
@@ -5698,6 +5699,100 @@ def rect_shape(c, name, inset=0):
         m = poly_mask(c, [(x0, y0 - e * 0.0), (x0 + k * 1.2, y0), (x0 + k * 1.2 + e, y0 + e), (x1 - k * 1.2 - e, y0 + e), (x1 - k * 1.2, y0),
                           (x1, y0), (x1, y1), (x0, y1)], 4)
     return shrink(m, inset) if inset else m
+
+
+# ---- glyph centring, tile-fit and edge fade (all skins; GLYPH_FIX salts every digest) ---------------------------------
+GLYPH_FIX = b"glyphfix1"
+FormSkin.center_glyph = True
+
+
+def _centroid(m):
+    a = np.asarray(m.point(lambda v: 255 if v > 100 else 0), np.bool_)
+    ys, xs = np.nonzero(a)
+    if xs.size == 0:
+        return None
+    return xs.mean(), ys.mean()
+
+
+def _bbox_c(m):
+    b = m.point(lambda v: 255 if v > 100 else 0).getbbox()
+    return None if not b else ((b[0] + b[2]) / 2.0, (b[1] + b[3]) / 2.0)
+
+
+def _recenter(self, c, sk, m, shape):
+    gc, sc = _bbox_c(m), _centroid(shape)
+    if gc is None or sc is None:
+        return m
+    if c.kind == "dpad":
+        dx, dy = sc[0] - gc[0], sc[1] - gc[1]
+    else:  # keep the symbol's own optical offset (triangle); only follow the button shape's centre of mass
+        dx, dy = sc[0] - c.cx, sc[1] - c.cy
+    if abs(dx) < 1 and abs(dy) < 1:
+        return m
+    return ImageChops.offset(m, int(round(dx)), int(round(dy)))
+
+
+_glyph_mask_v1 = FormSkin.glyph_mask
+
+
+def _glyph_mask_centered(self, c):
+    m = _glyph_mask_v1(self, c)
+    if m is None or not self.center_glyph or c.kind not in ("dpad", "face", "l3"):
+        return m
+    return _recenter(self, c, self, m, self.shape(c))
+
+
+FormSkin.glyph_mask = _glyph_mask_centered
+_ctx_mark_v1 = Ctx.mark_mask
+
+
+def _ctx_mark_centered(self, thick=1.0, scale=1.0, filled=False):
+    m = _ctx_mark_v1(self, thick, scale, filled)
+    if m is None or isinstance(self.skin, FormSkin) or self.kind not in ("dpad", "face", "l3"):
+        return m
+    return _recenter(self, self, self.skin, m, self.geom(0))
+
+
+Ctx.mark_mask = _ctx_mark_centered
+
+_face_fit = {}
+_face_shape_v3 = face_shape
+
+
+def face_shape(c, name, R):
+    m = _face_shape_v3(c, name, R)
+    if R <= 0:
+        return m
+    key = (name, R, c.w)
+    if key not in _face_fit:
+        b = m.point(lambda v: 255 if v > 100 else 0).getbbox()
+        k = 1.0
+        if b:
+            ex, ey = max(c.cx - b[0], b[2] - c.cx), max(c.cy - b[1], b[3] - c.cy)
+            k = min(1.0, (c.w / 2.0 - 4 * S) / max(1.0, ex), (c.h / 2.0 - 4 * S) / max(1.0, ey))
+        _face_fit[key] = k
+    k = _face_fit[key]
+    if k >= 0.999:
+        return m
+    return _face_shape_v3(c, name, R * k)
+
+
+_finish_v1 = finish
+
+
+def finish(layer, c):
+    im = _finish_v1(layer, c)
+    if c.kind == "dpad":
+        return im
+    a = np.asarray(im.getchannel("A"), np.float32)
+    h, w = a.shape
+    if max(a[0].max(), a[-1].max(), a[:, 0].max(), a[:, -1].max()) < 4:
+        return im
+    f = 7
+    ramp_ = np.minimum(np.minimum(np.arange(w), np.arange(w)[::-1]), f)[None, :] / float(f)
+    ramp_ = np.minimum(ramp_, (np.minimum(np.minimum(np.arange(h), np.arange(h)[::-1]), f)[:, None] / float(f)))
+    im.putalpha(Image.fromarray(np.clip(a * ramp_, 0, 255).astype(np.uint8), "L"))
+    return im
 
 
 # ---- new glyph styles ------------------------------------------------------------------------------------------------
@@ -6003,15 +6098,16 @@ def mat_stormring(sk, c, M, hi, lo):
     arr = _cmap(t, [(0, lo), (1, hi)])
     cl = (np.abs(np.sin(t * 34.0)) < 0.13).astype(np.float32)
     arr = arr * (1 - 0.35 * cl[..., None]) + cl[..., None] * np.array(lighten(hi, 0.4), np.float32) * 0.35
-    zc = (cx + w * 0.1, cy - (y1 - y0) * 0.06)
+    zc = (cx, cy)
     rr = np.hypot(xx - zc[0], yy - zc[1])
-    zr = min(w, y1 - y0) * 0.36
+    zr = min(w, y1 - y0) * 0.42 if c.round else 1e5
     outside = (rr > zr).astype(np.float32)
     storm = np.array(_acc(sk, (150, 70, 255)), np.float32)
     arr = arr * (1 - 0.55 * outside[..., None]) + storm * 0.55 * outside[..., None]
     out = fin(sk, c, M, _img(arr), lo, bev=(0.4, 0.55, 3.0), rim=0.85)
     zring = c.new()
-    ImageDraw.Draw(zring).ellipse([zc[0] - zr, zc[1] - zr, zc[0] + zr, zc[1] + zr], outline=255, width=int(3.0 * S))
+    if c.round:
+        ImageDraw.Draw(zring).ellipse([zc[0] - zr, zc[1] - zr, zc[0] + zr, zc[1] + zr], outline=255, width=int(3.0 * S))
     zring = ImageChops.multiply(zring, shrink(M, 3))
     out = over(out, paint(blur(zring, 4), tuple(int(v) for v in storm), 0.8))
     return over(out, paint(zring, (240, 232, 255), 0.95))
@@ -6352,7 +6448,7 @@ kit("zombie-outbreak", "pad-zombie-outbreak", "Quarantine Tape", "Grimy olive pl
 kit("zombie-outbreak", "pad-zombie-outbreak-pro", "Chainlink Siege", "Rusty chain-link fencing over a blood-lit wall, with sprayed-on warning symbols.", ["material"], True,
     press="shrink", opacity=0.95, backdrop=((20, 8, 6), (90, 32, 22)), scene=3,
     mat="chainlink", face="chamfer", dpad="arm", sh="rect", small="rect", stick_shape="chamfer", stick_style="reticle", base_shape="chamfer", base_style="dots",
-    well_a=0.5, glyph="spray", sym_thick=1.05, acc=(176, 44, 30), P=_all((176, 182, 184), (60, 64, 68)), mark_col=(236, 52, 44))
+    well_a=0.5, glyph="spray", sym_thick=1.1, acc=(176, 44, 30), P=_all((176, 182, 184), (60, 64, 68)), mark_col=(255, 226, 150))
 
 # 6 battle-royale --------------------------------------------------------------------------------------------------
 kit("battle-royale", "pad-battle-royale", "Loot Rarity", "Glossy loot cells that glow up from the bottom in blue, gold, purple and green rarity colours.", ["playful", "neon"], False,
@@ -6364,7 +6460,7 @@ kit("battle-royale", "pad-battle-royale", "Loot Rarity", "Glossy loot cells that
 kit("battle-royale", "pad-battle-royale-pro", "Storm Circle", "Topographic island map buttons with a glowing violet storm ring closing in from the edge.", ["neon", "material"], True,
     press="glow", opacity=0.94, backdrop=((14, 26, 22), (70, 40, 120)), scene=1,
     mat="stormring", face="octagon", dpad="capsule", sh="hexbar", small="hexbar", stick_shape="octagon", stick_style="reticle", base_shape="circle", base_style="cross",
-    well_a=0.45, glyph="hollow", sym_thick=1.1, acc=(156, 76, 255), P=_all((120, 160, 112), (22, 40, 38)), mark_col=(238, 230, 255))
+    well_a=0.45, glyph="pop", sym_thick=1.1, sym_scale=1.05, acc=(156, 76, 255), P=_all((120, 160, 112), (22, 40, 38)), mark_col=(255, 255, 255))
 
 # 7 ronin ----------------------------------------------------------------------------------------------------------
 kit("ronin", "pad-ronin", "Sumi Ink", "Rice-paper discs swept by one bold ink stroke, with a small red seal and brush-painted symbols.", ["minimal", "ornate"], False,
@@ -6419,7 +6515,7 @@ kit("cyber-merc", "pad-cyber-merc", "Glitch Visor", "Dark smoked glass with scan
 kit("cyber-merc", "pad-cyber-merc-pro", "Chrome Contract", "Mirror chrome that reflects a magenta and cyan neon skyline, edged with fine circuit scratches.", ["material", "neon"], True,
     press="glow", opacity=0.95, backdrop=((14, 4, 36), (92, 16, 120)), scene=2,
     mat="mercchrome", face="diamond", dpad="oct", sh="hexbar", small="hexbar", stick_shape="diamond", stick_style="dome", base_shape="diamond", base_style="cross",
-    well_a=0.45, glyph="duo", sym_thick=0.95, duo=(0, 226, 255), P=_all((150, 96, 220), (20, 24, 70)), mark_col=(255, 90, 210))
+    well_a=0.45, glyph="pop", sym_thick=1.1, P=_all((150, 96, 220), (20, 24, 70)), mark_col=(255, 255, 255))
 
 # 12 pirate-cove ---------------------------------------------------------------------------------------------------
 kit("pirate-cove", "pad-pirate-cove", "Rope and Plank", "Weathered ship-deck planks framed by twisted hemp rope, with branded-in symbols.", ["material"], False,
@@ -6442,6 +6538,28 @@ kit("frontier", "pad-frontier-pro", "Dry Gulch Clay", "Sun-baked cracked clay gl
     press="grow", opacity=0.95, backdrop=((60, 24, 20), (226, 126, 60)), scene=3,
     mat="claycrack", face="arch", dpad="house", sh="arch", small="arch", stick_shape="arch", stick_style="dimples", base_shape="octagon", base_style="dots",
     well_a=0.45, glyph="stamp", sym_thick=1.15, P=_all((232, 142, 78), (110, 40, 28)), mark_col=(66, 24, 16))
+
+# ---- legibility fixes for older skins (applied after registration; the GLYPH_FIX salt rebuilds them) -------------------
+_BY_ID = {s_.id: s_ for s_ in SKINS}
+
+
+def _tune(sid, **kw):
+    for k, v in kw.items():
+        setattr(_BY_ID[sid], k, v)
+
+
+_tune("stealth-matte", mark_col=(178, 184, 198))
+_tune("pad-leather-racing", mark_col=(255, 112, 92), sym_thick=1.4)
+_tune("pad-denim-stitch", mark_col=(238, 234, 224))
+_tune("pad-crystal-gem", sym_thick=1.45)
+_tune("pad-felt-patch", mark_col=(38, 36, 54))
+_tune("pad-wax-seal", glyph="gilt", mark_col=(255, 224, 160))
+_tune("pad-origami", mark_col=(34, 52, 96))
+_tune("pad-paper-cut", mark_col=(46, 52, 80))
+_tune("pad-toy-bricks", sym_scale=0.92)
+_tune("pad-microswitch", sym_scale=0.95, sym_thick=1.0)
+_tune("pad-mech-keys", sym_scale=0.95, sym_thick=0.9)
+_tune("pad-arcade-cabinet", sym_scale=0.95, sym_thick=1.0)
 #### ---- KITS END ----
 def main(argv):
     force = "--force" in argv
