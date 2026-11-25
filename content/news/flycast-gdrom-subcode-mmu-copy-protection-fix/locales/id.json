@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast memperbaiki penanganan subkode GD-ROM dan MMU untuk tiga judul homebrew",
+  "summary": "Ghost Blade, Pier Solar, dan Ganryu kini dapat boot setelah implementasi balasan subkode Media Catalog Number dan ISRC yang benar, serta pengaktifan emulasi MMU penuh untuk pemeriksaan proteksi salinan mereka.",
+  "heroAlt": "Konsol Dreamcast dengan drive GD-ROM terbuka menampilkan cakram game",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "proteksi salinan",
+    "MMU",
+    "homebrew",
+    "akurasi emulasi"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "compatibility": "Kompatibilitas"
+  },
+  "sourceLabels": {
+    "change": "Pull request Flycast #2624",
+    "implementation": "Patch dan review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa game tidak bisa memulai"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects, dan Ganryu adalah rilis homebrew komersial yang menggunakan proteksi salinan GD-ROM. Proteksi tersebut membaca data subkode dari cakram — secara spesifik Media Catalog Number (MCN) dalam format 2 dan International Standard Recording Code (ISRC) dalam format 3 — dan juga memicu kegagalan TLB melalui penulisan store-queue yang memerlukan MMU yang sepenuhnya diemulasi. Flycast sebelumnya mengembalikan nol untuk MCN dan jatuh ke data Q-channel untuk ISRC, sementara jalur MMU cepatnya melewati kesalahan buffer lookaside terjemahan yang diharapkan game. Kedua kesenjangan itu menyebabkan pemeriksaan proteksi gagal dan judul-judul tersebut macet di layar hitam."
+    },
+    {
+      "type": "heading",
+      "text": "Balasan subkode kini mengikuti spesifikasi GD-ROM SPI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Driver GD-ROM sekarang mengekstrak bidang CATALOG dari cue sheet dan mengembalikannya dalam format GET_SCD 2 dengan bit MCVal disetel, memvalidasi bahwa katalog persis 13 digit desimal. Untuk format 3, driver membaca tag ISRC dari entri cue trek saat ini, mengenkode lima karakter alphanumerik pertama sebagai simbol subkode 6-bit dan tujuh digit tersisa dengan bit 5-4 disetel, sesuai tabel GD-ROM SPI v1.30. Ketika trek tidak memiliki ISRC, byte balasan 14-20 diisi dengan 0x30 sebagaimana yang ditentukan spesifikasi. Pengujian unit mencakup kasus katalog dan ISRC yang valid maupun hilang menggunakan cue fixture baru."
+    },
+    {
+      "type": "heading",
+      "text": "MMU penuh hanya diaktifkan untuk judul yang terpengaruh"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flag pengaturan baru `fullMmu` disetel saat memuat game ketika nomor produk adalah T65181N (digunakan bersama oleh Ghost Blade dan Pier Solar) atau ketika nomor produk adalah T0000 generik dan pengidentifikasi volume ISO9660 sama dengan \"GANRYU\". ID volume dibaca sekali dari Primary Volume Descriptor di sektor 16, sehingga cakram T0000 lain seperti Dux dan Dux 1.5 tetap berada di jalur MMU cepat. Ketika flag aktif, inti SH-4 melewati MMU cepat dan menelusuri UTLB penuh pada setiap akses memori, memungkinkan kegagalan TLB store-queue yang dikode proteksi andalkan."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan batasan tersisa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penulis menguji ketiga game tersebut pada macOS arm64 dengan dynarec dan mengonfirmasi mereka mencapai gameplay. Pengkodean ISRC untuk trek yang benar-benar berisi ISRC tidak dapat divalidasi terhadap perangkat keras asli karena judul yang diuji hanya meminta trek data; implementasi mengikuti tabel spesifikasi secara langsung. Pengguna dapat memverifikasi perbaikan dengan memuat salah satu dari tiga game dan memeriksa log boot untuk \"Enabling full MMU\" serta dengan menjalankan suite GdromSubcodeTest dan IsoFsTest yang baru, yang menguji penguraian katalog, ISRC, dan volume-ID terhadap cue fixture yang disediakan."
+    }
+  ]
+}

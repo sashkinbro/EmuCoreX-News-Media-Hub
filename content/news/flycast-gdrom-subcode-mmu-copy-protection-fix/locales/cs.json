@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast opravuje zpracování subkódu GD-ROM a MMU pro tři homebrew tituly",
+  "summary": "Ghost Blade, Pier Solar a Ganryu se nyní spouštějí díky implementaci správných odpovědí subkódu Media Catalog Number a ISRC a také díky povolení plné emulace MMU pro jejich kontroly ochrany proti kopírování.",
+  "heroAlt": "Konzole Dreamcast s otevřenou mechanikou GD-ROM zobrazující herní disk",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "copy protection",
+    "ochrana proti kopírování",
+    "MMU",
+    "homebrew",
+    "emulation accuracy",
+    "přesnost emulace"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "compatibility": "Kompatibilita"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2624",
+    "implementation": "Oprava a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč se hry nespouštěly"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects a Ganryu jsou komerční homebrew tituly, které využívají ochranu proti kopírování GD-ROM. Tato ochrana čte data subkódu z disku – konkrétně Media Catalog Number (MCN) ve formátu 2 a International Standard Recording Code (ISRC) ve formátu 3 – a také vyvolává výpadky TLB prostřednictvím zápisů do store-queue, které vyžadují plně emulovanou MMU. Flycast dříve pro MCN vracel nuly a u ISRC přecházel na data Q-kanálu, zatímco jeho rychlá cesta MMU přeskakovala chyby translation lookaside buffer, které hry očekávají. Obě tyto mezery způsobovaly selhání kontrol ochrany a zamrznutí titulů na černé obrazovce."
+    },
+    {
+      "type": "heading",
+      "text": "Odpovědi subkódu nyní odpovídají specifikaci GD-ROM SPI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ovladač GD-ROM nyní extrahuje pole CATALOG ze souboru cue a vrací jej ve formátu GET_SCD 2 s nastaveným bitem MCVal, přičemž ověřuje, že katalog obsahuje přesně 13 dekadických číslic. Pro formát 3 ovladač čte tag ISRC z položky cue aktuální stopy, kóduje prvních pět alfanumerických znaků jako 6bitové symboly subkódu a zbývajících sedm číslic s nastavenými bity 5-4, což odpovídá tabulce GD-ROM SPI v1.30. Pokud stopě ISRC chybí, bajty odpovědi 14–20 jsou vyplněny hodnotou 0x30, jak vyžaduje specifikace. Jednotkové testy pokrývají případy s platným i chybějícím katalogem a ISRC pomocí nového cue fixture."
+    },
+    {
+      "type": "heading",
+      "text": "Plná MMU povolena pouze pro dotčené tituly"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nový příznak nastavení `fullMmu` se nastavuje během načítání hry, pokud je produktové číslo T65181N (sdílené hrami Ghost Blade a Pier Solar) nebo pokud je produktové číslo obecné T0000 a identifikátor svazku ISO9660 se rovná \"GANRYU\". ID svazku se načte jednou z Primary Volume Descriptor na sektoru 16, takže ostatní disky T0000, jako jsou Dux a Dux 1.5, zůstávají na rychlé cestě MMU. Když je příznak aktivní, jádro SH-4 obchází rychlou MMU a při každém přístupu k paměti prochází celou UTLB, což umožňuje výpadky TLB ve store-queue, na kterých kód ochrany závisí."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a zbývající omezení"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor otestoval všechny tři hry na macOS arm64 s dynarec a potvrdil, že dosáhnou samotného hraní. Kódování ISRC pro stopy, které skutečně obsahují ISRC, nebylo možné ověřit proti skutečnému hardwaru, protože testované tituly dotazují pouze datovou stopu; implementace se řídí přímo tabulkou specifikace. Uživatelé mohou opravu ověřit načtením kterékoli ze tří her a kontrolou zaváděcího protokolu na přítomnost „Enabling full MMU“ a spuštěním nových sad GdromSubcodeTest a IsoFsTest, které testují parsování katalogu, ISRC a ID svazku proti poskytnutým cue fixtures."
+    }
+  ]
+}

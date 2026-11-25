@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast, üç homebrew başlığı için GD-ROM alt kod ve MMU işlemeyi düzeltiyor",
+  "summary": "Ghost Blade, Pier Solar ve Ganryu, uygun Media Catalog Number ve ISRC alt kod yanıtlarının uygulanması ve kopyalama koruma kontrolleri için tam MMU emülasyonunun etkinleştirilmesi sayesinde artık önyükleniyor.",
+  "heroAlt": "Açık GD-ROM sürücüsü ve oyun diski gösteren Dreamcast konsolu",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "copy protection",
+    "MMU",
+    "homebrew",
+    "emulation accuracy",
+    "kopyalama koruması",
+    "emülasyon doğruluğu"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "compatibility": "Uyumluluk"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2624",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Neden oyunlar başlamıyordu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects ve Ganryu, GD-ROM kopyalama koruması kullanan ticari homebrew sürümleridir. Koruma, diskten alt kod verilerini okur — özellikle Media Catalog Number (MCN) format 2 ve International Standard Recording Code (ISRC) format 3 — ve mağaza kuyruğu yazımları aracılığıyla TLB hatalarını tetikler; bunlar tam emüle edilmiş bir MMU gerektirir. Flycast daha önce MCN için sıfırlar döndürüyor ve ISRC için Q-kanal verisine atlıyordu, hızlı MMU yolu ise oyunların beklediği çeviri arama arabelleği hatalarını atlıyordu. Her iki boşluk da koruma kontrollerinin başarısız olmasına ve başlıkların siyah ekranda takılmasına neden oluyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Alt kod yanıtları artık GD-ROM SPI spesifikasyonunu takip ediyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "GD-ROM sürücüsü artık cue sayfasından CATALOG alanını çıkarıyor ve bunu MCVal biti ayarlı GET_SCD format 2 ile döndürüyor, kataloğun tam olarak 13 ondalık basamak olduğunu doğruluyor. Format 3 için sürücü, geçerli parçanın cue girişinden ISRC etiketini okur, ilk beş alfanumerik karakteri 6-bit alt kod sembollerine kodlar ve kalan yedi rakamı 5-4 bitleri ayarlanmış olarak kodlar; bu GD-ROM SPI v1.30 tablosu ile eşleşir. Bir parçada ISRC yoksa yanıt baytları 14-20, spesifikasyonun gerektirdiği gibi 0x30 ile doldurulur. Birim testleri, yeni bir cue fixture kullanarak hem geçerli hem de eksik kataloq ve ISRC durumlarını kapsar."
+    },
+    {
+      "type": "heading",
+      "text": "Tam MMU yalnızca etkilenen başlıklar için etkin"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yeni bir `fullMmu` ayarı bayrağı, ürün numarası T65181N (Ghost Blade ve Pier Solar tarafından paylaşılır) olduğunda veya ürün numarası genel T0000 ve ISO9660 birim tanımlayıcısı \"GANRYU\" eşit olduğunda oyun yükleme sırasında ayarlanır. Birim kimliği, 16. sektördeki Birincil Birim Tanımlayıcısından bir kez okunur, böylece Dux ve Dux 1.5 gibi diğer T0000 diskleri hızlı MMU yolunda kalır. Bayrak etkin olduğunda SH-4 çekirdeği hızlı MMU'yu atlar ve her bellek erişiminde tam UTLB'yi dolaşır; bu da koruma kodunun güvendiği mağaza kuyruğu TLB hatalarına izin verir."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve kalan sınırlamalar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yazar, dynarec ile macOS arm64 üzerinde üç oyunu da test etti ve oyun oynanabilirliğine ulaştıklarını onayladı. Gerçekten ISRC içeren parçalar için ISRC kodlaması, test edilen başlıkların yalnızca veri parçasını sorgulaması nedeniyle gerçek donanımla doğrulanamadı; uygulama doğrudan spesifikasyon tablosunu takip eder. Kullanıcılar, üç oyunlardan herhangi birini yükleyerek ve önyükleme günlüğünde \"Enabling full MMU\" ifadesini kontrol ederek ve sağlanan cue fixture'ları karşı kataloq, ISRC ve birim kimliği ayrıştırmasını test eden yeni GdromSubcodeTest ve IsoFsTest test paketlerini çalıştırarak düzeltmeyi doğrulayabilir."
+    }
+  ]
+}

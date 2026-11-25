@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast corrige la gestion du sous-code GD-ROM et du MMU pour trois titres homebrew",
+  "summary": "Ghost Blade, Pier Solar et Ganryu démarrent désormais après l'implémentation de réponses de sous-code Media Catalog Number et ISRC appropriées, ainsi que l'activation de l'émulation complète du MMU pour leurs vérifications de protection contre la copie.",
+  "heroAlt": "Console Dreamcast avec lecteur GD-ROM ouvert montrant un disque de jeu",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "protection contre la copie",
+    "MMU",
+    "homebrew",
+    "précision de l'émulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "compatibility": "Compatibilité"
+  },
+  "sourceLabels": {
+    "change": "Demande de tirage Flycast #2624",
+    "implementation": "Correctif et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pourquoi les jeux ne démarrent pas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects, et Ganryu sont des sorties homebrew commerciales qui utilisent la protection contre la copie GD-ROM. La protection lit les données de sous-code depuis le disque — plus précisément le Media Catalog Number (MCN) au format 2 et l'International Standard Recording Code (ISRC) au format 3 — et déclenche également des défauts TLB via des écritures dans la file d'attente de stockage (store-queue) qui nécessitent un MMU entièrement émulé. Flycast renvoyait auparavant des zéros pour le MCN et basculait vers les données du canal Q pour l'ISRC, alors que son chemin MMU rapide ignorait les défauts du tampon de traduction d'adresses (translation lookaside buffer) que les jeux attendent. Ces deux lacunes entraînaient l'échec des vérifications de protection et le blocage des titres sur un écran noir."
+    },
+    {
+      "type": "heading",
+      "text": "Les réponses de sous-code respectent désormais la spécification SPI GD-ROM"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le pilote GD-ROM extrait désormais le champ CATALOG de la feuille de cue (cue sheet) et le renvoie au format GET_SCD 2 avec le bit MCVal défini, en validant que le catalogue comporte exactement 13 chiffres décimaux. Pour le format 3, le pilote lit l'étiquette ISRC de l'entrée cue de la piste courante, encode les cinq premiers caractères alphanumériques en symboles de sous-code sur 6 bits et les sept chiffres restants avec les bits 5-4 positionnés, conformément au tableau de la GD-ROM SPI v1.30. Lorsqu'une piste ne possède pas d'ISRC, les octets 14 à 20 de la réponse sont remplis avec 0x30, comme l'exige la spécification. Les tests unitaires couvrent les cas de catalogue et d'ISRC valides et manquants à l'aide d'un nouveau fixture cue."
+    },
+    {
+      "type": "heading",
+      "text": "MMU complet activé uniquement pour les titres concernés"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un nouveau drapeau de paramètre `fullMmu` est défini lors du chargement du jeu lorsque le numéro de produit est T65181N (partagé par Ghost Blade et Pier Solar) ou lorsque le numéro de produit est le générique T0000 et que l'identificateur de volume ISO9660 est égal à \"GANRYU\". L'identifiant de volume est lu une seule fois depuis le descripteur de volume principal au secteur 16, de sorte que les autres disques T0000 comme Dux et Dux 1.5 restent sur le chemin MMU rapide. Lorsque le drapeau est actif, le cœur SH-4 contourne le MMU rapide et parcourt l'UTLB complet à chaque accès mémoire, autorisant ainsi les défauts TLB de la file d'attente de stockage (store-queue) sur lesquels le code de protection s'appuie."
+    },
+    {
+      "type": "heading",
+      "text": "Vérification et limites restantes"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'auteur a testé les trois jeux sur macOS arm64 avec le dynarec et a confirmé qu'ils atteignent le gameplay. L'encodage ISRC pour les pistes qui contiennent réellement un ISRC n'a pas pu être validé sur du matériel réel car les titres testés n'interrogent que la piste de données ; l'implémentation suit directement le tableau de la spécification. Les utilisateurs peuvent vérifier le correctif en chargeant l'un des trois jeux et en consultant le journal de démarrage pour \"Enabling full MMU\", ainsi qu'en exécutant les nouvelles suites de tests GdromSubcodeTest et IsoFsTest, qui testent l'analyse du catalogue, de l'ISRC et de l'identifiant de volume par rapport aux fixtures cue fournies."
+    }
+  ]
+}

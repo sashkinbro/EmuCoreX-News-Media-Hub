@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "FlycastがGD-ROMサブコードとMMU処理を修正、3つのホームブリュータイトルが起動可能に",
+  "summary": "Ghost Blade、Pier Solar、Ganryuが、適切なメディアカタログ番号（MCN）とISRCサブコード応答の実装、およびコピー保護チェックのための完全なMMUエミュレーションの有効化により、起動できるようになりました。",
+  "heroAlt": "GD-ROMドライブが開いた状態でゲームディスクが見えるDreamcast本体",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "コピー保護",
+    "MMU",
+    "ホームブリュー",
+    "エミュレーション精度"
+  ],
+  "categoryLabels": {
+    "emulation": "エミュレーション",
+    "compatibility": "互換性"
+  },
+  "sourceLabels": {
+    "change": "Flycastプルリクエスト #2624",
+    "implementation": "パッチとレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "ゲームが起動しなかった理由"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade、Pier Solar and the Great Architects、GanryuはGD-ROMコピー保護を使用する商用ホームブリューリリースです。この保護はディスクからサブコードデータを読み取ります。具体的には、フォーマット2のメディアカタログ番号（MCN）とフォーマット3の国際標準レコーディングコード（ISRC）です。また、ストアキュー書き込みを通じてTLBミスを発生させ、完全にエミュレートされたMMUを必要とします。Flycastは以前、MCNにゼロを返し、ISRCにはQチャネルデータにフォールバックしていました。一方、高速MMUパスはゲームが期待する翻訳ルックアサイドバッファフォルトをスキップしていました。これら両方の欠落により保護チェックが失敗し、タイトルがブラックスクリーンでハングアップしていました。"
+    },
+    {
+      "type": "heading",
+      "text": "サブコード応答がGD-ROM SPI仕様に準拠"
+    },
+    {
+      "type": "paragraph",
+      "text": "GD-ROMドライバーはキューシートからCATALOGフィールドを抽出し、MCValビットをセットしたGET_SCDフォーマット2で返すようになりました。これによりカタログが正確に13桁の10進数字であることを検証します。フォーマット3では、現在のトラックのキューシートエントリからISRCタグを読み取り、最初の5文字の英数字を6ビットサブコードシンボルとして、残りの7桁をビット5-4をセットしてエンコードします。これはGD-ROM SPI v1.30の表と一致します。トラックにISRCがない場合、仕様要求通りに応答バイト14-20を0x30で埋めます。ユニットテストは、新しいキューフィクスチャを使用して、有効および欠落しているカタログとISRCの両ケースをカバーしています。"
+    },
+    {
+      "type": "heading",
+      "text": "影響を受けるタイトルのみで完全MMUを有効化"
+    },
+    {
+      "type": "paragraph",
+      "text": "ゲームロード時に、製品番号がT65181N（Ghost BladeとPier Solarで共有）である場合、または製品番号が汎用のT0000でISO9660ボリューム識別子が\"GANRYU\"と等しい場合、新しい設定フラグ`fullMmu`がセットされます。ボリュームIDはセクタ16のプライマリボリューム記述子から1回読み取られるため、DuxやDux 1.5などの他のT0000ディスクは高速MMUパスのままです。フラグがアクティブになると、SH-4コアは高速MMUをバイパスし、すべてのメモリアクセスで完全なUTLBをウォークするようになり、保護コードが依存するストアキューTLBミスを可能にします。"
+    },
+    {
+      "type": "heading",
+      "text": "検証と残りの制限事項"
+    },
+    {
+      "type": "paragraph",
+      "text": "作者はmacOS arm64上でダイナレックを使用して3つのゲームすべてをテストし、ゲームプレイに到達することを確認しました。実際にISRCを含むトラックのISRCエンコーディングは、テストされたタイトルがデータトラックのみをクエリするため、実機との検証はできませんでした。実装は仕様表に直接従っています。ユーザーは、3つのゲームのいずれかをロードし、ブートログで\"Enabling full MMU\"を確認することで、また新しいGdromSubcodeTestとIsoFsTestスイートを実行することで、提供されるキューフィクスチャに対するカタログ、ISRC、ボリュームIDのパースをテストすることで修正を検証できます。"
+    }
+  ]
+}

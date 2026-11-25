@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast naprawia obsługę subkodu GD-ROM i MMU dla trzech tytułów homebrew",
+  "summary": "Ghost Blade, Pier Solar i Ganryu teraz uruchamiają się po zaimplementowaniu odpowiednich odpowiedzi subkodu Media Catalog Number i ISRC, a także włączeniu pełnej emulacji MMU dla ich sprawdzania zabezpieczeń kopiowania.",
+  "heroAlt": "Konsola Dreamcast z otwartym napędem GD-ROM pokazująca dysk z grą",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "zabezpieczenia kopiowania",
+    "MMU",
+    "homebrew",
+    "dokładność emulacji"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "compatibility": "Zgodność"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2624",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dlaczego gry nie uruchamiały się"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects oraz Ganryu to komercyjne wydania homebrew, które wykorzystują zabezpieczenia kopiowania GD-ROM. Zabezpieczenie odczytuje dane subkodu z dysku — konkretnie Media Catalog Number (MCN) w formacie 2 oraz International Standard Recording Code (ISRC) w formacie 3 — a także wyzwala błędy TLB poprzez zapisy do kolejki zapisu (store-queue), które wymagają w pełni emulowanego MMU. Flycast wcześniej zwracał zera dla MCN i przechodził do danych kanału Q dla ISRC, podczas gdy jego szybka ścieżka MMU pomijała błędy bufora TLB, których oczekiwały gry. Obie luki powodowały niepowodzenie sprawdzania zabezpieczeń i zawieszanie się tytułów na czarnym ekranie."
+    },
+    {
+      "type": "heading",
+      "text": "Odpowiedzi subkodu teraz są zgodne ze specyfikacją GD-ROM SPI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sterownik GD-ROM teraz wyciąga pole CATALOG z arkusza cue i zwraca je w formacie GET_SCD 2 z ustawionym bitem MCVal, sprawdzając, że katalog składa się dokładnie z 13 cyfr dziesiętnych. Dla formatu 3 sterownik odczytuje tag ISRC z wpisu cue bieżącej ścieżki, koduje pierwsze pięć znaków alfanumerycznych jako 6-bitowe symbole subkodu, a pozostałe siedem cyfr z ustawionymi bitami 5-4, zgodnie z tabelą GD-ROM SPI v1.30. Gdy ścieżka nie posiada ISRC, bajty odpowiedzi 14-20 są wypełniane wartością 0x30, jak wymaga specyfikacja. Testy jednostkowe obejmują przypadki poprawne i brakujące katalogu oraz ISRC, wykorzystując nowy fixture cue."
+    },
+    {
+      "type": "heading",
+      "text": "Pełne MMU włączone tylko dla dotkniętych tytułów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nowa flaga ustawień `fullMmu` jest ustawiana podczas ładowania gry, gdy numer produktu to T65181N (wspólny dla Ghost Blade i Pier Solar) lub gdy numer produktu to generyczny T0000, a identyfikator woluminu ISO9660 wynosi \"GANRYU\". Identyfikator woluminu jest odczytywany raz z Primary Volume Descriptor w sektorze 16, dzięki czemu inne dyski T0000, takie jak Dux i Dux 1.5, pozostają na szybkiej ścieżce MMU. Gdy flaga jest aktywna, rdzeń SH-4 omija szybkie MMU i przeszukuje pełne UTLB przy każdym dostępie do pamięci, co pozwala na błędy TLB kolejki zapisu, na których polega kod zabezpieczeń."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i pozostałe ograniczenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor przetestował wszystkie trzy gry na macOS arm64 z dynarec i potwierdził, że osiągają one rozgrywkę. Kodowanie ISRC dla ścieżek, które faktycznie zawierają ISRC, nie mogło zostać zweryfikowane na prawdziwym sprzęcie, ponieważ testowane tytuły odpytywają tylko ścieżkę danych; implementacja bezpośrednio folgt tabeli specyfikacji. Użytkownicy mogą zweryfikować poprawkę, ładując dowolną z trzech gier i sprawdzając log startowy pod kątem komunikatu \"Enabling full MMU\" oraz uruchamiając nowe pakiety testowe GdromSubcodeTest i IsoFsTest, które testują parsowanie katalogu, ISRC i identyfikatora woluminu na dostarczonych fixture'ach cue."
+    }
+  ]
+}

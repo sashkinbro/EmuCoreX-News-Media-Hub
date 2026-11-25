@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast, 세 홈브루 타이틀의 GD-ROM 서브코드 및 MMU 처리 수정",
+  "summary": "Ghost Blade, Pier Solar, Ganryu가 적절한 미디어 카탈로그 번호와 ISRC 서브코드 응답 구현과 복사 보호 검사를 위한 전체 MMU 에뮬레이션 활성화로 이제 부팅됩니다.",
+  "heroAlt": "게임 디스크가 보이는 열린 GD-ROM 드라이브가 있는 드림캐스트 콘솔",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "copy protection",
+    "MMU",
+    "homebrew",
+    "emulation accuracy",
+    "플라이캐스트",
+    "드림캐스트",
+    "복사 보호"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "compatibility": "호환성"
+  },
+  "sourceLabels": {
+    "change": "Flycast 풀 리퀘스트 #2624",
+    "implementation": "패치 및 검토"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "게임이 시작되지 않는 이유"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects, Ganryu는 GD-ROM 복사 보호를 사용하는 상업용 홈브루 릴리스입니다. 이 보호는 디스크에서 서브코드 데이터를 읽습니다 — 구체적으로 포맷 2의 미디어 카탈로그 번호(MCN)와 포맷 3의 국제 표준 녹음 코드(ISRC) — 또한 스토어 큐 쓰기를 통해 TLB 미스를 유발하며 이는 완전히 에뮬레이션된 MMU를 필요로 합니다. Flycast는 이전에 MCN에 대해 0을 반환했고 ISRC에 대해 Q-채널 데이터로 폴백했으며, 빠른 MMU 경로는 게임이 기대하는 변환 색인 버퍼 폴트를 건너뛰었습니다. 두 가지 공백 모두 보호 검사를 실패하게 하여 타이틀이 검은 화면에서 멈추게 했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "서브코드 응답이 이제 GD-ROM SPI 사양을 따릅니다"
+    },
+    {
+      "type": "paragraph",
+      "text": "GD-ROM 드라이버는 이제 큐 시트에서 CATALOG 필드를 추출하여 MCVal 비트가 설정된 GET_SCD 포맷 2로 반환하며, 카탈로그가 정확히 13자리 십진수인지 검증합니다. 포맷 3의 경우 드라이버는 현재 트랙의 큐 엔트리에서 ISRC 태그를 읽고, 처음 5개의 영숫자를 6비트 서브코드 심볼로 인코딩하고 나머지 7자리는 비트 5-4를 설정하여 GD-ROM SPI v1.30 표와 일치시킵니다. 트랙에 ISRC가 없는 경우 응답 바이트 14-20이 사양이 요구하는 대로 0x30으로 채워집니다. 단위 테스트는 새로운 큐 픽스처를 사용하여 유효한 경우와 누락된 카탈로그 및 ISRC 경우를 모두 다룹니다."
+    },
+    {
+      "type": "heading",
+      "text": "영향을 받는 타이틀에만 전체 MMU 활성화"
+    },
+    {
+      "type": "paragraph",
+      "text": "새로운 설정 플래그 `fullMmu`는 게임 로드 중에 제품 번호가 T65181N(Ghost Blade와 Pier Solar이 공유)일 때 또는 제품 번호가 일반 T0000이고 ISO9660 볼륨 식별자가 \"GANRYU\"와 같을 때 설정됩니다. 볼륨 ID는 섹터 16의 기본 볼륨 설명자에서 한 번 읽으므로 Dux 및 Dux 1.5와 같은 다른 T0000 디스크는 빠른 MMU 경로에 남아 있습니다. 플래그가 활성화되면 SH-4 코어는 빠른 MMU를 우회하고 모든 메모리 접근 시 전체 UTLB를 순회하여 보호 코드가 의존하는 스토어 큐 TLB 미스를 허용합니다."
+    },
+    {
+      "type": "heading",
+      "text": "검증 및 남은 한계"
+    },
+    {
+      "type": "paragraph",
+      "text": "작성자는 dynarec를 사용하여 macOS arm64에서 세 게임 모두를 테스트하고 게임 플레이에 도달함을 확인했습니다. 실제로 ISRC를 포함하는 트랙의 ISRC 인코딩은 테스트된 타이틀이 데이터 트랙만 쿼리하기 때문에 실제 하드웨어와 검증할 수 없었으며, 구현은 사양 표를 직접 따릅니다. 사용자는 세 게임 중 하나를 로드하고 부팅 로그에서 \"Enabling full MMU\"를 확인하거나, 제공된 큐 픽스처에 대해 카탈로그, ISRC 및 볼륨 ID 파싱을 수행하는 새로운 GdromSubcodeTest 및 IsoFsTest 제품군을 실행하여 수정 사항을 검증할 수 있습니다."
+    }
+  ]
+}

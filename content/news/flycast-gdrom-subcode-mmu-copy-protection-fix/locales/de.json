@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast behebt GD-ROM-Subcode- und MMU-Handhabung für drei Homebrew-Titel",
+  "summary": "Ghost Blade, Pier Solar und Ganryu starten nun, nachdem die korrekten Media Catalog Number- und ISRC-Subcode-Antworten implementiert sowie die vollständige MMU-Emulation für ihre Kopierschutzprüfungen aktiviert wurden.",
+  "heroAlt": "Dreamcast-Konsole mit geöffnetem GD-ROM-Laufwerk, das eine Spiel-Disc zeigt",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "Kopierschutz",
+    "MMU",
+    "Homebrew",
+    "Emulationsgenauigkeit"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "compatibility": "Kompatibilität"
+  },
+  "sourceLabels": {
+    "change": "Flycast Pull Request #2624",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warum die Spiele nicht starten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects und Ganryu sind kommerzielle Homebrew-Veröffentlichungen, die GD-ROM-Kopierschutz verwenden. Der Schutz liest Subcode-Daten von der Disc – speziell die Media Catalog Number (MCN) im Format 2 und den International Standard Recording Code (ISRC) im Format 3 – und löst außerdem TLB-Fehlzugriffe durch Store-Queue-Schreibzugriffe aus, die ein vollständig emuliertes MMU erfordern. Flycast gab zuvor Nullen für die MCN zurück und griff für den ISRC auf Q-Kanal-Daten zurück, während der schnelle MMU-Pfad die Translation-Lookaside-Buffer-Fehler übersprang, die die Spiele erwarten. Beide Lücken führten dazu, dass die Schutzprüfungen fehlschlugen und die Titel an einem schwarzen Bildschirm hingen blieben."
+    },
+    {
+      "type": "heading",
+      "text": "Subcode-Antworten folgen nun der GD-ROM-SPI-Spezifikation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der GD-ROM-Treiber extrahiert nun das CATALOG-Feld aus dem Cue-Sheet und gibt es im GET_SCD-Format 2 mit gesetztem MCVal-Bit zurück, wobei validiert wird, dass der Katalog genau 13 Dezimalziffern umfasst. Für Format 3 liest der Treiber das ISRC-Tag aus dem Cue-Eintrag des aktuellen Tracks, kodiert die ersten fünf alphanumerischen Zeichen als 6-Bit-Subcode-Symbole und die verbleibenden sieben Ziffern mit den Bits 5-4 gesetzt, entsprechend der GD-ROM-SPI-v1.30-Tabelle. Fehlt einem Track ein ISRC, werden die Antwortbytes 14-20 mit 0x30 gefüllt, wie die Spezifikation verlangt. Unit-Tests decken sowohl gültige als auch fehlende Katalog- und ISRC-Fälle mithilfe eines neuen Cue-Fixtures ab."
+    },
+    {
+      "type": "heading",
+      "text": "Vollständiges MMU nur für die betroffenen Titel aktiviert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ein neues Einstellungs-Flag `fullMmu` wird beim Laden des Spiels gesetzt, wenn die Produktnummer T65181N ist (gemeinsam von Ghost Blade und Pier Solar verwendet) oder wenn die Produktnummer die generische T0000 ist und der ISO9660-Volume-Identifier „GANRYU“ lautet. Die Volume-ID wird einmalig aus dem Primary Volume Descriptor in Sektor 16 eingelesen, sodass andere T0000-Discs wie Dux und Dux 1.5 auf dem schnellen MMU-Pfad verbleiben. Ist das Flag aktiv, umgeht der SH-4-Kern das schnelle MMU und durchläuft bei jedem Speicherzugriff das vollständige UTLB, wodurch die Store-Queue-TLB-Fehlzugriffe ermöglicht werden, auf die der Schutzcode angewiesen ist."
+    },
+    {
+      "type": "heading",
+      "text": "Verifizierung und verbleibende Einschränkungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Autor testete alle drei Spiele unter macOS arm64 mit dem Dynarec und bestätigte, dass sie das Gameplay erreichen. Die ISRC-Kodierung für Tracks, die tatsächlich einen ISRC enthalten, konnte nicht an echter Hardware validiert werden, da die getesteten Titel nur den Data-Track abfragen; die Implementierung folgt direkt der Spezifikationstabelle. Nutzer können den Fix verifizieren, indem sie eines der drei Spiele laden und im Boot-Log nach „Enabling full MMU“ suchen sowie die neuen Test-Suiten GdromSubcodeTest und IsoFsTest ausführen, die das Parsen von Katalog, ISRC und Volume-ID anhand der bereitgestellten Cue-Fixtures prüfen."
+    }
+  ]
+}

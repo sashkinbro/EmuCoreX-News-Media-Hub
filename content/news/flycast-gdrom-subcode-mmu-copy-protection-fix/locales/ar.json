@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "ar",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast يصلح معالجة الـ subcode لـ GD-ROM والـ MMU لثلاثة من ألعاب الـ homebrew",
+  "summary": "أصبحت ألعاب Ghost Blade وPier Solar وGanryu تعمل الآن بعد تنفيذ ردود الـ subcode الصحيحة لـ Media Catalog Number وISRC، بالإضافة إلى تفعيل محاكاة MMU كاملة لفحوصات حماية النسخ الخاصة بها.",
+  "heroAlt": "جهاز Dreamcast مع فتح محرك أقراص GD-ROM يظهر قرص لعبة",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "copy protection",
+    "حماية النسخ",
+    "MMU",
+    "homebrew",
+    "emulation accuracy",
+    "دقة المحاكاة"
+  ],
+  "categoryLabels": {
+    "emulation": "المحاكاة",
+    "compatibility": "التوافق"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2624",
+    "implementation": "التنفيذ والمراجعة"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "لماذا لم تكن الألعاب تبدأ"
+    },
+    {
+      "type": "paragraph",
+      "text": "تعد Ghost Blade وPier Solar and the Great Architects وGanryu إصدارات homebrew تجارية تستخدم حماية نسخ GD-ROM. تقرأ الحماية بيانات الـ subcode من القرص — وتحديداً Media Catalog Number (MCN) في التنسيق 2 وInternational Standard Recording Code (ISRC) في التنسيق 3 — كما تطلق أخطاء TLB misses من خلال كتابات store-queue التي تتطلب MMU محاكى بالكامل. كان Flycast سابقاً يعيد أصفاراً لـ MCN وينتقل إلى بيانات Q-channel لـ ISRC، بينما كان مسار MMU السريع يتخطى أخطاء translation lookaside buffer التي تتوقعها الألعاب. تسببت هاتان الفجوتان في فشل فحوصات الحماية وتوقف الألعاب عند شاشة سوداء."
+    },
+    {
+      "type": "heading",
+      "text": "ردود الـ subcode تتبع الآن مواصفات GD-ROM SPI"
+    },
+    {
+      "type": "paragraph",
+      "text": "يقوم برنامج تشغيل GD-ROM الآن باستخراج حقل CATALOG من ورقة cue ويعيده في GET_SCD التنسيق 2 مع تعيين بت MCVal، مما يؤكد أن الكتالوج يتكون من 13 رقماً عشرياً بالضبط. بالنسبة للتنسيق 3، يقرأ برنامج التشغيل علامة ISRC من إدخال cue للمسار الحالي، ويقوم بتشفير أول خمسة أحرف أبجدية رقمية كرموز subcode ذات 6 بتات والسبعة أرقام المتبقية مع تعيين البتات 5-4، بما يطابق جدول GD-ROM SPI v1.30. عندما يفتقر المسار إلى ISRC، يتم ملء بايتات الرد 14-20 بـ 0x30 كما تتطلب المواصفات. تغطي اختبارات الوحدة كلاً من حالات الكتالوج وISRC الصالحة والمفقودة باستخدام cue fixture جديد."
+    },
+    {
+      "type": "heading",
+      "text": "تفعيل MMU الكامل للعناوين المتأثرة فقط"
+    },
+    {
+      "type": "paragraph",
+      "text": "يتم تعيين علم إعدادات جديد `fullMmu` أثناء تحميل اللعبة عندما يكون رقم المنتج T65181N (المشترك بين Ghost Blade وPier Solar) أو عندما يكون رقم المنتج هو T0000 العام ويكون معرف وحدة تخزين ISO9660 يساوي \"GANRYU\". يتم قراءة معرف وحدة التخزين مرة واحدة من Primary Volume Descriptor في القطاع 16، لذا تظل أقراص T0000 الأخرى مثل Dux وDux 1.5 على مسار MMU السريع. عندما يكون العلم نشطاً، تتجاوز نواة SH-4 مسار MMU السريع وتفحص UTLB بالكامل عند كل وصول للذاكرة، مما يسمح بحدوث store-queue TLB misses التي يعتمد عليها كود الحماية."
+    },
+    {
+      "type": "heading",
+      "text": "التحقق والقيود المتبقية"
+    },
+    {
+      "type": "paragraph",
+      "text": "قام المؤلف باختبار جميع الألعاب الثلاث على macOS arm64 باستخدام dynarec وأكد وصولها إلى مرحلة اللعب. لم يكن من الممكن التحقق من تشفير ISRC للمسارات التي تحتوي بالفعل على ISRC مقابل الأجهزة الحقيقية لأن العناوين المختبرة تستعلم فقط عن مسار البيانات؛ يتبع التنفيذ جدول المواصفات مباشرة. يمكن للمستخدمين التحقق من الإصلاح عن طريق تحميل أي من الألعاب الثلاث والتحقق من سجل الإقلاع بحثاً عن \"Enabling full MMU\" وعن طريق تشغيل مجموعات اختبار GdromSubcodeTest وIsoFsTest الجديدة، والتي تختبر تحليل الكتالوج وISRC ومعرف وحدة التخزين مقابل cue fixtures المتوفرة."
+    }
+  ]
+}

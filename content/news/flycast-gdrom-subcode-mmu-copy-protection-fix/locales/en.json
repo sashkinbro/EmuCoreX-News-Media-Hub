@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast fixes GD-ROM subcode and MMU handling for three homebrew titles",
+  "summary": "Ghost Blade, Pier Solar and Ganryu now boot after implementing proper Media Catalog Number and ISRC subcode replies, plus enabling full MMU emulation for their copy protection checks.",
+  "heroAlt": "Dreamcast console with GD-ROM drive open showing a game disc",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "copy protection",
+    "MMU",
+    "homebrew",
+    "emulation accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "compatibility": "Compatibility"
+  },
+  "sourceLabels": {
+    "change": "Flycast pull request #2624",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Why the games would not start"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ghost Blade, Pier Solar and the Great Architects, and Ganryu are commercial homebrew releases that use GD-ROM copy protection. The protection reads subcode data from the disc — specifically the Media Catalog Number (MCN) in format 2 and the International Standard Recording Code (ISRC) in format 3 — and also triggers TLB misses through store-queue writes that require a fully emulated MMU. Flycast previously returned zeroes for the MCN and fell through to Q-channel data for the ISRC, while its fast MMU path skipped the translation lookaside buffer faults the games expect. Both gaps caused the protection checks to fail and the titles to hang at a black screen."
+    },
+    {
+      "type": "heading",
+      "text": "Subcode replies now follow the GD-ROM SPI specification"
+    },
+    {
+      "type": "paragraph",
+      "text": "The GD-ROM driver now extracts the CATALOG field from the cue sheet and returns it in GET_SCD format 2 with the MCVal bit set, validating that the catalog is exactly 13 decimal digits. For format 3 the driver reads the ISRC tag from the current track's cue entry, encodes the first five alphanumeric characters as 6-bit subcode symbols and the remaining seven digits with bits 5-4 set, matching the GD-ROM SPI v1.30 table. When a track lacks an ISRC the reply bytes 14-20 are filled with 0x30 as the specification requires. Unit tests cover both valid and missing catalog and ISRC cases using a new cue fixture."
+    },
+    {
+      "type": "heading",
+      "text": "Full MMU enabled only for the affected titles"
+    },
+    {
+      "type": "paragraph",
+      "text": "A new settings flag `fullMmu` is set during game load when the product number is T65181N (shared by Ghost Blade and Pier Solar) or when the product number is the generic T0000 and the ISO9660 volume identifier equals \"GANRYU\". The volume ID is read once from the Primary Volume Descriptor at sector 16, so other T0000 discs such as Dux and Dux 1.5 remain on the fast MMU path. When the flag is active the SH-4 core bypasses the fast MMU and walks the full UTLB on every memory access, allowing the store-queue TLB misses that the protection code relies on."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and remaining limits"
+    },
+    {
+      "type": "paragraph",
+      "text": "The author tested all three games on macOS arm64 with the dynarec and confirmed they reach gameplay. The ISRC encoding for tracks that actually contain an ISRC could not be validated against real hardware because the tested titles only query the data track; the implementation follows the spec table directly. Users can verify the fix by loading any of the three games and checking the boot log for \"Enabling full MMU\" and by running the new GdromSubcodeTest and IsoFsTest suites, which exercise catalog, ISRC and volume-ID parsing against the provided cue fixtures."
+    }
+  ]
+}

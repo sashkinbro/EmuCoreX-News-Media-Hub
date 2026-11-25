@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "flycast-gdrom-subcode-mmu-copy-protection-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Flycast 修复 GD-ROM 子码和 MMU 处理，使三款自制游戏可运行",
+  "summary": "在实现正确的媒体目录号 (MCN) 和 ISRC 子码回复，并为其复制保护检查启用完整 MMU 模拟后，《Ghost Blade》、《Pier Solar》和《Ganryu》现已能够启动。",
+  "heroAlt": "打开 GD-ROM 驱动器并显示游戏光盘的 Dreamcast 主机",
+  "searchKeywords": [
+    "Flycast",
+    "Dreamcast",
+    "GD-ROM",
+    "复制保护",
+    "MMU",
+    "自制游戏",
+    "模拟准确性"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "compatibility": "兼容性"
+  },
+  "sourceLabels": {
+    "change": "Flycast 拉取请求 #2624",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "游戏无法启动的原因"
+    },
+    {
+      "type": "paragraph",
+      "text": "《Ghost Blade》、《Pier Solar and the Great Architects》和《Ganryu》是使用 GD-ROM 复制保护的商业自制游戏。该保护会从光盘读取子码数据——具体为格式 2 的媒体目录号 (MCN) 和格式 3 的国际标准录音代码 (ISRC)——并通过存储队列写入触发 TLB 未命中，这需要完整模拟的 MMU。Flycast 此前对 MCN 返回零值，对 ISRC 则回退到 Q 通道数据，而其快速 MMU 路径跳过了游戏所期望的转换旁路缓冲故障。这两个缺口导致保护检查失败，游戏在黑屏处卡住。"
+    },
+    {
+      "type": "heading",
+      "text": "子码回复现遵循 GD-ROM SPI 规范"
+    },
+    {
+      "type": "paragraph",
+      "text": "GD-ROM 驱动现在从 CUE 表中提取 CATALOG 字段，并在 GET_SCD 格式 2 中返回，同时设置 MCVal 位，验证目录号恰好为 13 位十进制数字。对于格式 3，驱动从当前轨道的 CUE 条目读取 ISRC 标签，将前五个字母数字字符编码为 6 位子码符号，将剩余七位数字设置位 5-4，符合 GD-ROM SPI v1.30 表。当轨道缺少 ISRC 时，回复字节 14-20 填充 0x30，符合规范要求。单元测试使用新的 CUE 固件覆盖了目录号和 ISRC 存在及缺失的情况。"
+    },
+    {
+      "type": "heading",
+      "text": "仅为受影响标题启用完整 MMU"
+    },
+    {
+      "type": "paragraph",
+      "text": "在游戏加载时，当产品编号为 T65181N（《Ghost Blade》和《Pier Solar》共用）或产品编号为通用的 T0000 且 ISO9660 卷标识符等于 \"GANRYU\" 时，会设置新的设置标志 `fullMmu`。卷 ID 从扇区 16 的主卷描述符中读取一次，因此其他 T0000 光盘（如《Dux》和《Dux 1.5》）仍保持在快速 MMU 路径上。当标志激活时，SH-4 核心绕过快速 MMU，在每次内存访问时遍历完整的 UTLB，从而允许保护代码所依赖的存储队列 TLB 未命中。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与剩余限制"
+    },
+    {
+      "type": "paragraph",
+      "text": "作者在搭载 dynarec 的 macOS arm64 上测试了所有三款游戏，确认它们均能进入游戏画面。由于测试标题仅查询数据轨道，实际包含 ISRC 的轨道的 ISRC 编码无法通过真机验证；实现直接遵循规范表。用户可通过加载任意一款游戏并在启动日志中查找 \"Enabling full MMU\"，以及运行新的 GdromSubcodeTest 和 IsoFsTest 测试套件（它们针对提供的 CUE 固件测试目录号、ISRC 和卷 ID 解析）来验证修复。"
+    }
+  ]
+}
