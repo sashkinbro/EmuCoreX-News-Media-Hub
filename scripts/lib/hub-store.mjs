@@ -82,7 +82,11 @@ export function collectStore() {
         featured: listing.featured === true,
         publishedAt: listing.publishedAt,
         categories: listing.categories ?? [],
-        tags: listing.tags ?? [],
+        // Controller skins are drawn for PlayStation buttons unless they say otherwise; apps of other families
+        // (Nintendo, Sega) filter by this tag.
+        tags: kind === "controls" && !(listing.tags ?? []).some((tag) => tag.startsWith("platform:"))
+          ? [...(listing.tags ?? []), "platform:playstation"]
+          : listing.tags ?? [],
         name: listing.name,
         description: listing.description,
         swatch,
