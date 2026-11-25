@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimalizace redundantních vykreslovacích úloh v OpenGL a Vulkan",
+  "summary": "Vita3K snižuje režii CPU a GPU eliminací redundantního hashování textur, přeskakováním neviditelných barevných výstupů při průchodech pouze s hloubkou a povolením rychlého mazání bufferů hloubky a stencilu na úrovni ovladače.",
+  "heroAlt": "Detail přední strany PlayStation Vita, zobrazující obrazovku a ikonický D-pad a akční tlačítka.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emulátor",
+    "OpenGL optimalizace",
+    "Vulkan výkon",
+    "hashování textur",
+    "shadow mapping",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden",
+    "emulace",
+    "grafika"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4450",
+    "implementation": "Patch a recenze"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Režie redundantní správy stavu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulace grafického API GXM konzole PlayStation Vita vyžaduje překlad komplexních stavů hosta do moderních hostitelských API, jako jsou OpenGL a Vulkan. Dříve renderer prováděl několik opakujících se úloh, které spotřebovávaly značný čas zpracování, aniž by změnily výsledný obraz. Emulátor například znovu hashoval cachované textury pokaždé, když byly navázány na shader, i když se základní paměť hosta nezměnila. Průchody pouze s hloubkou – běžné v moderních titulech pro shadow mapping – navíc často spouštěly fragmentové shadery na celou obrazovku do fiktivních barevných příloh, čímž plýtvaly cykly GPU na výstup, který hra nikdy neuvidí ani nepoužije. Tyto neefektivity vytvářely zbytečná úzká hrdla ve scénářích omezených jak CPU, tak GPU."
+    },
+    {
+      "type": "heading",
+      "text": "Generační hashování a vyřazování vykreslování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktualizace zavádí „generační“ systém pro hashování textur napříč backendy OpenGL i Vulkan. Textura je nyní znovu hashována pouze jednou za generaci, přičemž generace končí pouze tehdy, když mohla být paměť hosta změněna, například mezi seznamy příkazů nebo po zpětném čtení. To drasticky snižuje režii CPU ve scénách náročných na vykreslování. Renderer navíc nyní detekuje scény bez barevných ploch a maskuje zápisy barev, pokud pozdější operace tato data specificky nečte zpět. Pokud se zjistí, že vykreslovací volání nemá žádný pozorovatelný vliv na barvu, hloubku, stencil nebo paměť hosta, je zcela přeskočeno. Nakonec jsou mazání hloubky a stencilu v OpenGL sloučena do jednoho volání, aby se usnadnilo rychlé mazání na úrovni hardwaru."
+    },
+    {
+      "type": "heading",
+      "text": "Měřitelný dopad na výkon"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tyto optimalizace poskytují měřitelná zlepšení ve scénářích omezených CPU i GPU. U hry Soul Sacrifice Delta, která je často omezena vykreslovacím vláknem CPU, klesl čas strávený na snímek o 54 %, čímž se celkové využití CPU procesu snížilo z 86 % na 69 % jednoho jádra. U úloh náročných na GPU, jako je spouštění Persona 4 Golden při 8x interním rozlišení, vedlo snížení redundantní práce fragmentového shaderu pro stínové mapy k 20% nárůstu snímkové frekvence. Eliminací režie fiktivních barevných příloh může hostitelské GPU efektivněji zpracovávat průchody pouze s hloubkou, což vede k plynulejšímu výkonu v titulech s komplexním osvětlením a vysokým škálováním rozlišení."
+    },
+    {
+      "type": "heading",
+      "text": "Technický rozsah a ověření"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změny ovlivňují backendy OpenGL i Vulkan, ačkoliv kombinované mazání hloubky a stencilu je specifické pro OpenGL, aby lépe odpovídalo očekáváním ovladačů pro balené buffery. Vývojáři a uživatelé mohou tato vylepšení ověřit sledováním časů snímků a využití CPU v titulech s vysokým počtem vykreslovacích volání nebo intenzivním využíváním stínových objemů. I když tyto optimalizace výrazně snižují náklady na správu stavu a redundantní vykreslování, neobcházejí základní požadavky API GXM. Budoucí vývoj se nadále zaměřuje na zpřesnění způsobu, jakým emulátor sleduje úpravy paměti, aby bylo zajištěno, že generační hashování zůstane přesné, aniž by vynechalo legitimní aktualizace textur ze softwaru hosta."
+    }
+  ]
+}

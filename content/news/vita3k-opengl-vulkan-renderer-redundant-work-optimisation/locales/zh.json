@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "优化 OpenGL 和 Vulkan 中的冗余渲染任务",
+  "summary": "Vita3K 通过消除冗余的纹理哈希、跳过深度通道中不可见的颜色输出，以及为深度和模板缓冲启用驱动程序级的快速清除，降低了 CPU 和 GPU 的开销。",
+  "heroAlt": "PlayStation Vita 正面的特写，展示了屏幕以及标志性的方向键和动作按钮。",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita 模拟器",
+    "OpenGL 优化",
+    "Vulkan 性能",
+    "纹理哈希 (texture hashing)",
+    "阴影映射 (shadow mapping)",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "Vita3K 拉取请求 #4450",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "冗余状态管理的开销"
+    },
+    {
+      "type": "paragraph",
+      "text": "模拟 PlayStation Vita 的 GXM 图形 API 需要将复杂的客户机状态转换为 OpenGL 和 Vulkan 等现代主机 API。此前，渲染器执行了多项重复性任务，这些任务在不改变最终图像的情况下消耗了大量的处理时间。例如，每当纹理绑定到着色器时，模拟器都会对缓存的纹理进行重新哈希处理，即使底层的客户机内存并未发生变化。此外，在现代游戏中常用于阴影映射的仅深度通道（depth-only passes）通常会将全屏片段着色器执行到虚拟颜色附件中，从而在游戏永远不会看到或使用的输出上浪费 GPU 周期。这些低效行为在 CPU 受限和 GPU 受限的情况下都造成了不必要的瓶颈。"
+    },
+    {
+      "type": "heading",
+      "text": "分代哈希与绘制剔除"
+    },
+    {
+      "type": "paragraph",
+      "text": "此次更新为 OpenGL 和 Vulkan 后端引入了纹理哈希的“分代（generation）”系统。现在，纹理在每一代中仅重新哈希一次，而只有当客户机内存可能被修改时（例如在命令列表之间或回读之后），一代才会结束。这极大地降低了绘制密集型场景中的 CPU 开销。此外，渲染器现在可以检测没有颜色表面的场景，并屏蔽颜色写入，除非后续操作明确回读该数据。如果确定某个绘制调用对颜色、深度、模板或客户机内存没有可观察的影响，则会将其完全跳过。最后，OpenGL 的深度和模板清除被合并为单个调用，以促进硬件级的快速清除。"
+    },
+    {
+      "type": "heading",
+      "text": "可衡量的性能提升"
+    },
+    {
+      "type": "paragraph",
+      "text": "这些优化在 CPU 受限和 GPU 受限的情况下都带来了可衡量的改进。在经常受限于 CPU 渲染线程的 Soul Sacrifice Delta 中，每帧耗时下降了 54%，使整个进程的 CPU 占用率从单核的 86% 降至 69%。对于 GPU 密集型任务，例如以 8x 内部分辨率运行 Persona 4 Golden，阴影映射中冗余片段着色器工作的减少使帧率提升了 20%。通过消除虚拟颜色附件的开销，主机 GPU 可以更高效地处理仅深度通道，从而在具有复杂光照和高分辨率缩放的游戏中实现更流畅的性能。"
+    },
+    {
+      "type": "heading",
+      "text": "技术范围与验证"
+    },
+    {
+      "type": "paragraph",
+      "text": "这些更改影响了 OpenGL 和 Vulkan 后端，不过合并深度模板清除是 OpenGL 特有的，旨在更好地符合驱动程序对打包缓冲区的预期。开发者和用户可以通过监控具有高绘制调用次数或大量使用阴影卷的游戏中的帧时间和 CPU 利用率来验证这些改进。虽然这些优化显著降低了状态管理和冗余绘制的成本，但它们并未绕过 GXM API 的基本要求。未来的开发将继续专注于完善模拟器跟踪内存修改的方式，以确保基于分代的哈希保持准确，同时不会错过来自客户机软件的合法纹理更新。"
+    }
+  ]
+}

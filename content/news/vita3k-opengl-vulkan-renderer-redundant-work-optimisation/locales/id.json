@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mengoptimalkan Tugas Rendering Redundan di OpenGL dan Vulkan",
+  "summary": "Vita3K mengurangi overhead CPU dan GPU dengan menghilangkan hashing tekstur yang redundan, melewatkan output warna yang tidak terlihat pada pass depth-only, dan mengaktifkan fast clear tingkat driver untuk buffer depth dan stencil.",
+  "heroAlt": "Close-up bagian depan PlayStation Vita, menampilkan layar serta D-pad dan tombol aksi yang ikonik.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulator PlayStation Vita",
+    "optimasi OpenGL",
+    "performa Vulkan",
+    "hashing tekstur",
+    "shadow mapping",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4450",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Overhead dari Manajemen State yang Redundan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mengemulasi API grafis GXM milik PlayStation Vita memerlukan penerjemahan state guest yang kompleks ke dalam API host modern seperti OpenGL dan Vulkan. Sebelumnya, renderer melakukan beberapa tugas berulang yang memakan waktu pemrosesan signifikan tanpa mengubah gambar akhir. Sebagai contoh, emulator melakukan hashing ulang pada tekstur yang di-cache setiap kali tekstur tersebut diikat (bound) ke shader, bahkan jika memori guest di bawahnya tidak berubah. Selain itu, pass depth-only—yang umum pada judul modern untuk shadow mapping—sering kali mengeksekusi fragment shader layar penuh ke dalam attachment warna dummy, membuang siklus GPU pada output yang tidak akan pernah dilihat atau digunakan oleh game. Inefisiensi ini menciptakan bottleneck yang tidak perlu baik dalam skenario CPU-bound maupun GPU-bound."
+    },
+    {
+      "type": "heading",
+      "text": "Hashing Generasional dan Draw Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembaruan ini memperkenalkan sistem \"generasi\" untuk hashing tekstur di backend OpenGL dan Vulkan. Sebuah tekstur kini hanya di-hash ulang sekali per generasi, di mana sebuah generasi berakhir hanya ketika memori guest mungkin telah dimodifikasi, seperti di antara command list atau setelah readback. Hal ini secara drastis mengurangi overhead CPU dalam adegan yang padat draw call. Lebih jauh lagi, renderer kini mendeteksi adegan tanpa permukaan warna dan memasker penulisan warna kecuali jika operasi selanjutnya secara khusus membaca kembali data tersebut. Jika sebuah draw call ditentukan tidak memiliki efek yang dapat diamati pada warna, depth, stencil, atau memori guest, draw call tersebut akan dilewati sepenuhnya. Terakhir, pembersihan (clear) depth dan stencil pada OpenGL digabungkan menjadi satu panggilan tunggal untuk memfasilitasi fast clear tingkat perangkat keras."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak Terukur pada Performa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Optimasi ini memberikan peningkatan terukur baik dalam skenario CPU-bound maupun GPU-bound. Dalam Soul Sacrifice Delta, yang sering kali dibatasi oleh thread render CPU, waktu yang dihabiskan per frame turun sebesar 54%, mengurangi penggunaan CPU proses secara keseluruhan dari 86% menjadi 69% dari satu core. Untuk tugas-tugas berat GPU, seperti menjalankan Persona 4 Golden pada resolusi internal 8x, pengurangan kerja fragment shader yang redundan untuk shadow map menghasilkan peningkatan frame rate sebesar 20%. Dengan menghilangkan overhead dari attachment warna dummy, GPU host dapat memproses pass depth-only secara lebih efisien, yang mengarah pada performa yang lebih lancar dalam judul-judul dengan pencahayaan kompleks dan penskalaan resolusi tinggi."
+    },
+    {
+      "type": "heading",
+      "text": "Cakupan Teknis dan Verifikasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan ini memengaruhi backend OpenGL dan Vulkan, meskipun penggabungan pembersihan depth-stencil bersifat spesifik untuk OpenGL agar lebih selaras dengan ekspektasi driver untuk buffer yang dikemas (packed buffers). Pengembang dan pengguna dapat memverifikasi peningkatan ini dengan memantau waktu frame dan utilisasi CPU dalam judul-judul dengan jumlah draw call yang tinggi atau penggunaan shadow volume yang intensif. Meskipun optimasi ini secara signifikan mengurangi biaya manajemen state dan draw yang redundan, hal tersebut tidak mengabaikan persyaratan mendasar dari API GXM. Pengembangan di masa mendatang terus berfokus pada penyempurnaan cara emulator melacak modifikasi memori untuk memastikan hashing berbasis generasi tetap akurat tanpa melewatkan pembaruan tekstur yang sah dari perangkat lunak guest."
+    }
+  ]
+}

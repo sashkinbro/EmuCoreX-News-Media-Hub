@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimisation des tâches de rendu redondantes dans OpenGL et Vulkan",
+  "summary": "Vita3K réduit la charge CPU et GPU en éliminant le hachage de texture redondant, en ignorant les sorties de couleur invisibles lors des passes de profondeur seule, et en activant les effacements rapides au niveau du pilote pour les tampons de profondeur et de stencil.",
+  "heroAlt": "Un gros plan de la face avant de la PlayStation Vita, montrant l'écran ainsi que la croix directionnelle et les boutons d'action emblématiques.",
+  "searchKeywords": [
+    "Vita3K",
+    "émulateur PlayStation Vita",
+    "optimisation OpenGL",
+    "performance Vulkan",
+    "hachage de texture",
+    "shadow mapping",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden",
+    "rendu graphique"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "Pull request Vita3K #4450",
+    "implementation": "Correctif et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "La surcharge liée à la gestion d'état redondante"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'émulation de l'API graphique GXM de la PlayStation Vita nécessite la traduction d'états invités complexes vers des API hôtes modernes comme OpenGL et Vulkan. Auparavant, le moteur de rendu effectuait plusieurs tâches répétitives qui consommaient un temps de traitement important sans modifier l'image finale. Par exemple, l'émulateur recalculait le hachage des textures en cache à chaque fois qu'elles étaient liées à un shader, même si la mémoire invitée sous-jacente n'avait pas changé. De plus, les passes de profondeur seule — courantes dans les titres modernes pour le shadow mapping — exécutaient souvent des fragment shaders en plein écran vers des attachements de couleur factices, gaspillant des cycles GPU pour une sortie qui ne serait jamais vue ni utilisée par le jeu. Ces inefficacités créaient des goulots d'étranglement inutiles dans les scénarios limités par le CPU comme par le GPU."
+    },
+    {
+      "type": "heading",
+      "text": "Hachage générationnel et culling d'appels de dessin"
+    },
+    {
+      "type": "paragraph",
+      "text": "La mise à jour introduit un système de « génération » pour le hachage de texture sur les backends OpenGL et Vulkan. Une texture n'est désormais hachée qu'une seule fois par génération, une génération ne se terminant que lorsque la mémoire invitée est susceptible d'avoir été modifiée, par exemple entre des listes de commandes ou après une relecture (readback). Cela réduit considérablement la charge CPU dans les scènes riches en appels de dessin. De plus, le moteur de rendu détecte désormais les scènes sans surfaces de couleur et masque les écritures de couleur, à moins qu'une opération ultérieure ne relise spécifiquement ces données. Si un appel de dessin (draw call) est déterminé comme n'ayant aucun effet observable sur la couleur, la profondeur, le stencil ou la mémoire invitée, il est entièrement ignoré. Enfin, les effacements (clears) de profondeur et de stencil OpenGL sont combinés en un seul appel pour faciliter les effacements rapides au niveau matériel."
+    },
+    {
+      "type": "heading",
+      "text": "Impact mesurable sur les performances"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ces optimisations apportent des améliorations mesurables dans les scénarios limités par le CPU et le GPU. Dans Soul Sacrifice Delta, qui est souvent limité par le thread de rendu CPU, le temps passé par image a chuté de 54 %, réduisant l'utilisation globale du CPU par le processus de 86 % à 69 % d'un cœur. Pour les tâches lourdes pour le GPU, comme l'exécution de Persona 4 Golden en résolution interne 8x, la réduction du travail redondant des fragment shaders pour les shadow maps a entraîné une augmentation de 20 % de la fréquence d'images. En éliminant la surcharge des attachements de couleur factices, le GPU hôte peut traiter plus efficacement les passes de profondeur seule, ce qui conduit à des performances plus fluides dans les titres dotés d'un éclairage complexe et d'une mise à l'échelle de haute résolution."
+    },
+    {
+      "type": "heading",
+      "text": "Portée technique et vérification"
+    },
+    {
+      "type": "paragraph",
+      "text": "Les changements affectent les backends OpenGL et Vulkan, bien que l'effacement combiné profondeur-stencil soit spécifique à OpenGL pour mieux s'aligner sur les attentes des pilotes pour les tampons packés. Les développeurs et les utilisateurs peuvent vérifier ces améliorations en surveillant les temps de trame et l'utilisation du CPU dans les titres ayant un nombre élevé d'appels de dessin ou une utilisation intensive des volumes d'ombre. Bien que ces optimisations réduisent considérablement le coût de la gestion d'état et des dessins redondants, elles ne contournent pas les exigences fondamentales de l'API GXM. Le développement futur continue de se concentrer sur l'affinage de la manière dont l'émulateur suit les modifications de mémoire afin de garantir que le hachage basé sur les générations reste précis sans manquer les mises à jour de texture légitimes du logiciel invité."
+    }
+  ]
+}

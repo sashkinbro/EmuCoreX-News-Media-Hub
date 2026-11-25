@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimizing Redundant Rendering Tasks in OpenGL and Vulkan",
+  "summary": "Vita3K reduces CPU and GPU overhead by eliminating redundant texture hashing, skipping invisible color outputs in depth-only passes, and enabling driver-level fast clears for depth and stencil buffers.",
+  "heroAlt": "A close-up of the PlayStation Vita's front face, showing the screen and the iconic D-pad and action buttons.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emulator",
+    "OpenGL optimization",
+    "Vulkan performance",
+    "texture hashing",
+    "shadow mapping",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4450",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Overhead of Redundant State Management"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulating the PlayStation Vita's GXM graphics API requires translating complex guest states into modern host APIs like OpenGL and Vulkan. Previously, the renderer performed several repetitive tasks that consumed significant processing time without changing the final image. For instance, the emulator rehashed cached textures every time they were bound to a shader, even if the underlying guest memory had not changed. Additionally, depth-only passes—common in modern titles for shadow mapping—were often executing full-screen fragment shaders into dummy color attachments, wasting GPU cycles on output that would never be seen or used by the game. These inefficiencies created unnecessary bottlenecks in both CPU-bound and GPU-bound scenarios."
+    },
+    {
+      "type": "heading",
+      "text": "Generational Hashing and Draw Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "The update introduces a \"generation\" system for texture hashing across both OpenGL and Vulkan backends. A texture is now only rehashed once per generation, where a generation ends only when guest memory might have been modified, such as between command lists or after a readback. This drastically reduces CPU overhead in draw-heavy scenes. Furthermore, the renderer now detects scenes without color surfaces and masks color writes unless a later operation specifically reads that data back. If a draw call is determined to have no observable effect on color, depth, stencil, or guest memory, it is skipped entirely. Finally, OpenGL depth and stencil clears are combined into a single call to facilitate hardware-level fast clears."
+    },
+    {
+      "type": "heading",
+      "text": "Measurable Impact on Performance"
+    },
+    {
+      "type": "paragraph",
+      "text": "These optimizations provide measurable improvements in both CPU-bound and GPU-bound scenarios. In Soul Sacrifice Delta, which is often limited by the CPU render thread, the time spent per frame dropped by 54%, reducing overall process CPU usage from 86% to 69% of a core. For GPU-heavy tasks, such as running Persona 4 Golden at 8x internal resolution, the reduction in redundant fragment shader work for shadow maps resulted in a 20% increase in frame rate. By eliminating the overhead of dummy color attachments, the host GPU can more efficiently process depth-only passes, leading to smoother performance in titles with complex lighting and high resolution scaling."
+    },
+    {
+      "type": "heading",
+      "text": "Technical Scope and Verification"
+    },
+    {
+      "type": "paragraph",
+      "text": "The changes affect both the OpenGL and Vulkan backends, though the combined depth-stencil clear is specific to OpenGL to better align with driver expectations for packed buffers. Developers and users can verify these improvements by monitoring frame times and CPU utilization in titles with high draw call counts or heavy use of shadow volumes. While these optimizations significantly reduce the cost of state management and redundant draws, they do not bypass the fundamental requirements of the GXM API. Future development continues to focus on refining how the emulator tracks memory modifications to ensure the generation-based hashing remains accurate without missing legitimate texture updates from the guest software."
+    }
+  ]
+}

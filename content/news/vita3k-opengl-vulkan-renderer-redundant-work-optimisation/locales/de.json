@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimierung redundanter Rendering-Aufgaben in OpenGL und Vulkan",
+  "summary": "Vita3K reduziert den CPU- und GPU-Overhead durch die Eliminierung von redundantem Texture-Hashing, das Überspringen unsichtbarer Farbausgaben in Depth-only-Passes und die Aktivierung von Fast-Clears auf Treiber-Ebene für Depth- und Stencil-Buffer.",
+  "heroAlt": "Eine Nahaufnahme der Vorderseite der PlayStation Vita, die den Bildschirm sowie das ikonische Steuerkreuz und die Aktionstasten zeigt.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita Emulator",
+    "OpenGL-Optimierung",
+    "Vulkan-Performance",
+    "Texture-Hashing",
+    "Shadow-Mapping",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden",
+    "Grafikoptimierung",
+    "Leistungssteigerung"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "Vita3K Pull Request #4450",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Der Overhead redundanter Statusverwaltung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Emulation der GXM-Grafik-API der PlayStation Vita erfordert die Übersetzung komplexer Guest-States in moderne Host-APIs wie OpenGL und Vulkan. Zuvor führte der Renderer mehrere repetitive Aufgaben aus, die erhebliche Rechenzeit beanspruchten, ohne das finale Bild zu verändern. Beispielsweise berechnete der Emulator den Hash von gecachten Texturen jedes Mal neu, wenn sie an einen Shader gebunden wurden, selbst wenn sich der zugrunde liegende Guest-Speicher nicht geändert hatte. Zusätzlich führten Depth-only-Passes – die in modernen Titeln für Shadow-Mapping üblich sind – oft Full-Screen-Fragment-Shader in Dummy-Color-Attachments aus, wodurch GPU-Zyklen für Ausgaben verschwendet wurden, die vom Spiel niemals gesehen oder verwendet würden. Diese Ineffizienzen erzeugten unnötige Engpässe sowohl in CPU-gebundenen als auch in GPU-gebundenen Szenarien."
+    },
+    {
+      "type": "heading",
+      "text": "Generationsbasiertes Hashing und Draw-Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Update führt ein „Generationen“-System für das Texture-Hashing in den OpenGL- und Vulkan-Backends ein. Eine Textur wird nun nur noch einmal pro Generation neu gehasht, wobei eine Generation erst endet, wenn der Guest-Speicher möglicherweise modifiziert wurde, etwa zwischen Command-Lists oder nach einem Readback. Dies reduziert den CPU-Overhead in Draw-intensiven Szenen drastisch. Darüber hinaus erkennt der Renderer nun Szenen ohne Farboberflächen und maskiert Farbschreibvorgänge, es sei denn, eine spätere Operation liest diese Daten explizit zurück. Wenn festgestellt wird, dass ein Draw-Call keine beobachtbare Auswirkung auf Farbe, Depth, Stencil oder den Guest-Speicher hat, wird er vollständig übersprungen. Schließlich werden OpenGL-Depth- und Stencil-Clears in einem einzigen Aufruf kombiniert, um Fast-Clears auf Hardware-Ebene zu ermöglichen."
+    },
+    {
+      "type": "heading",
+      "text": "Messbare Auswirkungen auf die Performance"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diese Optimierungen bieten messbare Verbesserungen sowohl in CPU-gebundenen als auch in GPU-gebundenen Szenarien. In Soul Sacrifice Delta, das oft durch den CPU-Render-Thread limitiert wird, sank die pro Frame aufgewendete Zeit um 54 %, wodurch die gesamte CPU-Auslastung des Prozesses von 86 % auf 69 % eines Kerns reduziert wurde. Bei GPU-intensiven Aufgaben, wie dem Ausführen von Persona 4 Golden mit 8-facher interner Auflösung, führte die Reduzierung redundanter Fragment-Shader-Arbeit für Shadow-Maps zu einer Steigerung der Bildrate um 20 %. Durch die Eliminierung des Overheads von Dummy-Color-Attachments kann die Host-GPU Depth-only-Passes effizienter verarbeiten, was zu einer flüssigeren Performance in Titeln mit komplexer Beleuchtung und hoher Auflösungsskalierung führt."
+    },
+    {
+      "type": "heading",
+      "text": "Technischer Umfang und Verifizierung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Änderungen betreffen sowohl das OpenGL- als auch das Vulkan-Backend, wobei der kombinierte Depth-Stencil-Clear spezifisch für OpenGL ist, um besser den Erwartungen der Treiber für gepackte Buffer zu entsprechen. Entwickler und Benutzer können diese Verbesserungen verifizieren, indem sie die Frame-Zeiten und die CPU-Auslastung in Titeln mit hohen Draw-Call-Zahlen oder intensiver Nutzung von Shadow-Volumes überwachen. Obwohl diese Optimierungen die Kosten für die Statusverwaltung und redundante Draws erheblich senken, umgehen sie nicht die grundlegenden Anforderungen der GXM-API. Die zukünftige Entwicklung konzentriert sich weiterhin darauf, die Verfolgung von Speicheränderungen durch den Emulator zu verfeinern, um sicherzustellen, dass das generationsbasierte Hashing präzise bleibt, ohne legitime Textur-Updates der Guest-Software zu übersehen."
+    }
+  ]
+}

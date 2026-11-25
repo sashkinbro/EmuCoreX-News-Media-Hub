@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optymalizacja nadmiarowych zadań renderowania w OpenGL i Vulkan",
+  "summary": "Vita3K redukuje narzut CPU i GPU poprzez eliminację nadmiarowego hashowania tekstur, pomijanie niewidocznych wyjść kolorów w przebiegach typu depth-only oraz włączenie szybkich czyszczeń (fast clears) na poziomie sterownika dla buforów głębi i szablonu.",
+  "heroAlt": "Zbliżenie na przedni panel konsoli PlayStation Vita, przedstawiające ekran oraz kultowy D-pad i przyciski akcji.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulator PlayStation Vita",
+    "optymalizacja OpenGL",
+    "wydajność Vulkan",
+    "hashowanie tekstur",
+    "shadow mapping",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden",
+    "mapowanie cieni"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4450",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Narzut nadmiarowego zarządzania stanem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Emulacja API graficznego GXM konsoli PlayStation Vita wymaga tłumaczenia złożonych stanów gościa na nowoczesne API hosta, takie jak OpenGL i Vulkan. Wcześniej renderer wykonywał kilka powtarzalnych zadań, które pochłaniały znaczny czas procesora bez zmiany końcowego obrazu. Na przykład emulator ponownie hashował tekstury w pamięci podręcznej za każdym razem, gdy były one przypisywane do shadera, nawet jeśli bazowa pamięć gościa nie uległa zmianie. Dodatkowo przebiegi typu depth-only – powszechne w nowoczesnych tytułach do mapowania cieni – często wykonywały pełnoekranowe shadery fragmentów do atrap załączników kolorów (dummy color attachments), marnując cykle GPU na dane wyjściowe, które nigdy nie byłyby widoczne ani wykorzystane przez grę. Te nieefektywności tworzyły niepotrzebne wąskie gardła zarówno w scenariuszach ograniczonych przez CPU, jak i GPU."
+    },
+    {
+      "type": "heading",
+      "text": "Hashowanie generacyjne i culling wywołań rysowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktualizacja wprowadza system „generacji” dla hashowania tekstur w backendach OpenGL i Vulkan. Tekstura jest teraz hashowana ponownie tylko raz na generację, przy czym generacja kończy się tylko wtedy, gdy pamięć gościa mogła zostać zmodyfikowana, na przykład między listami poleceń lub po odczycie zwrotnym (readback). Drastycznie redukuje to narzut CPU w scenach z dużą liczbą wywołań rysowania. Co więcej, renderer wykrywa teraz sceny bez powierzchni kolorów i maskuje zapisy kolorów, chyba że późniejsza operacja wyraźnie odczytuje te dane. Jeśli zostanie ustalone, że wywołanie rysowania nie ma zauważalnego wpływu na kolor, głębię, szablon ani pamięć gościa, jest ono całkowicie pomijane. Wreszcie, czyszczenia buforów głębi i szablonu w OpenGL są łączone w jedno wywołanie, aby ułatwić sprzętowe szybkie czyszczenie (fast clears)."
+    },
+    {
+      "type": "heading",
+      "text": "Wymierny wpływ na wydajność"
+    },
+    {
+      "type": "paragraph",
+      "text": "Optymalizacje te zapewniają wymierną poprawę zarówno w scenariuszach ograniczonych przez CPU, jak i GPU. W Soul Sacrifice Delta, która często jest ograniczona przez wątek renderowania CPU, czas spędzony na klatkę spadł o 54%, redukując ogólne użycie CPU przez proces z 86% do 69% rdzenia. W przypadku zadań obciążających GPU, takich jak uruchamianie Persona 4 Golden w 8-krotnej rozdzielczości wewnętrznej, redukcja nadmiarowej pracy shaderów fragmentów dla map cieni zaowocowała 20-procentowym wzrostem liczby klatek na sekundę. Dzięki wyeliminowaniu narzutu atrap załączników kolorów, GPU hosta może wydajniej przetwarzać przebiegi depth-only, co prowadzi do płynniejszego działania w tytułach ze złożonym oświetleniem i wysokim skalowaniem rozdzielczości."
+    },
+    {
+      "type": "heading",
+      "text": "Zakres techniczny i weryfikacja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiany dotyczą zarówno backendów OpenGL, jak i Vulkan, choć połączone czyszczenie głębi i szablonu jest specyficzne dla OpenGL, aby lepiej dopasować się do oczekiwań sterowników względem buforów pakowanych. Deweloperzy i użytkownicy mogą zweryfikować te ulepszenia, monitorując czasy klatek i wykorzystanie CPU w tytułach z dużą liczbą wywołań rysowania lub intensywnym wykorzystaniem wolumenów cieni (shadow volumes). Chociaż optymalizacje te znacznie redukują koszt zarządzania stanem i nadmiarowych rysowań, nie omijają one fundamentalnych wymagań API GXM. Przyszłe prace rozwojowe będą nadal koncentrować się na dopracowaniu sposobu, w jaki emulator śledzi modyfikacje pamięci, aby zapewnić, że hashowanie oparte na generacjach pozostanie dokładne bez pomijania uzasadnionych aktualizacji tekstur z oprogramowania gościa."
+    }
+  ]
+}

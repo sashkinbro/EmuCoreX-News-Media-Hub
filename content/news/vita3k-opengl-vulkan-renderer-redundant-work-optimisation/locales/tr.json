@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-vulkan-renderer-redundant-work-optimisation",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "OpenGL ve Vulkan'da Gereksiz İşleme Görevlerini Optimize Etme",
+  "summary": "Vita3K, gereksiz doku karma (texture hashing) işlemlerini ortadan kaldırarak, yalnızca derinlik (depth-only) geçişlerinde görünmez renk çıktılarını atlayarak ve derinlik ile kalıp (stencil) tamponları için sürücü düzeyinde hızlı temizleme (fast clear) özelliğini etkinleştirerek CPU ve GPU yükünü azaltır.",
+  "heroAlt": "PlayStation Vita'nın ön yüzünün, ekranı ve ikonik yön tuşlarını (D-pad) ve eylem düğmelerini gösteren yakın çekimi.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emülatörü",
+    "OpenGL optimizasyonu",
+    "Vulkan performansı",
+    "doku karma",
+    "gölge haritalama",
+    "Soul Sacrifice Delta",
+    "Persona 4 Golden",
+    "texture hashing",
+    "shadow mapping"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4450",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gereksiz Durum Yönetiminin Yükü"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation Vita'nın GXM grafik API'sini emüle etmek, karmaşık konuk durumlarını OpenGL ve Vulkan gibi modern ana bilgisayar API'lerine çevirmeyi gerektirir. Daha önce, işleyici (renderer), nihai görüntüyü değiştirmeden önemli ölçüde işlem süresi tüketen birkaç tekrarlayan görev gerçekleştiriyordu. Örneğin emülatör, temel konuk belleği değişmemiş olsa bile, önbelleğe alınmış dokuları bir gölgelendiriciye (shader) her bağlandıklarında yeniden karma (rehash) işlemine tabi tutuyordu. Ek olarak, modern oyunlarda gölge haritalama (shadow mapping) için yaygın olan yalnızca derinlik (depth-only) geçişleri, genellikle sahte renk eklerine (dummy color attachments) tam ekran parça gölgelendiricileri (fragment shaders) yürütüyor ve oyun tarafından asla görülmeyecek veya kullanılmayacak çıktılar için GPU döngülerini boşa harcıyordu. Bu verimsizlikler, hem CPU hem de GPU sınırlı senaryolarda gereksiz darboğazlar yaratıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Nesilsel Karma (Generational Hashing) ve Çizim Ayıklama (Draw Culling)"
+    },
+    {
+      "type": "paragraph",
+      "text": "Güncelleme, hem OpenGL hem de Vulkan arka uçları için doku karma (texture hashing) işlemlerine yönelik bir \"nesil\" (generation) sistemi getiriyor. Bir doku artık nesil başına yalnızca bir kez yeniden karma işlemine tabi tutuluyor; bir nesil ise yalnızca komut listeleri arasında veya bir geri okumadan (readback) sonra olduğu gibi konuk belleğinin değiştirilmiş olabileceği durumlarda sona eriyor. Bu, çizim yoğunluklu sahnelerde CPU yükünü büyük ölçüde azaltır. Ayrıca işleyici artık renk yüzeyi olmayan sahneleri algılıyor ve daha sonraki bir işlem bu veriyi özellikle geri okumadıkça renk yazımlarını maskeliyor. Bir çizim çağrısının (draw call) renk, derinlik, kalıp (stencil) veya konuk belleği üzerinde gözlemlenebilir bir etkisi olmadığı belirlenirse, bu çağrı tamamen atlanır. Son olarak, donanım düzeyinde hızlı temizlemeyi (fast clear) kolaylaştırmak için OpenGL derinlik ve kalıp temizleme işlemleri tek bir çağrıda birleştirilir."
+    },
+    {
+      "type": "heading",
+      "text": "Performans Üzerindeki Ölçülebilir Etki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu optimizasyonlar hem CPU hem de GPU sınırlı senaryolarda ölçülebilir iyileştirmeler sağlar. Genellikle CPU işleme iş parçacığı (render thread) tarafından kısıtlanan Soul Sacrifice Delta'da, kare başına harcanan süre %54 oranında düştü ve toplam işlem CPU kullanımı bir çekirdeğin %86'sından %69'una geriledi. Persona 4 Golden'ı 8 kat dahili çözünürlükte çalıştırmak gibi GPU yoğunluklu görevlerde, gölge haritaları için gereksiz parça gölgelendirici (fragment shader) işindeki azalma, kare hızında %20'lik bir artışla sonuçlandı. Sahte renk eklerinin (dummy color attachments) yükünü ortadan kaldırarak, ana bilgisayar GPU'su yalnızca derinlik (depth-only) geçişlerini daha verimli bir şekilde işleyebilir ve bu da karmaşık aydınlatma ve yüksek çözünürlük ölçeklendirmesine sahip oyunlarda daha akıcı bir performans sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "Teknik Kapsam ve Doğrulama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Değişiklikler hem OpenGL hem de Vulkan arka uçlarını etkiler, ancak birleştirilmiş derinlik-kalıp (depth-stencil) temizleme işlemi, paketlenmiş tamponlar (packed buffers) için sürücü beklentileriyle daha iyi uyum sağlamak amacıyla OpenGL'e özeldir. Geliştiriciler ve kullanıcılar, yüksek çizim çağrısı (draw call) sayısına veya yoğun gölge hacmi (shadow volumes) kullanımına sahip oyunlarda kare sürelerini ve CPU kullanımını izleyerek bu iyileştirmeleri doğrulayabilirler. Bu optimizasyonlar durum yönetimi ve gereksiz çizimlerin maliyetini önemli ölçüde azaltsa da, GXM API'sinin temel gereksinimlerini devre dışı bırakmazlar. Gelecekteki geliştirmeler, nesil tabanlı karma işleminin konuk yazılımdan gelen meşru doku güncellemelerini kaçırmadan doğru kalmasını sağlamak için emülatörün bellek değişikliklerini nasıl izlediğini iyileştirmeye odaklanmaya devam ediyor."
+    }
+  ]
+}
