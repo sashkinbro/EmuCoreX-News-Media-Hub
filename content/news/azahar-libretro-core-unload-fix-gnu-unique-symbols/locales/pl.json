@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Rdzeń Azahar Libretro Teraz Prawidłowo Się Wyładowuje Między Grami",
+  "summary": "Zmiana flagi kompilatora usuwa symbole GNU unique z kompilacji libretro, pozwalając frontendom takim jak Kodi na pełne wyładowanie i ponowne załadowanie rdzenia, dzięki czemu każda gra startuje ze czystego stanu.",
+  "heroAlt": "Konsola przenośna Nintendo 3DS z dwoma ekranami, wyświetlająca interfejs emulatora homebrew na górnym ekranie",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique symbols",
+    "wyłądowanie rdzenia (core unloading)",
+    "emulator 3DS (3DS emulator)",
+    "kompatybilność frontendów (frontend compatibility)"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "core": "Rdzeń"
+  },
+  "sourceLabels": {
+    "change": "Azahar pull request #2805",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dlaczego gry przejmowały stan z poprzedniej sesji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gdy Azahar jest budowany jako rdzeń libretro, wynikowa biblioteka współdzielona zawierała ponad 12 000 symboli GNU unique, z których większość pochodziła z singletonów serializacji Boost. Mechanizm symboli GNU unique informuje linker dynamiczny, że symbol musi mieć tylko jedną instancję w całym procesie, co w praktyce uniemożliwia pełne wyładowanie biblioteki. Frontendy takie jak Kodi, które wyładowują rdzeń po jednej grze i załadują go ponownie dla następnego tytułu, otrzymywały w ten sposób tę samą instancję biblioteki, wraz ze wszystkimi stanami globalnymi pozostawionymi przez poprzednią sesję. W rdzeniu Citra libretro objawiało się to awarią około sekundy po uruchomieniu drugiej gry."
+    },
+    {
+      "type": "heading",
+      "text": "Jak flaga kompilatora eliminuje symbole unique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Naprawa dodaje blok warunkowy do pliku CMakeLists.txt najwyższego poziomu, który aktywuje się tylko wtedy, gdy ENABLE_LIBRETRO jest włączone, a kompilator C++ jest identyfikowany jako GCC. Wstrzykuje ona opcję -fno-gnu-unique do poleceń kompilacji dla każdej jednostki translacji C++, w tym dołączonych źródeł Boost. Ta flaga instruuje GCC, by emitował zwykłe symbole słabe zamiast symboli GNU unique, usuwając dyrektywę linkerową, która przypinała bibliotekę w pamięci. Zmiana ma sześć linii i wpływa na wszystkie 762 kompilacje C++ w konfiguracji libretro."
+    },
+    {
+      "type": "heading",
+      "text": "Co zauważą gracze w frontendach, które przeładowują rdzenie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Po usunięciu symboli unique, linker dynamiczny może teraz w pełni wyładować azahar_libretro.so, gdy frontend o to zażąda. Następne uruchomienie gry ładuje świeżą kopię rdzenia, dzięki czemu zmienne globalne, pamięci podręczne JIT oraz singletonowe serializacji Boost zaczynają od swoich wartości początkowych. Gracze korzystający z Kodi na LibreELEC, lub jakikolwiek inny frontend stosujący wzorzec wyładuj-załaduj, nie będą już widzieć awarii ani uszkodzonego stanu przenoszonego z poprzedniego tytułu. Zachowanie to odpowiada oczekiwanemu kontraktowi libretro, w którym każde załadowanie rdzenia reprezentuje niezależną instancję emulatora."
+    },
+    {
+      "type": "heading",
+      "text": "Zakres zmiany i sposób jej weryfikacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Flaga jest chroniona zarówno przez ENABLE_LIBRETRO, jak i sprawdzanie identyfikatora kompilatora GNU, dzięki czemu zwykłe budowania autonomiczne oraz budowania z Clang pozostają bez wpływu. Programiści mogą potwierdzić naprawę, badając wygenerowaną bibliotekę za pomocą readelf -sW azahar_libretro.so | grep UNIQUE i weryfikując, że nie pozostały żadne symbole unique. Testowanie w froncie, który jawnie wyładowuje i ponownie ładuje rdzeń między grami — takim jak przepływ dodatku do gier Kodi — dostarcza funkcjonalnej walidacji, że każda sesja zaczyna się od czystej karty."
+    }
+  ]
+}

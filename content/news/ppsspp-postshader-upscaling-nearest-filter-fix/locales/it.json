@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP ripristina il Nearest Sampling per gli shader di upscaling nel passaggio finale",
+  "summary": "Una regressione ha causato il campionamento con filtro bilineare invece che nearest neighbor negli shader di upscaling come 5xBR, producendo un output sfocato. La correzione passa il flag di nearest-sampling all'operazione di copia finale.",
+  "heroAlt": "Foto di una console portatile PlayStation Portable argento che mostra il suo display LCD widescreen",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-processing",
+    "upscaling",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "rendering",
+    "post-elaborazione",
+    "aumento di risoluzione"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "graphics": "Grafica"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23175",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cosa è andato storto con gli shader di upscaling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando la pipeline di post-shader è stata rifattorizzata, la logica che forzava il campionamento nearest-neighbor per i filtri di upscaling nel loro passaggio finale è rimasta nella vecchia funzione. La nuova routine `CopyToOutput` si basava solo sull'impostazione globale del filtro di visualizzazione, quindi se l'utente aveva abilitato il filtro lineare, gli shader di upscaling come 5xBR avrebbero letto texel bilinearmente interpolati. Ogni pixel sorgente veniva quindi disegnato come una forma morbida e seghettata invece del risultato nitido e a preservazione dei blocchi per cui lo shader era stato progettato. Il problema appariva su ogni backend grafico perché il flag andava perso prima della chiamata di disegno finale."
+    },
+    {
+      "type": "heading",
+      "text": "Come la correzione ripristina il comportamento previsto"
+    },
+    {
+      "type": "paragraph",
+      "text": "La patch aggiunge un singolo flag, `OutputFlags::NEAREST`, a `outputFlags_` ogni volta che l'ultimo passaggio di post-shader è un filtro di upscaling in esecuzione alla risoluzione di output. `CopyToOutput` legge già questo flag per scegliere il suo sampler, quindi il blit finale ora usa il filtro nearest-neighbor indipendentemente dall'impostazione globale del filtro di visualizzazione. La modifica è di sole quattro righe: una coppia di parentesi per raggruppare la condizione, l'assegnazione del flag e un commento che spiega perché il flag è necessario. Nessun codice shader o layout di pipeline viene modificato."
+    },
+    {
+      "type": "heading",
+      "text": "Cosa vedranno i giocatori in pratica"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con la correzione applicata, gli shader di upscaling producono di nuovo bordi nitidi e puliti che corrispondono alle loro immagini di riferimento. Lo screenshot prima-e-dopo nella pull request mostra 5xBR-lv2 su Vulkan: il lato sinistro mostra la sfocatura caratteristica del campionamento bilineare, mentre il lato destro ripristina il distinto scaling pixel-art che lo shader promette. Gli utenti che mantengono il filtro lineare attivo per l'immagine di base non vedranno più quell'impostazione propagarsi nel passaggio finale dell'upscaler, quindi filtri CRT, xBR e simili si comporteranno come i loro autori intendevano."
+    },
+    {
+      "type": "heading",
+      "text": "Verifica e considerazioni rimanenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il contributore ha testato la modifica con 5xBR-lv2 su Vulkan usando una cattura della finestra, confermando che la regressione visiva è risolta. Poiché il flag viene ora impostato nello stesso percorso di codice che identifica il passaggio finale di upscaling, la correzione copre tutti i backend che usano `PresentationCommon`. Non vengono introdotte nuove opzioni di configurazione; il comportamento è automatico ogni volta che un filtro di upscaling è l'ultimo passaggio. Lavori futuri potrebbero esplorare l'esposizione della decisione di nearest-sampling come opzione utente, ma la modifica attuale ripristina il design originale senza aggiungere complessità."
+    }
+  ]
+}

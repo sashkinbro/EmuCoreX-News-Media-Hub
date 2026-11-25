@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP restaure l'échantillonnage au plus proche pour les shaders d'upscaling dans la passe finale",
+  "summary": "Une régression a provoqué l'utilisation d'un filtrage bilinéaire au lieu du plus proche voisin par les shaders d'upscaling comme 5xBR, produisant une sortie floue. La correction transmet le drapeau d'échantillonnage au plus proche à l'opération de copie finale.",
+  "heroAlt": "Photo d'une console portable PlayStation Portable argentée montrant son écran LCD panoramique",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-traitement",
+    "upscaling",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "rendu",
+    "post-processing",
+    "échantillonnage",
+    "plus proche voisin"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23175",
+    "implementation": "Correctif et revue"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ce qui n'allait pas avec les shaders d'upscaling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque le pipeline de post-shader a été refactorisé, la logique qui forçait l'échantillonnage au plus proche voisin pour les filtres d'upscaling dans leur passe finale a été laissée dans l'ancienne fonction. La nouvelle routine `CopyToOutput` ne se basait que sur le paramètre global de filtre d'affichage, donc si l'utilisateur avait activé le filtrage linéaire, les shaders d'upscaling comme 5xBR liraient des texels mélangés bilinéairement. Chaque pixel source était alors dessiné comme une forme douce et dentelée au lieu du résultat net et préservant les blocs pour lequel le shader était conçu. Le problème apparaissait sur tous les backends graphiques car le drapeau était perdu avant l'appel de dessin final."
+    },
+    {
+      "type": "heading",
+      "text": "Comment la correction restaure le comportement prévu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif ajoute un unique drapeau, `OutputFlags::NEAREST`, à `outputFlags_` chaque fois que la dernière passe de post-shader est un filtre d'upscaling s'exécutant à la résolution de sortie. `CopyToOutput` lit déjà ce drapeau pour choisir son échantillonneur, donc le blit final utilise maintenant le filtrage au plus proche voisin indépendamment du paramètre global de filtre d'affichage. Le changement ne fait que quatre lignes : une paire d'accolades pour grouper la condition, l'assignation du drapeau, et un commentaire expliquant pourquoi le drapeau est nécessaire. Aucun code de shader ou disposition de pipeline n'est modifié."
+    },
+    {
+      "type": "heading",
+      "text": "Ce que les joueurs verront en pratique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avec le correctif appliqué, les shaders d'upscaling produisent à nouveau des bords nets et propres qui correspondent à leurs images de référence. La capture d'écran avant-après dans la pull request montre 5xBR-lv2 sur Vulkan : le côté gauche exhibe le flou caractéristique de l'échantillonnage bilinéaire, tandis que le côté droit restaure le mise à l'échelle pixel-art distincte que le shader promet. Les utilisateurs qui gardent le filtrage linéaire activé pour l'image de base n'auront plus ce paramètre qui fuit dans la passe finale de l'upscaler, donc les filtres CRT, xBR et similaires se comportent comme leurs auteurs l'avaient prévu."
+    },
+    {
+      "type": "heading",
+      "text": "Vérification et considérations restantes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le contributeur a testé le changement avec 5xBR-lv2 sur Vulkan en utilisant une capture de fenêtre, confirmant que la régression visuelle est résolue. Puisque le drapeau est maintenant défini dans le même chemin de code qui identifie la passe finale d'upscaling, la correction couvre tous les backends qui utilisent `PresentationCommon`. Aucune nouvelle option de configuration n'est introduite ; le comportement est automatique chaque fois qu'un filtre d'upscaling est la dernière passe. Un travail futur pourrait explorer l'exposition de la décision d'échantillonnage au plus proche comme une option utilisateur, mais le changement actuel restaure la conception originale sans ajouter de complexité."
+    }
+  ]
+}

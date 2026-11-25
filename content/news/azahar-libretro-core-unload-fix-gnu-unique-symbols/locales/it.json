@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Il Core Libretro di Azahar Ora Si Scarica Correttamente Tra un Gioco e l'Altro",
+  "summary": "Una modifica al flag del compilatore rimuove i simboli univoci GNU dalla build libretro, permettendo a frontend come Kodi di scaricare e ricaricare completamente il core in modo che ogni gioco inizi da uno stato pulito.",
+  "heroAlt": "Console portatile Nintendo 3DS con doppio schermo, che mostra l'interfaccia dell'emulatore homebrew sul display superiore",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique symbols / simboli univoci GNU",
+    "core unloading / scaricamento core",
+    "3DS emulator / emulatore 3DS",
+    "frontend compatibility / compatibilità frontend"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "Pull request #2805 di Azahar",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Perché i giochi mantenevano lo stato dalla sessione precedente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando Azahar viene compilato come core libretro, la libreria condivisa risultante conteneva oltre 12.000 simboli univoci GNU, la maggior parte dei quali provenienti dai singleton di serializzazione di Boost. Il meccanismo dei simboli univoci GNU indica al linker dinamico che un simbolo deve avere una sola istanza nell'intero processo, il che in pratica impedisce che la libreria venga mai scaricata completamente. I frontend come Kodi, che scaricano un core dopo un gioco e lo ricaricano per il titolo successivo, ricevevano quindi la stessa istanza della libreria, completa di tutto lo stato globale lasciato dalla sessione precedente. Nel core libretro di Citra questo si manifestava come un crash circa un secondo dopo l'avvio del secondo gioco."
+    },
+    {
+      "type": "heading",
+      "text": "Come il flag del compilatore elimina i simboli univoci"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione aggiunge un blocco condizionale al CMakeLists.txt di primo livello che si attiva solo quando ENABLE_LIBRETRO è abilitato e il compilatore C++ è identificato come GCC. Inietta l'opzione -fno-gnu-unique nei comandi di compilazione per ogni unità di traduzione C++, incluse le fonti Boost incluse. Questo flag indica a GCC di emettere simboli deboli ordinari invece di simboli univoci GNU, rimuovendo la direttiva del linker che inchiodava la libreria in memoria. La modifica è lunga sei righe e interessa tutte le 762 compilazioni C++ nella configurazione libretro."
+    },
+    {
+      "type": "heading",
+      "text": "Cosa noteranno i giocatori nei frontend che ricaricano i core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con la rimozione dei simboli univoci, il linker dinamico può ora scaricare completamente azahar_libretro.so quando un frontend lo richiede. Il successivo avvio del gioco carica una copia fresca del core, così le variabili globali, le cache JIT e i singleton di serializzazione Boost partono dai loro valori iniziali. I giocatori che usano Kodi su LibreELEC, o qualsiasi altro frontend che segue lo schema scarica-ricarica, non vedranno più crash o stati corrotti riportati dal titolo precedente. Il comportamento corrisponde al contratto libretro previsto, dove ogni caricamento del core rappresenta un'istanza indipendente dell'emulatore."
+    },
+    {
+      "type": "heading",
+      "text": "Ambito della modifica e come verificarla"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il flag è protetto sia da ENABLE_LIBRETRO che da un controllo sull'ID del compilatore GNU, quindi le build standalone regolari e le build con Clang non sono interessate. Gli sviluppatori possono confermare la correzione ispezionando la libreria generata con readelf -sW azahar_libretro.so | grep UNIQUE e verificando che non rimangano simboli univoci. Il test in un frontend che scarica e ricarica esplicitamente il core tra un gioco e l'altro — come il flusso degli add-on per giochi di Kodi — fornisce la validazione funzionale che ogni sessione inizia da una situazione pulita."
+    }
+  ]
+}

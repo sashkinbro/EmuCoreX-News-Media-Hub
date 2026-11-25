@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP restaura el muestreo más cercano para shaders de escalado en la pasada final",
+  "summary": "Una regresión hizo que shaders de escalado como 5xBR realizaran muestreo con filtrado bilineal en lugar del vecino más cercano, produciendo una salida borrosa. La corrección pasa la bandera de muestreo más cercano a la operación de copia final.",
+  "heroAlt": "Foto de una consola portátil PlayStation Portable plateada mostrando su pantalla LCD panorámica",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-procesamiento",
+    "escalado",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "renderizado"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Solicitud de extracción #23175 de PPSSPP",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Qué salió mal con los shaders de escalado"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando se refactorizó la canalización de post-shaders, la lógica que forzaba el muestreo de vecino más cercano para los filtros de escalado en su pasada final quedó en la función antigua. La nueva rutina `CopyToOutput` dependía solo de la configuración global del filtro de visualización, por lo que si el usuario tenía el filtrado lineal activado, shaders de escalado como 5xBR leerían texeles mezclados bilinealmente. Cada píxel de origen se dibujaba entonces como una forma suave y dentada en lugar del resultado nítido y que preserva bloques para el que fue diseñado el shader. El problema apareció en todos los backends gráficos porque la bandera se perdió antes de la llamada de dibujo final."
+    },
+    {
+      "type": "heading",
+      "text": "Cómo la corrección restaura el comportamiento previsto"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche añade una sola bandera, `OutputFlags::NEAREST`, a `outputFlags_` siempre que la última pasada de post-shader es un filtro de escalado que se ejecuta en la resolución de salida. `CopyToOutput` ya lee esta bandera para elegir su muestreador, por lo que el blit final ahora usa filtrado de vecino más cercano independientemente de la configuración global del filtro de visualización. El cambio son solo cuatro líneas: un par de llaves para agrupar la condición, la asignación de la bandera y un comentario que explica por qué se necesita la bandera. No se modifica código de shader ni diseño de canalización."
+    },
+    {
+      "type": "heading",
+      "text": "Qué verán los jugadores en la práctica"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con la corrección aplicada, los shaders de escalado vuelven a producir bordes nítidos y limpios que coinciden con sus imágenes de referencia. La captura de pantalla de antes y después en la solicitud de extracción muestra 5xBR-lv2 en Vulkan: el lado izquierdo exhibe el desenfoque característico del muestreo bilineal, mientras que el lado derecho restaura el escalado de pixel-art distintivo que promete el shader. Los usuarios que mantengan el filtrado lineal activado para la imagen base ya no tendrán esa configuración filtrándose en la pasada final del escalador, por lo que los filtros CRT, xBR y similares se comportan como sus autores pretendían."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y consideraciones restantes"
+    },
+    {
+      "type": "paragraph",
+      "text": "El colaborador probó el cambio con 5xBR-lv2 en Vulkan usando una captura de ventana, confirmando que la regresión visual está resuelta. Dado que la bandera ahora se establece en la misma ruta de código que identifica la pasada final de escalado, la corrección cubre todos los backends que usan `PresentationCommon`. No se introducen nuevas opciones de configuración; el comportamiento es automático siempre que un filtro de escalado sea la última pasada. Trabajos futuros podrían explorar exponer la decisión de muestreo más cercano como una opción de usuario, pero el cambio actual restaura el diseño original sin añadir complejidad."
+    }
+  ]
+}

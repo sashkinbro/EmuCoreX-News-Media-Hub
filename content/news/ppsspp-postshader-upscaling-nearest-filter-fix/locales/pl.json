@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP przywraca próbkowanie najbliższego sąsiada dla shaderów skalowania w ostatnim przejściu",
+  "summary": "Regresja spowodowała, że shadery skalowania, takie jak 5xBR, próbkowały z filtrowaniem biliniowym zamiast najbliższego sąsiada, co dawało rozmyte wyjście. Naprawa przekazuje flagę próbkowania najbliższego sąsiada do operacji końcowego kopiowania.",
+  "heroAlt": "Zdjęcie srebrnej konsoli przenośnej PlayStation Portable pokazującej jej panoramiczny wyświetlacz LCD",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-processing",
+    "postprocessing",
+    "upscaling",
+    "skalowanie",
+    "5xBR",
+    "shader",
+    "cieniowanie",
+    "Vulkan",
+    "rendering"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23175",
+    "implementation": "Poprawka i przegląd"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Co poszło nie tak ze shaderami skalowania"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gdy potok post-shaderowy został zrefaktoryzowany, logika wymuszająca próbkowanie najbliższego sąsiada dla filtrów skalowania w ich ostatnim przejściu została pozostawiona w starej funkcji. Nowa rutyna `CopyToOutput` polegać tylko na globalnym ustawieniu filtra wyświetlania, więc jeśli użytkownik miał włączone filtrowanie liniowe, shadery skalowania takie jak 5xBR odczytywały biliniowo splątane tekstury. Każdy piksel źródłowy był wtedy rysowany jako miękki, postrzępiony kształt zamiast ostrego, bloków zachowującego wynik, do którego shader został zaprojektowany. Problem pojawił się na każdym backendzie graficznym, ponieważ flaga została utracona przed końcowym wywołaniem rysowania."
+    },
+    {
+      "type": "heading",
+      "text": "Jak naprawa przywraca zamierzone zachowanie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poprawka dodaje pojedynczą flagę, `OutputFlags::NEAREST`, do `outputFlags_` zawsze, gdy ostatnie przejście post-shaderowe jest filtrem skalowania działającym w rozdzielczości wyjściowej. `CopyToOutput` już czyta tę flagę, aby wybrać swój sampler, więc końcowe blitowanie teraz używa filtrowania najbliższego sąsiada niezależnie od globalnego ustawienia filtra wyświetlania. Zmiana to zaledwie cztery linie: para nawiasów do zgrupowania warunku, przypisanie flagi i komentarz wyjaśniający, dlaczego flaga jest potrzebna. Żaden kod shadera ani układ potoku nie jest modyfikowany."
+    },
+    {
+      "type": "heading",
+      "text": "Co gracze zobaczą w praktyce"
+    },
+    {
+      "type": "paragraph",
+      "text": "Z zastosowaną poprawką shadery skalowania znowu generują ostre, czyste krawędzie, które odpowiadają ich obrazom referencyjnym. Zrzut ekranu przed i po w pull requeście pokazuje 5xBR-lv2 na Vulkanie: lewa strona wykazuje charakterystyczne rozmycie próbkowania biliniowego, podczas gdy prawa strona przywraca wyraźne skalowanie pixel-art, które shader obiecuje. Użytkownicy, którzy trzymają filtrowanie liniowe włączone dla obrazu bazowego, nie będą już mieć tego ustawienia przeciekającego do ostatniego przejścia upskalera, więc filtry CRT, xBR i podobne zachowują się tak, jak zamierzali ich autorzy."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i pozostałe zagadnienia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Współautor przetestował zmianę z 5xBR-lv2 na Vulkanie używając przechwycenia okna, potwierdzając, że regresja wizualna została rozwiązana. Ponieważ flaga jest teraz ustawiana w tej samej ścieżce kodu, która identyfikuje końcowe przejście skalowania, naprawa obejmuje wszystkie backendy korzystające z `PresentationCommon`. Nie wprowadzono nowych opcji konfiguracji; zachowanie jest automatyczne zawsze, gdy filtr skalowania jest ostatnim przejściem. Przyszła praca mogłaby zbadać udostępnienie decyzji o próbkowaniu najbliższego sąsiada jako przełącznika dla użytkownika, ale obecna zmiana przywraca oryginalny design bez dodawania złożoności."
+    }
+  ]
+}

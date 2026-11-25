@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Restaura Amostragem Mais Próxima para Shaders de Upscaling na Passagem Final",
+  "summary": "Uma regressão fez com que shaders de upscaling como o 5xBR realizassem amostragem com filtragem bilinear em vez do vizinho mais próximo, produzindo saída borrada. A correção passa a sinalização de amostragem mais próxima para a operação de cópia final.",
+  "heroAlt": "Foto de um console portátil PlayStation Portable prateado mostrando sua tela LCD widescreen",
+  "searchKeywords": [
+    "PPSSPP",
+    "pós-processamento",
+    "upscaling",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "renderização"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Pull request #23175 do PPSSPP",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O que deu errado com os shaders de upscaling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando o pipeline de pós-shader foi refatorado, a lógica que forçava a amostragem de vizinho mais próximo para filtros de upscaling em sua passagem final foi deixada para trás na função antiga. A nova rotina `CopyToOutput` dependia apenas da configuração global de filtro de exibição, então, se o usuário tivesse filtragem linear ativada, shaders de upscaling como o 5xBR leriam texels mesclados bilinearmente. Cada pixel de origem era então desenhado como uma forma suave e serrilhada em vez do resultado nítido e preservador de blocos para o qual o shader foi projetado. O problema apareceu em todos os backends gráficos porque a sinalização foi perdida antes da chamada de desenho final."
+    },
+    {
+      "type": "heading",
+      "text": "Como a correção restaura o comportamento pretendido"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch adiciona uma única sinalização, `OutputFlags::NEAREST`, a `outputFlags_` sempre que a última passagem de pós-shader é um filtro de upscaling executado na resolução de saída. `CopyToOutput` já lê essa sinalização para escolher seu sampler, então o blit final agora usa filtragem de vizinho mais próximo independentemente da configuração global de filtro de exibição. A mudança tem apenas quatro linhas: um par de chaves para agrupar a condição, a atribuição da sinalização e um comentário explicando por que a sinalização é necessária. Nenhum código de shader ou layout de pipeline é modificado."
+    },
+    {
+      "type": "heading",
+      "text": "O que os jogadores verão na prática"
+    },
+    {
+      "type": "paragraph",
+      "text": "Com a correção aplicada, os shaders de upscaling novamente produzem bordas nítidas e limpas que correspondem às suas imagens de referência. A captura de tela de antes e depois no pull request mostra o 5xBR-lv2 no Vulkan: o lado esquerdo exibe o desfoque característico da amostragem bilinear, enquanto o lado direito restaura o escalonamento de pixel art distinto que o shader promete. Usuários que mantêm a filtragem linear ativada para a imagem base não terão mais essa configuração vazando para a passagem final do upscaler, então filtros CRT, xBR e similares se comportam como seus autores pretendiam."
+    },
+    {
+      "type": "heading",
+      "text": "Verificação e considerações restantes"
+    },
+    {
+      "type": "paragraph",
+      "text": "O contribuidor testou a mudança com 5xBR-lv2 no Vulkan usando uma captura de janela, confirmando que a regressão visual foi resolvida. Como a sinalização agora é definida no mesmo caminho de código que identifica a passagem final de upscaling, a correção abrange todos os backends que usam `PresentationCommon`. Nenhuma nova opção de configuração é introduzida; o comportamento é automático sempre que um filtro de upscaling é a última passagem. Trabalhos futuros poderiam explorar expor a decisão de amostragem mais próxima como uma alternância do usuário, mas a mudança atual restaura o design original sem adicionar complexidade."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Le noyau libretro Azahar se décharge maintenant proprement entre les jeux",
+  "summary": "Un changement de drapeau de compilation supprime les symboles uniques GNU de la compilation libretro, permettant aux frontaux comme Kodi de décharger et recharger complètement le noyau pour que chaque jeu démarre depuis un état propre.",
+  "heroAlt": "Console portable Nintendo 3DS à double écran, affichant une interface d'émulateur homebrew sur l'écran supérieur",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "symboles uniques GNU",
+    "déchargement de noyau",
+    "émulateur 3DS",
+    "compatibilité des frontaux"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "core": "Noyau"
+  },
+  "sourceLabels": {
+    "change": "Demande de tirage Azahar #2805",
+    "implementation": "Correctif et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Pourquoi les jeux conservaient l'état de la session précédente"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque Azahar est compilé en tant que noyau libretro, la bibliothèque partagée résultante contenait plus de 12 000 symboles uniques GNU, dont la plupart provenaient de singletons de sérialisation Boost. Le mécanisme des symboles uniques GNU indique à l'éditeur de liens dynamique qu'un symbole doit n'avoir qu'une seule instance dans l'ensemble du processus, ce qui empêche en pratique la bibliothèque d'être jamais complètement déchargée. Les frontaux tels que Kodi, qui déchargent un noyau après un jeu et le rechargent pour le titre suivant, recevaient donc la même instance de bibliothèque, avec tout l'état global laissé par la session précédente. Dans le noyau libretro Citra, cela se manifestait par un plantage environ une seconde après le démarrage du deuxième jeu."
+    },
+    {
+      "type": "heading",
+      "text": "Comment le drapeau de compilation élimine les symboles uniques"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif ajoute un bloc conditionnel au fichier CMakeLists.txt de niveau supérieur qui s'active uniquement lorsque ENABLE_LIBRETRO est activé et que le compilateur C++ est identifié comme GCC. Il injecte l'option -fno-gnu-unique dans les commandes de compilation de chaque unité de traduction C++, y compris les sources Boost incluses. Ce drapeau indique à GCC d'émettre des symboles faibles ordinaires au lieu de symboles uniques GNU, supprimant la directive de l'éditeur de liens qui maintenait la bibliothèque en mémoire. Le changement ne fait que six lignes et affecte les 762 compilations C++ de la configuration libretro."
+    },
+    {
+      "type": "heading",
+      "text": "Ce que les joueurs remarqueront dans les frontaux qui rechargent les noyaux"
+    },
+    {
+      "type": "paragraph",
+      "text": "Avec la disparition des symboles uniques, l'éditeur de liens dynamique peut maintenant décharger complètement azahar_libretro.so lorsqu'un frontal le demande. Le lancement du jeu suivant charge une nouvelle copie du noyau, de sorte que les variables globales, les caches JIT et les singletons de sérialisation Boost repartent de leurs valeurs initiales. Les joueurs utilisant Kodi sur LibreELEC, ou tout autre frontal suivant le motif déchargement-rechargement, ne verront plus de plantages ni d'état corrompu reporté du titre précédent. Le comportement correspond au contrat libretro attendu où chaque chargement de noyau représente une instance d'émulateur indépendante."
+    },
+    {
+      "type": "heading",
+      "text": "Portée du changement et comment le vérifier"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le drapeau est protégé à la fois par ENABLE_LIBRETRO et par une vérification de l'identifiant du compilateur GNU, de sorte que les compilations autonomes régulières et les compilations avec Clang ne sont pas affectées. Les développeurs peuvent confirmer le correctif en inspectant la bibliothèque générée avec readelf -sW azahar_libretro.so | grep UNIQUE et en vérifiant qu'aucun symbole unique ne subsiste. Les tests dans un frontal qui décharge et recharge explicitement le noyau entre les jeux — comme le flux d'extension de jeu de Kodi — fournissent la validation fonctionnelle que chaque session démarre sur une ardoise propre."
+    }
+  ]
+}

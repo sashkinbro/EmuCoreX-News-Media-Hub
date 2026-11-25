@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Restores Nearest Sampling for Upscaling Shaders in Final Pass",
+  "summary": "A regression caused upscaling shaders like 5xBR to sample with bilinear filtering instead of nearest neighbor, producing blurry output. The fix passes the nearest-sampling flag through to the final copy operation.",
+  "heroAlt": "Photo of a silver PlayStation Portable handheld console showing its widescreen LCD display",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-processing",
+    "upscaling",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "rendering"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23175",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "What went wrong with upscaling shaders"
+    },
+    {
+      "type": "paragraph",
+      "text": "When the post-shader pipeline was refactored, the logic that forced nearest-neighbor sampling for upscaling filters in their final pass was left behind in the old function. The new `CopyToOutput` routine relied only on the global display filter setting, so if the user had linear filtering enabled, upscaling shaders such as 5xBR would read bilinearly blended texels. Each source pixel was then drawn as a soft, jagged shape instead of the crisp, block-preserving result the shader was designed to produce. The problem appeared on every graphics backend because the flag was lost before the final draw call."
+    },
+    {
+      "type": "heading",
+      "text": "How the fix restores the intended behavior"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch adds a single flag, `OutputFlags::NEAREST`, to `outputFlags_` whenever the last post-shader pass is an upscaling filter running at the output resolution. `CopyToOutput` already reads this flag to choose its sampler, so the final blit now uses nearest-neighbor filtering regardless of the global display filter setting. The change is only four lines: a brace pair to group the condition, the flag assignment, and a comment explaining why the flag is needed. No shader code or pipeline layout is modified."
+    },
+    {
+      "type": "heading",
+      "text": "What players will see in practice"
+    },
+    {
+      "type": "paragraph",
+      "text": "With the fix applied, upscaling shaders again produce sharp, clean edges that match their reference images. The before-and-after screenshot in the pull request shows 5xBR-lv2 on Vulkan: the left side exhibits the characteristic blur of bilinear sampling, while the right side restores the distinct pixel-art scaling the shader promises. Users who keep linear filtering on for the base image will no longer have that setting leak into the upscaler's final pass, so CRT, xBR, and similar filters behave as their authors intended."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and remaining considerations"
+    },
+    {
+      "type": "paragraph",
+      "text": "The contributor tested the change with 5xBR-lv2 on Vulkan using a window capture, confirming the visual regression is resolved. Because the flag is now set in the same code path that identifies the final upscaling pass, the fix covers all backends that use `PresentationCommon`. No new configuration options are introduced; the behavior is automatic whenever an upscaling filter is the last pass. Future work could explore exposing the nearest-sampling decision as a user toggle, but the current change restores the original design without adding complexity."
+    }
+  ]
+}

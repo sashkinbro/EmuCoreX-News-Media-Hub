@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Jádro Azahar Libretro se nyní mezi hrami čistě ukončuje",
+  "summary": "Změna příznaku kompilátoru odstraňuje GNU unique symbols z libretro sestavení, což umožňuje frontendům jako Kodi plně uvolnit a znovu načíst jádro, takže každá hra začíná v čistém stavu.",
+  "heroAlt": "Handheldová konzole Nintendo 3DS se dvěma obrazovkami, zobrazující rozhraní homebrew emulátoru na horním displeji",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique symbols",
+    "uvolňování jádra",
+    "3DS emulátor",
+    "kompatibilita frontendu"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "core": "Jádro"
+  },
+  "sourceLabels": {
+    "change": "Azahar pull request #2805",
+    "implementation": "Implementace a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč si hry přenášely stav z předchozí relace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pokud je Azahar sestaven jako libretro jádro, výsledná sdílená knihovna obsahovala přes 12 000 GNU unique symbols, z nichž většina pocházela ze singletonů serializace Boost. Mechanismus GNU unique symbol říká dynamickému linkeru, že symbol musí mít v rámci celého procesu pouze jednu instanci, což v praxi brání tomu, aby byla knihovna kdykoli plně uvolněna z paměti. Frontendy jako Kodi, které po jedné hře jádro uvolní a pro další titul jej znovu načtou, proto obdržely stejnou instanci knihovny, a to včetně veškerého globálního stavu zanechaného předchozí relací. V libretro jádru Citra se to projevovalo pádem přibližně sekundu po spuštění druhé hry."
+    },
+    {
+      "type": "heading",
+      "text": "Jak příznak kompilátoru eliminuje unikátní symboly"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava přidává podmíněný blok do souboru CMakeLists.txt na nejvyšší úrovni, který se aktivuje pouze tehdy, když je zapnuto ENABLE_LIBRETRO a C++ kompilátor je identifikován jako GCC. Do příkazů pro kompilaci každé C++ překladové jednotky, včetně přibalených zdrojových kódů Boost, vkládá volbu -fno-gnu-unique. Tento příznak instruuje GCC, aby místo GNU unique symbols generoval běžné weak symbols, čímž se odstraní direktiva linkeru, která držela knihovnu v paměti. Změna má délku šesti řádků a ovlivňuje všech 762 kompilací C++ v konfiguraci libretro."
+    },
+    {
+      "type": "heading",
+      "text": "Co hráči zaznamenají ve frontendech, které znovu načítají jádra"
+    },
+    {
+      "type": "paragraph",
+      "text": "Po odstranění unikátních symbolů může nyní dynamický linker na žádost frontendu úplně uvolnit azahar_libretro.so. Další spuštění hry načte čerstvou kopii jádra, takže globální proměnné, JIT mezipaměti a singletony serializace Boost začínají od svých výchozích hodnot. Hráči používající Kodi na LibreELEC nebo jakýkoli jiný frontend, který se řídí vzorem uvolnění a opětovného načtení, již neuvidí pády ani poškozený stav přenesený z předchozího titulu. Toto chování odpovídá očekávanému standardu libretro, kde každé načtení jádra představuje nezávislou instanci emulátoru."
+    },
+    {
+      "type": "heading",
+      "text": "Rozsah změny a jak ji ověřit"
+    },
+    {
+      "type": "paragraph",
+      "text": "Příznak je chráněn jak volbou ENABLE_LIBRETRO, tak kontrolou ID kompilátoru GNU, takže běžná samostatná sestavení a sestavení pomocí Clang nejsou ovlivněna. Vývojáři mohou opravu potvrdit kontrolou vygenerované knihovny pomocí readelf -sW azahar_libretro.so | grep UNIQUE a ověřením, že nezůstaly žádné unikátní symboly. Testování ve frontendu, který explicitně uvolňuje a znovu načítá jádro mezi hrami — jako je například proces herních doplňků v Kodi — poskytuje funkční ověření, že každá relace začíná s čistým štítem."
+    }
+  ]
+}

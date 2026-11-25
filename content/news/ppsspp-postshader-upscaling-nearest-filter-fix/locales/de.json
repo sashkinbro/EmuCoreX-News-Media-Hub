@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP stellt Nearest Sampling für Upscaling-Shader im finalen Pass wieder her",
+  "summary": "Eine Regression bewirkte, dass Upscaling-Shader wie 5xBR mit bilinearer Filterung statt Nearest-Neighbor sampelten, was zu unscharfer Ausgabe führte. Der Fix leitet das Nearest-Sampling-Flag an die finale Kopieroperation weiter.",
+  "heroAlt": "Foto einer silbernen PlayStation Portable Handheld-Konsole, die ihr Breitbild-LCD-Display zeigt",
+  "searchKeywords": [
+    "PPSSPP",
+    "Post-Processing",
+    "Upscaling",
+    "5xBR",
+    "Shader",
+    "Vulkan",
+    "Rendering"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23175",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Was bei Upscaling-Shadern schiefging"
+    },
+    {
+      "type": "paragraph",
+      "text": "Als die Post-Shader-Pipeline überarbeitet wurde, blieb die Logik, die Nearest-Neighbor-Sampling für Upscaling-Filter in ihrem finalen Pass erzwang, in der alten Funktion zurück. Die neue `CopyToOutput`-Routine verließ sich nur auf die globale Display-Filter-Einstellung, sodass Upscaling-Shader wie 5xBR bilinear gemischte Texel auslasen, wenn der Benutzer lineares Filtern aktiviert hatte. Jedes Quellpixel wurde dann als weiche, gezackte Form gezeichnet, anstatt des knackigen, blockerhaltenden Ergebnisses, für das der Shader entworfen war. Das Problem trat auf jedem Grafik-Backend auf, da das Flag vor dem finalen Draw-Call verloren ging."
+    },
+    {
+      "type": "heading",
+      "text": "Wie der Fix das beabsichtigte Verhalten wiederherstellt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch fügt ein einzelnes Flag, `OutputFlags::NEAREST`, zu `outputFlags_` hinzu, wann immer der letzte Post-Shader-Pass ein Upscaling-Filter ist, das in der Ausgaberauflösung läuft. `CopyToOutput` liest dieses Flag bereits, um seinen Sampler auszuwählen, sodass der finale Blit jetzt Nearest-Neighbor-Filtering verwendet, unabhängig von der globalen Display-Filter-Einstellung. Die Änderung umfasst nur vier Zeilen: ein Klammerpaar zur Gruppierung der Bedingung, die Flag-Zuweisung und einen Kommentar, der erklärt, warum das Flag benötigt wird. Kein Shader-Code oder Pipeline-Layout wird geändert."
+    },
+    {
+      "type": "heading",
+      "text": "Was Spieler in der Praxis sehen werden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mit dem angewendeten Fix erzeugen Upscaling-Shader wieder scharfe, saubere Kanten, die ihren Referenzbildern entsprechen. Der Vorher-Nachher-Screenshot im Pull Request zeigt 5xBR-lv2 auf Vulkan: die linke Seite weist die charakteristische Unschärfe des bilinearen Samplings auf, während die rechte Seite die eindeutige Pixel-Art-Skalierung wiederherstellt, die der Shader verspricht. Benutzer, die lineares Filtern für das Basisbild aktiviert lassen, werden nicht mehr erleben, dass diese Einstellung in den finalen Pass des Upscalers hineinwirkt, sodass CRT, xBR und ähnliche Filter sich so verhalten, wie es ihre Autoren beabsichtigt haben."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikation und verbleibende Überlegungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Beitragende testete die Änderung mit 5xBR-lv2 auf Vulkan mittels Fensteraufnahme und bestätigte, dass die visuelle Regression behoben ist. Da das Flag nun im selben Codepfad gesetzt wird, der den finalen Upscaling-Pass identifiziert, deckt der Fix alle Backends ab, die `PresentationCommon` verwenden. Es werden keine neuen Konfigurationsoptionen eingeführt; das Verhalten ist automatisch, wann immer ein Upscaling-Filter der letzte Pass ist. Zukünftige Arbeit könnte untersuchen, die Nearest-Sampling-Entscheidung als Benutzer-Umschalter bereitzustellen, aber die aktuelle Änderung stellt das ursprüngliche Design ohne zusätzliche Komplexität wieder her."
+    }
+  ]
+}

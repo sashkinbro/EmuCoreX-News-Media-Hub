@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "O core Azahar Libretro agora é descarregado de forma limpa entre jogos",
+  "summary": "Uma alteração na flag do compilador remove símbolos únicos GNU da compilação libretro, permitindo que frontends como o Kodi descarreguem e recarreguem completamente o core para que cada jogo inicie a partir de um estado limpo.",
+  "heroAlt": "Console portátil Nintendo 3DS com duas telas, exibindo interface de emulador homebrew na tela superior",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "símbolos únicos GNU",
+    "descarregamento de core",
+    "emulador 3DS",
+    "compatibilidade de frontend"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "Pull request #2805 do Azahar",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por que os jogos mantinham o estado da sessão anterior"
+    },
+    {
+      "type": "paragraph",
+      "text": "Quando o Azahar é compilado como um core libretro, a biblioteca compartilhada resultante continha mais de 12.000 símbolos únicos GNU, a maioria deles originada de singletons de serialização do Boost. O mecanismo de símbolos únicos do GNU informa ao linker dinâmico que um símbolo deve ter apenas uma instância em todo o processo, o que na prática impede que a biblioteca seja totalmente descarregada. Frontends como o Kodi, que descarregam um core após um jogo e o carregam novamente para o próximo título, portanto recebiam a mesma instância da biblioteca, com todo o estado global deixado pela sessão anterior. No core Citra libretro, isso se manifestava como uma falha aproximadamente um segundo após o início do segundo jogo."
+    },
+    {
+      "type": "heading",
+      "text": "Como a flag do compilador elimina os símbolos únicos"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção adiciona um bloco condicional ao CMakeLists.txt de nível superior que é ativado apenas quando ENABLE_LIBRETRO está ligado e o compilador C++ é identificado como GCC. Ele injeta a opção -fno-gnu-unique nos comandos de compilação de cada unidade de tradução C++, incluindo as fontes do Boost embutidas. Essa flag instrui o GCC a emitir símbolos fracos comuns em vez de símbolos únicos GNU, removendo a diretiva do linker que mantinha a biblioteca na memória. A alteração tem seis linhas e afeta todas as 762 compilações C++ na configuração libretro."
+    },
+    {
+      "type": "heading",
+      "text": "O que os jogadores notarão em frontends que recarregam cores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Com a remoção dos símbolos únicos, o linker dinâmico agora pode descarregar completamente o azahar_libretro.so quando um frontend o solicita. O próximo lançamento do jogo carrega uma cópia nova do core, de modo que variáveis globais, caches JIT e singletons de serialização do Boost partem de seus valores iniciais. Jogadores que usam o Kodi no LibreELEC, ou qualquer outro frontend que siga o padrão de descarregar e recarregar, não verão mais falhas ou estado corrompido herdado do título anterior. O comportamento corresponde ao contrato esperado do libretro, no qual cada carregamento de core representa uma instância independente do emulador."
+    },
+    {
+      "type": "heading",
+      "text": "Escopo da alteração e como verificá-la"
+    },
+    {
+      "type": "paragraph",
+      "text": "A flag é protegida tanto por ENABLE_LIBRETRO quanto por uma verificação do ID do compilador GNU, de modo que builds standalone regulares e builds com Clang não são afetados. Desenvolvedores podem confirmar a correção inspecionando a biblioteca gerada com readelf -sW azahar_libretro.so | grep UNIQUE e verificando que nenhum símbolo único permanece. Testes em um frontend que descarrega e recarrega explicitamente o core entre jogos — como o fluxo de complemento de jogos do Kodi — fornecem a validação funcional de que cada sessão começa do zero."
+    }
+  ]
+}

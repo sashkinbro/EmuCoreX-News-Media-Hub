@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "El núcleo Azahar Libretro ahora se descarga limpiamente entre juegos",
+  "summary": "Un cambio en la bandera del compilador elimina los símbolos únicos de GNU de la compilación libretro, permitiendo que frontends como Kodi descarguen y recarguen completamente el núcleo para que cada juego comience desde un estado limpio.",
+  "heroAlt": "Consola portátil Nintendo 3DS con doble pantalla, mostrando interfaz de emulador homebrew en la pantalla superior",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "símbolos únicos de GNU",
+    "descarga de núcleo",
+    "emulador 3DS",
+    "compatibilidad con frontend"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "core": "Núcleo"
+  },
+  "sourceLabels": {
+    "change": "Azahar pull request #2805",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por qué los juegos arrastraban el estado de la sesión anterior"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cuando Azahar se compila como un núcleo libretro, la biblioteca compartida resultante contenía más de 12.000 símbolos únicos de GNU, la mayoría de ellos originados en los singletons de serialización de Boost. El mecanismo de símbolos únicos de GNU indica al enlazador dinámico que un símbolo debe tener una única instancia en todo el proceso, lo que en la práctica impide que la biblioteca se descargue completamente. Los frontends como Kodi, que descargan un núcleo tras un juego y lo vuelven a cargar para el siguiente título, recibían por tanto la misma instancia de la biblioteca, con todo el estado global dejado por la sesión anterior. En el núcleo libretro de Citra esto se manifestaba como un fallo aproximadamente un segundo después de que comenzara el segundo juego."
+    },
+    {
+      "type": "heading",
+      "text": "Cómo la bandera del compilador elimina los símbolos únicos"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solución añade un bloque condicional al CMakeLists.txt de nivel superior que se activa solo cuando ENABLE_LIBRETRO está activado y el compilador de C++ se identifica como GCC. Inyecta la opción -fno-gnu-unique en los comandos de compilación de cada unidad de traducción de C++, incluidas las fuentes de Boost incluidas. Esta bandera indica a GCC que emita símbolos débiles ordinarios en lugar de símbolos únicos de GNU, eliminando la directiva del enlazador que mantenía la biblioteca fijada en memoria. El cambio tiene seis líneas de longitud y afecta a las 762 compilaciones de C++ en la configuración libretro."
+    },
+    {
+      "type": "heading",
+      "text": "Qué notarán los jugadores en frontends que recargan núcleos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Con la eliminación de los símbolos únicos, el enlazador dinámico ahora puede descargar completamente azahar_libretro.so cuando un frontend lo solicita. El siguiente lanzamiento del juego carga una copia fresca del núcleo, por lo que las variables globales, las cachés JIT y los singletons de serialización de Boost comienzan desde sus valores iniciales. Los jugadores que usen Kodi en LibreELEC, o cualquier otro frontend que siga el patrón de descarga-recarga, ya no verán fallos ni estados corruptos arrastrados del título anterior. El comportamiento coincide con el contrato esperado de libretro, donde cada carga del núcleo representa una instancia independiente del emulador."
+    },
+    {
+      "type": "heading",
+      "text": "Alcance del cambio y cómo verificarlo"
+    },
+    {
+      "type": "paragraph",
+      "text": "La bandera está protegida tanto por ENABLE_LIBRETRO como por una comprobación del ID del compilador GNU, por lo que las compilaciones independientes regulares y las compilaciones con Clang no se ven afectadas. Los desarrolladores pueden confirmar la solución inspeccionando la biblioteca generada con readelf -sW azahar_libretro.so | grep UNIQUE y verificando que no queden símbolos únicos. Las pruebas en un frontend que descarga y recarga explícitamente el núcleo entre juegos —como el flujo de complementos de juegos de Kodi— proporcionan la validación funcional de que cada sesión comienza desde un estado limpio."
+    }
+  ]
+}

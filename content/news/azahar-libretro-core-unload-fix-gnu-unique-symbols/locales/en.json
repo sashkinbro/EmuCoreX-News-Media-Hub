@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar Libretro Core Now Unloads Cleanly Between Games",
+  "summary": "A compiler flag change removes GNU unique symbols from the libretro build, allowing frontends like Kodi to fully unload and reload the core so each game starts from a clean state.",
+  "heroAlt": "Nintendo 3DS handheld console with dual screens, showing homebrew emulator interface on the top display",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique symbols",
+    "core unloading",
+    "3DS emulator",
+    "frontend compatibility"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "Azahar pull request #2805",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Why games carried over state from the previous session"
+    },
+    {
+      "type": "paragraph",
+      "text": "When Azahar is built as a libretro core, the resulting shared library contained over 12,000 GNU unique symbols, most of them originating from Boost serialization singletons. The GNU unique symbol mechanism tells the dynamic linker that a symbol must have only one instance across the entire process, which in practice prevents the library from ever being fully unloaded. Frontends such as Kodi that unload a core after one game and load it again for the next title therefore received the same library instance, complete with all global state left behind by the previous session. In the Citra libretro core this manifested as a crash roughly one second after the second game started."
+    },
+    {
+      "type": "heading",
+      "text": "How the compiler flag eliminates the unique symbols"
+    },
+    {
+      "type": "paragraph",
+      "text": "The fix adds a conditional block to the top-level CMakeLists.txt that activates only when ENABLE_LIBRETRO is on and the C++ compiler is identified as GCC. It injects the option -fno-gnu-unique into the compile commands for every C++ translation unit, including the bundled Boost sources. This flag instructs GCC to emit ordinary weak symbols instead of GNU unique symbols, removing the linker directive that pinned the library in memory. The change is six lines long and affects all 762 C++ compiles in the libretro configuration."
+    },
+    {
+      "type": "heading",
+      "text": "What players will notice in frontends that reload cores"
+    },
+    {
+      "type": "paragraph",
+      "text": "With the unique symbols gone, the dynamic linker can now unload azahar_libretro.so completely when a frontend requests it. The next game launch loads a fresh copy of the core, so global variables, JIT caches, and Boost serialization singletons start from their initial values. Players using Kodi on LibreELEC, or any other frontend that follows the unload-reload pattern, will no longer see crashes or corrupted state carried over from the previous title. The behavior matches the expected libretro contract where each core load represents an independent emulator instance."
+    },
+    {
+      "type": "heading",
+      "text": "Scope of the change and how to verify it"
+    },
+    {
+      "type": "paragraph",
+      "text": "The flag is guarded by both ENABLE_LIBRETRO and a check for the GNU compiler ID, so regular standalone builds and builds with Clang are unaffected. Developers can confirm the fix by inspecting the generated library with readelf -sW azahar_libretro.so | grep UNIQUE and verifying that no unique symbols remain. Testing in a frontend that explicitly unloads and reloads the core between games — such as Kodi's game add-on flow — provides the functional validation that each session starts from a clean slate."
+    }
+  ]
+}

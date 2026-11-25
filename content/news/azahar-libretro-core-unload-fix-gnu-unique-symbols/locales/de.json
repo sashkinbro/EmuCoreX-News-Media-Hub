@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar Libretro Core entlädt nun sauber zwischen Spielen",
+  "summary": "Eine Änderung des Compiler-Flags entfernt GNU-unique-Symbole aus dem libretro-Build, sodass Frontends wie Kodi den Core vollständig entladen und neu laden können, wodurch jedes Spiel von einem sauberen Zustand aus startet.",
+  "heroAlt": "Nintendo 3DS Handheld-Konsole mit zwei Bildschirmen, die eine Homebrew-Emulator-Oberfläche auf dem oberen Display anzeigt",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU-unique-Symbole",
+    "Core-Entladen",
+    "3DS-Emulator",
+    "Frontend-Kompatibilität"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "core": "Kern"
+  },
+  "sourceLabels": {
+    "change": "Azahar Pull Request #2805",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warum Spiele den Zustand der vorherigen Sitzung übernahmen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn Azahar als libretro-Core gebaut wird, enthielt die resultierende Shared Library über 12.000 GNU-unique-Symbole, von denen die meisten von Boost-Serialisierungs-Singletons stammten. Der GNU-unique-Symbol-Mechanismus teilt dem dynamischen Linker mit, dass ein Symbol nur eine Instanz im gesamten Prozess haben darf, was in der Praxis verhindert, dass die Bibliothek jemals vollständig entladen wird. Frontends wie Kodi, die einen Core nach einem Spiel entladen und für den nächsten Titel erneut laden, erhielten daher dieselbe Bibliotheksinstanz, komplett mit dem gesamten globalen Zustand, den die vorherige Sitzung hinterlassen hatte. Im Citra-libretro-Core äußerte sich dies als Absturz etwa eine Sekunde nach dem Start des zweiten Spiels."
+    },
+    {
+      "type": "heading",
+      "text": "Wie das Compiler-Flag die Unique-Symbole entfernt"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Fix fügt einen bedingten Block zur obersten CMakeLists.txt hinzu, der nur aktiviert wird, wenn ENABLE_LIBRETRO gesetzt ist und der C++-Compiler als GCC erkannt wird. Er fügt die Option -fno-gnu-unique in die Kompilierbefehle für jede C++-Übersetzungseinheit ein, einschließlich der gebündelten Boost-Quellen. Dieses Flag weist GCC an, gewöhnliche schwache Symbole anstelle von GNU-unique-Symbolen auszugeben, wodurch die Linker-Anweisung entfernt wird, die die Bibliothek im Speicher festhielt. Die Änderung umfasst sechs Zeilen und betrifft alle 762 C++-Kompilierungen in der libretro-Konfiguration."
+    },
+    {
+      "type": "heading",
+      "text": "Was Spieler in Frontends bemerken werden, die Cores neu laden"
+    },
+    {
+      "type": "paragraph",
+      "text": "Da die Unique-Symbole entfernt sind, kann der dynamische Linker azahar_libretro.so nun vollständig entladen, wenn ein Frontend dies anfordert. Der nächste Spielstart lädt eine frische Kopie des Cores, sodass globale Variablen, JIT-Caches und Boost-Serialisierungs-Singletons von ihren Initialwerten ausgehen. Spieler, die Kodi auf LibreELEC oder ein anderes Frontend verwenden, das das Entladen-Neu-Laden-Muster befolgt, werden keine Abstürze oder korrupten Zustand mehr sehen, der vom vorherigen Titel übernommen wurde. Das Verhalten entspricht dem erwarteten libretro-Vertrag, bei dem jeder Core-Load eine unabhängige Emulator-Instanz darstellt."
+    },
+    {
+      "type": "heading",
+      "text": "Umfang der Änderung und wie man sie überprüft"
+    },
+    {
+      "type": "paragraph",
+      "text": "Das Flag wird sowohl durch ENABLE_LIBRETRO als auch durch eine Prüfung der GNU-Compiler-ID geschützt, sodass reguläre Standalone-Builds und Builds mit Clang unbeeinflusst bleiben. Entwickler können den Fix bestätigen, indem sie die generierte Bibliothek mit readelf -sW azahar_libretro.so | grep UNIQUE untersuchen und prüfen, dass keine Unique-Symbole mehr vorhanden sind. Tests in einem Frontend, das den Core zwischen Spielen explizit entlädt und neu lädt – wie der Spiel-Add-on-Ablauf von Kodi – liefern die funktionale Validierung, dass jede Sitzung von einem sauberen Zustand ausgeht."
+    }
+  ]
+}

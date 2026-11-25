@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP obnovuje nearest sampling pro upscaling shadery ve finální průchodu",
+  "summary": "Regrese způsobila, že upscaling shadery jako 5xBR vzorkovaly s bilineárním filtrováním místo nearest neighbor, což vedlo k rozmazanému výstupu. Oprava předá příznak nearest-sampling do finální kopírovací operace.",
+  "heroAlt": "Fotografie stříbrné ruční konzole PlayStation Portable zobrazující její širokoúhlý LCD displej",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-processing",
+    "upscaling",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "rendering"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23175",
+    "implementation": "Oprava a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Co se pokazilo u upscaling shaderů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Při refaktoringu post-shader pipeline zůstal logika, která vynutila nearest-neighbor vzorkování pro upscaling filtry ve jejich finálním průchodu, v původní funkci. Nová rutina `CopyToOutput` spoléhala pouze na globální nastavení display filtru, takže pokud uživatel měl povoleno lineární filtrování, upscaling shadery jako 5xBR četly bilineárně smíchané texely. Každý zdrojový pixel byl pak vykreslen jako měkký, zubatý tvar místo ostrého, bloky zachovávajícího výsledku, pro který byl shader navržen. Problém se projevil na všech grafických backendech, protože příznak byl ztracen před finálním draw call."
+    },
+    {
+      "type": "heading",
+      "text": "Jak oprava obnovuje zamýšlené chování"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch přidá jediný příznak, `OutputFlags::NEAREST`, do `outputFlags_` vždy, když je poslední post-shader průchod upscaling filtrem běžícím v výstupním rozlišení. `CopyToOutput` již tento příznak čte pro výběr sampleru, takže finální blit nyní používá nearest-neighbor filtrování bez ohledu na globální nastavení display filtru. Změna je pouze čtyři řádky: pár závorek pro seskupení podmínky, přiřazení příznaku a komentář vysvětlující, proč je příznak potřeba. Žádný shader kód nebo pipeline layout není upraven."
+    },
+    {
+      "type": "heading",
+      "text": "Co hráči uvidí v praxi"
+    },
+    {
+      "type": "paragraph",
+      "text": "S aplikovanou opravou upscaling shadery znovu produkují ostré, čisté hrany, které odpovídají jejich referenčním obrázkům. Before-and-after screenshot v pull requestu ukazuje 5xBR-lv2 na Vulkanu: levá strana ukazuje charakteristické rozmazání bilineárního vzorkování, zatímco pravá strana obnovuje distinctní pixel-art škálování, které shader slibuje. Uživatelé, kteří ponechají lineární filtrování pro základní obraz, už nebudou mít to nastavení unikat do finálního průchodu upscaleru, takže CRT, xBR a podobné filtry se chovají tak, jak zamýšleli jejich autoři."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a zbývající úvahy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Přispěvatel testoval změnu s 5xBR-lv2 na Vulkanu pomocí zachycení okna, potvrzující, že vizuální regrese je vyřešena. Protože příznak je nyní nastaven ve stejné code path, která identifikuje finální upscaling průchod, oprava pokrývá všechny back-endy používající `PresentationCommon`. Nejsou zavedeny žádné nové konfigurační volby; chování je automatické vždy, když je upscaling filtr posledním průchodem. Budoucí práce by mohla zkoumat vystavení rozhodnutí o nearest-sampling jako uživatelského přepínače, ale současná změna obnovuje původní design bez přidání complexity."
+    }
+  ]
+}

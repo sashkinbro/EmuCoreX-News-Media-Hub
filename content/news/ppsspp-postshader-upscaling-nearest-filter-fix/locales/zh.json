@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 在最终通道中为升级着色器恢复最近邻采样",
+  "summary": "回归导致像 5xBR 这样的升级着色器使用双线性过滤而非最近邻采样，产生模糊输出。修复将最近邻采样标志传递给最终复制操作。",
+  "heroAlt": "银色 PlayStation Portable 掌机照片，显示其宽屏 LCD 显示屏",
+  "searchKeywords": [
+    "PPSSPP",
+    "后处理",
+    "升级",
+    "5xBR",
+    "着色器",
+    "Vulkan",
+    "渲染"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP 拉取请求 #23175",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "升级着色器出了什么问题"
+    },
+    {
+      "type": "paragraph",
+      "text": "当后着色器管线重构时，强制升级滤镜在其最终通道使用最近邻采样的逻辑被遗留在旧函数中。新的 `CopyToOutput` 例程仅依赖全局显示滤镜设置，因此如果用户启用了线性过滤，像 5xBR 这样的升级着色器会读取双线性混合的纹素。每个源像素随即被绘制为柔和、锯齿状的形状，而非着色器设计的清晰、保留块状的结果。由于标志在最终绘制调用前丢失，该问题出现在每个图形后端上。"
+    },
+    {
+      "type": "heading",
+      "text": "修复如何恢复预期行为"
+    },
+    {
+      "type": "paragraph",
+      "text": "每当最后一个后着色器通道是在输出分辨率下运行的升级滤镜时，补丁会向 `outputFlags_` 添加单个标志 `OutputFlags::NEAREST`。`CopyToOutput` 已读取此标志以选择其采样器，因此最终位块传输现在无论全局显示滤镜设置如何都使用最近邻过滤。该更改仅四行：一对大括号用于分组条件、标志赋值，以及解释为何需要该标志的注释。未修改任何着色器代码或管线布局。"
+    },
+    {
+      "type": "heading",
+      "text": "玩家实际将看到什么"
+    },
+    {
+      "type": "paragraph",
+      "text": "应用修复后，升级着色器再次生成与其参考图像匹配的锐利、干净的边缘。拉取请求中的前后对比截图展示了 Vulkan 上的 5xBR-lv2：左侧呈现双线性采样的特征模糊，右侧恢复了着色器承诺的独特像素艺术缩放。为基础图像保持线性过滤开启的用户将不再让该设置泄漏到升级器的最终通道，因此 CRT、xBR 等滤镜将按其作者意图运行。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与剩余考量"
+    },
+    {
+      "type": "paragraph",
+      "text": "贡献者使用窗口捕获在 Vulkan 上用 5xBR-lv2 测试了该更改，确认视觉回归已解决。因为标志现在在识别最终升级通道的同一代码路径中设置，该修复覆盖所有使用 `PresentationCommon` 的后端。未引入新配置选项；每当升级滤镜为最后一个通道时，行为自动生效。未来工作可探索将最近邻采样决策作为用户切换暴露，但当前更改在不增加复杂性的情况下恢复了原始设计。"
+    }
+  ]
+}

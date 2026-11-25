@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar Libretro 核心现在可在游戏间干净卸载",
+  "summary": "编译器标志变更从 libretro 构建中移除了 GNU unique 符号，使 Kodi 等前端能完全卸载并重新加载核心，让每个游戏都从干净状态启动。",
+  "heroAlt": "配备双屏幕的 Nintendo 3DS 手持游戏机，顶屏显示自制模拟器界面",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique 符号",
+    "核心卸载",
+    "3DS 模拟器",
+    "前端兼容性"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "core": "核心"
+  },
+  "sourceLabels": {
+    "change": "Azahar 拉取请求 #2805",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "为什么游戏会继承上一会话的状态"
+    },
+    {
+      "type": "paragraph",
+      "text": "当 Azahar 作为 libretro 核心构建时，生成的共享库包含超过 12,000 个 GNU unique 符号，其中大多数源自 Boost 序列化单例。GNU unique 符号机制告诉动态链接器某个符号在整个进程中必须只有一个实例，这实际上阻止了库被完全卸载。Kodi 等前端在一个游戏后卸载核心、为下一款游戏再次加载时，因此收到的是同一个库实例，连同上一会话遗留的所有全局状态。在 Citra libretro 核心中，这表现为第二款游戏启动约一秒后崩溃。"
+    },
+    {
+      "type": "heading",
+      "text": "编译器标志如何消除 unique 符号"
+    },
+    {
+      "type": "paragraph",
+      "text": "该修复在顶层 CMakeLists.txt 中添加了一个条件块，仅在 ENABLE_LIBRETRO 开启且 C++ 编译器被识别为 GCC 时激活。它将 -fno-gnu-unique 选项注入每个 C++ 翻译单元的编译命令中，包括捆绑的 Boost 源码。此标志指示 GCC 生成普通弱符号而非 GNU unique 符号，移除了将库钉在内存中的链接器指令。该变更仅六行，影响 libretro 配置中所有 762 个 C++ 编译单元。"
+    },
+    {
+      "type": "heading",
+      "text": "玩家在重新加载核心的前端中将注意到什么"
+    },
+    {
+      "type": "paragraph",
+      "text": "unique 符号消失后，当前端请求时，动态链接器现在可以完全卸载 azahar_libretro.so。下一次游戏启动会加载核心的全新副本，因此全局变量、JIT 缓存和 Boost 序列化单例都从其初始值开始。在 LibreELEC 上使用 Kodi 的玩家，或任何遵循卸载-重新加载模式的前端用户，将不再看到从上一款游戏继承的崩溃或损坏状态。该行为符合预期的 libretro 契约，即每次核心加载代表一个独立的模拟器实例。"
+    },
+    {
+      "type": "heading",
+      "text": "变更范围及验证方法"
+    },
+    {
+      "type": "paragraph",
+      "text": "该标志同时受 ENABLE_LIBRETRO 和 GNU 编译器 ID 检查保护，因此常规独立构建和 Clang 构建不受影响。开发者可通过 readelf -sW azahar_libretro.so | grep UNIQUE 检查生成的库，验证不再有 unique 符号来确认修复。在明确在游戏间卸载并重新加载核心的前端（如 Kodi 的游戏插件流程）中测试，可提供功能验证，证明每个会话都从干净的初始状态开始。"
+    }
+  ]
+}

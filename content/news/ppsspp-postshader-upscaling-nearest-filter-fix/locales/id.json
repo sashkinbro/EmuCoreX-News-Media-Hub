@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Memulihkan Nearest Sampling untuk Shader Upscaling di Pass Terakhir",
+  "summary": "Sebuah regresi menyebabkan shader upscaling seperti 5xBR melakukan sampling dengan bilinear filtering alih-alih nearest neighbor, menghasilkan output yang buram. Perbaikan ini meneruskan flag nearest-sampling ke operasi copy final.",
+  "heroAlt": "Foto konsol genggam PlayStation Portable berwarna perak yang menampilkan layar LCD lebarnya",
+  "searchKeywords": [
+    "PPSSPP",
+    "post-processing",
+    "pascapemrosesan",
+    "upscaling",
+    "penskalaan",
+    "5xBR",
+    "shader",
+    "Vulkan",
+    "rendering",
+    "penggambaran"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23175",
+    "implementation": "Patch dan review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Apa yang Salah dengan Shader Upscaling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Saat pipeline post-shader direfaktor, logika yang memaksa nearest-neighbor sampling untuk filter upscaling di pass final mereka tertinggal di fungsi lama. Rutin `CopyToOutput` yang baru hanya mengandalkan pengaturan filter tampilan global, sehingga jika pengguna mengaktifkan linear filtering, shader upscaling seperti 5xBR akan membaca texel yang diblending secara bilinear. Setiap piksel sumber kemudian digambar sebagai bentuk lembut dan bergerigi alih-alih hasil tajam yang mempertahankan blok seperti yang dirancang shader. Masalah ini muncul di setiap backend grafis karena flag hilang sebelum panggilan draw final."
+    },
+    {
+      "type": "heading",
+      "text": "Bagaimana Perbaikan Memulihkan Perilaku yang Diharapkan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini menambahkan satu flag, `OutputFlags::NEAREST`, ke `outputFlags_` setiap kali pass post-shader terakhir adalah filter upscaling yang berjalan di resolusi output. `CopyToOutput` sudah membaca flag ini untuk memilih sampler-nya, sehingga blit final sekarang menggunakan nearest-neighbor filtering terlepas dari pengaturan filter tampilan global. Perubahan ini hanya empat baris: sepasang kurung kurawal untuk mengelompokkan kondisi, penugasan flag, dan komentar yang menjelaskan mengapa flag diperlukan. Tidak ada kode shader atau tata letak pipeline yang dimodifikasi."
+    },
+    {
+      "type": "heading",
+      "text": "Apa yang Akan Dilihat Pemain dalam Praktiknya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dengan perbaikan yang diterapkan, shader upscaling kembali menghasilkan tepi tajam dan bersih yang cocok dengan gambar referensinya. Screenshot before-and-after di pull request menampilkan 5xBR-lv2 di Vulkan: sisi kiri menunjukkan blur khas dari bilinear sampling, sedangkan sisi kanan memulihkan penskalaan pixel-art yang khas seperti yang dijanjikan shader. Pengguna yang mempertahankan linear filtering untuk gambar dasar tidak akan lagi memiliki pengaturan yang bocor ke pass final upscaler, sehingga filter CRT, xBR, dan sejenisnya berperilaku seperti yang dimaksudkan penulisnya."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Pertimbangan yang Tersisa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kontributor menguji perubahan dengan 5xBR-lv2 di Vulkan menggunakan window capture, mengonfirmasi regresi visual telah teratasi. Karena flag sekarang diset di code path yang sama yang mengidentifikasi pass upscaling final, perbaikan ini mencakup semua backend yang menggunakan `PresentationCommon`. Tidak ada opsi konfigurasi baru yang diperkenalkan; perilakunya otomatis setiap kali filter upscaling adalah pass terakhir. Pekerjaan masa depan bisa mengeksplorasi mengekspos keputusan nearest-sampling sebagai toggle pengguna, tetapi perubahan saat ini memulihkan desain asli tanpa menambah kompleksitas."
+    }
+  ]
+}

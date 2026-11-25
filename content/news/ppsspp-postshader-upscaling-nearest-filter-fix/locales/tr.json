@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-postshader-upscaling-nearest-filter-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Son Geçişte Yükseltme Gölgelendiricileri için En Yakın Örneklemeyi Geri Getiriyor",
+  "summary": "Bir regresyon, 5xBR gibi yükseltme gölgelendiricilerinin en yakın komşu yerine bilinear filtreleme ile örnekleme yapmasına neden olarak bulanık çıktı üretti. Düzeltme, en yakın örnekleme bayrağını son kopyalama işlemine iletir.",
+  "heroAlt": "Geniş ekran LCD ekranını gösteren gümüş renkli bir PlayStation Portable el konsolunun fotoğrafı",
+  "searchKeywords": [
+    "PPSSPP",
+    "son işleme",
+    "yükseltme",
+    "5xBR",
+    "gölgelendirici",
+    "Vulkan",
+    "işleme"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23175",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Yükseltme gölgelendiricilerinde ne yanlış gitti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Son gölgelendirici işlem hattı yeniden düzenlendiğinde, yükseltme filtrelerinin son geçişte en yakın komşu örneklemeyi zorlayan mantık eski işlevde bırakıldı. Yeni `CopyToOutput` yalancı sadece küresel görüntü filtresi ayarına güveniyordu, bu yüzden kullanıcı doğrusal filtrelemeyi etkinleştirmişse, 5xBR gibi yükseltme gölgelendiricileri bilinear karıştırılmış tekstelleri okuyordu. Her kaynak piksel, gölgelendiricinin üretmek üzere tasarladığı net, blok koruyucu sonuç yerine yumuşak, dişli bir şekil olarak çiziliyordu. Bayrak son çizim çağrısından önce kaybolduğu için sorun her grafik arka ucunda ortaya çıktı."
+    },
+    {
+      "type": "heading",
+      "text": "Düzeltme nasıl istenen davranışı geri getiriyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yama, son son gölgelendirici geçişi çıkış çözünürlüğünde çalışan bir yükseltme filtresi olduğunda `outputFlags_` alanına tek bir bayrak olan `OutputFlags::NEAREST` ekler. `CopyToOutput` zaten bu bayrağı okuyup örneleyicisini seçtiği için, son blit işlemi artık küresel görüntü filtresi ayarından bağımsız olarak en yakın komşu filtrelemesini kullanır. Değişiklik sadece dört satırdır: koşulu gruplayan bir süslü parantez çifti, bayrak ataması ve bayrağın neden gerekli olduğunu açıklayan bir yorum. Hiçbir gölgelendirici kodu veya işlem hattı düzeni değiştirilmez."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuncular uygulamada ne görecek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme uygulandığında, yükseltme gölgelendiricileri tekrar referans görüntüleriyle eşleşen keskin, temiz kenarlar üretir. Pull request'teki önce/sonra ekran görüntüsü Vulkan'da 5xBR-lv2'yi gösteriyor: sol taraf bilinear örneklemenin karakteristik bulanıklığını sergilerken, sağ taraf gölgelendiricinin vaat ettiği belirgin piksel sanatı ölçeklendirmesini geri getiriyor. Temel görüntü için doğrusal filtrelemeyi açık tutan kullanıcılar artık bu ayarın yükselticinin son geçişine sızmasını görmeyecek, böylece CRT, xBR ve benzeri filtreler yazarlarının tasarladığı gibi davranacak."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve kalan hususlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Katkıda bulunan, pencere yakalama kullanarak Vulkan'da 5xBR-lv2 ile değişikliği test etti ve görsel regresyonun çözüldüğünü onayladı. Bayrak artık son yükseltme geçişini tanımlayan aynı kod yolunda ayarlandığı için, düzeltme `PresentationCommon` kullanan tüm arka uçları kapsıyor. Yeni yapılandırma seçeneği eklenmedi; davranış bir yükseltme filtresi son geçiş olduğunda otomatik. Gelecek çalışmalarda en yakın örnekleme kararının bir kullanıcı açma/kapama seçeneği olarak sunulması araştırılabilir, ancak mevcut değişiklik karmaşıklık eklemeden orijinal tasarımı geri getiriyor."
+    }
+  ]
+}

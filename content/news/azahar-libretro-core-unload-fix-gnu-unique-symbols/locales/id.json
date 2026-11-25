@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Core Libretro Azahar Sekarang Dapat Dibongkar Bersih Antara Game",
+  "summary": "Perubahan bendera kompiler menghapus simbol unik GNU dari build libretro, memungkinkan frontend seperti Kodi untuk sepenuhnya membongkar dan memuat ulang core sehingga setiap game dimulai dari kondisi bersih.",
+  "heroAlt": "Konsol genggam Nintendo 3DS dengan layar ganda, menampilkan antarmuka emulator homebrew di layar atas",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique symbols",
+    "simbol unik GNU",
+    "core unloading",
+    "pembongkaran core",
+    "3DS emulator",
+    "emulator 3DS",
+    "frontend compatibility"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "Pull request Azahar #2805",
+    "implementation": "Patch dan review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa game membawa status dari sesi sebelumnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Saat Azahar dibangun sebagai core libretro, library bersama yang dihasilkan berisi lebih dari 12.000 simbol unik GNU, sebagian besar berasal dari singleton serialisasi Boost. Mekanisme simbol unik GNU memberitahu linker dinamis bahwa sebuah simbol harus memiliki hanya satu instance di seluruh proses, yang pada praktiknya mencegah library dari pernah dibongkar sepenuhnya. Frontend seperti Kodi yang membongkar core setelah satu game dan memuatnya lagi untuk judul berikutnya oleh karena itu menerima instance library yang sama, lengkap dengan semua status global yang ditinggalkan oleh sesi sebelumnya. Di core libretro Citra hal ini bermanifestasi sebagai crash sekitar satu detik setelah game kedua dimulai."
+    },
+    {
+      "type": "heading",
+      "text": "Bagaimana bendera kompiler menghapus simbol unik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan menambahkan blok kondisional ke CMakeLists.txt tingkat atas yang hanya aktif ketika ENABLE_LIBRETRO menyala dan kompiler C++ diidentifikasi sebagai GCC. Blok tersebut menyuntikkan opsi -fno-gnu-unique ke perintah kompilasi untuk setiap unit terjemahan C++, termasuk sumber Boost yang dibundel. Bendera ini menginstruksikan GCC untuk mengeluarkan simbol lemah biasa alih-alih simbol unik GNU, menghapus direktif linker yang menancapkan library di memori. Perubahan ini hanya enam baris dan memengaruhi semua 762 kompilasi C++ dalam konfigurasi libretro."
+    },
+    {
+      "type": "heading",
+      "text": "Apa yang akan dirasakan pemain di frontend yang memuat ulang core"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dengan hilangnya simbol unik, linker dinamis kini dapat membongkar azahar_libretro.so sepenuhnya ketika frontend memintanya. Peluncuran game berikutnya memuat salinan baru dari core, sehingga variabel global, cache JIT, dan singleton serialisasi Boost memulai dari nilai awal mereka. Pemain yang menggunakan Kodi di LibreELEC, atau frontend lain yang mengikuti pola bongkar-muat ulang, tidak akan lagi melihat crash atau status rusak yang dibawa dari judul sebelumnya. Perilaku ini sesuai dengan kontrak libretro yang diharapkan di mana setiap pemuatan core mewakili instance emulator independen."
+    },
+    {
+      "type": "heading",
+      "text": "Cakupan perubahan dan cara memverifikasinya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bendera dijaga oleh baik ENABLE_LIBRETRO maupun pemeriksaan ID kompiler GNU, sehingga build mandiri reguler dan build dengan Clang tidak terpengaruh. Pengembang dapat mengonfirmasi perbaikan dengan memeriksa library yang dihasilkan menggunakan readelf -sW azahar_libretro.so | grep UNIQUE dan memverifikasi bahwa tidak ada simbol unik yang tersisa. Pengujian di frontend yang secara eksplisit membongkar dan memuat ulang core antara game — seperti alur add-on game Kodi — memberikan validasi fungsional bahwa setiap sesi dimulai dari piringan bersih."
+    }
+  ]
+}

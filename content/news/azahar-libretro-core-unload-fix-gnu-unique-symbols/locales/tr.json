@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "azahar-libretro-core-unload-fix-gnu-unique-symbols",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Azahar Libretro Çekirdeği Artık Oyunlar Arasında Temiz Bir Şekilde Bellekten Kaldırılıyor",
+  "summary": "Bir derleyici bayrağı değişikliği, libretro derlemesinden GNU unique sembollerini kaldırarak, Kodi gibi ön uçların çekirdeği tamamen boşaltmasına ve yeniden yüklemesine olanak tanıyor, böylece her oyun temiz bir durumdan başlıyor.",
+  "heroAlt": "Üst ekranda homebrew emülatör arayüzünü gösteren, çift ekranlı Nintendo 3DS el konsolu",
+  "searchKeywords": [
+    "Azahar",
+    "libretro",
+    "Kodi",
+    "GNU unique symbols",
+    "core unloading",
+    "3DS emulator",
+    "frontend compatibility",
+    "Azahar",
+    "libretro",
+    "Kodi"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "core": "Çekirdek"
+  },
+  "sourceLabels": {
+    "change": "Azahar pull request #2805",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Neden oyunlar önceki oturumdan durumu taşırıyordu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Azahar bir libretro çekirdeği olarak derlendiğinde, ortaya çıkan paylaşılan kütüphane 12.000'in üzerinde GNU unique sembolü içeriyordu, bunların çoğu Boost serileştirme singleton'larından kaynaklanıyordu. GNU unique sembol mekanizması, bir sembolün tüm süreç boyunca yalnızca bir örneğe sahip olması gerektiğini dinamik bağlayıcıya söyler; bu da pratikte kütüphanenin hiçbir zaman tamamen boşaltılmasını engeller. Bir oyun sonra çekirdeği boşaltan ve bir sonraki oyun için tekrar yükleyen Kodi gibi ön uçlar, bu nedenle önceki oturumun geride bıraktığı tüm genel durumla birlikte aynı kütüphane örneğini alıyordu. Citra libretro çekirdeğinde bu durum, ikinci oyun başladıktan yaklaşık bir saniye sonra bir çökme olarak ortaya çıkıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Derleyici bayrağı unique sembolleri nasıl ortadan kaldırıyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme, en üst seviyedeki CMakeLists.txt dosyasına, yalnızca ENABLE_LIBRETRO açıkken ve C++ derleyicisi GCC olarak tanımlandığında etkinleşen bir koşullu blok ekler. Bu, paketlenmiş Boost kaynakları da dahil her C++ çeviri birimi için derleme komutlarına -fno-gnu-unique seçeneğini enjekte eder. Bu bayrak, GCC'ye GNU unique sembolleri yerine normal zayıf semboller üretmesini söyler, kütüphaneyi bellekte sabitleyen bağlayıcı yönergesini kaldırır. Değişiklik altı satır uzunluğundadır ve libretro yapılandırmasındaki tüm 762 C++ derlemesini etkiler."
+    },
+    {
+      "type": "heading",
+      "text": "Çekirdekleri yeniden yükleyen ön uçlarda oyuncular ne fark edecek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Unique semboller ortadan kalktığında, dinamik bağlayıcı artık bir ön uç istediğinde azahar_libretro.so dosyasını tamamen boşaltabilir. Sonraki oyun başlatması çekirdeğin taze bir kopyasını yükler, böylece genel değişkenler, JIT önbellekleri ve Boost serileştirme singleton'ları başlangıç değerlerinden başlar. LibreELEC üzerinde Kodi kullanan oyuncular veya boşaltma-yeniden yükleme modelini takip eden herhangi bir ön uç, artık önceki oyunlardan taşınan çökmeleri veya bozulmuş durumları görmeyecek. Bu davranış, her çekirdek yüklemesinin bağımsız bir emülatör örneğini temsil ettiği beklenen libretro sözleşmesiyle eşleşir."
+    },
+    {
+      "type": "heading",
+      "text": "Değişikliğin kapsamı ve nasıl doğrulanacağı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bayrak, hem ENABLE_LIBRETRO hem de GNU derleyici kimliği kontrolüyle korunur, bu nedenle normal tek başına derlemeler ve Clang ile yapılan derlemeler etkilenmez. Geliştiriciler, readelf -sW azahar_libretro.so | grep UNIQUE komutuyla oluşturulan kütüphaneyi inceleyerek ve hiçbir unique sembol kalmadığını doğrulayarak düzeltmeyi onaylayabilir. Oyunlar arasında çekirdeği açıkça boşaltan ve yeniden yükleyen bir ön uçta test yapmak — örneğin Kodi'nin oyun eklentisi akışı — her oturumun temiz bir başlangıçla başladığını işlevsel olarak doğrular."
+    }
+  ]
+}
