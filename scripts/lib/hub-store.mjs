@@ -82,18 +82,17 @@ export function collectStore() {
         featured: listing.featured === true,
         publishedAt: listing.publishedAt,
         categories: listing.categories ?? [],
-        // Controller skins are drawn for PlayStation buttons unless they say otherwise; apps of other families
-        // (Nintendo, Sega) filter by this tag.
-        tags: kind === "controls" && !(listing.tags ?? []).some((tag) => tag.startsWith("platform:"))
-          ? [...(listing.tags ?? []), "platform:playstation"]
-          : listing.tags ?? [],
+        // Controller skins also ship a neutral package (label-free art) that Nintendo and Sega apps install and
+        // label themselves, so an untagged skin fits every app. A "platform:<family>" tag still limits an item.
+        tags: listing.tags ?? [],
         name: listing.name,
         description: listing.description,
         swatch,
         cover: imageReference(coverPath, `${location} cover`, errors),
         gallery,
         packageFile: fileReference(packagePath),
-        sizeBytes: packageSize
+        sizeBytes: packageSize,
+        ...neutralPackage(kind, outDir)
       });
     }
   }
@@ -110,6 +109,14 @@ export function collectStore() {
     categories: categories.filter((category) => used.has(`${category.kind}:${category.id}`)),
     items
   };
+}
+
+// Controller skins: the label-free variant that Nintendo and Sega apps install instead of item.ecxcontrols.
+function neutralPackage(kind, outDir) {
+  if (kind !== "controls") return {};
+  const neutralPath = path.join(outDir, "neutral.ecxcontrols");
+  if (!fs.existsSync(neutralPath)) return {};
+  return { neutralPackageFile: fileReference(neutralPath), neutralSizeBytes: fs.statSync(neutralPath).size };
 }
 
 function readCategories(kind, filePath, errors) {

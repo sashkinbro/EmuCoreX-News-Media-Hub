@@ -51,6 +51,7 @@ if (!fs.existsSync(manifestPath)) {
         validateReference(item.cover, errors);
         for (const image of item.gallery ?? []) validateReference(image, errors);
         validateReference(item.packageFile, errors);
+        if (item.neutralPackageFile) validateReference(item.neutralPackageFile, errors);
         if (item.kind === "font") validateFontItem(item, errors);
       }
       if (JSON.stringify(catalog) !== JSON.stringify(storeCatalog(store))) errors.push("catalog: store.json is stale; run npm run build");

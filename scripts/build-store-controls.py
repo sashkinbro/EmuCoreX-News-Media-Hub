@@ -7,12 +7,15 @@ Symbols and labels are original vector strokes; face symbols are generic geometr
 Output (the listing.json files and categories.json are generated from the data in this script):
   store/controls/categories.json
   store/controls/src/<id>/listing.json
-  store/controls/dist/<id>/item.ecxcontrols   deterministic ZIP: controls.json + 35 PNG images
+  store/controls/dist/<id>/item.ecxcontrols   deterministic ZIP: controls.json + 35 PNG images (PlayStation symbols)
+  store/controls/dist/<id>/neutral.ecxcontrols deterministic ZIP: label-free blank_<part> art + d-pad + stick and
+                                              skin.labelColors, for Nintendo/Sega apps that draw their own labels
   store/controls/dist/<id>/cover.webp         640x360 card image
   store/controls/dist/<id>/ingame.webp        1280x720 gallery mock of the full on-screen layout
   store/controls/dist/<id>/build.json         {"sourceSha256": hash(listing + this script)}
 
-Usage: python scripts/build-store-controls.py [skin-id ...] [--force] [--sheet contact.png]
+Usage: python scripts/build-store-controls.py [skin-id ...] [--force] [--add-neutral] [--sheet contact.png]
+  --add-neutral  write neutral.ecxcontrols for already built skins (no full re-render)
 Needs Pillow only. Deterministic and idempotent (unchanged skins are skipped).
 """
 import hashlib
@@ -38,6 +41,10 @@ FACE = ["cross", "circle", "square", "triangle"]
 DIRS = ["up", "down", "left", "right"]
 SHOULDERS = ["l1", "l2", "r1", "r2"]
 PARTS = FACE + ["dpad_" + d for d in DIRS] + SHOULDERS + ["l3", "r3", "start", "select", "analog_base", "analog_stick"]
+# Parts that also ship as label-free "blank_<part>" art. Apps for other consoles (Nintendo, Sega) draw their own
+# button labels (A/B/X/Y, L/ZL, 1/2, +/-...) on these, so one skin fits every app.
+BLANK_PARTS = FACE + SHOULDERS + ["l3", "r3", "start", "select"]
+BLANK = False  # True while rendering blank art: every symbol/label painter draws nothing
 ROLE = {"l1": "shoulder", "r1": "shoulder", "l2": "shoulder2", "r2": "shoulder2", "l3": "l3", "r3": "l3",
         "start": "small", "select": "small", "analog_base": "base", "analog_stick": "stick"}
 for _d in DIRS:
@@ -359,6 +366,8 @@ class Ctx:
         return m.transpose(op) if op is not None else m
 
     def mark_mask(self, thick=1.0, scale=1.0, filled=False):
+        if BLANK and self.kind != "dpad":
+            return self.new()
         sk = self.skin
         th = thick * sk.sym_thick
         sc = scale * sk.sym_scale
@@ -1636,7 +1645,9 @@ class Pixel8bit(Skin):
                 d.arc([cx - r + 3, cy - r + 3, cx + r - 6, cy + r - 6], 195, 262, fill=hi + (255,), width=1)
                 d.point([(cx - r + 4, cy - r + 7)], fill=hi + (255,))
             o = 1 if pressed else 0
-            if k == "face":
+            if BLANK:
+                pass
+            elif k == "face":
                 s = self.part_symbol(c.part)
                 if s == "cross":
                     d.line([(cx - 5, cy - 5 + o), (cx + 4, cy + 4 + o)], fill=W, width=2)
@@ -1679,7 +1690,9 @@ class Pixel8bit(Skin):
             if not pressed:
                 d.line([(box[0] + rad, box[1] + 1), (box[2] - rad, box[1] + 1)], fill=hi + (255,))
             my = (box[1] + box[3]) // 2 + (1 if pressed else 0)
-            if k == "small":
+            if BLANK:
+                pass
+            elif k == "small":
                 if part == "start":
                     d.polygon([(cx - 1, my - 2), (cx + 2, my), (cx - 1, my + 2)], fill=txt)
                 else:
@@ -3250,7 +3263,9 @@ class FormSkin(Skin):
             ring = ImageChops.subtract(small(self.shape(c, 22)), small(self.shape(c, 30)))
             lay(ring, lo)
         ink = self.ink_p if (c.p and self.ink_p) else self.sym_color(c)
-        if c.kind in ("sh1", "sh2", "l3"):
+        if BLANK and c.kind in ("sh1", "sh2", "l3", "small", "face"):
+            pass
+        elif c.kind in ("sh1", "sh2", "l3"):
             fs = max(1, 8 // g) * (2 if c.kind == "l3" else 1)
             txt = c.part.upper()
             tm = Image.new("L", (tw, th), 0)
@@ -3978,7 +3993,7 @@ def g_dyslexic(sk, c, m, col):
     out = paint(grow(m, 1.6), darkc(col, 0.62), 0.9)
     out = over(out, paint(m, col))
     n = int(c.part[1]) if c.part[0] in "lr" and c.part[1:].isdigit() else 0
-    if n and c.kind in ("sh1", "sh2", "l3"):
+    if n and c.kind in ("sh1", "sh2", "l3") and not BLANK:
         pm = c.new()
         dd = ImageDraw.Draw(pm)
         y = (c.rect_box()[3] - 9) * S if c.kind != "l3" else (128 + 74) * S
@@ -5451,10 +5466,17 @@ def webp_bytes(im):
     return b.getvalue()
 
 
-def build_zip(skin, images):
-    manifest = {"formatVersion": 1, "id": skin.id, "version": 1,
-                "skin": {"images": {k: k + ".png" for k in sorted(images)}, "tint": None, "opacity": skin.opacity,
-                         "pressEffect": skin.press}}
+def label_colors(skin):
+    """Colour each app should use for its own label on blank_<part> art (the skin's own symbol/label ink)."""
+    return {part: hexc(skin.sym_color(Ctx(skin, part, False))) for part in BLANK_PARTS}
+
+
+def build_zip(skin, images, label_ink=False):
+    spec = {"images": {k: k + ".png" for k in sorted(images)}, "tint": None, "opacity": skin.opacity,
+            "pressEffect": skin.press}
+    if label_ink:
+        spec["labelColors"] = label_colors(skin)
+    manifest = {"formatVersion": 1, "id": skin.id, "version": 1, "skin": spec}
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z:
         def add(name, data):
@@ -5519,6 +5541,19 @@ def digest_of(listing_text):
     return h.hexdigest()
 
 
+def render_blanks(skin):
+    global BLANK
+    T = {}
+    BLANK = True
+    try:
+        for part in BLANK_PARTS:
+            T["blank_" + part] = skin.render(part, False)
+            T["blank_" + part + "_pressed"] = skin.render(part, True)
+    finally:
+        BLANK = False
+    return T
+
+
 def render_all(skin):
     T = {}
     for part in PARTS:
@@ -5528,19 +5563,43 @@ def render_all(skin):
     return T
 
 
+# The neutral package: the same skin for apps whose buttons are not PlayStation symbols (Nintendo, Sega). It holds
+# the label-free art plus the parts that carry no symbol (d-pad, stick). Kept apart from item.ecxcontrols so the
+# PlayStation package stays exactly as released apps expect it (they accept at most 48 skin images).
+NEUTRAL_SHARED = ["dpad_" + d for d in DIRS] + ["analog_base", "analog_stick"]
+
+
+def neutral_images(skin, shared_png):
+    images = {k: v for k, v in shared_png.items() if k.removesuffix("_pressed") in NEUTRAL_SHARED}
+    images.update({k: png_bytes(v) for k, v in render_blanks(skin).items()})
+    return images
+
+
+def add_neutral(skin):
+    """Writes neutral.ecxcontrols for an already built skin, reusing its d-pad and stick art (no full re-render)."""
+    out_dir = DIST / skin.id
+    listing_text = json.dumps(keep_locales(listing_of(skin), SRC / skin.id / "listing.json"), indent=2, ensure_ascii=False) + "\n"
+    with zipfile.ZipFile(out_dir / "item.ecxcontrols") as z:
+        shared = {n[:-4]: z.read(n) for n in z.namelist() if n.endswith(".png")}
+    (out_dir / "neutral.ecxcontrols").write_bytes(build_zip(skin, neutral_images(skin, shared), label_ink=True))
+    (out_dir / "build.json").write_text(json.dumps({"sourceSha256": digest_of(listing_text)}, indent=2) + "\n",
+                                        encoding="utf-8", newline="\n")
+
+
 def build_skin(skin, force=False, tiles_dir=None):
     out_dir = DIST / skin.id
     listing_text = json.dumps(keep_locales(listing_of(skin), SRC / skin.id / "listing.json"), indent=2, ensure_ascii=False) + "\n"
     write_text(SRC / skin.id / "listing.json", listing_text)
     digest = digest_of(listing_text)
     stamp = out_dir / "build.json"
-    need = ["item.ecxcontrols", "cover.webp", "ingame.webp", "build.json"]
+    need = ["item.ecxcontrols", "neutral.ecxcontrols", "cover.webp", "ingame.webp", "build.json"]
     if not force and all((out_dir / n).is_file() for n in need) and json.loads(stamp.read_text())["sourceSha256"] == digest:
         return False
     T = render_all(skin)
     images = {k: png_bytes(v) for k, v in T.items()}
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "item.ecxcontrols").write_bytes(build_zip(skin, images))
+    (out_dir / "neutral.ecxcontrols").write_bytes(build_zip(skin, neutral_images(skin, images), label_ink=True))
     (out_dir / "cover.webp").write_bytes(webp_bytes(make_cover(skin, T)))
     (out_dir / "ingame.webp").write_bytes(webp_bytes(make_ingame(skin, T)))
     stamp.write_text(json.dumps({"sourceSha256": digest}, indent=2) + "\n", encoding="utf-8", newline="\n")
@@ -6575,6 +6634,11 @@ def main(argv):
     cats = keep_label_locales([{"id": i, "labels": {"en": n}} for i, n in CATEGORIES], CTRL / "categories.json")
     write_text(CTRL / "categories.json", json.dumps(cats, indent=2, ensure_ascii=False) + "\n")
     chosen = [s for s in SKINS if not ids or s.id in ids]
+    if "--add-neutral" in argv:
+        for s in chosen:
+            add_neutral(s)
+            print("neutral " + s.id, flush=True)
+        return
     for s in chosen:
         built = build_skin(s, force)
         print(("built   " if built else "skipped ") + s.id, flush=True)
