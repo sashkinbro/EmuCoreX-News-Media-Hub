@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K fügt Unterstützung für spielspezifische Vblank-Raten und natives Frame-Seitenverhältnis hinzu",
+  "summary": "Ein zusammengeführter Pull Request ersetzt den alten FPS-Hack durch eine konfigurierbare Vblank-Rate von bis zu 240 Hz und sorgt dafür, dass der Emulator das native Seitenverhältnis jedes Frames respektiert, was korrekte Patches für hohe Bildwiederholraten und Widescreen-Mods ermöglicht.",
+  "heroAlt": "Eine PlayStation Vita Handheld-Konsole mit OLED-Bildschirm, auf dem ein Spiel läuft, platziert auf einem neutralen Hintergrund.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita Emulator",
+    "vblank rate",
+    "Vblank-Rate",
+    "high refresh rate",
+    "hohe Bildwiederholrate",
+    "widescreen patches",
+    "Widescreen-Patches",
+    "aspect ratio",
+    "Seitenverhältnis"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "Vita3K Pull Request #4315",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warum der alte FPS-Hack einschränkend war"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K bot zuvor einen einfachen \"FPS Hack\"-Schalter an, der versuchte, 30 FPS-Spiele durch Halbierung der Vblank-Wartezeit auf 60 FPS zu verdoppeln. Dieser Ansatz war grob: Er konnte keine beliebigen Bildwiederholraten ansteuern, beschädigte Titel, die auf präzises Vblank-Timing angewiesen waren, und begrenzte jeden Community-Patch, der über 60 FPS hinausging, da der emulierte Vblank bei 60 Hz gesperrt blieb. Der Hack vermischte zudem zwei unterschiedliche Anforderungen — das Aufheben des Frame-Limits und die Korrektur der Spielgeschwindigkeitslogik —, was ihn für alles jenseits weniger Titel unzuverlässig machte."
+    },
+    {
+      "type": "heading",
+      "text": "Konfigurierbare Vblank-Rate mit spielspezifischen Überschreibungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die neue `vblank-rate`-Einstellung ersetzt den booleschen Hack durch einen Ganzzahl-Schieberegler von 30 bis 240 Hz (0 bedeutet \"dem Host-Bildschirm folgen\"). Sie befindet sich im Tab \"Erweitert\" zusammen mit einem \"An die Bildwiederholrate des Bildschirms anpassen\"-Kontrollkästchen und einer Reset-Taste und kann pro Anwendung überschrieben werden. Intern bewahrt ein `vcount_60hz` atomarer Zähler die 60 Hz-Einheiten, die `sceDisplayGetVcount` zurückgibt, sodass bestehende Homebrew- und kommerzielle Spiele denselben Vcount-Verlauf sehen, während sich das emulierte Vblank-Intervall verkürzt. Der Vblank-Thread begrenzt die Rate nun auf einen Bereich zwischen 60 Hz (das native Minimum, das von den Touch- und Bewegungs-Subsystemen benötigt wird) und 240 Hz, und das Qt-Frontend aktualisiert `host_refresh_rate` vom Bildschirm des Fensters, sodass der \"Bildschirm folgen\"-Modus beim Wechsel zwischen Monitoren präzise bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Frames behalten ihr eigenes Seitenverhältnis für Widescreen-Patches bei"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sowohl die OpenGL- als auch die Vulkan-Renderer berechnen nun das Viewport-Seitenverhältnis aus dem Frame, den das Spiel übermittelt (`frame.image_size`), anstatt 16:9 fest zu kodieren. Wenn ein Widescreen-Patch beispielsweise mit 1280x544 rendert, übernimmt das Fenster automatisch dieses Verhältnis. Die Touch-Eingabe folgt derselben Logik: Bei Frames, die größer als die nativen 960x544 sind, wird davon ausgegangen, dass die Benutzeroberfläche in diesem 960x544-Bereich zentriert bleibt, und Berührungen außerhalb werden auf den nächsten Rand begrenzt. Die Option \"Anzeigebereich strecken\" muss weiterhin aktiviert sein, wenn der Benutzer möchte, dass das Bild ein nicht passendes Fenster oder eine Vollbildanzeige ausfüllt, wodurch das bisherige Verhalten für diejenigen beibehalten wird, die dies bevorzugen."
+    },
+    {
+      "type": "heading",
+      "text": "Überprüfung und verbleibende Überlegungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der PR-Autor testete WipEout 2048 auf Vulkan sowohl bei 60 Hz als auch bei 240 Hz und bestätigte, dass der Vblank-Thread korrekt skaliert. Android-Änderungen wurden in diesem Merge nicht kompiliert, daher sollten mobile Benutzer auf nachfolgende Builds achten. Entwickler können das neue Verhalten überprüfen, indem sie `vblank-rate` in einer spielspezifischen Konfiguration auf über 60 setzen, einen Titel mit einem 60 FPS-Patch starten und beobachten, dass das Spiel nicht mehr auf eine künstliche Obergrenze stößt. Die Touch-Ausrichtung bei Nicht-16:9-Frames kann überprüft werden, indem ein Widescreen-Mod aktiviert und in der Nähe der Bildschirmränder getippt wird; die Begrenzungslogik sollte Eingaben innerhalb des logischen 960x544 UI-Bereichs halten."
+    }
+  ]
+}

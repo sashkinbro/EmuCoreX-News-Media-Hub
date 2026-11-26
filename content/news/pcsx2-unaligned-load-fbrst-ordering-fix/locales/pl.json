@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 naprawia zachowanie nienawiązanych instrukcji LWR i czasowanie rejestru flag VU",
+  "summary": "Dwie poprawki zgodne z sprzętem korygują obsługę nienawiązanych ładowań przez rekompilator EE oraz kolejność zapisu rejestru FBRST w trybie makro microVU, eliminując rozbieżności wykryte w ps2autotests.",
+  "heroAlt": "Zbliżenie na płytę główną PlayStation 2 pokazująca procesor Emotion Engine CPU oraz układy Vector Unit w oświetleniu laboratoryjnym",
+  "searchKeywords": [
+    "PCSX2",
+    "emulator PlayStation 2",
+    "EE recompiler",
+    "rekompilator EE",
+    "microVU",
+    "instrukcja LWR",
+    "FBRST register",
+    "rejestr FBRST",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 pull request #15213",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Co było nie tak"
+    },
+    {
+      "type": "paragraph",
+      "text": "Backend x86 32-bitowy rekompilatora EE błędnie obsługiwał instrukcję LWR (Load Word Right), operując na rejestrach 32-bitowych zamiast na pełnych 64-bitowych rejestrach ogólnego przeznaczenia EE. Powodowało to wyzerowanie starszych 32 bitów rejestru docelowego zamiast rozszerzenia znaku z bitu 31, co odbiegało od zachowania prawdziwego sprzętu. Oddzielnie, w trybie makro microVU, instrukcja CTC2 zapisująca do rejestru FBRST (Flag Busy Reset) wykonywała się po sekwencji resetu VU. Ponieważ reset czyści bity flag, zapisywana wartość była natychmiast tracona, pozostawiając rejestr na zerze zamiast odzwierciedlać zamierzony stan flag."
+    },
+    {
+      "type": "heading",
+      "text": "Jak działa zmiana"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dla LWR, rekompilator x86-32 używa teraz rejestrów 64-bitowych (RDX, RAX) oraz operacji logicznych 64-bitowych przy maskowaniu i scalaniu ładowanych bajtów, zachowując rozszerzenie znaku do bitów 32-63. Stała maski zmieniła się z 0xFFFFFF00 na ~0xFF (64-bitową), a końcowe OR operuje na pełnym 64-bitowym rejestrze docelowym. Dla FBRST, obsługa CTC2 w trybie makro zapisuje teraz przefiltrowaną wartość flag (zmaskowaną 0x0C0C) do rejestru VI[REG_FBRST] przed wywołaniem makr TEST_FBRST_RESET, które czyści stan VU. Ta kolejność odpowiada sekwencji sprzętowej, w której magistrala flag przechwytuje wartość przed wejściem w życie resetu."
+    },
+    {
+      "type": "heading",
+      "text": "Wpływ na graczy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gry polegające na precyzyjnych wzorcach dostępu do pamięci nienawiązanej — w szczególności te używające par LWR/LWL do nienawiązanych ładowań 32-bitowych — zobaczą teraz poprawne zawartości rejestrów, eliminując subtelne uszkodzenia, które mogły objawiać się jako błędy graficzne, błędy fizyki lub awarie. Naprawa FBRST gwarantuje, że synchronizacja flag Jednostki Wektorowej zachowuje się identycznie jak na konsoli, co wpływa na tytuły korzystające z programów VU w trybie makro z jawna manipulacją flagami. Obie korekty zostały zweryfikowane względem pakietu ps2autotests (cpu/ee/lsu.elf oraz cpu/vu0_macro/transfer.elf), potwierdzając bajt-dla-bajta równoważność sprzętową."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i zakres"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zmiany objęły wyłącznie 32-bitowy rekompilator x86 EE (iR5900LoadStore.cpp) oraz obsługę CTC2 w trybie makro microVU (microVU_Macro.inl). Rekompilator 64-bitowy x86-64 nie został zmodyfikowany, co sugeruje, że już poprawnie obsługiwał LWR. Programiści mogą zweryfikować poprawki, uruchamiając wymienione ps2autotests z włączonym rekompilatorem EE oraz logowaniem konsoli EE/IOP; wyjście testów powinno teraz pokazywać 0xFFFFFFFF w starszym słowie dla przypadków LWR z rozszerzeniem znaku oraz 0x00000000 dla odczytu FBRST po resecie. Żadne inne ścieżki instrukcji ani tryby VU nie są objęte tą poprawką."
+    }
+  ]
+}

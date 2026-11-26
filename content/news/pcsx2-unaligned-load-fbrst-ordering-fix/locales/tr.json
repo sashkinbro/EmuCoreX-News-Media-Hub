@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2, Hizalanmamış LWR Davranışını ve VU Bayrak Kayıt Zamanlamasını Düzeltiyor",
+  "summary": "İki donanım-açısından doğru düzeltme, EE yeniden derleyicinin hizalanmamış yükleme işlemlerini ve microVU makro modunun FBRST kayıt yazma sırasını düzeltiyor, ps2autotests'te bulunan uyuşmazlıkları çözüyor.",
+  "heroAlt": "Laboratuvar ışığında Emotion Engine CPU ve Vector Unit çiplerini gösteren bir PlayStation 2 anakartının yakın çekimi",
+  "searchKeywords": [
+    "PCSX2",
+    "PlayStation 2 emulator",
+    "EE recompiler",
+    "microVU",
+    "LWR instruction",
+    "FBRST register",
+    "ps2autotests",
+    "PCSX2",
+    "PlayStation 2 emülatörü",
+    "EE yeniden derleyici"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 pull request #15213",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ne Yanlıştı"
+    },
+    {
+      "type": "paragraph",
+      "text": "EE yeniden derleyicinin 32-bit x86 arka ucu, LWR (Load Word Right / Sağa Kelime Yükle) talimatını, tam 64-bit EE genel amaçlı kayıtlar yerine 32-bit kayıtlarda işleyerek yanlış ele aldı. Bu, hedef kaydın üst 32 bitinin, 31. bitten işarete dayalı genişletme yerine sıfırlanmasına neden oldu ve gerçek donanım davranışından sapma yarattı. Ayrı olarak, microVU makro modunda, FBRST (Flag Busy Reset / Bayrak Meşgul Sıfırlama) kaydına yazan CTC2 talimatı, VU sıfırlama dizisinden sonra gerçekleşti. Sıfırlama bayrak bitlerini temizlediği için, yazılan değer hemen kaybedildi ve kayıt, istenen bayrak durumunu yansıtmak yerine sıfırda kaldı."
+    },
+    {
+      "type": "heading",
+      "text": "Değişim Nasıl Çalışır"
+    },
+    {
+      "type": "paragraph",
+      "text": "LWR için, x86-32 yeniden derleyici artık yüklenen baytları maskeleyip birleştirirken 64-bit kayıtları (RDX, RAX) ve 64-bit mantıksal işlemleri kullanıyor, böylece işarete dayalı genişletme 32-63 bitlerine korunuyor. Maske sabiti 0xFFFFFF00'dan ~0xFF (64-bit) olarak değişti ve son OR işlemi tam 64-bit hedef kaydında gerçekleşiyor. FBRST için, makro modu CTC2 işleyicisi artık filtrelenmiş bayrak değerini (0x0C0C ile maskelenmiş) VI[REG_FBRST] kaydına, VU durumunu temizleyen TEST_FBRST_RESET makrolarını çağırmadan önce yazıyor. Bu sıralama, bayrak veri yolunun sıfırlama etkili olmadan önce değeri yakaladığı donanım sıralamasıyla eşleşiyor."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuncular Üzerindeki Etki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hassas hizalanmamış bellek erişim desenlerine güvenen oyunlar — özellikle hizalanmamış 32-bit yüklemeler için LWR/LWL çiftlerini kullananlar — artık doğru kayıt içeriklerini görecek, bu da grafik hataları, fizik hataları veya çökmeler olarak ortaya çıkabilen ince bozulmaları ortadan kaldıracak. FBRST düzeltmesi, Vector Unit bayrak senkronizasyonunun konsol ile birebir aynı davranmasını sağlıyor; bu, açık bayrak manipülasyonu ile makro modu VU programları kullanan oyunları etkiliyor. Her iki düzeltme de ps2autotests paketiyle (cpu/ee/lsu.elf ve cpu/vu0_macro/transfer.elf) doğrulandı, bayt-bayt donanım eşdeğerliğini onaylıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Kapsam"
+    },
+    {
+      "type": "paragraph",
+      "text": "Değişiklikler 32-bit x86 EE yeniden derleyicisine (iR5900LoadStore.cpp) ve microVU makro modu CTC2 işleyicisine (microVU_Macro.inl) sınırlı. 64-bit x86-64 yeniden derleyici değiştirilmedi; bu da LWR'ı zaten doğru işlediğini gösteriyor. Geliştiriciler, belirtilen ps2autotests'leri EE rec ve EE/IOP konsol günlüğü etkinleştirilmiş şekilde çalıştırarak düzeltmeleri doğrulayabilir; test çıktısı artık işarete dayalı genişletme yapılan LWR durumları için üst kelimede 0xFFFFFFFF ve sıfırlama sonrası FBRST okuması için 0x00000000 göstermeli. Bu yama tarafından başka hiçbir talimat yolu veya VU modu etkilenmiyor."
+    }
+  ]
+}

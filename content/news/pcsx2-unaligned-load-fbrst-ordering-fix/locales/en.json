@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 Fixes Unaligned LWR Behavior and VU Flag Register Timing",
+  "summary": "Two hardware-accurate fixes correct the EE recompiler's handling of unaligned loads and the microVU macro mode's FBRST register write order, resolving mismatches found in ps2autotests.",
+  "heroAlt": "Close-up of a PlayStation 2 motherboard showing the Emotion Engine CPU and Vector Unit chips under laboratory lighting",
+  "searchKeywords": [
+    "PCSX2",
+    "PlayStation 2 emulator",
+    "EE recompiler",
+    "microVU",
+    "LWR instruction",
+    "FBRST register",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 pull request #15213",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "What was wrong"
+    },
+    {
+      "type": "paragraph",
+      "text": "The EE recompiler's 32-bit x86 backend mishandled the LWR (Load Word Right) instruction by operating on 32-bit registers instead of the full 64-bit EE general-purpose registers. This caused the upper 32 bits of the destination register to be zeroed rather than sign-extended from bit 31, diverging from real hardware behavior. Separately, in microVU macro mode, the CTC2 instruction writing to the FBRST (Flag Busy Reset) register occurred after the VU reset sequence. Since the reset clears the flag bits, the written value was immediately lost, leaving the register at zero instead of reflecting the intended flag state."
+    },
+    {
+      "type": "heading",
+      "text": "How the change works"
+    },
+    {
+      "type": "paragraph",
+      "text": "For LWR, the x86-32 recompiler now uses 64-bit registers (RDX, RAX) and 64-bit logical operations when masking and merging the loaded bytes, preserving the sign extension into bits 32-63. The mask constant changed from 0xFFFFFF00 to ~0xFF (64-bit) and the final OR operates on the full 64-bit target register. For FBRST, the macro-mode CTC2 handler now writes the filtered flag value (masked with 0x0C0C) to the VI[REG_FBRST] register before invoking the TEST_FBRST_RESET macros that clear the VU state. This ordering matches the hardware sequence where the flag bus captures the value prior to the reset taking effect."
+    },
+    {
+      "type": "heading",
+      "text": "Impact on players"
+    },
+    {
+      "type": "paragraph",
+      "text": "Games relying on precise unaligned memory access patterns — particularly those using LWR/LWL pairs for misaligned 32-bit loads — will now see correct register contents, eliminating subtle corruption that could manifest as graphical glitches, physics errors, or crashes. The FBRST fix ensures Vector Unit flag synchronization behaves identically to the console, which affects titles that use macro-mode VU programs with explicit flag manipulation. Both corrections were validated against the ps2autotests suite (cpu/ee/lsu.elf and cpu/vu0_macro/transfer.elf), confirming byte-for-byte hardware equivalence."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and scope"
+    },
+    {
+      "type": "paragraph",
+      "text": "The changes are confined to the 32-bit x86 EE recompiler (iR5900LoadStore.cpp) and the microVU macro-mode CTC2 handler (microVU_Macro.inl). The 64-bit x86-64 recompiler was not modified, implying it already handled LWR correctly. Developers can verify the fixes by running the cited ps2autotests with EE rec and EE/IOP console logging enabled; the test output should now show 0xFFFFFFFF in the upper word for sign-extended LWR cases and 0x00000000 for the post-reset FBRST read. No other instruction paths or VU modes are affected by this patch."
+    }
+  ]
+}

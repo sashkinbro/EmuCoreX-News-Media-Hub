@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, Oyuna Özel Vblank Hızı ve Yerel Kare En-Boy Oranı Desteği Ekledi",
+  "summary": "Birleştirilen bir pull request, eski FPS hack'ini 240 Hz'e kadar yapılandırılabilir bir vblank hızıyla değiştiriyor ve emülatörün her karenin yerel en-boy oranına uymasını sağlayarak düzgün yüksek yenileme hızı yamalarının ve geniş ekran modlarının önünü açıyor.",
+  "heroAlt": "OLED ekranında bir oyun çalıştıran, nötr bir arka plan üzerine yerleştirilmiş PlayStation Vita el konsolu.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emülatörü",
+    "vblank hızı",
+    "yüksek yenileme hızı",
+    "geniş ekran yamaları",
+    "en-boy oranı",
+    "FPS yamaları"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4315",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eski FPS hack'i neden sınırlayıcıydı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K daha önce, vblank bekleme süresini yarıya indirerek 30 FPS oyunları 60 FPS'ye katlamaya çalışan basit bir \"FPS Hack\" seçeneği sunuyordu. Bu yaklaşım oldukça kaba bir yöntemdi: rastgele yenileme hızlarını hedefleyemiyor, hassas vblank zamanlamasına dayanan oyunları bozuyor ve emüle edilen vblank 60 Hz'de kilitli kaldığı için 60 FPS'nin üzerine çıkan topluluk yamalarını kısıtlıyordu. Bu hack ayrıca iki farklı ihtiyacı —kare sınırı kilidini kaldırmak ve oyun hızı mantığını düzeltmek— birbirine karıştırdığı için birkaç oyun dışında hiçbirinde güvenilir değildi."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuna özel geçersiz kılmalarla yapılandırılabilir vblank hızı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yeni `vblank-rate` ayarı, boolean hack'in yerini 30 ile 240 Hz arasında değişen bir tam sayı kaydırıcısı ile alıyor (0, \"ana ekranı takip et\" anlamına gelir). Bu ayar, Gelişmiş sekmesinde \"Ekranın yenileme hızıyla eşleştir\" onay kutusu ve bir sıfırlama düğmesi ile birlikte yer alır ve uygulama bazında geçersiz kılınabilir. Dahili olarak, bir `vcount_60hz` atomik sayacı, `sceDisplayGetVcount` tarafından döndürülen 60 Hz birimlerini korur, böylece mevcut homebrew ve ticari oyunlar, emüle edilen vblank aralığı kısalırken aynı vcount ilerlemesini görür. Vblank iş parçacığı artık hızı 60 Hz (dokunmatik ve hareket alt sistemlerinin gerektirdiği yerel minimum) ile 240 Hz arasında sabitler ve Qt arayüzü, monitörler arasında geçiş yaparken \"ekranı takip et\" modunun doğru kalması için `host_refresh_rate` değerini pencerenin ekranından günceller."
+    },
+    {
+      "type": "heading",
+      "text": "Kareler, geniş ekran yamaları için kendi en-boy oranlarını korur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hem OpenGL hem de Vulkan oluşturucular artık 16:9 oranını sabit kodlamak yerine, oyunun gönderdiği kareden (`frame.image_size`) görüntü alanı oranını hesaplıyor. Bir geniş ekran yaması örneğin 1280x544 çözünürlüğünde oluşturulduğunda, pencere bu oranı otomatik olarak benimser. Dokunmatik giriş de aynı mantığı izler: yerel 960x544 çözünürlüğünden daha büyük karelerin, kullanıcı arayüzünü bu 960x544 bölgesinde ortalanmış tuttuğu varsayılır ve dışındaki dokunuşlar en yakın kenara sabitlenir. Kullanıcı görüntünün uyumsuz bir pencereyi veya tam ekranı doldurmasını istiyorsa \"Görüntü Alanını Esnet\" seçeneği yine de etkinleştirilmelidir; bu, bunu tercih edenler için önceki davranışı korur."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve kalan hususlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "PR yazarı, WipEout 2048'i Vulkan üzerinde hem 60 Hz hem de 240 Hz'de test ederek vblank iş parçacığının doğru şekilde ölçeklendiğini doğruladı. Android değişiklikleri bu birleştirmeye dahil edilmedi, bu nedenle mobil kullanıcılar takip eden sürümleri beklemelidir. Geliştiriciler, `vblank-rate` değerini oyuna özel bir yapılandırmada 60'ın üzerine ayarlayarak, 60 FPS yaması olan bir oyunu başlatarak ve oyunun artık yapay bir sınıra takılmadığını gözlemleyerek yeni davranışı doğrulayabilirler. 16:9 olmayan karelerle dokunmatik hizalaması, bir geniş ekran modu etkinleştirilerek ve ekran kenarlarına yakın dokunarak kontrol edilebilir; sabitleme mantığı, girişleri mantıksal 960x544 kullanıcı arayüzü alanı içinde tutmalıdır."
+    }
+  ]
+}

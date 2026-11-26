@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2, 정렬되지 않은 LWR 동작 및 VU 플래그 레지스터 타이밍 수정",
+  "summary": "두 가지 하드웨어 정확한 수정으로 EE 재컴파일러의 정렬되지 않은 로드 처리와 microVU 매크로 모드의 FBRST 레지스터 쓰기 순서가 수정되어 ps2autotests에서 발견된 불일치가 해결되었습니다.",
+  "heroAlt": "실험실 조명 아래 Emotion Engine CPU와 Vector Unit 칩이 보이는 PlayStation 2 마더보드 클로즈업",
+  "searchKeywords": [
+    "PCSX2",
+    "PlayStation 2 에뮬레이터",
+    "EE 재컴파일러",
+    "microVU",
+    "LWR 명령어",
+    "FBRST 레지스터",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 풀 리퀘스트 #15213",
+    "implementation": "패치 및 검토"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "문제점"
+    },
+    {
+      "type": "paragraph",
+      "text": "EE 재컴파일러의 32비트 x86 백엔드가 LWR(Load Word Right) 명령어를 64비트 EE 범용 레지스터가 아닌 32비트 레지스터에서 처리하여 문제가 발생했습니다. 이로 인해 대상 레지스터의 상위 32비트가 비트 31로부터 부호 확장되는 대신 0으로 초기화되어 실제 하드웨어 동작과 달라졌습니다. 별개로 microVU 매크로 모드에서 FBRST(Flag Busy Reset) 레지스터에 쓰는 CTC2 명령어가 VU 리셋 시퀀스 이후에 발생했습니다. 리셋이 플래그 비트를 지우기 때문에 쓰여진 값이 즉시 손실되어 의도된 플래그 상태를 반영하는 대신 레지스터가 0으로 남게 되었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "변경 사항 작동 방식"
+    },
+    {
+      "type": "paragraph",
+      "text": "LWR의 경우 x86-32 재컴파일러가 이제 로드된 바이트를 마스킹하고 병합할 때 64비트 레지스터(RDX, RAX)와 64비트 논리 연산을 사용하여 비트 32-63으로의 부호 확장을 보존합니다. 마스크 상수가 0xFFFFFF00에서 ~0xFF(64비트)로 변경되었고 최종 OR 연산이 전체 64비트 대상 레지스터에서 수행됩니다. FBRST의 경우 매크로 모드 CTC2 핸들러가 이제 필터링된 플래그 값(0x0C0C로 마스킹)을 VU 상태를 지우는 TEST_FBRST_RESET 매크로를 호출하기 전에 VI[REG_FBRST] 레지스터에 씁니다. 이 순서는 플래그 버스가 리셋이 적용되기 전에 값을 캡처하는 하드웨어 시퀀스와 일치합니다."
+    },
+    {
+      "type": "heading",
+      "text": "플레이어 영향"
+    },
+    {
+      "type": "paragraph",
+      "text": "정확한 정렬되지 않은 메모리 접근 패턴에 의존하는 게임들 — 특히 LWR/LWL 쌍을 사용하여 정렬되지 않은 32비트 로드를 수행하는 게임들 — 은 이제 올바른 레지스터 내용을 보게 되어 그래픽 글리치, 물리 오류 또는 크래시로 나타날 수 있는 미묘한 손상이 제거됩니다. FBRST 수정은 Vector Unit 플래그 동기화가 콘솔과 동일하게 동작하도록 보장하며, 명시적 플래그 조작이 있는 매크로 모드 VU 프로그램을 사용하는 타이틀에 영향을 줍니다. 두 수정 모두 ps2autotests 제품군(cpu/ee/lsu.elf 및 cpu/vu0_macro/transfer.elf)에 대해 검증되어 바이트 단위 하드웨어 동등성이 확인되었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "검증 및 범위"
+    },
+    {
+      "type": "paragraph",
+      "text": "변경 사항은 32비트 x86 EE 재컴파일러(iR5900LoadStore.cpp)와 microVU 매크로 모드 CTC2 핸들러(microVU_Macro.inl)에 국한됩니다. 64비트 x86-64 재컴파일러는 수정되지 않았으며, 이는 이미 LWR을 올바르게 처리했음을 시사합니다. 개발자는 EE rec와 EE/IOP 콘솔 로깅을 활성화한 상태에서 인용된 ps2autotests를 실행하여 수정 사항을 검증할 수 있습니다. 테스트 출력은 이제 부호 확장된 LWR 경우 상위 워드에 0xFFFFFFFF를, 리셋 후 FBRST 읽기에 0x00000000을 표시해야 합니다. 이 패치로 다른 명령어 경로나 VU 모드는 영향을 받지 않습니다."
+    }
+  ]
+}

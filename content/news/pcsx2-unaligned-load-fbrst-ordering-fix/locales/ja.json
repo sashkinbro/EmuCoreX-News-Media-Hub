@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2、非アライン LWR の挙動と VU フラグレジスタのタイミングを修正",
+  "summary": "2 つのハードウェア準拠の修正により、EE リコンパイラの非アラインロード処理と microVU マクロモードの FBRST レジスタ書き込み順序が正され、ps2autotests で見つかった不一致が解消されました。",
+  "heroAlt": "実験室照明の下で Emotion Engine CPU とベクトルユニットチップが見える PlayStation 2 マザーボードのクローズアップ",
+  "searchKeywords": [
+    "PCSX2",
+    "PlayStation 2 エミュレータ",
+    "EE リコンパイラ",
+    "microVU",
+    "LWR 命令",
+    "FBRST レジスタ",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "エミュレーション",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 プルリクエスト #15213",
+    "implementation": "パッチとレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "何が問題だったか"
+    },
+    {
+      "type": "paragraph",
+      "text": "EE リコンパイラの 32 ビット x86 バックエンドは、LWR（Load Word Right）命令を処理する際に 64 ビット EE 汎用レジスタではなく 32 ビットレジスタを使用していました。これにより、デスティネーションレジスタの上位 32 ビットがビット 31 から符号拡張される代わりにゼロクリアされ、実機の挙動から逸脱していました。別の問題として、microVU マクロモードでは、CTC2 命令による FBRST（Flag Busy Reset）レジスタへの書き込みが VU リセットシーケンスの後に行われていました。リセットによってフラグビットがクリアされるため、書き込まれた値が即座に失われ、レジスタが意図したフラグ状態ではなくゼロのままになっていました。"
+    },
+    {
+      "type": "heading",
+      "text": "変更の仕組み"
+    },
+    {
+      "type": "paragraph",
+      "text": "LWR については、x86-32 リコンパイラがロードされたバイトのマスクとマージ時に 64 ビットレジスタ（RDX、RAX）と 64 ビット論理演算を使用するようになり、ビット 32-63 への符号拡張が保持されるようになりました。マスク定数が 0xFFFFFF00 から ~0xFF（64 ビット）に変更され、最終的な OR 演算がフル 64 ビットのターゲットレジスタで実行されます。FBRST については、マクロモードの CTC2 ハンドラが、フィルタリングされたフラグ値（0x0C0C でマスク）を VI[REG_FBRST] レジスタに書き込んでから、VU 状態をクリアする TEST_FBRST_RESET マクロを呼び出すようになりました。この順序は、リセットが有効になる前にフラグバスが値を取得するというハードウェアのシーケンスと一致します。"
+    },
+    {
+      "type": "heading",
+      "text": "プレイヤーへの影響"
+    },
+    {
+      "type": "paragraph",
+      "text": "特に LWR/LWL ペアを使用して非アライン 32 ビットロードを行うタイトルなど、正確な非アラインメモリアクセスパターンに依存するゲームでは、レジスタ内容が正しくなり、グラフィックの不具合、物理演算のエラー、クラッシュとして現れる可能性があった微妙な破損が排除されます。FBRST の修正により、ベクトルユニットのフラグ同期が実機と同一に振る舞うようになり、マクロモード VU プログラムで明示的なフラグ操作を行うタイトルに影響します。両修正とも ps2autotests スイート（cpu/ee/lsu.elf および cpu/vu0_macro/transfer.elf）で検証され、バイト単位でハードウェアと同等であることが確認されました。"
+    },
+    {
+      "type": "heading",
+      "text": "検証と範囲"
+    },
+    {
+      "type": "paragraph",
+      "text": "変更は 32 ビット x86 EE リコンパイラ（iR5900LoadStore.cpp）と microVU マクロモード CTC2 ハンドラ（microVU_Macro.inl）に限定されます。64 ビット x86-64 リコンパイラは変更されておらず、LWR を正しく処理していたことを示唆しています。開発者は、EE rec と EE/IOP コンソールログを有効にして引用された ps2autotests を実行することで修正を確認できます。テスト出力では、符号拡張 LWR ケースで上位ワードが 0xFFFFFFFF、リセット後の FBRST 読み取りで 0x00000000 が表示されるようになります。このパッチによって他の命令パスや VU モードが影響を受けることはありません。"
+    }
+  ]
+}

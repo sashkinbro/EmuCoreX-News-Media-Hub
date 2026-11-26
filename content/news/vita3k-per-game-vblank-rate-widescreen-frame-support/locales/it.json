@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K aggiunge il supporto per il vblank rate per-gioco e il rapporto d'aspetto nativo dei fotogrammi",
+  "summary": "Una pull request unita sostituisce il vecchio hack FPS con un vblank rate configurabile fino a 240 Hz e fa sì che l'emulatore rispetti il rapporto d'aspetto nativo di ogni fotogramma, consentendo patch corrette per l'alta frequenza di aggiornamento e mod widescreen.",
+  "heroAlt": "Una console portatile PlayStation Vita che mostra il suo schermo OLED con un gioco in esecuzione, posizionata su uno sfondo neutro.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulatore PlayStation Vita",
+    "vblank rate",
+    "frequenza di aggiornamento elevata",
+    "patch widescreen",
+    "rapporto d'aspetto",
+    "aspect ratio",
+    "patch FPS"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "graphics": "Grafica"
+  },
+  "sourceLabels": {
+    "change": "Pull request Vita3K #4315",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Perché il vecchio hack FPS era limitante"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K offriva in precedenza un semplice interruttore \"FPS Hack\" che tentava di raddoppiare i giochi a 30 FPS a 60 FPS dimezzando l'attesa del vblank. Questo approccio era grossolano: non poteva puntare a frequenze di aggiornamento arbitrarie, rompeva i titoli che si basavano su un timing preciso del vblank e limitava qualsiasi patch della community che superasse i 60 FPS perché il vblank emulato rimaneva bloccato a 60 Hz. L'hack confondeva inoltre due esigenze diverse — sbloccare il limite dei fotogrammi e correggere la logica della velocità di gioco — rendendolo inaffidabile per tutto ciò che andava oltre pochi titoli."
+    },
+    {
+      "type": "heading",
+      "text": "Vblank rate configurabile con override per-gioco"
+    },
+    {
+      "type": "paragraph",
+      "text": "La nuova impostazione `vblank-rate` sostituisce l'hack booleano con uno slider intero che va da 30 a 240 Hz (0 significa \"segui lo schermo host\"). Si trova nella scheda Avanzate con una casella di controllo \"Corrispondi alla frequenza di aggiornamento dello schermo\" e un pulsante di ripristino, e può essere sovrascritto per singola applicazione. Internamente, un contatore atomico `vcount_60hz` preserva le unità a 60 Hz restituite da `sceDisplayGetVcount`, così che gli homebrew esistenti e i giochi commerciali vedano la stessa progressione del vcount mentre l'intervallo del vblank emulato si accorcia. Il thread del vblank ora blocca la frequenza tra 60 Hz (il minimo nativo richiesto dai sottosistemi touch e motion) e 240 Hz, e il frontend Qt aggiorna `host_refresh_rate` dallo schermo della finestra, così che la modalità \"segui schermo\" rimanga accurata quando ci si sposta tra i monitor."
+    },
+    {
+      "type": "heading",
+      "text": "I fotogrammi mantengono il proprio rapporto d'aspetto per le patch widescreen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sia i renderer OpenGL che Vulkan ora calcolano il rapporto d'aspetto del viewport dal fotogramma inviato dal gioco (`frame.image_size`) invece di codificare rigidamente il 16:9. Quando una patch widescreen viene renderizzata, ad esempio, a 1280x544, la finestra adotta automaticamente quel rapporto. L'input touch segue la stessa logica: si presume che i fotogrammi più grandi del nativo 960x544 mantengano la loro interfaccia centrata in quell'area 960x544, e i tocchi esterni vengono bloccati al bordo più vicino. L'opzione \"Allunga l'area di visualizzazione\" deve essere ancora abilitata se l'utente desidera che l'immagine riempia una finestra non corrispondente o uno schermo intero, preservando il comportamento precedente per coloro che lo preferiscono."
+    },
+    {
+      "type": "heading",
+      "text": "Verifica e considerazioni rimanenti"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'autore della PR ha testato WipEout 2048 su Vulkan sia a 60 Hz che a 240 Hz, confermando che il thread del vblank scala correttamente. Le modifiche per Android non sono state compilate in questo merge, quindi gli utenti mobile dovrebbero attendere i build successivi. Gli sviluppatori possono verificare il nuovo comportamento impostando `vblank-rate` sopra 60 in una configurazione per-gioco, avviando un titolo con una patch a 60 FPS e osservando che il gioco non raggiunge più un limite artificiale. L'allineamento del touch con fotogrammi non 16:9 può essere controllato abilitando una mod widescreen e toccando vicino ai bordi dello schermo; la logica di blocco dovrebbe mantenere gli input all'interno dell'area logica dell'interfaccia 960x544."
+    }
+  ]
+}

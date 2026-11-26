@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 corrige el comportamiento desalineado de LWR y la temporización del registro de banderas VU",
+  "summary": "Dos correcciones precisas al hardware corrigen el manejo de cargas desalineadas del recompilador EE y el orden de escritura del registro FBRST en el modo macro microVU, resolviendo las discrepancias halladas en ps2autotests.",
+  "heroAlt": "Primer plano de una placa base de PlayStation 2 que muestra la CPU Emotion Engine y los chips de la Vector Unit bajo iluminación de laboratorio",
+  "searchKeywords": [
+    "PCSX2",
+    "emulador PlayStation 2",
+    "recompilador EE",
+    "microVU",
+    "instrucción LWR",
+    "registro FBRST",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Solicitud de extracción #15213 de PCSX2",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Qué estaba mal"
+    },
+    {
+      "type": "paragraph",
+      "text": "El backend x86 de 32 bits del recompilador EE manejó incorrectamente la instrucción LWR (Load Word Right) al operar sobre registros de 32 bits en lugar de los registros de propósito general de 64 bits completos de la EE. Esto provocaba que los 32 bits superiores del registro de destino se pusieran a cero en lugar de extenderse con signo desde el bit 31, divergiendo del comportamiento real del hardware. Por separado, en el modo macro microVU, la instrucción CTC2 que escribe en el registro FBRST (Flag Busy Reset) ocurría después de la secuencia de reinicio de la VU. Dado que el reinicio borra los bits de bandera, el valor escrito se perdía inmediatamente, dejando el registro en cero en lugar de reflejar el estado de bandera previsto."
+    },
+    {
+      "type": "heading",
+      "text": "Cómo funciona el cambio"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para LWR, el recompilador x86-32 ahora utiliza registros de 64 bits (RDX, RAX) y operaciones lógicas de 64 bits al enmascarar y fusionar los bytes cargados, preservando la extensión de signo en los bits 32-63. La constante de máscara cambió de 0xFFFFFF00 a ~0xFF (64 bits) y la operación OR final actúa sobre el registro de destino completo de 64 bits. En cuanto a FBRST, el manejador CTC2 del modo macro ahora escribe el valor de bandera filtrado (enmascarado con 0x0C0C) en el registro VI[REG_FBRST] antes de invocar las macros TEST_FBRST_RESET que borran el estado de la VU. Este orden coincide con la secuencia del hardware donde el bus de banderas captura el valor antes de que el reinicio surta efecto."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto en los jugadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los juegos que dependen de patrones precisos de acceso a memoria desalineada —en particular aquellos que usan pares LWR/LWL para cargas de 32 bits desalineadas— ahora verán contenidos de registro correctos, eliminando la corrupción sutil que podía manifestarse como fallos gráficos, errores de física o bloqueos. La corrección de FBRST garantiza que la sincronización de banderas de la Vector Unit se comporte de forma idéntica a la consola, lo que afecta a los títulos que emplean programas VU en modo macro con manipulación explícita de banderas. Ambas correcciones se validaron frente a la suite ps2autotests (cpu/ee/lsu.elf y cpu/vu0_macro/transfer.elf), confirmando la equivalencia byte a byte con el hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y alcance"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los cambios se limitan al recompilador EE x86 de 32 bits (iR5900LoadStore.cpp) y al manejador CTC2 del modo macro microVU (microVU_Macro.inl). El recompilador x86-64 de 64 bits no se modificó, lo que implica que ya manejaba LWR correctamente. Los desarrolladores pueden verificar las correcciones ejecutando los ps2autotests citados con el registro de consola EE rec y EE/IOP activado; la salida de la prueba ahora debería mostrar 0xFFFFFFFF en la palabra superior para los casos de LWR con extensión de signo y 0x00000000 para la lectura de FBRST posterior al reinicio. Ninguna otra ruta de instrucción o modo VU se ve afectada por este parche."
+    }
+  ]
+}

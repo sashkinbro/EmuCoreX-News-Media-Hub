@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 corrige comportamento de LWR não alinhado e temporização de registrador de flag da VU",
+  "summary": "Duas correções fiéis ao hardware corrigem o tratamento de cargas não alinhadas pelo recompilador EE e a ordem de escrita do registrador FBRST no modo macro do microVU, resolvendo divergências encontradas no ps2autotests.",
+  "heroAlt": "Detalhe de uma placa-mãe do PlayStation 2 mostrando a CPU Emotion Engine e os chips da Vector Unit sob iluminação de laboratório",
+  "searchKeywords": [
+    "PCSX2",
+    "emulador PlayStation 2",
+    "recompilador EE",
+    "microVU",
+    "instrução LWR",
+    "registrador FBRST",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "pull request do PCSX2 #15213",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O que estava errado"
+    },
+    {
+      "type": "paragraph",
+      "text": "O backend x86 de 32 bits do recompilador EE tratou incorretamente a instrução LWR (Load Word Right) ao operar em registradores de 32 bits em vez dos registradores de propósito geral de 64 bits do EE. Isso fez com que os 32 bits superiores do registrador de destino fossem zerados em vez de estendidos com sinal a partir do bit 31, divergindo do comportamento do hardware real. Separadamente, no modo macro do microVU, a instrução CTC2 que escreve no registrador FBRST (Flag Busy Reset) ocorria após a sequência de reset do VU. Como o reset limpa os bits de flag, o valor escrito era perdido imediatamente, deixando o registrador em zero em vez de refletir o estado de flag pretendido."
+    },
+    {
+      "type": "heading",
+      "text": "Como a mudança funciona"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para o LWR, o recompilador x86-32 agora utiliza registradores de 64 bits (RDX, RAX) e operações lógicas de 64 bits ao mascarar e mesclar os bytes carregados, preservando a extensão de sinal nos bits 32-63. A constante de máscara foi alterada de 0xFFFFFF00 para ~0xFF (64 bits) e o OR final opera no registrador de destino completo de 64 bits. Para o FBRST, o manipulador CTC2 do modo macro agora escreve o valor de flag filtrado (mascarado com 0x0C0C) no registrador VI[REG_FBRST] antes de invocar as macros TEST_FBRST_RESET que limpam o estado do VU. Essa ordenação corresponde à sequência do hardware em que o barramento de flag captura o valor antes de o reset entrar em vigor."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto para os jogadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jogos que dependem de padrões precisos de acesso à memória não alinhada — especialmente aqueles que usam pares LWR/LWL para cargas de 32 bits desalinhadas — agora verão o conteúdo correto dos registradores, eliminando corrupções sutis que poderiam se manifestar como falhas gráficas, erros de física ou travamentos. A correção do FBRST garante que a sincronização de flags da Vector Unit comporte-se de forma idêntica à do console, o que afeta títulos que utilizam programas VU no modo macro com manipulação explícita de flags. Ambas as correções foram validadas em relação à suíte ps2autotests (cpu/ee/lsu.elf e cpu/vu0_macro/transfer.elf), confirmando equivalência de hardware byte a byte."
+    },
+    {
+      "type": "heading",
+      "text": "Verificação e escopo"
+    },
+    {
+      "type": "paragraph",
+      "text": "As alterações estão restritas ao recompilador EE x86 de 32 bits (iR5900LoadStore.cpp) e ao manipulador CTC2 do modo macro do microVU (microVU_Macro.inl). O recompilador x86-64 de 64 bits não foi modificado, o que indica que ele já tratava o LWR corretamente. Os desenvolvedores podem verificar as correções executando os ps2autotests citados com o rec do EE e o log do console EE/IOP ativados; a saída do teste agora deve mostrar 0xFFFFFFFF na palavra superior para casos de LWR com extensão de sinal e 0x00000000 para a leitura do FBRST após o reset. Nenhum outro caminho de instrução ou modo de VU é afetado por este patch."
+    }
+  ]
+}

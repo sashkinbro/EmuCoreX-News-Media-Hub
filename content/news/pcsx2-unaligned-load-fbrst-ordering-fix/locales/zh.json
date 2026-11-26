@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 修复未对齐 LWR 行为和 VU 标志寄存器时序",
+  "summary": "两项硬件精确修复纠正了 EE 重编译器对未对齐加载的处理以及 microVU 宏模式下 FBRST 寄存器写入顺序，解决了在 ps2autotests 中发现的不匹配问题。",
+  "heroAlt": "PlayStation 2 主板特写，实验室灯光下展示 Emotion Engine CPU 和向量单元芯片",
+  "searchKeywords": [
+    "PCSX2",
+    "PlayStation 2 模拟器",
+    "EE 重编译器",
+    "microVU",
+    "LWR 指令",
+    "FBRST 寄存器",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 拉取请求 #15213",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "问题所在"
+    },
+    {
+      "type": "paragraph",
+      "text": "EE 重编译器的 32 位 x86 后端错误处理了 LWR（Load Word Right，加载字右）指令，它在 32 位寄存器上操作，而不是完整的 64 位 EE 通用寄存器。这导致目标寄存器的高 32 位被清零，而不是从第 31 位进行符号扩展，与真实硬件行为不符。另外，在 microVU 宏模式下，向 FBRST（Flag Busy Reset，标志忙复位）寄存器写入的 CTC2 指令发生在 VU 复位序列之后。由于复位会清除标志位，写入的值立即丢失，导致寄存器保持为零，而不是反映预期的标志状态。"
+    },
+    {
+      "type": "heading",
+      "text": "变更原理"
+    },
+    {
+      "type": "paragraph",
+      "text": "针对 LWR，x86-32 重编译器现在使用 64 位寄存器（RDX、RAX）和 64 位逻辑运算来进行掩码和合并加载的字节，保留符号扩展到第 32-63 位。掩码常量从 0xFFFFFF00 改为 ~0xFF（64 位），最终的 OR 运算作用于完整的 64 位目标寄存器。针对 FBRST，宏模式 CTC2 处理程序现在在调用清除 VU 状态的 TEST_FBRST_RESET 宏之前，将过滤后的标志值（掩码 0x0C0C）写入 VI[REG_FBRST] 寄存器。这种顺序与硬件序列一致，即标志总线在复位生效前捕获值。"
+    },
+    {
+      "type": "heading",
+      "text": "对玩家的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "依赖精确未对齐内存访问模式的游戏——特别是使用 LWR/LWL 配对进行未对齐 32 位加载的游戏——现在将看到正确的寄存器内容，消除了可能表现为图形故障、物理错误或崩溃的微妙损坏。FBRST 修复确保向量单元标志同步的行为与主机完全一致，这影响使用带有显式标志操作的宏模式 VU 程序的标题。这两项修正均通过 ps2autotests 套件（cpu/ee/lsu.elf 和 cpu/vu0_macro/transfer.elf）验证，确认了逐字节的硬件等价性。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与范围"
+    },
+    {
+      "type": "paragraph",
+      "text": "这些变更仅限于 32 位 x86 EE 重编译器（iR5900LoadStore.cpp）和 microVU 宏模式 CTC2 处理程序（microVU_Macro.inl）。64 位 x86-64 重编译器未作修改，意味着它已正确处理 LWR。开发者可通过启用 EE rec 和 EE/IOP 控制台日志运行上述 ps2autotests 来验证修复；测试输出现在应显示符号扩展 LWR 情况下高字为 0xFFFFFFFF，以及复位后 FBRST 读取为 0x00000000。此补丁不影响其他指令路径或 VU 模式。"
+    }
+  ]
+}

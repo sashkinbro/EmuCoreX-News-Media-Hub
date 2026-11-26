@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Menambahkan Dukungan Vblank Rate Per-Game dan Rasio Aspek Frame Asli",
+  "summary": "Sebuah pull request yang telah digabungkan menggantikan peretasan FPS lama dengan vblank rate yang dapat dikonfigurasi hingga 240 Hz dan membuat emulator mengikuti rasio aspek asli setiap frame, memungkinkan patch refresh rate tinggi dan mod layar lebar yang tepat.",
+  "heroAlt": "Konsol genggam PlayStation Vita yang menampilkan layar OLED-nya dengan game yang sedang berjalan, diletakkan di latar belakang netral.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulator PlayStation Vita",
+    "vblank rate",
+    "laju penyegaran tinggi",
+    "high refresh rate",
+    "patch layar lebar",
+    "widescreen patches",
+    "rasio aspek",
+    "aspect ratio",
+    "patch FPS"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4315",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa peretasan FPS lama bersifat membatasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K sebelumnya menawarkan tombol \"FPS Hack\" sederhana yang mencoba menggandakan game 30 FPS menjadi 60 FPS dengan membagi dua waktu tunggu vblank. Pendekatan ini sangat kasar: tidak dapat menargetkan refresh rate arbitrer, merusak judul game yang bergantung pada pengaturan waktu vblank yang presisi, dan membatasi patch komunitas apa pun yang melampaui 60 FPS karena vblank yang diemulasi tetap terkunci pada 60 Hz. Peretasan ini juga mencampuradukkan dua kebutuhan berbeda — membuka kunci batas frame dan memperbaiki logika kecepatan game — sehingga tidak dapat diandalkan untuk game selain beberapa judul tertentu."
+    },
+    {
+      "type": "heading",
+      "text": "Vblank rate yang dapat dikonfigurasi dengan penggantian per-game"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengaturan `vblank-rate` yang baru menggantikan peretasan boolean dengan penggeser integer mulai dari 30 hingga 240 Hz (0 berarti \"ikuti layar host\"). Pengaturan ini berada di tab Advanced dengan kotak centang \"Match the refresh rate of the screen\" dan tombol reset, serta dapat diganti per aplikasi. Secara internal, penghitung atomik `vcount_60hz` mempertahankan unit 60 Hz yang dikembalikan oleh `sceDisplayGetVcount`, sehingga homebrew dan game komersial yang ada melihat perkembangan vcount yang sama sementara interval vblank yang diemulasi menjadi lebih pendek. Thread vblank sekarang membatasi rate antara 60 Hz (minimum asli yang diperlukan oleh subsistem sentuh dan gerak) dan 240 Hz, dan frontend Qt memperbarui `host_refresh_rate` dari layar jendela sehingga mode \"follow screen\" tetap akurat saat berpindah antar monitor."
+    },
+    {
+      "type": "heading",
+      "text": "Frame mempertahankan rasio aspeknya sendiri untuk patch layar lebar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderer OpenGL dan Vulkan sekarang menghitung rasio aspek viewport dari frame yang dikirimkan game (`frame.image_size`) alih-alih melakukan hard-coding 16:9. Saat patch layar lebar merender pada, katakanlah, 1280x544, jendela akan mengadopsi rasio tersebut secara otomatis. Input sentuh mengikuti logika yang sama: frame yang lebih besar dari 960x544 asli diasumsikan menjaga UI-nya tetap terpusat di area 960x544 tersebut, dan sentuhan di luar area tersebut dibatasi ke tepi terdekat. Opsi \"Stretch the Display Area\" harus tetap diaktifkan jika pengguna ingin gambar memenuhi jendela yang tidak sesuai atau tampilan layar penuh, mempertahankan perilaku sebelumnya bagi mereka yang lebih menyukainya."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan pertimbangan lainnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penulis PR menguji WipEout 2048 pada Vulkan baik pada 60 Hz maupun 240 Hz, mengonfirmasi bahwa thread vblank berskala dengan benar. Perubahan Android tidak dikompilasi dalam penggabungan ini, jadi pengguna seluler harus menunggu build tindak lanjut. Pengembang dapat memverifikasi perilaku baru dengan mengatur `vblank-rate` di atas 60 dalam konfigurasi per-game, meluncurkan judul game dengan patch 60 FPS, dan mengamati bahwa game tersebut tidak lagi mencapai batas buatan. Penyelarasan sentuh dengan frame non-16:9 dapat diperiksa dengan mengaktifkan mod layar lebar dan mengetuk di dekat tepi layar; logika pembatasan harus menjaga input tetap berada di dalam area UI 960x544 yang logis."
+    }
+  ]
+}

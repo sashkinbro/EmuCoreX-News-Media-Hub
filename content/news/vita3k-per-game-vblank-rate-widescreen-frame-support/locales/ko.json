@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, 게임별 Vblank 속도 및 기본 프레임 화면 비율 지원 추가",
+  "summary": "병합된 pull request를 통해 기존의 FPS 핵이 최대 240Hz까지 설정 가능한 vblank 속도로 대체되었으며, 에뮬레이터가 각 프레임의 기본 화면 비율을 준수하도록 하여 적절한 고주사율 패치와 와이드스크린 모드를 사용할 수 있게 되었습니다.",
+  "heroAlt": "중립적인 배경 위에 OLED 화면이 켜진 게임이 실행 중인 PlayStation Vita 휴대용 콘솔.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita 에뮬레이터",
+    "vblank 속도",
+    "고주사율",
+    "와이드스크린 패치",
+    "화면 비율",
+    "FPS 패치"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "graphics": "그래픽"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4315",
+    "implementation": "패치 및 검토"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "기존 FPS 핵의 한계점"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K는 이전까지 vblank 대기 시간을 절반으로 줄여 30 FPS 게임을 60 FPS로 강제하는 단순한 \"FPS Hack\" 토글을 제공했습니다. 이 방식은 임의의 주사율을 설정할 수 없고, 정밀한 vblank 타이밍에 의존하는 타이틀에서 오류를 일으키며, 에뮬레이트된 vblank가 60Hz로 고정되어 있어 커뮤니티에서 제작한 60 FPS 이상의 패치를 적용할 수 없다는 한계가 있었습니다. 또한 이 핵은 프레임 제한 해제와 게임 속도 로직 수정이라는 두 가지 다른 요구 사항을 혼동하여 일부 타이틀 외에는 신뢰할 수 없었습니다."
+    },
+    {
+      "type": "heading",
+      "text": "게임별 오버라이드를 지원하는 설정 가능한 vblank 속도"
+    },
+    {
+      "type": "paragraph",
+      "text": "새로운 `vblank-rate` 설정은 기존의 불리언 방식 핵을 30에서 240Hz 범위의 정수 슬라이더(0은 \"호스트 화면 따름\"을 의미)로 대체합니다. 이 설정은 고급 탭에 위치하며 \"화면 주사율에 맞춤\" 체크박스와 초기화 버튼을 포함하고 있고, 애플리케이션별로 오버라이드할 수 있습니다. 내부적으로는 `sceDisplayGetVcount`가 반환하는 60Hz 단위를 유지하기 위해 `vcount_60hz` 원자 카운터가 사용되므로, 기존 홈브류 및 상용 게임은 에뮬레이트된 vblank 간격이 단축되더라도 동일한 vcount 진행을 확인합니다. vblank 스레드는 이제 속도를 60Hz(터치 및 모션 서브시스템이 요구하는 기본 최소값)에서 240Hz 사이로 제한하며, Qt 프론트엔드는 창의 화면에서 `host_refresh_rate`를 업데이트하여 모니터 간 이동 시에도 \"화면 따름\" 모드가 정확하게 유지되도록 합니다."
+    },
+    {
+      "type": "heading",
+      "text": "와이드스크린 패치를 위한 프레임별 화면 비율 유지"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL 및 Vulkan 렌더러 모두 이제 16:9로 고정하는 대신 게임이 제출하는 프레임(`frame.image_size`)에서 뷰포트 비율을 계산합니다. 와이드스크린 패치가 예를 들어 1280x544로 렌더링될 때, 창은 자동으로 해당 비율을 채택합니다. 터치 입력도 동일한 로직을 따릅니다. 기본 960x544보다 큰 프레임은 UI가 960x544 영역 내에 중앙 정렬된 것으로 간주하며, 영역 밖의 터치는 가장 가까운 가장자리로 고정됩니다. 사용자가 이미지를 맞지 않는 창이나 전체 화면에 채우고 싶다면 여전히 \"Stretch the Display Area\" 옵션을 활성화해야 하며, 이를 선호하는 사용자들을 위해 이전 동작을 유지합니다."
+    },
+    {
+      "type": "heading",
+      "text": "검증 및 향후 고려 사항"
+    },
+    {
+      "type": "paragraph",
+      "text": "PR 작성자는 Vulkan에서 60Hz와 240Hz 모두 WipEout 2048을 테스트하여 vblank 스레드가 올바르게 확장됨을 확인했습니다. Android 변경 사항은 이번 병합에 포함되지 않았으므로 모바일 사용자는 후속 빌드를 기다려 주시기 바랍니다. 개발자는 게임별 설정에서 `vblank-rate`를 60 이상으로 설정하고 60 FPS 패치가 적용된 타이틀을 실행하여 게임이 더 이상 인위적인 제한에 걸리지 않는지 확인하는 방식으로 새로운 동작을 검증할 수 있습니다. 16:9가 아닌 프레임에서의 터치 정렬은 와이드스크린 모드를 활성화하고 화면 가장자리 근처를 탭하여 확인할 수 있으며, 고정 로직이 입력을 논리적인 960x544 UI 영역 내에 유지해야 합니다."
+    }
+  ]
+}

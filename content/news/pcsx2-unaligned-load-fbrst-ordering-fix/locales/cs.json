@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 opravuje chování nezarovnané instrukce LWR a časování registru příznaků VU",
+  "summary": "Dvě hardwarově přesné opravy opravují zacházení EE rekompilátoru s nezarovnanými načítáními a pořadí zápisu do registru FBRST v makrovém režimu microVU, čímž řeší nesrovnalosti nalezené v ps2autotests.",
+  "heroAlt": "Zblízka základní desky PlayStation 2 ukazující CPU Emotion Engine a čipy Vector Unit pod laboratorním osvětlením",
+  "searchKeywords": [
+    "PCSX2",
+    "PlayStation 2 emulator, emulátor PlayStation 2",
+    "EE recompiler, EE rekompilátor",
+    "microVU",
+    "LWR instruction, instrukce LWR",
+    "FBRST register, registr FBRST",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 pull request #15213",
+    "implementation": "Oprava a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Co bylo špatně"
+    },
+    {
+      "type": "paragraph",
+      "text": "32bitové x86 backend EE rekompilátoru nesprávně zpracovával instrukci LWR (Load Word Right) operací na 32bitových registrech místo na plných 64bitových obecných registrech EE. To způsobilo, že horních 32 bitů cílového registru bylo vynulováno namísto aby byla znaménkově rozšířena z bitu 31, což odcházelo od chování skutečného hardwaru. Odděleně, v makrovém režimu microVU, instrukce CTC2 zapisující do registru FBRST (Flag Busy Reset) proběhla po sekvenci resetu VU. Protože reset vymaže příznakové bity, zapsaná hodnota byla okamžitě ztracena, což nechalo registr na nule místo aby odrážel zamýšlený stav příznaků."
+    },
+    {
+      "type": "heading",
+      "text": "Jak změna funguje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pro LWR nyní x86-32 rekompilátor používá 64bitové registry (RDX, RAX) a 64bitové logické operace při maskování a slučování načtených bajtů, čímž zachovává znaménkové rozšíření do bitů 32–63. Maskovací konstanta se změnila z 0xFFFFFF00 na ~0xFF (64bit) a finální operace OR pracuje s celým 64bitovým cílovým registrem. Pro FBRST nyní handler CTC2 v makrovém režimu zapíše filtrovanou hodnotu příznaků (zmaskovanou 0x0C0C) do registru VI[REG_FBRST] před vyvoláním maker TEST_FBRST_RESET, která vymažou stav VU. Toto pořadí odpovídá hardwarové sekvenci, kde sběrnice příznaků zachytí hodnotu předtím, než reset nastoupí."
+    },
+    {
+      "type": "heading",
+      "text": "Dopad na hráče"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hry spoléhající se na přesné vzory nezarovnaného přístupu do paměti — zejména ty používající páry LWR/LWL pro nezarovnaná 32bitová načítání — nyní uvidí správný obsah registrů, čímž se eliminuje jemná poškození, která se mohla projevit jako grafické chyby, fyzikální chyby nebo pády. Oprava FBRST zajišťuje, že synchronizace příznaků Vector Unit se chová identicky jako na konzoli, což ovlivňuje tituly používající VU programy v makrovém režimu s explicitní manipulací příznaků. Obě opravy byly ověřeny pomocí sady ps2autotests (cpu/ee/lsu.elf a cpu/vu0_macro/transfer.elf), což potvrdilo bajt-pro-bajt hardwarovou ekvivalenci."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a rozsah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Změny jsou omezeny na 32bitový x86 EE rekompilátor (iR5900LoadStore.cpp) a handler CTC2 v makrovém režimu microVU (microVU_Macro.inl). 64bitový x86-64 rekompilátor nebyl upraven, což naznačuje, že již správně zpracovával LWR. Vývojáři mohou ověřit opravy spuštěním uvedených ps2autotests s povoleným EE rec a logováním konzole EE/IOP; výstup testu by nyní měl ukazovat 0xFFFFFFFF ve horním slově pro znaménkově rozšířené případy LWR a 0x00000000 pro čtení FBRST po resetu. Žádné jiné instrukční cesty nebo VU režimy nejsou touto opravou ovlivněny."
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K přidává podporu pro vblank rate na hru a nativní poměr stran snímků",
+  "summary": "Sloučený pull request nahrazuje starý FPS hack konfigurovatelnou frekvencí vblank až do 240 Hz a zajišťuje, že emulátor respektuje nativní poměr stran každého snímku, což umožňuje správné patche pro vysokou obnovovací frekvenci a widescreen mody.",
+  "heroAlt": "Ruční konzole PlayStation Vita zobrazující svou OLED obrazovku s běžící hrou, umístěná na neutrálním pozadí.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulátor PlayStation Vita",
+    "vblank rate",
+    "obnovovací frekvence",
+    "vysoká obnovovací frekvence",
+    "widescreen patche",
+    "poměr stran",
+    "FPS patche"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4315",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč byl starý FPS hack omezující"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K dříve nabízel jednoduchý přepínač „FPS Hack“, který se pokoušel zdvojnásobit 30 FPS hry na 60 FPS tím, že zkrátil čekání na vblank na polovinu. Tento přístup byl neohrabaný: nedokázal cílit na libovolné obnovovací frekvence, rozbíjel tituly, které spoléhaly na přesné časování vblank, a omezoval jakýkoli komunitní patch překračující 60 FPS, protože emulovaný vblank zůstal uzamčen na 60 Hz. Hack také spojoval dvě různé potřeby — odemknutí limitu snímků a opravu logiky rychlosti hry — což ho činilo nespolehlivým pro cokoli jiného než několik málo titulů."
+    },
+    {
+      "type": "heading",
+      "text": "Konfigurovatelný vblank rate s přepisy pro jednotlivé hry"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nové nastavení `vblank-rate` nahrazuje booleovský hack celočíselným posuvníkem v rozsahu od 30 do 240 Hz (0 znamená „následovat hostitelskou obrazovku“). Nachází se na kartě Advanced spolu se zaškrtávacím políčkem „Match the refresh rate of the screen“ a tlačítkem pro reset a lze jej přepsat pro každou aplikaci zvlášť. Interně atomický čítač `vcount_60hz` zachovává 60Hz jednotky, které vrací `sceDisplayGetVcount`, takže stávající homebrew i komerční hry vidí stejný postup vcount, zatímco emulovaný interval vblank se zkracuje. Vlákno vblank nyní omezuje frekvenci mezi 60 Hz (nativní minimum vyžadované subsystémy dotyku a pohybu) a 240 Hz a Qt frontend aktualizuje `host_refresh_rate` z okna obrazovky, takže režim „následovat obrazovku“ zůstává přesný i při přesunu mezi monitory."
+    },
+    {
+      "type": "heading",
+      "text": "Snímky si zachovávají vlastní poměr stran pro widescreen patche"
+    },
+    {
+      "type": "paragraph",
+      "text": "Renderery OpenGL i Vulkan nyní počítají poměr stran viewportu ze snímku, který hra odešle (`frame.image_size`), namísto pevného zakódování 16:9. Když widescreen patch vykresluje např. v 1280x544, okno automaticky přijme tento poměr. Dotykový vstup následuje stejnou logiku: u snímků větších než nativních 960x544 se předpokládá, že si zachovávají UI vycentrované v této oblasti 960x544, a dotyky mimo ni jsou omezeny na nejbližší okraj. Možnost „Stretch the Display Area“ musí být stále povolena, pokud uživatel chce, aby obraz vyplnil nesourodé okno nebo celou obrazovku, čímž se zachovává předchozí chování pro ty, kteří ho preferují."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a zbývající úvahy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Autor PR testoval WipEout 2048 na Vulkanu při 60 Hz i 240 Hz, čímž potvrdil, že vlákno vblank správně škáluje. Změny pro Android nebyly v tomto sloučení zkompilovány, takže mobilní uživatelé by měli sledovat následné sestavení. Vývojáři mohou nové chování ověřit nastavením `vblank-rate` nad 60 v konfiguraci pro konkrétní hru, spuštěním titulu s 60 FPS patchem a pozorováním, že hra již nenaráží na umělý strop. Zarovnání dotyku u snímků jiných než 16:9 lze zkontrolovat povolením widescreen modu a klepnutím blízko okrajů obrazovky; logika omezování by měla udržet vstupy uvnitř logické oblasti UI 960x544."
+    }
+  ]
+}

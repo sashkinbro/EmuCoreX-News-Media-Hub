@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "pcsx2-unaligned-load-fbrst-ordering-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PCSX2 Memperbaiki Perilaku LWR Tidak Teralignment dan Penjadwalan Register Flag VU",
+  "summary": "Dua perbaikan yang akurat secara hardware memperbaiki penanganan muatan tidak teralignment oleh EE recompiler dan urutan penulisan register FBRST pada mode mikroVU macro, menyelesaikan ketidaksesuaian yang ditemukan di ps2autotests.",
+  "heroAlt": "Tampilan dekat motherboard PlayStation 2 yang menampilkan CPU Emotion Engine dan chip Vector Unit di bawah pencahayaan laboratorium",
+  "searchKeywords": [
+    "PCSX2",
+    "emulator PlayStation 2",
+    "EE recompiler",
+    "microVU",
+    "instruksi LWR",
+    "register FBRST",
+    "ps2autotests"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PCSX2 pull request #15213",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Apa yang Salah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Backend x86 32-bit dari EE recompiler menangani instruksi LWR (Load Word Right) dengan salah karena beroperasi pada register 32-bit, bukan pada register umum EE 64-bit penuh. Hal ini menyebabkan 32 bit atas dari register tujuan menjadi nol, bukan diperluas tanda (sign-extended) dari bit 31, menyimpang dari perilaku hardware asli. Terpisah, pada mode mikroVU macro, instruksi CTC2 yang menulis ke register FBRST (Flag Busy Reset) terjadi setelah urutan reset VU. Karena reset menghapus bit flag, nilai yang ditulis segera hilang, meninggalkan register pada nol, bukan mencerminkan status flag yang diinginkan."
+    },
+    {
+      "type": "heading",
+      "text": "Cara Perubahan Bekerja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk LWR, recompiler x86-32 kini menggunakan register 64-bit (RDX, RAX) dan operasi logika 64-bit saat melakukan masking dan merging byte yang dimuat, mempertahankan perluasan tanda ke bit 32-63. Konstanta mask berubah dari 0xFFFFFF00 menjadi ~0xFF (64-bit) dan operasi OR final beroperasi pada register target 64-bit penuh. Untuk FBRST, penangan CTC2 mode-makro kini menulis nilai flag yang difilter (dimasking dengan 0x0C0C) ke register VI[REG_FBRST] sebelum memanggil makro TEST_FBRST_RESET yang menghapus state VU. Urutan ini cocok dengan urutan hardware di mana bus flag menangkap nilai sebelum reset berlaku."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak bagi Pemain"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game yang mengandalkan pola akses memori tidak teralignment yang presisi — khususnya yang menggunakan pasangan LWR/LWL untuk memuat 32-bit tidak teralignment — kini akan melihat isi register yang benar, menghilangkan kerusakan halus yang bisa muncul sebagai glitch grafis, error fisika, atau crash. Perbaikan FBRST memastikan sinkronisasi flag Vector Unit berperilaku identik dengan konsol, yang mempengaruhi judul yang menggunakan program VU mode-makro dengan manipulasi flag eksplisit. Kedua koreksi divalidasi terhadap suite ps2autotests (cpu/ee/lsu.elf dan cpu/vu0_macro/transfer.elf), mengonfirmasi kesetaraan hardware byte-per-byte."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Ruang Lingkup"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan dibatasi pada recompiler EE x86 32-bit (iR5900LoadStore.cpp) dan penangan CTC2 mode-makro mikroVU (microVU_Macro.inl). Recompiler x86-64 64-bit tidak dimodifikasi, yang berarti ia sudah menangani LWR dengan benar. Pengembang dapat memverifikasi perbaikan dengan menjalankan ps2autotests yang dikutip dengan EE rec dan logging konsol EE/IOP diaktifkan; output seharusnya sekarang menampilkan 0xFFFFFFFF di kata atas untuk kasus LWR perluasan tanda dan 0x00000000 untuk bacaan FBRST pasca-reset. Jalur instruksi atau mode VU lain tidak terpengaruh oleh patch ini."
+    }
+  ]
+}

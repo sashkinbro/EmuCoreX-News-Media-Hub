@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 增加每游戏 Vblank 速率和原生帧纵横比支持",
+  "summary": "一项已合并的 PR 用可配置的最高 240 Hz vblank 速率取代了旧的 FPS 补丁，并使模拟器能够遵循每一帧的原生纵横比，从而实现正确的高刷新率补丁和宽屏模组。",
+  "heroAlt": "一台 PlayStation Vita 手持游戏机，其 OLED 屏幕上运行着一款游戏，放置在中性背景上。",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita 模拟器",
+    "vblank 速率",
+    "高刷新率",
+    "宽屏补丁",
+    "纵横比",
+    "FPS 补丁"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4315",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "为什么旧的 FPS 补丁存在局限性"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K 此前提供了一个简单的“FPS Hack”开关，试图通过将 vblank 等待时间减半来将 30 FPS 的游戏翻倍至 60 FPS。这种方法比较粗糙：它无法针对任意刷新率，会破坏依赖精确 vblank 计时的游戏，并且限制了任何超过 60 FPS 的社区补丁，因为模拟的 vblank 始终锁定在 60 Hz。该补丁还将两个不同的需求（解锁帧率上限和校正游戏速度逻辑）混为一谈，使其在处理少数游戏之外的情况时变得不可靠。"
+    },
+    {
+      "type": "heading",
+      "text": "具有每游戏覆盖功能的可配置 vblank 速率"
+    },
+    {
+      "type": "paragraph",
+      "text": "新的 `vblank-rate` 设置取代了布尔值补丁，改为一个 30 到 240 Hz 的整数滑动条（0 表示“跟随宿主屏幕”）。它位于“高级”选项卡中，配有“匹配屏幕刷新率”复选框和重置按钮，并且可以针对每个应用程序进行覆盖。在内部，一个 `vcount_60hz` 原子计数器保留了 `sceDisplayGetVcount` 返回的 60 Hz 单位，因此现有的自制程序和商业游戏在模拟 vblank 间隔缩短的同时，仍能看到相同的 vcount 进度。vblank 线程现在将速率限制在 60 Hz（触摸和运动子系统所需的原生最小值）到 240 Hz 之间，Qt 前端会从窗口屏幕更新 `host_refresh_rate`，以便在不同显示器之间移动时，“跟随屏幕”模式保持准确。"
+    },
+    {
+      "type": "heading",
+      "text": "帧保持其自身的纵横比以支持宽屏补丁"
+    },
+    {
+      "type": "paragraph",
+      "text": "OpenGL 和 Vulkan 渲染器现在都根据游戏提交的帧 (`frame.image_size`) 计算视口纵横比，而不是硬编码为 16:9。当宽屏补丁以例如 1280x544 分辨率渲染时，窗口会自动采用该比例。触摸输入遵循相同的逻辑：大于原生 960x544 的帧被假定将其 UI 保持在 960x544 区域的中心，而外部的触摸会被限制在最近的边缘。如果用户希望图像填充不匹配的窗口或全屏显示，则仍必须启用“拉伸显示区域”选项，从而为偏好此行为的用户保留了之前的操作方式。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与后续考量"
+    },
+    {
+      "type": "paragraph",
+      "text": "PR 作者在 Vulkan 上以 60 Hz 和 240 Hz 测试了 WipEout 2048，确认 vblank 线程缩放正确。Android 相关的更改未包含在此次合并中，因此移动端用户应关注后续版本。开发者可以通过在每游戏配置中将 `vblank-rate` 设置为 60 以上，启动带有 60 FPS 补丁的游戏，并观察游戏是否不再触及人为上限来验证新行为。可以通过启用宽屏模组并点击屏幕边缘附近来检查触摸与非 16:9 帧的对齐情况；限制逻辑应将输入保持在逻辑上的 960x544 UI 区域内。"
+    }
+  ]
+}

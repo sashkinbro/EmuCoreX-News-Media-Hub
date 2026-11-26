@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-per-game-vblank-rate-widescreen-frame-support",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Adds Per-Game Vblank Rate and Native Frame Aspect Ratio Support",
+  "summary": "A merged pull request replaces the old FPS hack with a configurable vblank rate up to 240 Hz and makes the emulator respect each frame's native aspect ratio, enabling proper high-refresh-rate patches and widescreen mods.",
+  "heroAlt": "A PlayStation Vita handheld console showing its OLED screen with a game running, placed on a neutral background.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emulator",
+    "vblank rate",
+    "high refresh rate",
+    "widescreen patches",
+    "aspect ratio",
+    "FPS patches"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4315",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Why the old FPS hack was limiting"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K previously offered a simple \"FPS Hack\" toggle that attempted to double 30 FPS games to 60 FPS by halving the vblank wait. This approach was blunt: it could not target arbitrary refresh rates, broke titles that relied on precise vblank timing, and capped any community patch pushing past 60 FPS because the emulated vblank remained locked at 60 Hz. The hack also conflated two different needs — unlocking the frame cap and correcting game-speed logic — making it unreliable for anything beyond a few titles."
+    },
+    {
+      "type": "heading",
+      "text": "Configurable vblank rate with per-game overrides"
+    },
+    {
+      "type": "paragraph",
+      "text": "The new `vblank-rate` setting replaces the boolean hack with an integer slider ranging from 30 to 240 Hz (0 means \"follow the host screen\"). It lives in the Advanced tab with a \"Match the refresh rate of the screen\" checkbox and a reset button, and it can be overridden per application. Internally, a `vcount_60hz` atomic counter preserves the 60 Hz units that `sceDisplayGetVcount` returns, so existing homebrew and commercial games see the same vcount progression while the emulated vblank interval shortens. The vblank thread now clamps the rate between 60 Hz (the native minimum required by the touch and motion subsystems) and 240 Hz, and the Qt frontend updates `host_refresh_rate` from the window's screen so the \"follow screen\" mode stays accurate when moving between monitors."
+    },
+    {
+      "type": "heading",
+      "text": "Frames keep their own aspect ratio for widescreen patches"
+    },
+    {
+      "type": "paragraph",
+      "text": "Both the OpenGL and Vulkan renderers now compute the viewport aspect from the frame the game submits (`frame.image_size`) instead of hard-coding 16:9. When a widescreen patch renders at, say, 1280x544, the window adopts that ratio automatically. Touch input follows the same logic: frames larger than the native 960x544 are assumed to keep their UI centered in that 960x544 region, and touches outside are clamped to the nearest edge. The \"Stretch the Display Area\" option must still be enabled if the user wants the image to fill a mismatched window or fullscreen display, preserving the previous behavior for those who prefer it."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and remaining considerations"
+    },
+    {
+      "type": "paragraph",
+      "text": "The PR author tested WipEout 2048 on Vulkan at both 60 Hz and 240 Hz, confirming the vblank thread scales correctly. Android changes were not compiled in this merge, so mobile users should watch for follow-up builds. Developers can verify the new behavior by setting `vblank-rate` above 60 in a per-game config, launching a title with a 60 FPS patch, and observing that the game no longer hits an artificial ceiling. Touch alignment with non-16:9 frames can be checked by enabling a widescreen mod and tapping near the screen edges; the clamping logic should keep inputs inside the logical 960x544 UI area."
+    }
+  ]
+}
