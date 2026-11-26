@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, AMD Donanımındaki OpenGL SPIR-V İşleme Sorunlarını Çözüyor",
+  "summary": "Vita3K'ya gelen yeni bir güncelleme, OpenGL üzerinde SPIR-V gölgelendiricileri kullanılırken yaşanan siyah ekran sorunlarını, özellikle maske dokularının örneklenme biçimini değiştirerek AMD GPU'ları hedef alacak şekilde düzeltiyor.",
+  "heroAlt": "Ekranı ve ön yüz tuşlarını gösteren bir PlayStation Vita el konsolunun yakın plan görüntüsü.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emülatörü",
+    "OpenGL",
+    "SPIR-V",
+    "AMD GPU",
+    "gölgelendirici derleme",
+    "shader compilation",
+    "işleme düzeltmesi",
+    "rendering fix"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4468",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Maske Depolama Hatasının Belirlenmesi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K'yı OpenGL oluşturucu ve SPIR-V gölgelendiricileri etkin şekilde çalıştıran kullanıcılar, özellikle RX 9070 XT gibi AMD donanımlarında sürekli bir siyah ekran sorunuyla karşılaşıyordu. Teknik incelemeler, maske testi emülasyonu için kullanılan maske depolama görüntüsünün, SPIR-V gölgelendiricileri içinde sürekli olarak sıfır değerini döndürdüğünü ortaya çıkardı. Maske testi, hangi piksellerin çizileceğini belirlemek için bu değerlere dayandığından, her bir parça (fragment) GPU tarafından yanlış bir şekilde atılıyordu. Maske dokusu doğru verileri içermesine rağmen, gölgelendirici depolama görüntüsü arayüzü aracılığıyla verilere düzgün bir şekilde erişemiyordu; bu da emülasyon mantığı arka planda doğru çalışsa bile görsel çıktının tamamen başarısız olmasına yol açıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Örnekleyici Tabanlı Maske Erişimine Geçiş"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu sorunu çözmek için geliştiriciler, maskeye erişim şeklini değiştirmek üzere OpenGL SPIR-V yeniden derleyicisini modifiye ettiler. Gölgelendiriciler artık bir depolama görüntüsü kullanmak yerine, 32 numaralı doku birimine bağlı özel bir örnekleyiciden (sampler) texelFetch işlemini kullanıyor. Bu özel birim, konuk donanım tarafından kullanılan standart parça ve tepe noktası (vertex) doku birimlerinden sonra güvenli bir şekilde konumlanması için seçildi. Ek olarak, kullanıcı arayüzü düzeltildi; daha önce sadece OpenGL'i etkilemesine rağmen Vulkan ayarları altında görünen \"Use SPIR-V Shader\" seçeneği, gelişmiş OpenGL yapılandırma bölümüne taşındı. Ayrıca, belirli donanım yapılandırmalarında performans optimizasyonu için geçerliliğini koruduğunu yansıtmak adına kullanımdan kaldırılmış (deprecated) etiketi de kaldırıldı."
+    },
+    {
+      "type": "heading",
+      "text": "Performans Kazanımları ve Uyumluluk Testleri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oyuncular için bu değişiklik, Vulkan'ın tercih edilen seçenek olmayabileceği sistemlerde OpenGL arka ucunun uygulanabilirliğini önemli ölçüde artırıyor. Freedom Wars ve Soul Sacrifice gibi oyunlarda yapılan testler, SPIR-V çıktısının artık standart GLSL işleme doğruluğu ile eşleştiğini ve kare verilerinde ihmal edilebilir bir ortalama fark olduğunu gösteriyor. Daha da önemlisi, SPIR-V gölgelendiricileri, gölgelendirici derleme takılmalarında ölçülebilir bir azalma sağlıyor. Freedom Wars'un soğuk bir çalıştırmasında, gölgelendirici kaynaklı duraksamalar GLSL ile 7.4 saniyeden, SPIR-V etkinleştirildiğinde 4.8 saniyeye düşürüldü. Derleme gecikmesindeki bu azalma, özellikle yeni efektlerle veya ortamlarla ilk kez karşılaşıldığında oyun sırasında daha akıcı bir deneyim sunuyor."
+    },
+    {
+      "type": "heading",
+      "text": "Teknik Gereksinimler ve Doğrulama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu güncelleme, gölgelendirici önbellek sürümünün 16'dan 17'ye yükseltilmesini içeriyor; bu da mevcut gölgelendirici önbelleklerinin geçersiz kılınacağı ve ilk başlatmada yeniden oluşturulacağı anlamına geliyor. Emülatör artık GPU bağlamının yeni maske örnekleyicisini barındırmak için yeterli doku birimini desteklediğinden emin olmak adına bir donanım kontrolü gerçekleştiriyor. Sistem gerekli birimlerden yoksunsa, işleme hatalarını önlemek için emülatör otomatik olarak standart gölgelendiricilere geri dönecektir. Geliştiriciler, parçaların artık atılmadığını doğrulamak için piksel geçmişi araçlarını kullanarak düzeltmeyi onayladılar. Oyuncular, OpenGL ayarlarından SPIR-V gölgelendiricilerini etkinleştirerek ve standart GLSL oluşturucu ile görsel uyumu kontrol ederek iyileştirmeyi doğrulayabilirler."
+    }
+  ]
+}

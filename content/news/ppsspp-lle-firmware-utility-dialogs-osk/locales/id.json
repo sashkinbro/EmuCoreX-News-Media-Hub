@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-lle-firmware-utility-dialogs-osk",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Memperkenalkan Low-Level Emulation untuk Dialog Utilitas Firmware",
+  "summary": "Fitur eksperimental baru memungkinkan PPSSPP untuk menjalankan kode firmware asli PlayStation Portable untuk dialog pesan dan keyboard layar, meningkatkan akurasi visual dan fidelitas sistem.",
+  "heroAlt": "Foto close-up konsol PlayStation Portable yang menampilkan dialog pesan asli sistem pada layarnya.",
+  "searchKeywords": [
+    "PPSSPP",
+    "LLE",
+    "Firmware",
+    "Utility Dialog",
+    "Dialog Utilitas",
+    "OSK",
+    "Emulation Accuracy",
+    "Akurasi Emulasi"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23046",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Batasan Emulasi UI High-Level"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dalam emulasi PlayStation Portable, antarmuka tingkat sistem seperti kotak pesan dan keyboard layar biasanya ditangani melalui High-Level Emulation (HLE). Ini berarti emulator menyediakan versi menu yang dikodekan secara khusus yang meniru perilaku aslinya. Meskipun fungsional dan efisien, implementasi HLE sering kali kurang memiliki nuansa visual yang tepat, animasi, dan logika internal spesifik dari firmware asli Sony. Bagi pemain yang mencari autentisitas maksimal, perbedaan antara menu yang dibuat ulang oleh emulator dan tampilan serta nuansa perangkat keras aslinya dapat terlihat jelas. Selain itu, game tertentu mungkin bergantung pada pengaturan waktu tertentu atau perilaku yang tidak terdokumentasi di dalam modul sistem ini yang mungkin tidak direplikasi secara sempurna oleh HLE, sehingga menyebabkan hambatan kompatibilitas kecil."
+    },
+    {
+      "type": "heading",
+      "text": "Mengimplementasikan Low-Level Utility Overrides"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perubahan arsitektur baru-baru ini memperkenalkan kemampuan untuk menjalankan kode utilitas firmware asli melalui Low-Level Emulation (LLE). Dengan mengaktifkan pengaturan eksperimental LLEUtilityDialogs, emulator kini dapat memuat modul utility.prx yang autentik dari dump firmware yang disediakan pengguna yang terletak di direktori flash0. Saat aktif, emulator mengarahkan panggilan sceUtility tertentu langsung ke kode firmware alih-alih fungsi HLE internal. Proses ini melibatkan pemuatan rantai dependensi, termasuk pafmini, common_gui, dan dialogmain, persis seperti yang dilakukan PSP ritel. Untuk mendukung hal ini, pengembang mengimplementasikan beberapa fungsi tingkat kernel dan NIDs, seperti sceKernelMemset32 dan sceKernelRegisterSysEventHandler, memastikan lingkungan firmware memiliki hook yang diperlukan untuk beroperasi dengan benar di dalam ruang emulasi."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak pada Akurasi Visual dan Input"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bagi pengguna akhir, perubahan ini terwujud sebagai rekreasi antarmuka sistem PSP yang sangat akurat di dalam game. Dalam judul-judul seperti Tekken 6, dialog pesan autosave asli firmware muncul dengan gaya orisinal, sementara di MotoGP, keyboard layar yang autentik digunakan untuk memasukkan nama pemain. Implementasi ini memastikan bahwa input dari keyboard firmware mencapai data simpanan game dengan benar. Hambatan teknis seperti manajemen memori volatil telah diatasi untuk memungkinkan modul-modul ini dimuat dan dilepas tanpa mengganggu ruang memori game itu sendiri. Tingkat integrasi ini bahkan mendukung savestates; sebuah state yang dibuat saat keyboard firmware terbuka akan tetap berfungsi saat dimuat, menjaga kontinuitas sesi emulasi."
+    },
+    {
+      "type": "heading",
+      "text": "Cakupan Saat Ini dan Batasan Eksperimental"
+    },
+    {
+      "type": "paragraph",
+      "text": "Fitur ini saat ini diklasifikasikan sebagai eksperimental dan parsial. Fitur ini terbatas pada fungsi MsgDialog dan OSK, sementara utilitas lain seperti manajemen SaveData terus mengandalkan jalur HLE yang sudah ada. Karena modul utility.prx dimuat saat boot, pengaturan ini tidak dapat diubah saat game sedang berjalan dan harus dikonfigurasi per game di pengaturan pengembang. Saat ini tidak ada fallback otomatis ke HLE jika file firmware yang diperlukan hilang, yang berarti fungsi yang diarahkan akan tetap tidak terselesaikan jika direktori flash0 tidak lengkap. Pengembang dan penggemar dapat memverifikasi implementasi ini dengan memeriksa apakah elemen UI asli firmware muncul dalam game yang didukung, menandai langkah signifikan menuju akurasi tingkat sistem penuh dalam emulator."
+    }
+  ]
+}

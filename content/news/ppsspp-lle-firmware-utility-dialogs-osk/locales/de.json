@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-lle-firmware-utility-dialogs-osk",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP führt Low-Level-Emulation für Firmware-Utility-Dialoge ein",
+  "summary": "Eine neue experimentelle Funktion ermöglicht es PPSSPP, originalen PlayStation Portable-Firmware-Code für Nachrichtendialoge und die Bildschirmtastatur auszuführen, was die visuelle Genauigkeit und Systemtreue verbessert.",
+  "heroAlt": "Eine Nahaufnahme einer PlayStation Portable-Konsole, die den nativen Nachrichtendialog des Systems auf ihrem Bildschirm zeigt.",
+  "searchKeywords": [
+    "PPSSPP",
+    "LLE",
+    "Firmware",
+    "Utility-Dialog",
+    "OSK",
+    "Emulationsgenauigkeit",
+    "Bildschirmtastatur"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23046",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Die Einschränkungen der High-Level-UI-Emulation"
+    },
+    {
+      "type": "paragraph",
+      "text": "In der PlayStation Portable-Emulation werden Schnittstellen auf Systemebene wie Nachrichtenfenster und die Bildschirmtastatur normalerweise über High-Level-Emulation (HLE) abgewickelt. Das bedeutet, dass der Emulator seine eigenen, individuell programmierten Versionen dieser Menüs bereitstellt, die das ursprüngliche Verhalten nachahmen. Obwohl HLE-Implementierungen funktional und effizient sind, fehlen ihnen oft die exakten visuellen Nuancen, Animationen und die spezifische interne Logik der originalen Sony-Firmware. Für Spieler, die maximale Authentizität suchen, kann die Diskrepanz zwischen den nachgebildeten Menüs des Emulators und dem Look-and-Feel der Original-Hardware spürbar sein. Darüber hinaus verlassen sich bestimmte Spiele möglicherweise auf spezifisches Timing oder undokumentiertes Verhalten innerhalb dieser Systemmodule, die HLE möglicherweise nicht perfekt repliziert, was zu geringfügigen Kompatibilitätshürden führt."
+    },
+    {
+      "type": "heading",
+      "text": "Implementierung von Low-Level-Utility-Overrides"
+    },
+    {
+      "type": "paragraph",
+      "text": "Eine kürzliche architektonische Änderung führt die Möglichkeit ein, den echten Utility-Code der Firmware über Low-Level-Emulation (LLE) auszuführen. Durch Aktivieren der experimentellen Einstellung LLEUtilityDialogs kann der Emulator nun das authentische Modul utility.prx aus einem vom Benutzer bereitgestellten Firmware-Dump im Verzeichnis flash0 laden. Wenn diese Funktion aktiv ist, leitet der Emulator spezifische sceUtility-Aufrufe direkt an den Firmware-Code weiter, anstatt an die internen HLE-Funktionen. Dieser Prozess umfasst das Laden einer Kette von Abhängigkeiten, einschließlich pafmini, common_gui und dialogmain, genau wie es eine handelsübliche PSP tun würde. Um dies zu unterstützen, implementierten die Entwickler mehrere Funktionen auf Kernel-Ebene und NIDs, wie sceKernelMemset32 und sceKernelRegisterSysEventHandler, um sicherzustellen, dass die Firmware-Umgebung über die notwendigen Hooks verfügt, um innerhalb des emulierten Raums korrekt zu funktionieren."
+    },
+    {
+      "type": "heading",
+      "text": "Auswirkungen auf die visuelle Genauigkeit und Eingabe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Für den Endbenutzer äußert sich diese Änderung in einer perfekt akkuraten Nachbildung der PSP-Systemoberfläche innerhalb von Spielen. In Titeln wie Tekken 6 erscheinen die nativen Autosave-Nachrichtendialoge der Firmware im Original-Stil, während in MotoGP die authentische Bildschirmtastatur für die Eingabe des Spielernamens verwendet wird. Die Implementierung stellt sicher, dass Eingaben von der Firmware-Tastatur korrekt in den Speicherdaten des Spiels ankommen. Technische Hürden wie die Verwaltung von flüchtigem Speicher (volatile memory) wurden angegangen, um das Laden und Entladen dieser Module zu ermöglichen, ohne den eigenen Speicherbereich des Spiels zu beeinträchtigen. Diese Integrationsebene unterstützt sogar Savestates; ein Spielstand, der erstellt wurde, während die Firmware-Tastatur geöffnet ist, bleibt nach dem Laden funktionsfähig, wodurch die Kontinuität der emulierten Sitzung gewahrt bleibt."
+    },
+    {
+      "type": "heading",
+      "text": "Aktueller Umfang und experimentelle Einschränkungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diese Funktion ist derzeit als experimentell und unvollständig eingestuft. Sie ist auf MsgDialog- und OSK-Funktionen beschränkt, während andere Utilities wie die SaveData-Verwaltung weiterhin auf den etablierten HLE-Pfad angewiesen sind. Da das Modul utility.prx beim Booten geladen wird, kann die Einstellung nicht während eines laufenden Spiels umgeschaltet werden und muss pro Spiel in den Entwicklereinstellungen konfiguriert werden. Es gibt derzeit kein automatisches Fallback auf HLE, falls die erforderlichen Firmware-Dateien fehlen, was bedeutet, dass die weitergeleiteten Funktionen ungelöst bleiben, wenn das flash0-Verzeichnis unvollständig ist. Entwickler und Enthusiasten können die Implementierung verifizieren, indem sie prüfen, ob die nativen UI-Elemente der Firmware in unterstützten Spielen erscheinen, was einen bedeutenden Schritt in Richtung vollständiger Genauigkeit auf Systemebene im Emulator markiert."
+    }
+  ]
+}

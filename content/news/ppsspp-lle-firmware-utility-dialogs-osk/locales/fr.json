@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-lle-firmware-utility-dialogs-osk",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP introduit l'émulation de bas niveau (LLE) pour les boîtes de dialogue utilitaires du firmware",
+  "summary": "Une nouvelle fonctionnalité expérimentale permet à PPSSPP d'exécuter le code original du firmware de la PlayStation Portable pour les boîtes de dialogue de message et le clavier virtuel, améliorant ainsi la précision visuelle et la fidélité du système.",
+  "heroAlt": "Un gros plan d'une console PlayStation Portable affichant la boîte de dialogue système native sur son écran.",
+  "searchKeywords": [
+    "PPSSPP",
+    "LLE",
+    "Firmware",
+    "Boîte de dialogue utilitaire",
+    "OSK",
+    "Précision de l'émulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "core": "Cœur"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23046",
+    "implementation": "Correctif et révision"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Les limites de l'émulation d'interface de haut niveau"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dans l'émulation PlayStation Portable, les interfaces au niveau système comme les boîtes de message et le clavier virtuel sont généralement gérées via l'émulation de haut niveau (HLE). Cela signifie que l'émulateur fournit ses propres versions codées sur mesure de ces menus qui imitent le comportement original. Bien qu'efficaces et fonctionnelles, les implémentations HLE manquent souvent des nuances visuelles exactes, des animations et de la logique interne spécifique du firmware Sony original. Pour les joueurs recherchant une authenticité maximale, l'écart entre les menus recréés par l'émulateur et l'aspect visuel du matériel original peut être perceptible. De plus, certains jeux peuvent dépendre de timings spécifiques ou de comportements non documentés au sein de ces modules système que le HLE pourrait ne pas répliquer parfaitement, entraînant des obstacles mineurs de compatibilité."
+    },
+    {
+      "type": "heading",
+      "text": "Mise en œuvre des remplacements utilitaires de bas niveau"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un changement architectural récent introduit la possibilité d'exécuter le code utilitaire réel du firmware via l'émulation de bas niveau (LLE). En activant le paramètre expérimental LLEUtilityDialogs, l'émulateur peut désormais charger le module authentique utility.prx à partir d'un dump de firmware fourni par l'utilisateur et situé dans le répertoire flash0. Lorsqu'il est actif, l'émulateur redirige les appels sceUtility spécifiques directement vers le code du firmware plutôt que vers les fonctions HLE internes. Ce processus implique le chargement d'une chaîne de dépendances, incluant pafmini, common_gui et dialogmain, tout comme le ferait une PSP du commerce. Pour prendre cela en charge, les développeurs ont implémenté plusieurs fonctions au niveau du noyau et des NIDs, tels que sceKernelMemset32 et sceKernelRegisterSysEventHandler, garantissant que l'environnement du firmware dispose des points d'ancrage nécessaires pour fonctionner correctement dans l'espace émulé."
+    },
+    {
+      "type": "heading",
+      "text": "Impact sur la précision visuelle et la saisie"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour l'utilisateur final, ce changement se manifeste par une recréation parfaitement fidèle de l'interface système de la PSP au sein des jeux. Dans des titres comme Tekken 6, les boîtes de dialogue de message de sauvegarde automatique natives du firmware apparaissent avec leur style original, tandis que dans MotoGP, le clavier virtuel authentique est utilisé pour la saisie du nom du joueur. L'implémentation garantit que la saisie provenant du clavier du firmware parvient correctement aux données de sauvegarde du jeu. Des obstacles techniques tels que la gestion de la mémoire volatile ont été résolus pour permettre à ces modules de se charger et de se décharger sans interférer avec l'espace mémoire propre au jeu. Ce niveau d'intégration prend même en charge les savestates ; un état créé alors que le clavier du firmware est ouvert restera fonctionnel lors du chargement, maintenant la continuité de la session émulée."
+    },
+    {
+      "type": "heading",
+      "text": "Portée actuelle et contraintes expérimentales"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cette fonctionnalité est actuellement classée comme expérimentale et partielle. Elle est limitée aux fonctions MsgDialog et OSK, tandis que d'autres utilitaires comme la gestion des SaveData continuent de s'appuyer sur la voie HLE établie. Étant donné que le module utility.prx est chargé au démarrage, le paramètre ne peut pas être basculé pendant qu'un jeu est en cours d'exécution et doit être configuré par jeu dans les paramètres de développement. Il n'y a actuellement aucun repli automatique vers le HLE si les fichiers du firmware requis sont manquants, ce qui signifie que les fonctions redirigées resteront non résolues si le répertoire flash0 est incomplet. Les développeurs et les passionnés peuvent vérifier l'implémentation en contrôlant si les éléments d'interface utilisateur natifs du firmware apparaissent dans les jeux pris en charge, marquant une étape importante vers une précision totale au niveau système dans l'émulateur."
+    }
+  ]
+}

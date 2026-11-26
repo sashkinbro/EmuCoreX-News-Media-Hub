@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K resolve problemas de renderização OpenGL SPIR-V em hardware AMD",
+  "summary": "Uma nova atualização do Vita3K corrige problemas de tela preta ao usar shaders SPIR-V no OpenGL, focando especificamente em GPUs AMD ao alterar a forma como as texturas de máscara são amostradas.",
+  "heroAlt": "Um close-up de um console portátil PlayStation Vita mostrando a tela e os botões frontais.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulador de PlayStation Vita",
+    "OpenGL",
+    "SPIR-V",
+    "GPU AMD",
+    "compilação de shader",
+    "correção de renderização",
+    "emulação",
+    "gráficos"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Pull request #4468 do Vita3K",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identificando a falha no armazenamento de máscara"
+    },
+    {
+      "type": "paragraph",
+      "text": "Usuários que executam o Vita3K com o renderizador OpenGL e shaders SPIR-V ativados frequentemente encontravam uma tela preta persistente, particularmente em hardware AMD como a RX 9070 XT. A investigação técnica revelou que a imagem de armazenamento de máscara, usada para a emulação de teste de máscara, retornava consistentemente um valor zero dentro dos shaders SPIR-V. Como o teste de máscara depende desses valores para determinar quais pixels desenhar, cada fragmento estava sendo descartado incorretamente pela GPU. Embora a textura de máscara contivesse os dados corretos, o shader não conseguia acessá-la adequadamente através da interface de imagem de armazenamento, levando a uma falha completa da saída visual, apesar da lógica de emulação estar sendo executada corretamente em segundo plano."
+    },
+    {
+      "type": "heading",
+      "text": "Transição para acesso de máscara baseado em sampler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para resolver isso, os desenvolvedores modificaram o recompilador OpenGL SPIR-V para alterar a forma como a máscara é acessada. Em vez de usar uma imagem de armazenamento, os shaders agora utilizam uma operação texelFetch de um sampler dedicado vinculado à unidade de textura 32. Esta unidade específica foi escolhida para ficar posicionada com segurança após as unidades de textura de fragmento e vértice padrão usadas pelo hardware convidado. Além disso, a interface do usuário foi corrigida; a opção \"Use SPIR-V Shader\", que anteriormente aparecia nas configurações de Vulkan apesar de afetar apenas o OpenGL, foi movida para a seção de configuração avançada do OpenGL. A tag de obsoleta também foi removida, refletindo sua relevância contínua para a otimização de desempenho em configurações de hardware específicas."
+    },
+    {
+      "type": "heading",
+      "text": "Ganhos de desempenho e testes de compatibilidade"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para os jogadores, essa mudança melhora significativamente a viabilidade do backend OpenGL em sistemas onde o Vulkan pode não ser a escolha preferencial. Testes em títulos como Freedom Wars e Soul Sacrifice demonstram que a saída SPIR-V agora corresponde à precisão de renderização GLSL padrão com uma diferença média insignificante nos dados de quadros. Mais importante ainda, os shaders SPIR-V oferecem uma redução mensurável nos travamentos de compilação de shader. Em uma execução inicial de Freedom Wars, os travamentos relacionados a shaders foram reduzidos de 7,4 segundos usando GLSL para apenas 4,8 segundos com o SPIR-V ativado. Essa redução no atraso de compilação proporciona uma experiência mais fluida durante a jogabilidade, especialmente ao encontrar novos efeitos ou ambientes pela primeira vez."
+    },
+    {
+      "type": "heading",
+      "text": "Requisitos técnicos e verificação"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esta atualização inclui um aumento na versão do cache de shader de 16 para 17, o que significa que os caches de shader existentes serão invalidados e reconstruídos na primeira inicialização. O emulador agora também realiza uma verificação de hardware para garantir que o contexto da GPU suporte unidades de textura suficientes para acomodar o novo sampler de máscara. Se o sistema não possuir as unidades necessárias, o emulador retornará automaticamente para os shaders padrão para evitar erros de renderização. Os desenvolvedores verificaram a correção usando ferramentas de histórico de pixels para confirmar que os fragmentos não são mais descartados. Os jogadores podem verificar a melhoria ativando os shaders SPIR-V nas configurações do OpenGL e verificando a paridade visual com o renderizador GLSL padrão."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K rozwiązuje problemy z renderowaniem OpenGL SPIR-V na sprzęcie AMD",
+  "summary": "Nowa aktualizacja Vita3K naprawia problemy z czarnym ekranem podczas korzystania z shaderów SPIR-V w OpenGL, koncentrując się szczególnie na procesorach graficznych AMD poprzez zmianę sposobu próbkowania tekstur maski.",
+  "heroAlt": "Zbliżenie na konsolę przenośną PlayStation Vita, pokazujące ekran i przyciski funkcyjne.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulator PlayStation Vita",
+    "OpenGL",
+    "SPIR-V",
+    "AMD GPU",
+    "kompilacja shaderów",
+    "naprawa renderowania",
+    "emulacja",
+    "grafika"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4468",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identyfikacja błędu przechowywania maski"
+    },
+    {
+      "type": "paragraph",
+      "text": "Użytkownicy uruchamiający Vita3K z rendererem OpenGL i włączonymi shaderami SPIR-V często napotykali problem trwałego czarnego ekranu, szczególnie na sprzęcie AMD, takim jak RX 9070 XT. Analiza techniczna wykazała, że obraz przechowywania maski, używany do emulacji testu maski, konsekwentnie zwracał wartość zero wewnątrz shaderów SPIR-V. Ponieważ test maski opiera się na tych wartościach w celu określenia, które piksele mają zostać narysowane, każdy fragment był nieprawidłowo odrzucany przez GPU. Mimo że tekstura maski zawierała poprawne dane, shader nie mógł uzyskać do niej prawidłowego dostępu poprzez interfejs obrazu przechowywania, co prowadziło do całkowitego braku obrazu, mimo że logika emulacji działała poprawnie w tle."
+    },
+    {
+      "type": "heading",
+      "text": "Przejście na dostęp do maski oparty na samplerach"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby rozwiązać ten problem, programiści zmodyfikowali rekompilator OpenGL SPIR-V, zmieniając sposób uzyskiwania dostępu do maski. Zamiast używać obrazu przechowywania, shadery wykorzystują teraz operację texelFetch z dedykowanego samplera przypisanego do jednostki teksturującej 32. Tę konkretną jednostkę wybrano tak, aby znajdowała się bezpiecznie za standardowymi jednostkami teksturującymi fragmentów i wierzchołków używanymi przez sprzęt gościa. Dodatkowo poprawiono interfejs użytkownika; opcja „Use SPIR-V Shader”, która wcześniej pojawiała się w ustawieniach Vulkan, mimo że wpływała tylko na OpenGL, została przeniesiona do sekcji zaawansowanej konfiguracji OpenGL. Usunięto również znacznik przestarzałości, co odzwierciedla jej ciągłe znaczenie dla optymalizacji wydajności w określonych konfiguracjach sprzętowych."
+    },
+    {
+      "type": "heading",
+      "text": "Wzrost wydajności i testy kompatybilności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dla graczy ta zmiana znacząco poprawia użyteczność backendu OpenGL w systemach, w których Vulkan może nie być preferowanym wyborem. Testy w tytułach takich jak Freedom Wars i Soul Sacrifice pokazują, że wyjście SPIR-V odpowiada teraz dokładności renderowania standardowego GLSL z pomijalną średnią różnicą w danych klatek. Co ważniejsze, shadery SPIR-V oferują mierzalną redukcję przycięć związanych z kompilacją shaderów. W „zimnym” uruchomieniu Freedom Wars przestoje związane z shaderami zostały zredukowane z 7,4 sekundy przy użyciu GLSL do zaledwie 4,8 sekundy z włączonym SPIR-V. Ta redukcja opóźnień kompilacji zapewnia płynniejszą rozgrywkę, zwłaszcza podczas napotykania nowych efektów lub środowisk po raz pierwszy."
+    },
+    {
+      "type": "heading",
+      "text": "Wymagania techniczne i weryfikacja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta aktualizacja zawiera zwiększenie wersji pamięci podręcznej shaderów z 16 do 17, co oznacza, że istniejące pamięci podręczne shaderów zostaną unieważnione i przebudowane przy pierwszym uruchomieniu. Emulator wykonuje teraz również sprawdzenie sprzętowe, aby upewnić się, że kontekst GPU obsługuje wystarczającą liczbę jednostek teksturujących, aby obsłużyć nowy sampler maski. Jeśli systemowi brakuje niezbędnych jednostek, emulator automatycznie powróci do standardowych shaderów, aby zapobiec błędom renderowania. Programiści zweryfikowali poprawkę za pomocą narzędzi do historii pikseli, aby potwierdzić, że fragmenty nie są już odrzucane. Gracze mogą zweryfikować poprawę, włączając shadery SPIR-V w ustawieniach OpenGL i sprawdzając zgodność wizualną ze standardowym rendererem GLSL."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-lle-firmware-utility-dialogs-osk",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 引入固件实用程序对话框的底层模拟 (LLE)",
+  "summary": "一项新的实验性功能允许 PPSSPP 为消息对话框和屏幕键盘运行原始 PlayStation Portable 固件代码，从而提高视觉准确度和系统还原度。",
+  "heroAlt": "一台 PlayStation Portable 控制台的特写，屏幕上显示着系统的原生消息对话框。",
+  "searchKeywords": [
+    "PPSSPP",
+    "LLE",
+    "底层模拟",
+    "Firmware",
+    "固件",
+    "Utility Dialog",
+    "实用程序对话框",
+    "OSK",
+    "屏幕键盘",
+    "Emulation Accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "core": "核心"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23046",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "高级 UI 模拟的局限性"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 PlayStation Portable 模拟中，消息框和屏幕键盘等系统级界面通常通过高级模拟 (HLE) 进行处理。这意味着模拟器提供了这些菜单的自定义代码版本，用以模仿原始行为。虽然 HLE 实现功能齐全且高效，但往往缺乏原始 Sony 固件中精确的视觉细微差别、动画和特定的内部逻辑。对于追求极致真实感的玩家来说，模拟器重建的菜单与原始硬件外观和感觉之间的差异是显而易见的。此外，某些游戏可能依赖于这些系统模块中特定的时序或未公开的行为，而 HLE 可能无法完美复制这些行为，从而导致细微的兼容性障碍。"
+    },
+    {
+      "type": "heading",
+      "text": "实现底层实用程序覆盖"
+    },
+    {
+      "type": "paragraph",
+      "text": "最近的一项架构更改引入了通过底层模拟 (LLE) 运行真实固件实用程序代码的能力。通过启用实验性的 LLEUtilityDialogs 设置，模拟器现在可以从位于 flash0 目录中用户提供的固件转储中加载真实的 utility.prx 模块。激活后，模拟器会将特定的 sceUtility 调用直接路由到固件代码，而不是内部的 HLE 函数。此过程涉及加载一系列依赖项，包括 pafmini、common_gui 和 dialogmain，就像零售版 PSP 一样。为了支持这一点，开发人员实现了多个内核级函数和 NIDs，例如 sceKernelMemset32 和 sceKernelRegisterSysEventHandler，确保固件环境具有在模拟空间内正确运行所需的钩子。"
+    },
+    {
+      "type": "heading",
+      "text": "对视觉准确度和输入的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于最终用户而言，这一变化表现为在游戏中完美准确地再现了 PSP 的系统界面。在《铁拳 6》(Tekken 6) 等游戏中，固件原生的自动保存消息对话框以原始样式出现，而在《世界摩托车锦标赛》(MotoGP) 中，则使用真实的屏幕键盘进行玩家名称输入。该实现确保了来自固件键盘的输入能够正确到达游戏的保存数据。开发人员解决了诸如易失性内存管理之类的技术障碍，允许这些模块在不干扰游戏自身内存空间的情况下进行加载和卸载。这种集成水平甚至支持即时存档 (savestates)；在固件键盘打开时创建的状态在加载后仍将保持功能，从而维持模拟会话的连续性。"
+    },
+    {
+      "type": "heading",
+      "text": "当前范围和实验性限制"
+    },
+    {
+      "type": "paragraph",
+      "text": "该功能目前被归类为实验性的且仅实现了部分功能。它仅限于 MsgDialog 和 OSK 函数，而其他实用程序（如 SaveData 管理）仍继续依赖已有的 HLE 路径。由于 utility.prx 模块是在启动时加载的，因此在游戏运行时无法切换该设置，必须在开发者设置中针对每个游戏进行配置。目前，如果缺少所需的固件文件，系统不会自动回退到 HLE，这意味着如果 flash0 目录不完整，路由的函数将保持未解析状态。开发人员和爱好者可以通过检查支持的游戏中是否出现固件原生 UI 元素来验证该实现，这标志着模拟器在实现完整的系统级准确度方面迈出了重要一步。"
+    }
+  ]
+}

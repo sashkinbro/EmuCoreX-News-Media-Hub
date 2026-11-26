@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 解决了 AMD 硬件上的 OpenGL SPIR-V 渲染问题",
+  "summary": "Vita3K 的一项新更新修复了在 OpenGL 上使用 SPIR-V 着色器时出现的黑屏问题，通过改变遮罩纹理的采样方式，专门针对 AMD GPU 进行了优化。",
+  "heroAlt": "PlayStation Vita 手持游戏机的特写，展示了屏幕和正面按键。",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita 模拟器",
+    "OpenGL",
+    "SPIR-V",
+    "AMD GPU",
+    "着色器编译",
+    "渲染修复"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4468",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "识别遮罩存储故障"
+    },
+    {
+      "type": "paragraph",
+      "text": "在使用 OpenGL 渲染器并启用 SPIR-V 着色器的 Vita3K 用户中，经常遇到持续的黑屏问题，特别是在 RX 9070 XT 等 AMD 硬件上。技术调查显示，用于遮罩测试模拟的遮罩存储图像在 SPIR-V 着色器中始终返回零值。由于遮罩测试依赖这些值来确定绘制哪些像素，因此 GPU 错误地丢弃了每一个片段。尽管遮罩纹理包含正确的数据，但着色器无法通过存储图像接口正确访问它，导致尽管模拟逻辑在后台正常运行，视觉输出却完全失败。"
+    },
+    {
+      "type": "heading",
+      "text": "过渡到基于采样器的遮罩访问"
+    },
+    {
+      "type": "paragraph",
+      "text": "为了解决这个问题，开发人员修改了 OpenGL SPIR-V 重新编译器，以改变访问遮罩的方式。着色器现在不再使用存储图像，而是利用绑定到纹理单元 32 的专用采样器执行 texelFetch 操作。选择该特定单元是为了使其安全地位于客户机硬件使用的标准片段和顶点纹理单元之后。此外，用户界面也得到了修正；此前出现在 Vulkan 设置下但仅影响 OpenGL 的“使用 SPIR-V 着色器 (Use SPIR-V Shader)”选项，已被移动到高级 OpenGL 配置部分。弃用标签也被移除，反映了它在特定硬件配置下对于性能优化的持续相关性。"
+    },
+    {
+      "type": "heading",
+      "text": "性能提升与兼容性测试"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于玩家而言，这一变化显著提高了 OpenGL 后端在 Vulkan 可能不是首选系统上的可行性。在《自由战争 (Freedom Wars)》和《灵魂献祭 (Soul Sacrifice)》等游戏上的测试表明，SPIR-V 输出现在与标准 GLSL 渲染精度相匹配，帧数据之间的平均差异可以忽略不计。更重要的是，SPIR-V 着色器在减少着色器编译卡顿方面效果显著。在《自由战争》的冷启动测试中，与使用 GLSL 的 7.4 秒相比，启用 SPIR-V 后着色器相关的停顿减少到了 4.8 秒。这种编译延迟的减少在游戏过程中提供了更流畅的体验，特别是在首次遇到新特效或环境时。"
+    },
+    {
+      "type": "heading",
+      "text": "技术要求与验证"
+    },
+    {
+      "type": "paragraph",
+      "text": "此更新包含将着色器缓存版本从 16 提升至 17，这意味着现有的着色器缓存将在首次启动时失效并重建。模拟器现在还会执行硬件检查，以确保 GPU 上下文支持足够的纹理单元来容纳新的遮罩采样器。如果系统缺少必要的单元，模拟器将自动回退到标准着色器以防止渲染错误。开发人员使用像素历史工具验证了修复效果，确认片段不再被丢弃。玩家可以通过在 OpenGL 设置中启用 SPIR-V 着色器并检查其与标准 GLSL 渲染器的视觉一致性来验证这一改进。"
+    }
+  ]
+}

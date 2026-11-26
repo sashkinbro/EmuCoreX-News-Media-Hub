@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K řeší problémy s vykreslováním OpenGL SPIR-V na hardwaru AMD",
+  "summary": "Nová aktualizace Vita3K opravuje problémy s černou obrazovkou při použití shaderů SPIR-V v OpenGL, přičemž se konkrétně zaměřuje na GPU AMD změnou způsobu vzorkování textur masky.",
+  "heroAlt": "Detailní záběr na kapesní konzoli PlayStation Vita zobrazující obrazovku a ovládací tlačítka.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulátor PlayStation Vita",
+    "OpenGL",
+    "SPIR-V",
+    "AMD GPU",
+    "kompilace shaderů",
+    "oprava vykreslování"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4468",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifikace selhání úložiště masky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uživatelé spouštějící Vita3K s rendererem OpenGL a povolenými shadery SPIR-V se často setkávali s přetrvávající černou obrazovkou, zejména na hardwaru AMD, jako je RX 9070 XT. Technické šetření odhalilo, že obraz úložiště masky, používaný pro emulaci testu masky, konzistentně vracel hodnotu nula v rámci shaderů SPIR-V. Protože test masky spoléhá na tyto hodnoty při určování, které pixely se mají vykreslit, každý fragment byl GPU nesprávně zahazován. I když textura masky obsahovala správná data, shader k nim nemohl správně přistupovat přes rozhraní obrazu úložiště, což vedlo k úplnému selhání vizuálního výstupu, přestože emulační logika běžela na pozadí správně."
+    },
+    {
+      "type": "heading",
+      "text": "Přechod na přístup k masce založený na vzorkovači"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby to vývojáři vyřešili, upravili rekompilátor OpenGL SPIR-V tak, aby změnili způsob přístupu k masce. Místo použití obrazu úložiště nyní shadery využívají operaci texelFetch z vyhrazeného vzorkovače vázaného na texturovou jednotku 32. Tato konkrétní jednotka byla zvolena tak, aby byla bezpečně umístěna za standardními fragmentovými a vertexovými texturovými jednotkami používanými hostujícím hardwarem. Kromě toho bylo opraveno uživatelské rozhraní; možnost „Use SPIR-V Shader“, která se dříve objevovala v nastavení Vulkan, přestože ovlivňovala pouze OpenGL, byla přesunuta do sekce pokročilé konfigurace OpenGL. Odstraněn byl také štítek zastaralosti (deprecated), což odráží její trvalý význam pro optimalizaci výkonu u konkrétních hardwarových konfigurací."
+    },
+    {
+      "type": "heading",
+      "text": "Zvýšení výkonu a testování kompatibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pro hráče tato změna výrazně zlepšuje životaschopnost backendu OpenGL na systémech, kde Vulkan nemusí být preferovanou volbou. Testování na titulech jako Freedom Wars a Soul Sacrifice ukazuje, že výstup SPIR-V nyní odpovídá přesnosti standardního vykreslování GLSL s zanedbatelným průměrným rozdílem v datech snímků. Ještě důležitější je, že shadery SPIR-V nabízejí měřitelné snížení zadrhávání při kompilaci shaderů. Při studeném spuštění Freedom Wars se záseky související se shadery snížily ze 7,4 sekundy při použití GLSL na pouhých 4,8 sekundy s povoleným SPIR-V. Toto snížení prodlevy při kompilaci poskytuje plynulejší zážitek během hraní, zejména při prvním setkání s novými efekty nebo prostředími."
+    },
+    {
+      "type": "heading",
+      "text": "Technické požadavky a ověření"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato aktualizace zahrnuje zvýšení verze mezipaměti shaderů ze 16 na 17, což znamená, že stávající mezipaměti shaderů budou při prvním spuštění zneplatněny a znovu vytvořeny. Emulátor nyní také provádí kontrolu hardwaru, aby zajistil, že kontext GPU podporuje dostatek texturových jednotek pro přizpůsobení novému vzorkovači masky. Pokud systému chybí potřebné jednotky, emulátor se automaticky vrátí ke standardním shaderům, aby se předešlo chybám vykreslování. Vývojáři ověřili opravu pomocí nástrojů historie pixelů, aby potvrdili, že fragmenty již nejsou zahazovány. Hráči mohou zlepšení ověřit povolením shaderů SPIR-V v nastavení OpenGL a kontrolou vizuální shody se standardním rendererem GLSL."
+    }
+  ]
+}

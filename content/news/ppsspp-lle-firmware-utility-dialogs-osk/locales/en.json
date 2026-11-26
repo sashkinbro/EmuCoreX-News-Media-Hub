@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-lle-firmware-utility-dialogs-osk",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Introduces Low-Level Emulation for Firmware Utility Dialogs",
+  "summary": "A new experimental feature allows PPSSPP to run original PlayStation Portable firmware code for message dialogs and the on-screen keyboard, improving visual accuracy and system fidelity.",
+  "heroAlt": "A close-up of a PlayStation Portable console showing the system's native message dialog on its screen.",
+  "searchKeywords": [
+    "PPSSPP",
+    "LLE",
+    "Firmware",
+    "Utility Dialog",
+    "OSK",
+    "Emulation Accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23046",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "The Limitations of High-Level UI Emulation"
+    },
+    {
+      "type": "paragraph",
+      "text": "In PlayStation Portable emulation, system-level interfaces like message boxes and the on-screen keyboard are typically handled through High-Level Emulation (HLE). This means the emulator provides its own custom-coded versions of these menus that mimic the original behavior. While functional and efficient, HLE implementations often lack the exact visual nuances, animations, and specific internal logic of the original Sony firmware. For players seeking maximum authenticity, the discrepancy between the emulator's recreated menus and the original hardware's look and feel can be noticeable. Furthermore, certain games may rely on specific timing or undocumented behaviors within these system modules that HLE might not perfectly replicate, leading to minor compatibility hurdles."
+    },
+    {
+      "type": "heading",
+      "text": "Implementing Low-Level Utility Overrides"
+    },
+    {
+      "type": "paragraph",
+      "text": "A recent architectural change introduces the ability to run the real firmware's utility code via Low-Level Emulation (LLE). By enabling the experimental LLEUtilityDialogs setting, the emulator can now load the authentic utility.prx module from a user-provided firmware dump located in the flash0 directory. When active, the emulator routes specific sceUtility calls directly to the firmware code rather than the internal HLE functions. This process involves loading a chain of dependencies, including pafmini, common_gui, and dialogmain, just as a retail PSP would. To support this, developers implemented several kernel-level functions and NIDs, such as sceKernelMemset32 and sceKernelRegisterSysEventHandler, ensuring the firmware environment has the necessary hooks to operate correctly within the emulated space."
+    },
+    {
+      "type": "heading",
+      "text": "Impact on Visual Accuracy and Input"
+    },
+    {
+      "type": "paragraph",
+      "text": "For the end user, this change manifests as a perfectly accurate recreation of the PSP's system interface within games. In titles like Tekken 6, the firmware's native autosave message dialogs appear with original styling, while in MotoGP, the authentic on-screen keyboard is used for player name entry. The implementation ensures that input from the firmware keyboard correctly reaches the game's save data. Technical hurdles such as volatile memory management were addressed to allow these modules to load and unload without interfering with the game's own memory space. This level of integration even supports savestates; a state made while the firmware keyboard is open will remain functional upon loading, maintaining the continuity of the emulated session."
+    },
+    {
+      "type": "heading",
+      "text": "Current Scope and Experimental Constraints"
+    },
+    {
+      "type": "paragraph",
+      "text": "This feature is currently classified as experimental and partial. It is limited to MsgDialog and OSK functions, while other utilities like SaveData management continue to rely on the established HLE path. Because the utility.prx module is loaded at boot, the setting cannot be toggled while a game is running and must be configured per-game in the developer settings. There is currently no automatic fallback to HLE if the required firmware files are missing, meaning the routed functions will remain unresolved if the flash0 directory is incomplete. Developers and enthusiasts can verify the implementation by checking if the firmware's native UI elements appear in supported games, marking a significant step toward full system-level accuracy in the emulator."
+    }
+  ]
+}

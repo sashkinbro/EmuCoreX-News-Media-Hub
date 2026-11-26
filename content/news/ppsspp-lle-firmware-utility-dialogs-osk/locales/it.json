@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-lle-firmware-utility-dialogs-osk",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP introduce la Low-Level Emulation per i dialoghi di utilità del firmware",
+  "summary": "Una nuova funzionalità sperimentale consente a PPSSPP di eseguire il codice originale del firmware PlayStation Portable per i dialoghi dei messaggi e la tastiera a schermo, migliorando l'accuratezza visiva e la fedeltà del sistema.",
+  "heroAlt": "Un primo piano di una console PlayStation Portable che mostra il dialogo dei messaggi nativo del sistema sul suo schermo.",
+  "searchKeywords": [
+    "PPSSPP",
+    "LLE",
+    "Firmware",
+    "Utility Dialog",
+    "OSK",
+    "Accuratezza dell'emulazione",
+    "Emulation Accuracy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "core": "Core"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23046",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Le limitazioni della High-Level UI Emulation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nell'emulazione della PlayStation Portable, le interfacce a livello di sistema come le finestre di messaggio e la tastiera a schermo sono tipicamente gestite tramite High-Level Emulation (HLE). Ciò significa che l'emulatore fornisce le proprie versioni di questi menu, codificate su misura, che imitano il comportamento originale. Sebbene siano funzionali ed efficienti, le implementazioni HLE spesso mancano delle esatte sfumature visive, delle animazioni e della specifica logica interna del firmware originale Sony. Per i giocatori che cercano la massima autenticità, la discrepanza tra i menu ricreati dall'emulatore e l'aspetto dell'hardware originale può essere evidente. Inoltre, alcuni giochi potrebbero fare affidamento su tempistiche specifiche o comportamenti non documentati all'interno di questi moduli di sistema che l'HLE potrebbe non replicare perfettamente, portando a lievi ostacoli di compatibilità."
+    },
+    {
+      "type": "heading",
+      "text": "Implementazione degli override delle utilità a basso livello"
+    },
+    {
+      "type": "paragraph",
+      "text": "Un recente cambiamento architetturale introduce la possibilità di eseguire il codice di utilità del firmware reale tramite Low-Level Emulation (LLE). Abilitando l'impostazione sperimentale LLEUtilityDialogs, l'emulatore può ora caricare l'autentico modulo utility.prx da un dump del firmware fornito dall'utente situato nella directory flash0. Quando attiva, l'emulatore instrada specifiche chiamate sceUtility direttamente al codice del firmware invece che alle funzioni HLE interne. Questo processo comporta il caricamento di una catena di dipendenze, inclusi pafmini, common_gui e dialogmain, proprio come farebbe una PSP retail. Per supportare ciò, gli sviluppatori hanno implementato diverse funzioni a livello di kernel e NID, come sceKernelMemset32 e sceKernelRegisterSysEventHandler, assicurando che l'ambiente del firmware disponga degli hook necessari per operare correttamente all'interno dello spazio emulato."
+    },
+    {
+      "type": "heading",
+      "text": "Impatto sull'accuratezza visiva e sull'input"
+    },
+    {
+      "type": "paragraph",
+      "text": "Per l'utente finale, questo cambiamento si manifesta come una ricreazione perfettamente accurata dell'interfaccia di sistema della PSP all'interno dei giochi. In titoli come Tekken 6, i dialoghi dei messaggi di salvataggio automatico nativi del firmware appaiono con lo stile originale, mentre in MotoGP viene utilizzata l'autentica tastiera a schermo per l'inserimento del nome del giocatore. L'implementazione garantisce che l'input dalla tastiera del firmware raggiunga correttamente i dati di salvataggio del gioco. Sono stati affrontati ostacoli tecnici come la gestione della memoria volatile per consentire a questi moduli di caricarsi e scaricarsi senza interferire con lo spazio di memoria del gioco stesso. Questo livello di integrazione supporta persino i savestate; uno stato creato mentre la tastiera del firmware è aperta rimarrà funzionale al caricamento, mantenendo la continuità della sessione emulata."
+    },
+    {
+      "type": "heading",
+      "text": "Ambito attuale e vincoli sperimentali"
+    },
+    {
+      "type": "paragraph",
+      "text": "Questa funzionalità è attualmente classificata come sperimentale e parziale. È limitata alle funzioni MsgDialog e OSK, mentre altre utilità come la gestione dei SaveData continuano a fare affidamento sul percorso HLE stabilito. Poiché il modulo utility.prx viene caricato all'avvio, l'impostazione non può essere attivata o disattivata mentre un gioco è in esecuzione e deve essere configurata per singolo gioco nelle impostazioni per sviluppatori. Al momento non è previsto un fallback automatico all'HLE se i file del firmware richiesti mancano, il che significa che le funzioni instradate rimarranno irrisolte se la directory flash0 è incompleta. Gli sviluppatori e gli appassionati possono verificare l'implementazione controllando se gli elementi UI nativi del firmware appaiono nei giochi supportati, segnando un passo significativo verso la piena accuratezza a livello di sistema nell'emulatore."
+    }
+  ]
+}

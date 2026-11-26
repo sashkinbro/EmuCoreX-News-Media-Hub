@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Mengatasi Masalah Rendering OpenGL SPIR-V pada Perangkat Keras AMD",
+  "summary": "Pembaruan baru untuk Vita3K memperbaiki masalah layar hitam saat menggunakan shader SPIR-V pada OpenGL, yang secara khusus menargetkan GPU AMD dengan mengubah cara tekstur mask disampel.",
+  "heroAlt": "Tampilan jarak dekat konsol genggam PlayStation Vita yang memperlihatkan layar dan tombol-tombol depan.",
+  "searchKeywords": [
+    "Vita3K",
+    "emulator PlayStation Vita",
+    "OpenGL",
+    "SPIR-V",
+    "GPU AMD",
+    "kompilasi shader",
+    "perbaikan rendering",
+    "emulator",
+    "grafis"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4468",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengidentifikasi Kegagalan Penyimpanan Mask"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pengguna yang menjalankan Vita3K dengan renderer OpenGL dan shader SPIR-V aktif sering kali mengalami layar hitam yang persisten, terutama pada perangkat keras AMD seperti RX 9070 XT. Investigasi teknis mengungkapkan bahwa gambar penyimpanan mask, yang digunakan untuk emulasi uji mask, secara konsisten mengembalikan nilai nol di dalam shader SPIR-V. Karena uji mask bergantung pada nilai-nilai ini untuk menentukan piksel mana yang akan digambar, setiap fragmen secara keliru dibuang oleh GPU. Meskipun tekstur mask berisi data yang benar, shader tidak dapat mengaksesnya dengan benar melalui antarmuka gambar penyimpanan, yang menyebabkan kegagalan total pada output visual meskipun logika emulasi berjalan dengan benar di latar belakang."
+    },
+    {
+      "type": "heading",
+      "text": "Beralih ke Akses Mask Berbasis Sampler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk mengatasi hal ini, para pengembang memodifikasi recompiler OpenGL SPIR-V untuk mengubah cara akses mask. Alih-alih menggunakan gambar penyimpanan, shader sekarang menggunakan operasi texelFetch dari sampler khusus yang terikat ke unit tekstur 32. Unit khusus ini dipilih agar berada dengan aman setelah unit tekstur fragmen dan vertex standar yang digunakan oleh perangkat keras tamu. Selain itu, antarmuka pengguna telah diperbaiki; opsi \"Use SPIR-V Shader\", yang sebelumnya muncul di bawah pengaturan Vulkan meskipun hanya memengaruhi OpenGL, telah dipindahkan ke bagian konfigurasi OpenGL tingkat lanjut. Tag deprecated juga telah dihapus, yang mencerminkan relevansinya yang berkelanjutan untuk optimalisasi kinerja pada konfigurasi perangkat keras tertentu."
+    },
+    {
+      "type": "heading",
+      "text": "Peningkatan Kinerja dan Pengujian Kompatibilitas"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bagi para pemain, perubahan ini secara signifikan meningkatkan kelayakan backend OpenGL pada sistem di mana Vulkan mungkin bukan pilihan utama. Pengujian pada judul-judul seperti Freedom Wars dan Soul Sacrifice menunjukkan bahwa output SPIR-V sekarang menyamai akurasi rendering GLSL standar dengan perbedaan rata-rata yang dapat diabaikan pada data frame. Lebih penting lagi, shader SPIR-V menawarkan pengurangan yang terukur dalam stutter kompilasi shader. Dalam cold run Freedom Wars, hambatan terkait shader berkurang dari 7,4 detik menggunakan GLSL menjadi hanya 4,8 detik dengan SPIR-V diaktifkan. Pengurangan jeda kompilasi ini memberikan pengalaman yang lebih mulus selama permainan, terutama saat menemui efek atau lingkungan baru untuk pertama kalinya."
+    },
+    {
+      "type": "heading",
+      "text": "Persyaratan Teknis dan Verifikasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pembaruan ini mencakup peningkatan versi shader cache dari 16 ke 17, yang berarti shader cache yang ada akan tidak valid dan dibangun kembali saat peluncuran pertama. Emulator sekarang juga melakukan pemeriksaan perangkat keras untuk memastikan konteks GPU mendukung unit tekstur yang cukup untuk mengakomodasi sampler mask yang baru. Jika sistem tidak memiliki unit yang diperlukan, emulator akan secara otomatis kembali ke shader standar untuk mencegah kesalahan rendering. Pengembang memverifikasi perbaikan tersebut menggunakan alat riwayat piksel untuk memastikan bahwa fragmen tidak lagi dibuang. Pemain dapat memverifikasi peningkatan tersebut dengan mengaktifkan shader SPIR-V di pengaturan OpenGL dan memeriksa kesamaan visual dengan renderer GLSL standar."
+    }
+  ]
+}

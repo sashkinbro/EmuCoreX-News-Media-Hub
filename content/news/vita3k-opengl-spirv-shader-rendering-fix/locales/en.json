@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-opengl-spirv-shader-rendering-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Resolves OpenGL SPIR-V Rendering Issues on AMD Hardware",
+  "summary": "A new update to Vita3K fixes black screen issues when using SPIR-V shaders on OpenGL, specifically targeting AMD GPUs by changing how mask textures are sampled.",
+  "heroAlt": "A close-up of a PlayStation Vita handheld console showing the screen and face buttons.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emulator",
+    "OpenGL",
+    "SPIR-V",
+    "AMD GPU",
+    "shader compilation",
+    "rendering fix"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4468",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifying the Mask Storage Failure"
+    },
+    {
+      "type": "paragraph",
+      "text": "Users running Vita3K with the OpenGL renderer and SPIR-V shaders enabled often encountered a persistent black screen, particularly on AMD hardware like the RX 9070 XT. Technical investigation revealed that the mask storage image, used for mask test emulation, consistently returned a value of zero within the SPIR-V shaders. Because the mask test relies on these values to determine which pixels to draw, every fragment was being incorrectly discarded by the GPU. Even though the mask texture contained the correct data, the shader could not access it properly through the storage image interface, leading to a complete failure of the visual output despite the emulation logic running correctly in the background."
+    },
+    {
+      "type": "heading",
+      "text": "Transitioning to Sampler-Based Mask Access"
+    },
+    {
+      "type": "paragraph",
+      "text": "To resolve this, the developers modified the OpenGL SPIR-V recompiler to change how the mask is accessed. Instead of using a storage image, the shaders now utilize a texelFetch operation from a dedicated sampler bound to texture unit 32. This specific unit was chosen to sit safely after the standard fragment and vertex texture units used by the guest hardware. Additionally, the user interface was corrected; the \"Use SPIR-V Shader\" option, which previously appeared under Vulkan settings despite only affecting OpenGL, has been moved to the advanced OpenGL configuration section. The deprecated tag was also removed, reflecting its continued relevance for performance optimization on specific hardware configurations."
+    },
+    {
+      "type": "heading",
+      "text": "Performance Gains and Compatibility Testing"
+    },
+    {
+      "type": "paragraph",
+      "text": "For players, this change significantly improves the viability of the OpenGL backend on systems where Vulkan might not be the preferred choice. Testing on titles such as Freedom Wars and Soul Sacrifice demonstrates that SPIR-V output now matches standard GLSL rendering accuracy with a negligible mean difference in frame data. More importantly, SPIR-V shaders offer a measurable reduction in shader compilation stutter. In a cold run of Freedom Wars, shader-related stalls were reduced from 7.4 seconds using GLSL to just 4.8 seconds with SPIR-V enabled. This reduction in compilation lag provides a smoother experience during gameplay, especially when encountering new effects or environments for the first time."
+    },
+    {
+      "type": "heading",
+      "text": "Technical Requirements and Verification"
+    },
+    {
+      "type": "paragraph",
+      "text": "This update includes a bump in the shader cache version from 16 to 17, meaning existing shader caches will be invalidated and rebuilt upon the first launch. The emulator now also performs a hardware check to ensure the GPU context supports enough texture units to accommodate the new mask sampler. If the system lacks the necessary units, the emulator will automatically fall back to standard shaders to prevent rendering errors. Developers verified the fix using pixel history tools to confirm that fragments are no longer discarded. Players can verify the improvement by enabling SPIR-V shaders in the OpenGL settings and checking for visual parity with the standard GLSL renderer."
+    }
+  ]
+}
