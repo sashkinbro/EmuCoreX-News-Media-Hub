@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin Mengadopsi Desain Berorientasi Data untuk Cache Register JIT x86",
+  "summary": "Dolphin melakukan refaktor pada cache register x86 miliknya dari array of structures menjadi structure of arrays, menggunakan bitset untuk mempercepat pembuatan kode JIT dan flushing status.",
+  "heroAlt": "Konsol Nintendo GameCube dan Wii disusun berdampingan di atas meja kerja yang bersih",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "compiler optimization",
+    "optimasi kompiler",
+    "emulasi"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Overhead Array of Structures dalam Pelacakan Register"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dalam recompiler JIT 64-bit Dolphin, cache register bertanggung jawab untuk memetakan register PowerPC yang disimulasikan ke register CPU host fisik. Secara historis, subsistem ini melacak status register menggunakan array of structures, di mana objek register yang di-cache secara individual menyimpan properti seperti apakah register tersebut terikat, dimodifikasi, atau dipertahankan dalam memori guest. Menanyakan properti ini memerlukan pemeriksaan field terpisah di berbagai objek dalam sebuah loop. Karena rutinitas manajemen register seperti flushing sering dijalankan selama pembuatan kode, pemanggil dipaksa untuk melakukan bitmasking manual yang kompleks guna membatasi iterasi dan mengurangi penalti performa selama translasi blok."
+    },
+    {
+      "type": "heading",
+      "text": "Transisi ke Bitset dan Structure of Arrays"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14806 menggantikan tata letak array-of-structures ini dengan desain structure-of-arrays, yang sepenuhnya menghilangkan header register cache yang terpisah. Status register inti sekarang diatur ke dalam array yang ringkas disertai dengan bitset yang merepresentasikan status register host dan guest. Karena status boolean dikemas ke dalam bitset seperti tipe bitmask host dan guest khusus, pemfilteran register untuk operasi cache tertentu dapat diselesaikan dalam satu instruksi bitwise. Operasi seperti flushing register tidak lagi menuntut kode pemanggil untuk memfilter kandidat register secara manual demi menjaga performa, sehingga menyederhanakan internal cache register dan kode pemanggil di seluruh recompiler JIT."
+    },
+    {
+      "type": "heading",
+      "text": "Menurunkan Waktu Rekompilasi Dinamis bagi Pemain"
+    },
+    {
+      "type": "paragraph",
+      "text": "Meskipun cache register tidak mengubah output matematis dari instruksi PowerPC yang diemulasi, efisiensi rekompilasi dinamis secara langsung memengaruhi kelancaran jalannya game. Kompilasi JIT terjadi terus-menerus saat game menemukan jalur kode baru, dan overhead yang berat dalam rutinitas translasi dapat menyebabkan gangguan frame yang terasa. Profiling beban kerja—seperti menjeda pertandingan berulang kali di NBA Live 2005—menunjukkan pengurangan yang nyata dalam proporsi waktu CPU yang dikonsumsi oleh manajemen register. Beberapa rutinitas cache register tidak lagi muncul secara signifikan dalam profiler performa, yang mengonfirmasi bahwa evaluasi bitset yang disederhanakan memberikan kompilasi JIT yang lebih cepat selama eksekusi pada prosesor host x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Cakupan Platform Saat Ini dan Peta Jalan Arsitektur"
+    },
+    {
+      "type": "paragraph",
+      "text": "Desain ulang berorientasi data ini saat ini hanya diimplementasikan untuk backend JIT x86-64, sehingga sistem berbasis ARM tidak berubah untuk saat ini. Catatan arsitektur jangka panjang menunjukkan rencana untuk menyatukan antarmuka cache register menggunakan Curiously Recurring Template Pattern, yang akan memungkinkan manajemen register bersama di berbagai arsitektur sambil memperhitungkan perbedaan jumlah register dan batasan tujuan memori. Antarmuka cache register yang terpadu juga akan meletakkan dasar teknis untuk mendukung percabangan dalam-blok (in-block branches) di dalam blok JIT. Pekerjaan di masa mendatang mungkin mengevaluasi pemindahan lebih banyak operasi cache register ke dalam file header untuk memungkinkan inlining, yang berpotensi dipasangkan dengan unity builds untuk mengurangi waktu kompilasi C++ yang lebih lama."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin adopta un diseño orientado a datos para la caché de registros JIT x86",
+  "summary": "Dolphin refactoriza su caché de registros x86 de un arreglo de estructuras a una estructura de arreglos, utilizando conjuntos de bits para acelerar la generación de código JIT y el vaciado de estado.",
+  "heroAlt": "Consolas Nintendo GameCube y Wii dispuestas una al lado de la otra en un banco de trabajo limpio",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "optimización de compilador",
+    "emulación",
+    "CPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sobrecarga del arreglo de estructuras en el seguimiento de registros"
+    },
+    {
+      "type": "paragraph",
+      "text": "En el recompilador JIT de 64 bits de Dolphin, la caché de registros es responsable de mapear los registros PowerPC simulados a los registros físicos de la CPU anfitriona. Históricamente, este subsistema rastreaba los estados de los registros utilizando un arreglo de estructuras, donde un objeto de registro en caché individual almacenaba propiedades como si un registro estaba vinculado, modificado o preservado en la memoria invitada. Consultar estas propiedades requería inspeccionar campos separados a través de múltiples objetos en un bucle. Debido a que las rutinas de gestión de registros, como el vaciado, se ejecutan frecuentemente durante la generación de código, los llamadores se veían obligados a realizar complejas máscaras de bits manuales para restringir la iteración y mitigar las penalizaciones de rendimiento durante la traducción de bloques."
+    },
+    {
+      "type": "heading",
+      "text": "Transición a conjuntos de bits y estructura de arreglos"
+    },
+    {
+      "type": "paragraph",
+      "text": "El pull request #14806 reemplaza este diseño de arreglo de estructuras con un diseño de estructura de arreglos, eliminando por completo el encabezado de registro en caché separado. Los estados centrales de los registros ahora están organizados en arreglos compactos acompañados por conjuntos de bits que representan el estado de los registros anfitriones e invitados. Debido a que los estados booleanos están empaquetados en conjuntos de bits, como tipos de máscara de bits dedicados para anfitrión e invitado, el filtrado de registros para operaciones de caché específicas puede completarse en una sola instrucción a nivel de bits. Operaciones como el vaciado de registros ya no exigen que el código llamador filtre manualmente los candidatos a registro para preservar el rendimiento, optimizando tanto los componentes internos de la caché de registros como el código llamador en todo el recompilador JIT."
+    },
+    {
+      "type": "heading",
+      "text": "Reducción del tiempo de recompilación dinámica para los jugadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Si bien la caché de registros no altera el resultado matemático de las instrucciones PowerPC emuladas, la eficiencia de la recompilación dinámica influye directamente en la fluidez con la que se ejecutan los juegos. La compilación JIT ocurre continuamente a medida que los juegos descubren nuevas rutas de código, y una sobrecarga pesada en las rutinas de traducción puede introducir tirones perceptibles en la tasa de fotogramas. El análisis de cargas de trabajo (como pausar repetidamente un partido en NBA Live 2005) demostró reducciones marcadas en la proporción de tiempo de CPU consumido por la gestión de registros. Varias rutinas de la caché de registros dejaron de aparecer de forma prominente en los perfiladores de rendimiento, lo que confirma que las evaluaciones optimizadas de conjuntos de bits ofrecen una compilación JIT más rápida durante la ejecución en procesadores anfitriones x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Alcance actual de la plataforma y hoja de ruta arquitectónica"
+    },
+    {
+      "type": "paragraph",
+      "text": "Este rediseño orientado a datos está implementado actualmente solo para el backend JIT x86-64, dejando los sistemas basados en ARM sin cambios por ahora. Las notas de arquitectura a largo plazo indican planes para unificar las interfaces de la caché de registros utilizando el patrón Curiously Recurring Template Pattern, lo que permitiría una gestión de registros compartida entre arquitecturas, teniendo en cuenta los diferentes conteos de registros y las restricciones de destino de memoria. Una interfaz de caché de registros unificada también sentaría las bases técnicas para admitir ramas dentro de los bloques JIT. El trabajo futuro puede evaluar mover más operaciones de la caché de registros a archivos de encabezado para permitir la expansión en línea (inlining), potencialmente junto con compilaciones unitarias para mitigar los tiempos de compilación de C++ más largos."
+    }
+  ]
+}

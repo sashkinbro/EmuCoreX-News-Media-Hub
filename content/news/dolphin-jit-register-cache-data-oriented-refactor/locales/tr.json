@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin, x86 JIT Kayıt Defteri Önbelleği için Veri Odaklı Tasarımı Benimseiyor",
+  "summary": "Dolphin, JIT kod üretimini ve durum temizlemeyi hızlandırmak için bitset kullanarak x86 kayıt defteri önbelleğini yapı dizisinden dizi yapısına dönüştürüyor.",
+  "heroAlt": "Temiz bir çalışma tezgahı üzerinde yan yana dizilmiş Nintendo GameCube ve Wii konsolları",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "compiler optimization",
+    "derleyici optimizasyonu",
+    "kayıt defteri önbelleği"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kayıt Defteri İzlemede Yapı Dizisi (Array of Structures) Ek Yükü"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dolphin'in 64-bit JIT yeniden derleyicisinde, kayıt defteri önbelleği, simüle edilen PowerPC kayıt defterlerini fiziksel ana bilgisayar CPU kayıt defterleriyle eşlemekten sorumludur. Tarihsel olarak bu alt sistem, kayıt defteri durumlarını bir yapı dizisi kullanarak takip ediyordu; burada her bir önbelleğe alınmış kayıt defteri nesnesi, bir kayıt defterinin bağlı olup olmadığı, değiştirilip değiştirilmediği veya konuk belleğinde korunup korunmadığı gibi özellikleri saklıyordu. Bu özellikleri sorgulamak, bir döngü içinde birden fazla nesne üzerindeki ayrı alanların incelenmesini gerektiriyordu. Temizleme gibi kayıt defteri yönetimi rutinleri kod üretimi boyunca sıklıkla yürütüldüğünden, çağırıcılar blok çevirisi sırasında yinelemeyi sınırlamak ve performans kayıplarını azaltmak için karmaşık manuel bit maskeleme işlemleri yapmak zorunda kalıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Bitsetlere ve Dizi Yapısına (Structure of Arrays) Geçiş"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14806, bu yapı dizisi düzenini bir dizi yapısı tasarımıyla değiştirerek ayrı önbelleğe alınmış kayıt defteri başlığını tamamen ortadan kaldırıyor. Temel kayıt defteri durumları artık ana bilgisayar ve konuk kayıt defteri durumunu temsil eden bitsetler eşliğinde kompakt diziler halinde düzenlenmiştir. Boole durumları, özel ana bilgisayar ve konuk bit maskesi türleri gibi bitsetlere paketlendiğinden, belirli önbellek işlemleri için kayıt defterlerini filtrelemek tek bir bit düzeyinde işlemle tamamlanabilir. Kayıt defteri temizleme gibi işlemler artık çağıran kodun performansı korumak için kayıt defteri adaylarını manuel olarak filtrelemesini gerektirmiyor; bu da hem kayıt defteri önbelleğinin iç işleyişini hem de JIT yeniden derleyicisi genelindeki çağıran kodu kolaylaştırıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuncular İçin Dinamik Yeniden Derleme Süresinin Kısaltılması"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kayıt defteri önbelleği, emüle edilen PowerPC talimatlarının matematiksel çıktısını değiştirmese de, dinamik yeniden derlemenin verimliliği oyunların ne kadar akıcı çalıştığını doğrudan etkiler. Oyunlar yeni kod yollarını keşfettikçe JIT derlemesi sürekli olarak gerçekleşir ve çeviri rutinlerindeki ağır ek yük, fark edilebilir kare takılmalarına neden olabilir. NBA Live 2005'te bir maçı tekrar tekrar duraklatmak gibi iş yüklerinin profillenmesi, kayıt defteri yönetimi tarafından tüketilen CPU süresi oranında belirgin azalmalar olduğunu gösterdi. Birçok kayıt defteri önbelleği rutini, performans profili oluşturucularında artık belirgin bir şekilde yer almamaya başladı; bu da optimize edilmiş bitset değerlendirmelerinin x86-64 ana bilgisayar işlemcilerinde yürütme sırasında daha hızlı JIT derlemesi sağladığını doğruluyor."
+    },
+    {
+      "type": "heading",
+      "text": "Mevcut Platform Kapsamı ve Mimari Yol Haritası"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu veri odaklı yeniden tasarım şu anda yalnızca x86-64 JIT arka ucu için uygulanmış olup, ARM tabanlı sistemler şimdilik değişmeden bırakılmıştır. Uzun vadeli mimari notları, Curiously Recurring Template Pattern (Garip Bir Şekilde Tekrarlayan Şablon Deseni) kullanılarak kayıt defteri önbelleği arayüzlerini birleştirme planlarını göstermektedir; bu, farklı kayıt defteri sayılarını ve bellek hedefi kısıtlamalarını hesaba katarken mimariler arasında paylaşılan kayıt defteri yönetimine olanak tanıyacaktır. Birleşik bir kayıt defteri önbelleği arayüzü, JIT blokları içinde blok içi dallanmaları desteklemek için teknik temeli de oluşturacaktır. Gelecekteki çalışmalar, daha uzun C++ derleme sürelerini hafifletmek için unity builds (birlik yapıları) ile potansiyel olarak eşleştirilmiş, satır içi (inlining) işlemeyi etkinleştirmek amacıyla daha fazla kayıt defteri önbelleği işleminin başlık dosyalarına taşınmasını değerlendirebilir."
+    }
+  ]
+}

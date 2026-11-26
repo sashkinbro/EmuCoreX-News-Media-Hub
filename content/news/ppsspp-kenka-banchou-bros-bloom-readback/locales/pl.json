@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP synchronizuje odczyty VRAM dla efektu bloom w Kenka Banchou Bros",
+  "summary": "PPSSPP rozwiązuje problem zablokowanych artefaktów bloom w Kenka Banchou Bros: Tokyo Battle Royale poprzez odczyt renderowanych celów VRAM przed przejściami progowymi CPU.",
+  "heroAlt": "Konsola przenośna PlayStation Portable wyświetlająca swój ekran oraz przyciski kierunkowe.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "emulacja PSP",
+    "odczyt VRAM",
+    "VRAM readback",
+    "oświetlenie bloom",
+    "post-processing",
+    "emulacja grafiki"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Poprawka i przegląd"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nieaktualne bufory ramki w hybrydowym post-processingu"
+    },
+    {
+      "type": "paragraph",
+      "text": "W grze Kenka Banchou Bros: Tokyo Battle Royale efekt bloom w post-processingu opiera się na hybrydowym potoku współdzielonym między dedykowanym układem graficznym PSP a jego głównym procesorem. Silnik renderuje bieżącą scenę 3D do małego bufora 128x128 16-bit RGB 565 w VRAM pod adresem 0x0417c000. Zamiast przetwarzać jasne punkty za pomocą shaderów GPU lub operacji blit, gra wykonuje procedurę progowania bezpośrednio na procesorze MIPS, zapisując przefiltrowane jasne obszary do drugorzędnego bufora pod adresem 0x04174000 przed ich nałożeniem. Emulacja tego procesu wymaga pobrania powierzchni wyrenderowanej przez GPU z powrotem do pamięci widocznej dla CPU. PPSSPP wcześniej wykonywał ten odczyt tylko raz przy początkowym uruchomieniu, pozostawiając stare dane wizualne na stałe w pamięci i zamrażając je na ekranie po wczytaniu stanów zapisu."
+    },
+    {
+      "type": "heading",
+      "text": "Przechwytywanie procedury progowania CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby zapewnić, że CPU otrzymuje aktualne dane wyjściowe renderowania, PPSSPP teraz przechwytuje funkcję bright-pass gry poprzez swoje tablice emulacji wysokiego poziomu. Analizator MIPS identyfikuje procedurę za pomocą skrótu sygnatury, indeksując za początkową instrukcją skoku, aby przechwycić logikę operacyjną. Po wyzwoleniu funkcja zastępcza weryfikuje wskaźnik obiektu, rozwiązuje adres bufora źródłowego 0x8000-bajtów wewnątrz VRAM i wywołuje odczyt do pamięci hosta tuż przed rozpoczęciem obliczeń. Jednocześnie PPSSPP zaktualizował logikę szybkiego testowania ramek ograniczających (bounding box) wewnątrz wspólnego silnika rysowania. Zwracając wartość false zamiast zgłaszania wewnętrznego błędu asercji podczas przetwarzania nieprawidłowych rysowań o zerowej pozycji, emulator zapobiega awariom w przypadku napotkania nieregularnych wywołań rysowania obecnych w zrzutach klatek."
+    },
+    {
+      "type": "heading",
+      "text": "Eliminacja trwałych artefaktów oświetlenia"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dla graczy uruchamiających Kenka Banchou Bros zmiana naprawia trwały błąd wizualny, w którym statyczne aureole świetlne pozostawały nałożone na akcję. Obracanie kamery lub przywracanie zapisanego stanu powodowało wcześniej, że poświata z poprzednich scen unosiła się na ekranie, zasłaniając starcia i utrudniając nawigację wizualną. Ponieważ emulator teraz przesyła zaktualizowaną klatkę o rozmiarze 0x8000 bajtów do pamięci systemowej przed każdym przejściem progowym, wynikowy efekt bloom dokładnie odzwierciedla żywą geometrię i zmiany oświetlenia w czasie rzeczywistym. Ukierunkowane przechwytywanie funkcji pozwala emulatorowi zachować wierność wizualną bez uciekania się do agresywnych odczytów pełnych klatek z GPU, które mogłyby obniżyć wydajność emulacji."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i granice docelowe"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poprawka wykorzystuje specyficzny dla gry hak zastępczy zamiast globalnej heurystyki graficznej, ograniczając zmiany ściśle do tytułów wykonujących tę znaną procedurę progowania. Weryfikację przeprowadzono poprzez bezpośrednią inspekcję pamięci bufora wyjściowego pod adresem 0x04174000. Przed wprowadzeniem poprawki zrzut pamięci po przesunięciu kamery w grze z aktywnego stanu zapisu wykazywał, że bufor docelowy zachowywał dane pikseli z początkowej zapisanej perspektywy. Przy aktywnym haku odczytu kolejne zrzuty pamięci wykazały, że bufor docelowy natychmiast odświeża się współrzędnymi odpowiadającymi zaktualizowanej perspektywie gracza, co potwierdza, że CPU skutecznie przetwarza świeże dane sceny w każdej klatce."
+    }
+  ]
+}

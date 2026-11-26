@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Synchronizes VRAM Readbacks for Kenka Banchou Bros Bloom",
+  "summary": "PPSSPP resolves stuck bloom artifacts in Kenka Banchou Bros: Tokyo Battle Royale by reading back VRAM render targets prior to CPU threshold passes.",
+  "heroAlt": "A PlayStation Portable handheld gaming console displaying its screen and directional buttons.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "PSP emulation",
+    "VRAM readback",
+    "bloom lighting",
+    "post-processing",
+    "graphics emulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Stale Framebuffers in Hybrid Post-Processing"
+    },
+    {
+      "type": "paragraph",
+      "text": "In Kenka Banchou Bros: Tokyo Battle Royale, post-processing bloom relies on a hybrid pipeline shared between the PSP's dedicated graphics hardware and its main processor. The engine renders the current 3D scene into a small 128x128 16-bit RGB 565 buffer in VRAM at address 0x0417c000. Instead of processing bright spots using GPU shaders or blits, the game executes a thresholding routine directly on the MIPS CPU, writing filtered highlights into a secondary buffer at 0x04174000 before overlaying them. Emulating this requires pulling the GPU-rendered surface back into CPU-visible memory. PPSSPP previously performed this readback only once on initial execution, leaving old visual data permanently stuck in memory and frozen on screen after loading savestates."
+    },
+    {
+      "type": "heading",
+      "text": "Hooking the CPU Threshold Routine"
+    },
+    {
+      "type": "paragraph",
+      "text": "To ensure the CPU receives current rendering output, PPSSPP now intercepts the game's bright-pass function through its high-level emulation tables. The MIPS analyzer identifies the routine using a signature hash, indexing past an initial branch instruction to hook the operational logic. When triggered, the replacement function validates the object pointer, resolves the 0x8000-byte source buffer address inside VRAM, and invokes a readback to host memory right before calculations begin. Concurrently, PPSSPP updated fast bounding box testing logic within the common draw engine. By returning false rather than failing an internal assertion when processing invalid zero-position draws, the emulator prevents crashes when encountering irregular draw calls present in frame dumps."
+    },
+    {
+      "type": "heading",
+      "text": "Eliminating Persistent Lighting Artifacts"
+    },
+    {
+      "type": "paragraph",
+      "text": "For players running Kenka Banchou Bros, the change fixes a persistent visual bug where static lighting halos remained superimposed over the action. Rotating the camera or restoring a saved state previously caused the glow of previous scenes to hover across the screen, obscuring combat encounters and visual navigation. Because the emulator now transfers the updated 0x8000-byte frame into system memory prior to every threshold pass, the resulting bloom accurately reflects live geometry and real-time lighting changes. Targeted function interception allows the emulator to maintain visual fidelity without resorting to aggressive full-frame GPU readbacks that could degrade emulation performance."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and Target Boundaries"
+    },
+    {
+      "type": "paragraph",
+      "text": "The fix uses a game-specific replacement hook rather than a global graphics heuristic, confining changes strictly to titles executing this known threshold routine. Verification was conducted through direct memory inspection of the output buffer at address 0x04174000. Prior to the fix, dumping memory after moving the in-game camera from an active savestate showed that the destination buffer retained pixel data from the initial saved perspective. With the readback hook active, subsequent memory dumps demonstrated that the destination buffer immediately refreshes with coordinates corresponding to the player's updated perspective, confirming that the CPU successfully processes fresh scene data every frame."
+    }
+  ]
+}

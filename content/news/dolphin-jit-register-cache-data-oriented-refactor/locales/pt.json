@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin Adota Design Orientado a Dados para o Cache de Registradores JIT x86",
+  "summary": "O Dolphin refatora seu cache de registradores x86 de um array de estruturas para uma estrutura de arrays, usando bitsets para acelerar a geração de código JIT e o flushing de estado.",
+  "heroAlt": "Consoles Nintendo GameCube e Wii dispostos lado a lado em uma bancada limpa",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "otimização de compilador",
+    "emulação",
+    "CPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Pull request #14806 do Dolphin",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sobrecarga de Array de Estruturas no Rastreamento de Registradores"
+    },
+    {
+      "type": "paragraph",
+      "text": "No recompiler JIT de 64 bits do Dolphin, o cache de registradores é responsável por mapear registradores PowerPC simulados para registradores físicos da CPU hospedeira. Historicamente, esse subsistema rastreava estados de registradores usando um array de estruturas, onde um objeto de registrador em cache individual armazenava propriedades como se um registrador estava vinculado, modificado ou preservado na memória guest. Consultar essas propriedades exigia inspecionar campos separados em múltiplos objetos dentro de um loop. Como rotinas de gerenciamento de registradores, como o flushing, são executadas frequentemente durante a geração de código, os chamadores eram forçados a realizar bitmasking manual complexo para restringir a iteração e mitigar penalidades de desempenho durante a tradução de blocos."
+    },
+    {
+      "type": "heading",
+      "text": "Transição para Bitsets e Estrutura de Arrays"
+    },
+    {
+      "type": "paragraph",
+      "text": "O pull request #14806 substitui esse layout de array de estruturas por um design de estrutura de arrays, eliminando completamente o cabeçalho de registrador em cache separado. Os estados centrais dos registradores agora são organizados em arrays compactos acompanhados por bitsets que representam o status dos registradores host e guest. Como os estados booleanos são compactados em bitsets, como tipos dedicados de bitmask de host e guest, a filtragem de registradores para operações de cache específicas pode ser concluída em uma única instrução bitwise. Operações como o flushing de registradores não exigem mais que o código chamador filtre manualmente os candidatos a registradores para preservar o desempenho, simplificando tanto os internos do cache de registradores quanto o código chamador em todo o recompiler JIT."
+    },
+    {
+      "type": "heading",
+      "text": "Redução do Tempo de Recompilação Dinâmica para Jogadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Embora o cache de registradores não altere a saída matemática das instruções PowerPC emuladas, a eficiência da recompilação dinâmica influencia diretamente a fluidez com que os jogos rodam. A compilação JIT ocorre continuamente à medida que os jogos descobrem novos caminhos de código, e uma sobrecarga pesada nas rotinas de tradução pode introduzir travamentos perceptíveis na taxa de quadros. Cargas de trabalho de perfilamento — como pausar repetidamente uma partida em NBA Live 2005 — demonstraram reduções marcantes na proporção de tempo de CPU consumido pelo gerenciamento de registradores. Várias rotinas de cache de registradores deixaram de aparecer de forma proeminente nos perfis de desempenho, confirmando que as avaliações de bitset simplificadas entregam uma compilação JIT mais rápida durante a execução em processadores host x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Escopo Atual da Plataforma e Roteiro Arquitetural"
+    },
+    {
+      "type": "paragraph",
+      "text": "Este redesenho orientado a dados está atualmente implementado apenas para o backend JIT x86-64, deixando os sistemas baseados em ARM inalterados por enquanto. Notas de arquitetura de longo prazo indicam planos para unificar as interfaces de cache de registradores usando o Curiously Recurring Template Pattern, o que permitiria o gerenciamento compartilhado de registradores entre arquiteturas, levando em conta diferentes contagens de registradores e restrições de destino de memória. Uma interface de cache de registradores unificada também estabeleceria a base técnica para suportar ramificações dentro de blocos JIT. Trabalhos futuros podem avaliar a movimentação de mais operações de cache de registradores para arquivos de cabeçalho para permitir inlining, potencialmente combinados com unity builds para mitigar tempos de compilação C++ mais longos."
+    }
+  ]
+}

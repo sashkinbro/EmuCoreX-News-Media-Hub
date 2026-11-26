@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP 同步 VRAM 回读以修复 Kenka Banchou Bros 的 Bloom 效果",
+  "summary": "PPSSPP 通过在 CPU 阈值处理前回读 VRAM 渲染目标，解决了 Kenka Banchou Bros: Tokyo Battle Royale 中 Bloom 特效卡顿的问题。",
+  "heroAlt": "一台显示屏幕和方向键的 PlayStation Portable 手持游戏机。",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "PSP emulation",
+    "PSP 模拟",
+    "VRAM readback",
+    "VRAM 回读",
+    "bloom lighting",
+    "Bloom 光效",
+    "post-processing",
+    "后期处理"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "混合后期处理中的陈旧帧缓冲区"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Kenka Banchou Bros: Tokyo Battle Royale 中，后期处理的 Bloom 效果依赖于 PSP 专用图形硬件与主处理器之间共享的混合管线。游戏引擎将当前的 3D 场景渲染到 VRAM 地址 0x0417c000 处的一个小型 128x128 16-bit RGB 565 缓冲区中。游戏并未通过 GPU 着色器或位块传输（blits）来处理高亮区域，而是直接在 MIPS CPU 上执行阈值处理程序，将过滤后的高亮部分写入 0x04174000 处的辅助缓冲区，然后再进行叠加。模拟此过程需要将 GPU 渲染的表面回读到 CPU 可见的内存中。PPSSPP 此前仅在初始执行时执行一次回读，导致旧的视觉数据永久残留在内存中，并在加载即时存档后冻结在屏幕上。"
+    },
+    {
+      "type": "heading",
+      "text": "挂钩 CPU 阈值处理程序"
+    },
+    {
+      "type": "paragraph",
+      "text": "为了确保 CPU 接收到当前的渲染输出，PPSSPP 现在通过其高级模拟表拦截了游戏的亮度提取函数。MIPS 分析器使用签名哈希识别该程序，通过索引跳过初始分支指令来挂钩操作逻辑。当触发时，替换函数会验证对象指针，解析 VRAM 内的 0x8000 字节源缓冲区地址，并在计算开始前调用回读到主机内存的操作。同时，PPSSPP 更新了通用绘图引擎内的快速边界框测试逻辑。通过在处理无效的零位置绘制时返回 false 而不是触发内部断言失败，模拟器避免了在遇到帧转储中存在的异常绘制调用时发生崩溃。"
+    },
+    {
+      "type": "heading",
+      "text": "消除持久性光效伪影"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于运行 Kenka Banchou Bros 的玩家来说，此更改修复了一个持久的视觉错误，即静态光晕会持续叠加在画面上。旋转摄像机或恢复即时存档此前会导致之前场景的光晕悬浮在屏幕上，遮挡战斗过程和视觉导航。由于模拟器现在在每次阈值处理前将更新后的 0x8000 字节帧传输到系统内存中，生成的 Bloom 效果能够准确反映实时几何图形和实时光照变化。针对性的函数拦截使模拟器能够在不诉诸可能降低模拟性能的激进全帧 GPU 回读的情况下，保持视觉保真度。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与目标边界"
+    },
+    {
+      "type": "paragraph",
+      "text": "该修复使用了特定于游戏的替换挂钩，而不是全局图形启发式算法，将更改严格限制在执行此已知阈值程序的标题中。验证是通过对地址 0x04174000 处的输出缓冲区进行直接内存检查进行的。在修复之前，从活动的即时存档移动游戏内摄像机后转储内存显示，目标缓冲区保留了初始保存视角下的像素数据。在启用回读挂钩后，随后的内存转储表明目标缓冲区立即刷新为与玩家更新视角相对应的坐标，证实了 CPU 每一帧都能成功处理最新的场景数据。"
+    }
+  ]
+}

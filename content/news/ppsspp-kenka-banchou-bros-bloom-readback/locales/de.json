@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP synchronisiert VRAM-Readbacks für den Bloom-Effekt in Kenka Banchou Bros",
+  "summary": "PPSSPP behebt hängengebliebene Bloom-Artefakte in Kenka Banchou Bros: Tokyo Battle Royale, indem VRAM-Render-Targets vor CPU-Schwellenwert-Durchläufen zurückgelesen werden.",
+  "heroAlt": "Eine PlayStation Portable Handheld-Spielkonsole, die ihren Bildschirm und die Richtungstasten zeigt.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "PSP emulation",
+    "PSP-Emulation",
+    "VRAM readback",
+    "VRAM-Readback",
+    "bloom lighting",
+    "Bloom-Beleuchtung",
+    "post-processing",
+    "Nachbearbeitung"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP Pull Request #23177",
+    "implementation": "Patch und Überprüfung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Veraltete Framebuffer in der hybriden Nachbearbeitung"
+    },
+    {
+      "type": "paragraph",
+      "text": "In Kenka Banchou Bros: Tokyo Battle Royale basiert der Bloom-Post-Processing-Effekt auf einer hybriden Pipeline, die sich die dedizierte Grafikhardware der PSP und deren Hauptprozessor teilen. Die Engine rendert die aktuelle 3D-Szene in einen kleinen 128x128 16-Bit RGB 565-Puffer im VRAM an der Adresse 0x0417c000. Anstatt helle Bereiche mittels GPU-Shadern oder Blits zu verarbeiten, führt das Spiel eine Schwellenwert-Routine direkt auf der MIPS-CPU aus und schreibt gefilterte Highlights in einen sekundären Puffer bei 0x04174000, bevor diese überlagert werden. Die Emulation erfordert hierfür das Zurücklesen der GPU-gerenderten Oberfläche in den für die CPU sichtbaren Speicher. PPSSPP führte dieses Readback bisher nur einmal bei der initialen Ausführung durch, was dazu führte, dass alte visuelle Daten dauerhaft im Speicher verblieben und nach dem Laden von Savestates fest auf dem Bildschirm eingefroren waren."
+    },
+    {
+      "type": "heading",
+      "text": "Hooking der CPU-Schwellenwert-Routine"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um sicherzustellen, dass die CPU die aktuelle Rendering-Ausgabe erhält, fängt PPSSPP nun die Bright-Pass-Funktion des Spiels über seine High-Level-Emulationstabellen ab. Der MIPS-Analysator identifiziert die Routine anhand eines Signatur-Hashes und indiziert hinter einer anfänglichen Branch-Instruktion, um die operative Logik zu hooken. Wenn diese ausgelöst wird, validiert die Ersatzfunktion den Objektzeiger, löst die 0x8000-Byte-Quellpufferadresse innerhalb des VRAM auf und ruft ein Readback in den Host-Speicher auf, unmittelbar bevor die Berechnungen beginnen. Gleichzeitig hat PPSSPP die Logik für schnelle Bounding-Box-Tests innerhalb der allgemeinen Draw-Engine aktualisiert. Durch die Rückgabe von 'false' anstelle eines Fehlers bei einer internen Assertion bei der Verarbeitung ungültiger Null-Positions-Draws verhindert der Emulator Abstürze beim Auftreten unregelmäßiger Draw-Calls in Frame-Dumps."
+    },
+    {
+      "type": "heading",
+      "text": "Eliminierung persistenter Beleuchtungsartefakte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Für Spieler von Kenka Banchou Bros behebt die Änderung einen hartnäckigen visuellen Fehler, bei dem statische Beleuchtungs-Halos über der Action liegen blieben. Das Drehen der Kamera oder das Wiederherstellen eines gespeicherten Zustands führte zuvor dazu, dass das Leuchten früherer Szenen über den Bildschirm schwebte und Kampfbegegnungen sowie die visuelle Navigation verdeckte. Da der Emulator nun vor jedem Schwellenwert-Durchlauf den aktualisierten 0x8000-Byte-Frame in den Systemspeicher überträgt, spiegelt der resultierende Bloom-Effekt präzise die Live-Geometrie und die Echtzeit-Beleuchtungsänderungen wider. Die gezielte Funktionsabfangung ermöglicht es dem Emulator, die visuelle Wiedergabetreue beizubehalten, ohne auf aggressive Full-Frame-GPU-Readbacks zurückgreifen zu müssen, die die Emulationsleistung beeinträchtigen könnten."
+    },
+    {
+      "type": "heading",
+      "text": "Verifizierung und Zielgrenzen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Fix verwendet einen spielspezifischen Ersatz-Hook anstelle einer globalen Grafik-Heuristik, wodurch die Änderungen strikt auf Titel beschränkt bleiben, die diese bekannte Schwellenwert-Routine ausführen. Die Verifizierung wurde durch direkte Speicherinspektion des Ausgabepuffers an der Adresse 0x04174000 durchgeführt. Vor dem Fix zeigte das Dumpen des Speichers nach dem Bewegen der In-Game-Kamera aus einem aktiven Savestate, dass der Zielpuffer Pixeldaten aus der ursprünglichen gespeicherten Perspektive beibehielt. Mit aktivem Readback-Hook zeigten nachfolgende Speicherdumps, dass der Zielpuffer sofort mit Koordinaten aktualisiert wird, die der aktualisierten Perspektive des Spielers entsprechen, was bestätigt, dass die CPU erfolgreich frische Szenendaten in jedem Frame verarbeitet."
+    }
+  ]
+}

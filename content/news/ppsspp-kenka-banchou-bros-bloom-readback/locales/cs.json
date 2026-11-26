@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP synchronizuje čtení VRAM pro bloom efekt ve hře Kenka Banchou Bros",
+  "summary": "PPSSPP řeší zaseknuté artefakty bloom efektu ve hře Kenka Banchou Bros: Tokyo Battle Royale tím, že před průchody prahování na CPU načítá renderovací cíle z VRAM.",
+  "heroAlt": "Ruční herní konzole PlayStation Portable zobrazující svou obrazovku a směrová tlačítka.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "PSP emulace",
+    "VRAM readback",
+    "čtení VRAM",
+    "bloom osvětlení",
+    "post-processing",
+    "grafická emulace"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Patch a recenze"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Zastaralé framebufferové vyrovnávací paměti v hybridním post-processingu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ve hře Kenka Banchou Bros: Tokyo Battle Royale spoléhá post-processing bloom efektu na hybridní pipeline sdílenou mezi dedikovaným grafickým hardwarem PSP a jeho hlavním procesorem. Engine vykresluje aktuální 3D scénu do malé 128x128 16bitové RGB 565 vyrovnávací paměti ve VRAM na adrese 0x0417c000. Místo zpracování jasných bodů pomocí GPU shaderů nebo blitů provádí hra rutinu prahování přímo na MIPS CPU, přičemž zapisuje filtrované světelné body do sekundární vyrovnávací paměti na adrese 0x04174000 před jejich překrytím. Emulace tohoto procesu vyžaduje stažení povrchu vykresleného GPU zpět do paměti viditelné pro CPU. PPSSPP dříve prováděl toto čtení pouze jednou při počátečním spuštění, což způsobovalo, že stará vizuální data zůstávala trvale zaseknutá v paměti a po načtení savestatů zamrzlá na obrazovce."
+    },
+    {
+      "type": "heading",
+      "text": "Napojení na rutinu prahování CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby bylo zajištěno, že CPU obdrží aktuální výstup vykreslování, PPSSPP nyní zachytává funkci hry pro průchod jasných bodů prostřednictvím svých tabulek emulace na vysoké úrovni. MIPS analyzátor identifikuje rutinu pomocí hash podpisu a indexuje za počáteční instrukci větvení, aby se napojil na operační logiku. Po spuštění nahrazující funkce validuje ukazatel objektu, vyřeší adresu zdrojové vyrovnávací paměti o velikosti 0x8000 bajtů uvnitř VRAM a vyvolá čtení do hostitelské paměti těsně před zahájením výpočtů. Současně PPSSPP aktualizoval logiku testování rychlého ohraničujícího rámečku (bounding box) v rámci běžného vykreslovacího enginu. Tím, že při zpracování neplatných vykreslení s nulovou pozicí vrací hodnotu false namísto selhání interního tvrzení, emulátor předchází pádům při setkání s nepravidelnými vykreslovacími voláními přítomnými ve výpisech snímků."
+    },
+    {
+      "type": "heading",
+      "text": "Eliminace přetrvávajících světelných artefaktů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pro hráče hrající Kenka Banchou Bros tato změna opravuje přetrvávající vizuální chybu, kdy statické světelné svatozáře zůstávaly překryty přes akci. Otáčení kamery nebo obnovení uloženého stavu dříve způsobovalo, že záře předchozích scén levitovala přes obrazovku, což zakrývalo bojové střety a vizuální navigaci. Protože emulátor nyní přenáší aktualizovaný snímek o velikosti 0x8000 bajtů do systémové paměti před každým průchodem prahování, výsledný bloom přesně odráží živou geometrii a změny osvětlení v reálném čase. Cílené zachytávání funkcí umožňuje emulátoru udržet vizuální věrnost, aniž by se musel uchýlit k agresivnímu čtení celých snímků z GPU, které by mohlo snížit výkon emulace."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a cílové hranice"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava používá herně specifický náhradní hook namísto globální grafické heuristiky, čímž omezuje změny striktně na tituly provádějící tuto známou rutinu prahování. Ověření bylo provedeno přímou kontrolou paměti výstupní vyrovnávací paměti na adrese 0x04174000. Před opravou výpis paměti po přesunu herní kamery z aktivního savestatu ukázal, že cílová vyrovnávací paměť si zachovala obrazová data z původní uložené perspektivy. S aktivním hookem pro čtení následné výpisy paměti prokázaly, že se cílová vyrovnávací paměť okamžitě obnovuje souřadnicemi odpovídajícími aktualizované perspektivě hráče, což potvrzuje, že CPU úspěšně zpracovává čerstvá data scény v každém snímku."
+    }
+  ]
+}

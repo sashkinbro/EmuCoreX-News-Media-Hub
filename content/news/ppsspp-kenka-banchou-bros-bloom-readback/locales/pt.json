@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP sincroniza readbacks de VRAM para o efeito de bloom em Kenka Banchou Bros",
+  "summary": "O PPSSPP resolve artefatos de bloom travados em Kenka Banchou Bros: Tokyo Battle Royale ao realizar o readback de render targets da VRAM antes das passagens de threshold da CPU.",
+  "heroAlt": "Um console portátil PlayStation Portable exibindo sua tela e botões direcionais.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "emulação de PSP",
+    "PSP emulation",
+    "readback de VRAM",
+    "VRAM readback",
+    "iluminação bloom",
+    "bloom lighting",
+    "pós-processamento",
+    "post-processing"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Pull request #23177 do PPSSPP",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Framebuffers obsoletos no pós-processamento híbrido"
+    },
+    {
+      "type": "paragraph",
+      "text": "Em Kenka Banchou Bros: Tokyo Battle Royale, o bloom de pós-processamento depende de um pipeline híbrido compartilhado entre o hardware gráfico dedicado do PSP e seu processador principal. O motor renderiza a cena 3D atual em um pequeno buffer RGB 565 de 128x128 e 16 bits na VRAM, no endereço 0x0417c000. Em vez de processar pontos brilhantes usando shaders de GPU ou blits, o jogo executa uma rotina de threshold diretamente na CPU MIPS, escrevendo os destaques filtrados em um buffer secundário em 0x04174000 antes de sobrepô-los. Emular isso requer trazer a superfície renderizada pela GPU de volta para a memória visível da CPU. O PPSSPP realizava anteriormente esse readback apenas uma vez na execução inicial, deixando dados visuais antigos permanentemente presos na memória e congelados na tela após o carregamento de savestates."
+    },
+    {
+      "type": "heading",
+      "text": "Interceptando a rotina de threshold da CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para garantir que a CPU receba a saída de renderização atual, o PPSSPP agora intercepta a função de bright-pass do jogo através de suas tabelas de emulação de alto nível. O analisador MIPS identifica a rotina usando um hash de assinatura, indexando após uma instrução de desvio inicial para interceptar a lógica operacional. Quando acionada, a função de substituição valida o ponteiro do objeto, resolve o endereço do buffer de origem de 0x8000 bytes dentro da VRAM e invoca um readback para a memória do host logo antes de os cálculos começarem. Simultaneamente, o PPSSPP atualizou a lógica de teste de bounding box rápido dentro do motor de desenho comum. Ao retornar falso em vez de falhar em uma asserção interna ao processar desenhos de posição zero inválidos, o emulador evita travamentos ao encontrar chamadas de desenho irregulares presentes em dumps de quadros."
+    },
+    {
+      "type": "heading",
+      "text": "Eliminando artefatos de iluminação persistentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para jogadores executando Kenka Banchou Bros, a mudança corrige um bug visual persistente onde halos de iluminação estática permaneciam sobrepostos à ação. Rotacionar a câmera ou restaurar um estado salvo anteriormente fazia com que o brilho de cenas anteriores pairasse pela tela, obscurecendo encontros de combate e a navegação visual. Como o emulador agora transfere o quadro de 0x8000 bytes atualizado para a memória do sistema antes de cada passagem de threshold, o bloom resultante reflete com precisão a geometria ao vivo e as mudanças de iluminação em tempo real. A interceptação direcionada de funções permite que o emulador mantenha a fidelidade visual sem recorrer a readbacks agressivos de quadro completo da GPU que poderiam degradar o desempenho da emulação."
+    },
+    {
+      "type": "heading",
+      "text": "Verificação e limites do alvo"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção usa um hook de substituição específico para o jogo em vez de uma heurística gráfica global, confinando as mudanças estritamente aos títulos que executam essa rotina de threshold conhecida. A verificação foi conduzida através da inspeção direta da memória do buffer de saída no endereço 0x04174000. Antes da correção, despejar a memória após mover a câmera do jogo a partir de um savestate ativo mostrava que o buffer de destino retinha dados de pixel da perspectiva salva inicialmente. Com o hook de readback ativo, dumps de memória subsequentes demonstraram que o buffer de destino é atualizado imediatamente com coordenadas correspondentes à perspectiva atualizada do jogador, confirmando que a CPU processa com sucesso dados de cena novos a cada quadro."
+    }
+  ]
+}

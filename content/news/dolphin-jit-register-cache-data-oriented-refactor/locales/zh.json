@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin 为 x86 JIT 寄存器缓存采用面向数据设计",
+  "summary": "Dolphin 将其 x86 寄存器缓存从结构体数组重构为数组结构体，并利用位集（bitsets）来加速 JIT 代码生成和状态刷新。",
+  "heroAlt": "并排摆放在整洁工作台上的 Nintendo GameCube 和 Wii 主机",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "寄存器缓存",
+    "x86-64",
+    "compiler optimization",
+    "编译器优化"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "寄存器追踪中结构体数组的开销"
+    },
+    {
+      "type": "paragraph",
+      "text": "在 Dolphin 的 64 位 JIT 重编译器中，寄存器缓存负责将模拟的 PowerPC 寄存器映射到物理宿主 CPU 寄存器。从历史上看，该子系统使用结构体数组来追踪寄存器状态，其中每个缓存的寄存器对象存储了诸如寄存器是否已绑定、已修改或保存在客户机内存中等属性。查询这些属性需要在循环中检查多个对象的独立字段。由于寄存器管理例程（如刷新）在代码生成过程中频繁执行，调用者被迫执行复杂的位掩码手动操作，以限制迭代并减轻块翻译期间的性能损耗。"
+    },
+    {
+      "type": "heading",
+      "text": "向位集和数组结构体的过渡"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14806 将这种结构体数组布局替换为数组结构体设计，彻底消除了独立的缓存寄存器头。核心寄存器状态现在被组织成紧凑的数组，并配有表示宿主和客户机寄存器状态的位集。由于布尔状态被打包进诸如专用宿主和客户机位掩码类型之类的位集中，因此针对特定缓存操作筛选寄存器的过程可以通过单条位运算指令完成。诸如寄存器刷新之类的操作不再需要调用代码手动筛选寄存器候选对象以维持性能，从而简化了 JIT 重编译器中寄存器缓存的内部结构和调用代码。"
+    },
+    {
+      "type": "heading",
+      "text": "降低玩家的动态重编译时间"
+    },
+    {
+      "type": "paragraph",
+      "text": "虽然寄存器缓存不会改变模拟 PowerPC 指令的数学输出，但动态重编译的效率直接影响游戏的运行流畅度。随着游戏发现新的代码路径，JIT 编译会持续进行，而翻译例程中的沉重开销可能会导致明显的帧卡顿。性能分析工作负载（例如在 NBA Live 2005 中反复暂停比赛）表明，寄存器管理所消耗的 CPU 时间比例显著降低。多个寄存器缓存例程在性能分析器中不再占据显著位置，这证实了精简后的位集评估在 x86-64 宿主处理器上执行时提供了更快的 JIT 编译速度。"
+    },
+    {
+      "type": "heading",
+      "text": "当前平台范围与架构路线图"
+    },
+    {
+      "type": "paragraph",
+      "text": "这种面向数据的重新设计目前仅在 x86-64 JIT 后端实现，基于 ARM 的系统暂时保持不变。长期的架构说明指出，计划使用奇异递归模板模式（Curiously Recurring Template Pattern）统一寄存器缓存接口，这将允许在不同架构间共享寄存器管理，同时兼顾不同的寄存器数量和内存目标限制。统一的寄存器缓存接口也将为支持 JIT 块内的块内分支奠定技术基础。未来的工作可能会评估将更多的寄存器缓存操作移入头文件以实现内联，并可能与统一构建（unity builds）相结合，以缓解 C++ 编译时间变长的问题。"
+    }
+  ]
+}

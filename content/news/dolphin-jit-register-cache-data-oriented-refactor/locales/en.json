@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin Adopts Data-Oriented Design for the x86 JIT Register Cache",
+  "summary": "Dolphin refactors its x86 register cache from an array of structures to a structure of arrays, using bitsets to accelerate JIT code generation and state flushing.",
+  "heroAlt": "Nintendo GameCube and Wii consoles arranged side by side on a clean workbench",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "compiler optimization"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Array of Structures Overhead in Register Tracking"
+    },
+    {
+      "type": "paragraph",
+      "text": "In Dolphin's 64-bit JIT recompiler, the register cache is responsible for mapping simulated PowerPC registers to physical host CPU registers. Historically, this subsystem tracked register states using an array of structures, where an individual cached register object stored properties such as whether a register was bound, modified, or preserved in guest memory. Querying these properties required inspecting separate fields across multiple objects in a loop. Because register management routines like flushing execute frequently throughout code generation, callers were forced to perform complex manual bitmasking to restrict iteration and mitigate performance penalties during block translation."
+    },
+    {
+      "type": "heading",
+      "text": "Transitioning to Bitsets and Structure of Arrays"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14806 replaces this array-of-structures layout with a structure-of-arrays design, entirely eliminating the separate cached register header. Core register states are now organized into compact arrays accompanied by bitsets representing host and guest register status. Because boolean states are packed into bitsets such as dedicated host and guest bitmask types, filtering registers for specific cache operations can be completed in a single bitwise instruction. Operations like register flushing no longer demand that calling code manually filter down register candidates to preserve performance, streamlining both the register cache internals and calling code across the JIT recompiler."
+    },
+    {
+      "type": "heading",
+      "text": "Lowering Dynamic Recompilation Time for Players"
+    },
+    {
+      "type": "paragraph",
+      "text": "While the register cache does not alter the mathematical output of emulated PowerPC instructions, the efficiency of dynamic recompilation directly influences how smoothly games run. JIT compilation occurs continuously as games discover new code paths, and heavy overhead in translation routines can introduce perceptible frame hitches. Profiling workloads—such as repeatedly pausing a match in NBA Live 2005—demonstrated marked reductions in the proportion of CPU time consumed by register management. Several register cache routines ceased to register prominently in performance profilers, confirming that the streamlined bitset evaluations deliver faster JIT compilation during execution on x86-64 host processors."
+    },
+    {
+      "type": "heading",
+      "text": "Current Platform Scope and Architectural Roadmap"
+    },
+    {
+      "type": "paragraph",
+      "text": "This data-oriented redesign is currently implemented only for the x86-64 JIT backend, leaving ARM-based systems unchanged for now. Long-term architecture notes indicate plans to unify the register cache interfaces using the Curiously Recurring Template Pattern, which would allow shared register management across architectures while accounting for differing register counts and memory destination constraints. A unified register cache interface would also lay the technical groundwork for supporting in-block branches within JIT blocks. Future work may evaluate moving more register cache operations into header files to enable inlining, potentially paired with unity builds to mitigate longer C++ compile times."
+    }
+  ]
+}

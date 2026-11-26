@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin adotta il Data-Oriented Design per la cache dei registri JIT x86",
+  "summary": "Dolphin rifattorizza la sua cache dei registri x86 passando da un array di strutture a una struttura di array, utilizzando bitset per accelerare la generazione del codice JIT e il flushing dello stato.",
+  "heroAlt": "Console Nintendo GameCube e Wii disposte fianco a fianco su un banco da lavoro pulito",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "ottimizzazione compilatore",
+    "emulazione",
+    "CPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sovraccarico dell'Array of Structures nel tracciamento dei registri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Nel ricompilatore JIT a 64 bit di Dolphin, la cache dei registri è responsabile della mappatura dei registri PowerPC simulati sui registri fisici della CPU host. Storicamente, questo sottosistema tracciava gli stati dei registri utilizzando un array di strutture, dove un singolo oggetto registro memorizzato conservava proprietà come se un registro fosse vincolato, modificato o preservato nella memoria guest. Interrogare queste proprietà richiedeva l'ispezione di campi separati attraverso molteplici oggetti all'interno di un ciclo. Poiché le routine di gestione dei registri, come il flushing, vengono eseguite frequentemente durante la generazione del codice, i chiamanti erano costretti a eseguire complesse operazioni manuali di bitmasking per limitare l'iterazione e mitigare le penalità di prestazioni durante la traduzione dei blocchi."
+    },
+    {
+      "type": "heading",
+      "text": "Transizione verso bitset e struttura di array"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14806 sostituisce questo layout array-of-structures con un design structure-of-arrays, eliminando completamente l'header separato del registro memorizzato. Gli stati principali dei registri sono ora organizzati in array compatti accompagnati da bitset che rappresentano lo stato dei registri host e guest. Poiché gli stati booleani sono raggruppati in bitset, come tipi di bitmask dedicati per host e guest, il filtraggio dei registri per specifiche operazioni di cache può essere completato in una singola istruzione bitwise. Operazioni come il flushing dei registri non richiedono più che il codice chiamante filtri manualmente i candidati per preservare le prestazioni, snellendo sia gli interni della cache dei registri che il codice chiamante in tutto il ricompilatore JIT."
+    },
+    {
+      "type": "heading",
+      "text": "Riduzione del tempo di ricompilazione dinamica per i giocatori"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebbene la cache dei registri non alteri l'output matematico delle istruzioni PowerPC emulate, l'efficienza della ricompilazione dinamica influenza direttamente la fluidità di esecuzione dei giochi. La compilazione JIT avviene continuamente man mano che i giochi scoprono nuovi percorsi di codice, e un elevato sovraccarico nelle routine di traduzione può introdurre scatti percepibili nel frame rate. L'analisi dei carichi di lavoro — come mettere ripetutamente in pausa una partita in NBA Live 2005 — ha dimostrato riduzioni marcate nella proporzione di tempo CPU consumato dalla gestione dei registri. Diverse routine della cache dei registri hanno smesso di apparire in modo prominente nei profiler delle prestazioni, confermando che le valutazioni semplificate tramite bitset offrono una compilazione JIT più rapida durante l'esecuzione su processori host x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Ambito attuale della piattaforma e roadmap architetturale"
+    },
+    {
+      "type": "paragraph",
+      "text": "Questa riprogettazione orientata ai dati è attualmente implementata solo per il backend JIT x86-64, lasciando i sistemi basati su ARM invariati per il momento. Le note sull'architettura a lungo termine indicano piani per unificare le interfacce della cache dei registri utilizzando il Curiously Recurring Template Pattern, che consentirebbe una gestione condivisa dei registri tra diverse architetture, tenendo conto del diverso numero di registri e dei vincoli di destinazione della memoria. Un'interfaccia unificata per la cache dei registri porrebbe anche le basi tecniche per supportare i rami in-block all'interno dei blocchi JIT. Il lavoro futuro potrebbe valutare lo spostamento di ulteriori operazioni della cache dei registri nei file header per consentire l'inlining, potenzialmente abbinato a unity builds per mitigare i tempi di compilazione C++ più lunghi."
+    }
+  ]
+}

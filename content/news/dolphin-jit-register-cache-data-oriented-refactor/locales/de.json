@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin führt datenorientiertes Design für den x86 JIT Register-Cache ein",
+  "summary": "Dolphin refaktoriert seinen x86 Register-Cache von einem Array von Strukturen zu einer Struktur von Arrays und nutzt Bitsets, um die JIT-Codegenerierung und das Leeren des Zustands zu beschleunigen.",
+  "heroAlt": "Nintendo GameCube und Wii Konsolen nebeneinander auf einer sauberen Werkbank",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "Compiler-Optimierung",
+    "Register-Cache"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin Pull Request #14806",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Overhead durch Array von Strukturen bei der Register-Verfolgung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Im 64-Bit JIT-Recompiler von Dolphin ist der Register-Cache dafür verantwortlich, simulierte PowerPC-Register auf physische Host-CPU-Register abzubilden. Historisch gesehen verfolgte dieses Subsystem Registerzustände mithilfe eines Arrays von Strukturen, wobei ein einzelnes zwischengespeichertes Registerobjekt Eigenschaften speicherte, wie etwa ob ein Register gebunden, modifiziert oder im Gastspeicher beibehalten wurde. Das Abfragen dieser Eigenschaften erforderte die Untersuchung separater Felder über mehrere Objekte hinweg in einer Schleife. Da Registerverwaltungsroutinen wie das Leeren (Flushing) während der Codegenerierung häufig ausgeführt werden, waren Aufrufer gezwungen, komplexe manuelle Bitmaskierungen durchzuführen, um Iterationen einzuschränken und Leistungseinbußen während der Blockübersetzung zu mindern."
+    },
+    {
+      "type": "heading",
+      "text": "Umstellung auf Bitsets und Struktur von Arrays"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Pull Request #14806 ersetzt dieses Array-von-Strukturen-Layout durch ein Struktur-von-Arrays-Design, wodurch der separate Header für zwischengespeicherte Register vollständig entfällt. Die Kern-Registerzustände sind nun in kompakten Arrays organisiert, begleitet von Bitsets, die den Status der Host- und Gastregister repräsentieren. Da boolesche Zustände in Bitsets wie dedizierte Host- und Gast-Bitmaskentypen gepackt sind, kann das Filtern von Registern für spezifische Cache-Operationen mit einer einzigen bitweisen Anweisung abgeschlossen werden. Operationen wie das Leeren von Registern erfordern nicht mehr, dass der aufrufende Code Registerkandidaten manuell filtert, um die Leistung zu erhalten, was sowohl die Interna des Register-Caches als auch den aufrufenden Code im gesamten JIT-Recompiler optimiert."
+    },
+    {
+      "type": "heading",
+      "text": "Senkung der dynamischen Rekompilierungszeit für Spieler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Obwohl der Register-Cache das mathematische Ergebnis der emulierten PowerPC-Befehle nicht verändert, beeinflusst die Effizienz der dynamischen Rekompilierung direkt, wie flüssig Spiele laufen. Die JIT-Kompilierung erfolgt kontinuierlich, während Spiele neue Codepfade entdecken, und ein hoher Overhead in Übersetzungsroutinen kann zu wahrnehmbaren Frame-Rucklern führen. Die Profilierung von Arbeitslasten – wie das wiederholte Pausieren eines Spiels in NBA Live 2005 – zeigte deutliche Reduzierungen des CPU-Zeitanteils, der durch die Registerverwaltung verbraucht wurde. Mehrere Register-Cache-Routinen tauchten nicht mehr prominent in Performance-Profilern auf, was bestätigt, dass die optimierten Bitset-Auswertungen eine schnellere JIT-Kompilierung während der Ausführung auf x86-64 Host-Prozessoren liefern."
+    },
+    {
+      "type": "heading",
+      "text": "Aktueller Plattformumfang und architektonischer Fahrplan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dieses datenorientierte Redesign ist derzeit nur für das x86-64 JIT-Backend implementiert, wodurch ARM-basierte Systeme vorerst unverändert bleiben. Langfristige Architekturhinweise deuten auf Pläne hin, die Register-Cache-Schnittstellen mithilfe des Curiously Recurring Template Pattern zu vereinheitlichen, was eine gemeinsame Registerverwaltung über Architekturen hinweg ermöglichen würde, während gleichzeitig unterschiedliche Registeranzahlen und Speicherzielbeschränkungen berücksichtigt werden. Eine vereinheitlichte Register-Cache-Schnittstelle würde auch die technische Grundlage für die Unterstützung von In-Block-Verzweigungen innerhalb von JIT-Blöcken schaffen. Zukünftige Arbeiten könnten evaluieren, mehr Register-Cache-Operationen in Header-Dateien zu verschieben, um Inlining zu ermöglichen, möglicherweise gepaart mit Unity-Builds, um längere C++ Kompilierzeiten zu mildern."
+    }
+  ]
+}

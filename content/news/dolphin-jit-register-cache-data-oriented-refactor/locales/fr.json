@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin adopte une conception orientée données pour le cache de registres JIT x86",
+  "summary": "Dolphin refactorise son cache de registres x86 en passant d'un tableau de structures à une structure de tableaux, utilisant des bitsets pour accélérer la génération de code JIT et le vidage d'état.",
+  "heroAlt": "Consoles Nintendo GameCube et Wii disposées côte à côte sur un établi propre",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "optimisation de compilateur",
+    "compilation dynamique"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Correctif et revue"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Surcharge du tableau de structures dans le suivi des registres"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dans le recompileur JIT 64 bits de Dolphin, le cache de registres est responsable du mappage des registres PowerPC simulés vers les registres CPU physiques de l'hôte. Historiquement, ce sous-système suivait les états des registres à l'aide d'un tableau de structures, où chaque objet de registre mis en cache stockait des propriétés telles que si un registre était lié, modifié ou préservé dans la mémoire invité. Interroger ces propriétés nécessitait d'inspecter des champs distincts à travers plusieurs objets dans une boucle. Étant donné que les routines de gestion des registres comme le vidage s'exécutent fréquemment lors de la génération de code, les appelants étaient contraints d'effectuer un masquage binaire manuel complexe pour limiter l'itération et atténuer les pénalités de performance lors de la traduction de blocs."
+    },
+    {
+      "type": "heading",
+      "text": "Transition vers les bitsets et la structure de tableaux"
+    },
+    {
+      "type": "paragraph",
+      "text": "La pull request #14806 remplace cette disposition en tableau de structures par une conception en structure de tableaux, éliminant entièrement l'en-tête de registre mis en cache séparé. Les états principaux des registres sont désormais organisés en tableaux compacts accompagnés de bitsets représentant le statut des registres hôte et invité. Parce que les états booléens sont regroupés dans des bitsets tels que des types de masques binaires dédiés à l'hôte et à l'invité, le filtrage des registres pour des opérations de cache spécifiques peut être effectué en une seule instruction binaire. Les opérations comme le vidage de registre ne nécessitent plus que le code appelant filtre manuellement les candidats de registre pour préserver les performances, rationalisant ainsi à la fois les composants internes du cache de registres et le code appelant dans tout le recompileur JIT."
+    },
+    {
+      "type": "heading",
+      "text": "Réduction du temps de recompilation dynamique pour les joueurs"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bien que le cache de registres ne modifie pas le résultat mathématique des instructions PowerPC émulées, l'efficacité de la recompilation dynamique influence directement la fluidité des jeux. La compilation JIT se produit en continu à mesure que les jeux découvrent de nouveaux chemins de code, et une lourde surcharge dans les routines de traduction peut introduire des saccades perceptibles. L'analyse des charges de travail — comme la mise en pause répétée d'un match dans NBA Live 2005 — a démontré des réductions marquées de la proportion de temps CPU consommée par la gestion des registres. Plusieurs routines de cache de registres ont cessé d'apparaître de manière significative dans les profileurs de performance, confirmant que les évaluations rationalisées par bitsets offrent une compilation JIT plus rapide lors de l'exécution sur des processeurs hôtes x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Portée actuelle de la plateforme et feuille de route architecturale"
+    },
+    {
+      "type": "paragraph",
+      "text": "Cette refonte orientée données est actuellement implémentée uniquement pour le backend JIT x86-64, laissant les systèmes basés sur ARM inchangés pour le moment. Les notes d'architecture à long terme indiquent des plans pour unifier les interfaces de cache de registres en utilisant le Curiously Recurring Template Pattern, ce qui permettrait une gestion partagée des registres entre les architectures tout en tenant compte des différents nombres de registres et des contraintes de destination mémoire. Une interface de cache de registres unifiée poserait également les bases techniques pour prendre en charge les branchements intra-bloc au sein des blocs JIT. Les travaux futurs pourraient évaluer le déplacement d'un plus grand nombre d'opérations de cache de registres dans des fichiers d'en-tête pour permettre l'inlining, potentiellement couplé à des unity builds pour atténuer les temps de compilation C++ plus longs."
+    }
+  ]
+}

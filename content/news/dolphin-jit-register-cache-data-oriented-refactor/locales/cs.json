@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin přechází na data-orientovaný návrh pro x86 JIT register cache",
+  "summary": "Dolphin refaktoruje svou x86 register cache z pole struktur na strukturu polí a využívá bitové sady k urychlení generování JIT kódu a vyprazdňování stavů.",
+  "heroAlt": "Konzole Nintendo GameCube a Wii umístěné vedle sebe na čistém pracovním stole",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "optimalizace kompilátoru",
+    "emulace",
+    "CPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Režie pole struktur při sledování registrů"
+    },
+    {
+      "type": "paragraph",
+      "text": "V 64bitovém JIT rekompilátoru Dolphin je register cache zodpovědná za mapování simulovaných PowerPC registrů na fyzické registry hostitelského CPU. Historicky tento subsystém sledoval stavy registrů pomocí pole struktur, kde jednotlivý objekt cacheovaného registru ukládal vlastnosti, jako zda je registr vázán, modifikován nebo zachován v paměti hosta. Dotazování na tyto vlastnosti vyžadovalo kontrolu jednotlivých polí napříč mnoha objekty v cyklu. Protože rutiny pro správu registrů, jako je vyprazdňování (flushing), probíhají během generování kódu často, volající kód byl nucen provádět složité ruční bitové maskování, aby omezil iteraci a zmírnil výkonnostní ztráty během překladu bloků."
+    },
+    {
+      "type": "heading",
+      "text": "Přechod na bitové sady a strukturu polí"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14806 nahrazuje toto uspořádání pole struktur návrhem struktury polí, čímž zcela eliminuje samostatnou hlavičku cacheovaného registru. Základní stavy registrů jsou nyní organizovány do kompaktních polí doprovázených bitovými sadami reprezentujícími stav hostitelských a hostujících registrů. Protože jsou booleovské stavy zabaleny do bitových sad, jako jsou dedikované typy bitových masek hostitele a hosta, filtrování registrů pro specifické operace cache lze provést jedinou bitovou instrukcí. Operace jako vyprazdňování registrů již nevyžadují, aby volající kód ručně filtroval kandidáty na registry pro zachování výkonu, což zefektivňuje jak vnitřní fungování register cache, tak volající kód v celém JIT rekompilátoru."
+    },
+    {
+      "type": "heading",
+      "text": "Snížení času dynamické rekompilace pro hráče"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ačkoliv register cache nemění matematický výstup emulovaných PowerPC instrukcí, efektivita dynamické rekompilace přímo ovlivňuje plynulost běhu her. JIT kompilace probíhá nepřetržitě, jak hry objevují nové cesty kódu, a vysoká režie v překladových rutinách může způsobit znatelné záseky snímků. Profilování zátěže – například opakované pozastavení zápasu v NBA Live 2005 – prokázalo výrazné snížení podílu času CPU spotřebovaného správou registrů. Několik rutin register cache přestalo být v profilech výkonu výrazně viditelných, což potvrzuje, že efektivní vyhodnocování bitových sad přináší rychlejší JIT kompilaci během běhu na hostitelských procesorech x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Současný rozsah platformy a architektonický plán"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tento data-orientovaný redesign je v současnosti implementován pouze pro x86-64 JIT backend, přičemž systémy založené na ARM zůstávají zatím beze změny. Dlouhodobé architektonické poznámky naznačují plány na sjednocení rozhraní register cache pomocí vzoru Curiously Recurring Template Pattern, což by umožnilo sdílenou správu registrů napříč architekturami při zohlednění rozdílných počtů registrů a omezení paměťových cílů. Sjednocené rozhraní register cache by také položilo technické základy pro podporu větví uvnitř JIT bloků. Budoucí práce mohou vyhodnotit přesun více operací register cache do hlavičkových souborů pro umožnění inliningu, potenciálně v kombinaci s unity buildy pro zmírnění delších časů kompilace C++."
+    }
+  ]
+}

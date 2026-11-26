@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP sincroniza las lecturas de VRAM para el efecto bloom de Kenka Banchou Bros",
+  "summary": "PPSSPP resuelve los artefactos de bloom estáticos en Kenka Banchou Bros: Tokyo Battle Royale mediante la lectura de los render targets de VRAM antes de los pases de umbral de la CPU.",
+  "heroAlt": "Una consola portátil PlayStation Portable mostrando su pantalla y botones direccionales.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "emulación PSP",
+    "lectura de VRAM",
+    "VRAM readback",
+    "iluminación bloom",
+    "post-procesamiento",
+    "emulación gráfica"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Framebuffers obsoletos en el post-procesamiento híbrido"
+    },
+    {
+      "type": "paragraph",
+      "text": "En Kenka Banchou Bros: Tokyo Battle Royale, el post-procesamiento de bloom depende de una tubería híbrida compartida entre el hardware gráfico dedicado de la PSP y su procesador principal. El motor renderiza la escena 3D actual en un pequeño búfer RGB 565 de 128x128 y 16 bits en la VRAM en la dirección 0x0417c000. En lugar de procesar los puntos brillantes mediante shaders de GPU o blits, el juego ejecuta una rutina de umbral directamente en la CPU MIPS, escribiendo los resaltados filtrados en un búfer secundario en 0x04174000 antes de superponerlos. Emular esto requiere extraer la superficie renderizada por la GPU hacia la memoria visible de la CPU. Anteriormente, PPSSPP realizaba esta lectura solo una vez durante la ejecución inicial, dejando datos visuales antiguos permanentemente bloqueados en la memoria y congelados en pantalla tras cargar estados guardados."
+    },
+    {
+      "type": "heading",
+      "text": "Intercepción de la rutina de umbral de la CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para asegurar que la CPU reciba la salida de renderizado actual, PPSSPP ahora intercepta la función de pase de brillo del juego a través de sus tablas de emulación de alto nivel. El analizador MIPS identifica la rutina usando un hash de firma, indexando después de una instrucción de ramificación inicial para enganchar la lógica operativa. Cuando se activa, la función de reemplazo valida el puntero del objeto, resuelve la dirección del búfer de origen de 0x8000 bytes dentro de la VRAM e invoca una lectura a la memoria del host justo antes de que comiencen los cálculos. Simultáneamente, PPSSPP actualizó la lógica de prueba de caja delimitadora rápida dentro del motor de dibujo común. Al devolver falso en lugar de fallar una aserción interna al procesar dibujos de posición cero no válidos, el emulador evita bloqueos al encontrar llamadas de dibujo irregulares presentes en los volcados de fotogramas."
+    },
+    {
+      "type": "heading",
+      "text": "Eliminación de artefactos de iluminación persistentes"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para los jugadores que ejecutan Kenka Banchou Bros, el cambio soluciona un error visual persistente donde los halos de iluminación estática permanecían superpuestos sobre la acción. Girar la cámara o restaurar un estado guardado provocaba anteriormente que el resplandor de escenas previas flotara por la pantalla, oscureciendo los encuentros de combate y la navegación visual. Debido a que el emulador ahora transfiere el fotograma actualizado de 0x8000 bytes a la memoria del sistema antes de cada pase de umbral, el bloom resultante refleja con precisión la geometría en vivo y los cambios de iluminación en tiempo real. La intercepción de funciones específicas permite al emulador mantener la fidelidad visual sin recurrir a lecturas agresivas de GPU de fotograma completo que podrían degradar el rendimiento de la emulación."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y límites del objetivo"
+    },
+    {
+      "type": "paragraph",
+      "text": "La corrección utiliza un gancho de reemplazo específico para el juego en lugar de una heurística gráfica global, limitando los cambios estrictamente a los títulos que ejecutan esta rutina de umbral conocida. La verificación se realizó mediante la inspección directa de la memoria del búfer de salida en la dirección 0x04174000. Antes de la corrección, volcar la memoria después de mover la cámara dentro del juego desde un estado guardado activo mostraba que el búfer de destino conservaba datos de píxeles de la perspectiva guardada inicial. Con el gancho de lectura activo, los volcados de memoria posteriores demostraron que el búfer de destino se actualiza inmediatamente con coordenadas correspondientes a la perspectiva actualizada del jugador, confirmando que la CPU procesa con éxito datos de escena frescos en cada fotograma."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP, Kenka Banchou Bros Bloom Efekti İçin VRAM Okumalarını Senkronize Ediyor",
+  "summary": "PPSSPP, Kenka Banchou Bros: Tokyo Battle Royale oyunundaki takılı kalan bloom efektlerini, CPU eşik değer geçişlerinden önce VRAM render hedeflerini geri okuyarak çözüyor.",
+  "heroAlt": "Ekranını ve yön tuşlarını gösteren bir PlayStation Portable el konsolu.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "PSP emülasyonu",
+    "VRAM okuma",
+    "bloom aydınlatması",
+    "post-processing",
+    "grafik emülasyonu"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Hibrit Post-Processing'de Güncelliğini Yitirmiş Framebuffer'lar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kenka Banchou Bros: Tokyo Battle Royale oyununda, post-processing bloom efekti, PSP'nin özel grafik donanımı ile ana işlemcisi arasında paylaşılan hibrit bir iş hattına dayanır. Oyun motoru, mevcut 3D sahneyi VRAM'deki 0x0417c000 adresinde bulunan küçük, 128x128 boyutunda, 16-bit RGB 565 bir arabelleğe işler. Oyun, parlak noktaları GPU shader'ları veya blit işlemleriyle işlemek yerine, doğrudan MIPS CPU üzerinde bir eşikleme rutini çalıştırır ve filtreli vurguları bindirmeden önce 0x04174000 adresindeki ikincil bir arabelleğe yazar. Bunu emüle etmek, GPU tarafından işlenen yüzeyin CPU tarafından görülebilir belleğe geri çekilmesini gerektirir. PPSSPP daha önce bu okumayı yalnızca ilk çalıştırmada bir kez gerçekleştiriyordu; bu da eski görsel verilerin bellekte kalıcı olarak takılı kalmasına ve kayıtlı durumlar (savestate) yüklendikten sonra ekranda donmasına neden oluyordu."
+    },
+    {
+      "type": "heading",
+      "text": "CPU Eşikleme Rutinini Kancalamak"
+    },
+    {
+      "type": "paragraph",
+      "text": "CPU'nun güncel render çıktısını aldığından emin olmak için PPSSPP, artık oyunun parlaklık geçiş fonksiyonunu üst düzey emülasyon tabloları aracılığıyla yakalıyor. MIPS analizcisi, operasyonel mantığı kancalamak için ilk dallanma komutunu geçerek rutinleri bir imza hash'i kullanarak tanımlar. Tetiklendiğinde, yedek fonksiyon nesne işaretçisini doğrular, VRAM içindeki 0x8000 baytlık kaynak arabellek adresini çözer ve hesaplamalar başlamadan hemen önce ana bellek için bir okuma çağrısı yapar. Eş zamanlı olarak PPSSPP, ortak çizim motoru içindeki hızlı sınırlayıcı kutu (bounding box) test mantığını güncelledi. Geçersiz sıfır konumlu çizimleri işlerken dahili bir assertion hatası vermek yerine false değerini döndüren emülatör, frame dökümlerinde bulunan düzensiz çizim çağrılarıyla karşılaşıldığında çökmeleri önler."
+    },
+    {
+      "type": "heading",
+      "text": "Kalıcı Aydınlatma Hatalarını Gidermek"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kenka Banchou Bros oynayan oyuncular için bu değişiklik, statik aydınlatma halelerinin aksiyon üzerinde üst üste binmiş halde kaldığı kalıcı bir görsel hatayı düzeltiyor. Kamerayı döndürmek veya kayıtlı bir durumu geri yüklemek, daha önce önceki sahnelerin parıltısının ekran üzerinde asılı kalmasına ve savaş karşılaşmaları ile görsel navigasyonu engellemesine neden oluyordu. Emülatör artık güncellenmiş 0x8000 baytlık kareyi her eşik geçişinden önce sistem belleğine aktardığı için, ortaya çıkan bloom efekti canlı geometriyi ve gerçek zamanlı aydınlatma değişikliklerini doğru bir şekilde yansıtır. Hedefli fonksiyon yakalama, emülatörün emülasyon performansını düşürebilecek agresif tam kare GPU okumalarına başvurmadan görsel sadakati korumasını sağlar."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Hedef Sınırları"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme, küresel bir grafik buluşsal yöntemi yerine oyuna özel bir yedek kanca kullanır ve değişiklikleri yalnızca bu bilinen eşikleme rutinini çalıştıran oyunlarla sınırlar. Doğrulama, 0x04174000 adresindeki çıktı arabelleğinin doğrudan bellek denetimi yoluyla gerçekleştirilmiştir. Düzeltmeden önce, oyun içi kamerayı aktif bir kayıtlı durumdan hareket ettirdikten sonra belleği dökmek, hedef arabelleğin ilk kaydedilen perspektiften piksel verilerini koruduğunu gösteriyordu. Okuma kancası aktifken, sonraki bellek dökümleri hedef arabelleğin oyuncunun güncellenmiş perspektifine karşılık gelen koordinatlarla anında yenilendiğini gösterdi; bu da CPU'nun her karede taze sahne verilerini başarıyla işlediğini doğruluyor."
+    }
+  ]
+}

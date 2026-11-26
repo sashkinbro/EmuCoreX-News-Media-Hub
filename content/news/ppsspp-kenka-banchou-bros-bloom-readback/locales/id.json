@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP Menyinkronkan Readback VRAM untuk Bloom di Kenka Banchou Bros",
+  "summary": "PPSSPP mengatasi artefak bloom yang macet di Kenka Banchou Bros: Tokyo Battle Royale dengan melakukan readback render target VRAM sebelum pass threshold CPU.",
+  "heroAlt": "Konsol genggam PlayStation Portable yang menampilkan layar dan tombol arahnya.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "emulasi PSP",
+    "PSP emulation",
+    "VRAM readback",
+    "pencahayaan bloom",
+    "bloom lighting",
+    "pasca-pemrosesan",
+    "post-processing",
+    "emulasi grafis"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Framebuffer Usang dalam Pasca-Pemrosesan Hibrida"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dalam Kenka Banchou Bros: Tokyo Battle Royale, bloom pasca-pemrosesan mengandalkan pipeline hibrida yang digunakan bersama antara perangkat keras grafis khusus PSP dan prosesor utamanya. Engine merender adegan 3D saat ini ke dalam buffer RGB 565 16-bit 128x128 kecil di VRAM pada alamat 0x0417c000. Alih-alih memproses titik terang menggunakan shader GPU atau blit, game ini menjalankan rutinitas thresholding langsung pada CPU MIPS, menulis highlight yang difilter ke buffer sekunder di 0x04174000 sebelum menimpanya. Mengemulasikan hal ini memerlukan penarikan permukaan yang dirender GPU kembali ke memori yang dapat dilihat CPU. PPSSPP sebelumnya melakukan readback ini hanya sekali pada eksekusi awal, membiarkan data visual lama tersangkut secara permanen di memori dan membeku di layar setelah memuat savestate."
+    },
+    {
+      "type": "heading",
+      "text": "Menghubungkan Rutinitas Threshold CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk memastikan CPU menerima output rendering terkini, PPSSPP kini mencegat fungsi bright-pass game melalui tabel emulasi tingkat tinggi. Penganalisis MIPS mengidentifikasi rutinitas menggunakan hash tanda tangan, melakukan pengindeksan melewati instruksi percabangan awal untuk menghubungkan logika operasional. Saat dipicu, fungsi pengganti memvalidasi pointer objek, menyelesaikan alamat buffer sumber 0x8000-byte di dalam VRAM, dan memanggil readback ke memori host tepat sebelum perhitungan dimulai. Secara bersamaan, PPSSPP memperbarui logika pengujian kotak pembatas cepat dalam engine gambar umum. Dengan mengembalikan false alih-alih gagal dalam assertion internal saat memproses draw posisi nol yang tidak valid, emulator mencegah crash saat menemukan panggilan gambar yang tidak teratur yang ada dalam frame dump."
+    },
+    {
+      "type": "heading",
+      "text": "Menghilangkan Artefak Pencahayaan yang Persisten"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bagi pemain yang menjalankan Kenka Banchou Bros, perubahan ini memperbaiki bug visual persisten di mana halo pencahayaan statis tetap tertumpuk di atas aksi. Memutar kamera atau memulihkan status tersimpan sebelumnya menyebabkan cahaya dari adegan sebelumnya melayang di layar, mengaburkan pertemuan pertempuran dan navigasi visual. Karena emulator sekarang mentransfer frame 0x8000-byte yang diperbarui ke memori sistem sebelum setiap pass threshold, bloom yang dihasilkan secara akurat mencerminkan geometri langsung dan perubahan pencahayaan waktu nyata. Pencegatan fungsi yang ditargetkan memungkinkan emulator untuk mempertahankan fidelitas visual tanpa harus melakukan readback GPU full-frame agresif yang dapat menurunkan kinerja emulasi."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Batasan Target"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan ini menggunakan hook pengganti khusus game alih-alih heuristik grafis global, membatasi perubahan secara ketat pada judul yang menjalankan rutinitas threshold yang diketahui ini. Verifikasi dilakukan melalui inspeksi memori langsung dari buffer output pada alamat 0x04174000. Sebelum perbaikan, melakukan dump memori setelah memindahkan kamera dalam game dari savestate aktif menunjukkan bahwa buffer tujuan mempertahankan data piksel dari perspektif tersimpan awal. Dengan hook readback aktif, dump memori berikutnya menunjukkan bahwa buffer tujuan segera disegarkan dengan koordinat yang sesuai dengan perspektif pemain yang diperbarui, mengonfirmasi bahwa CPU berhasil memproses data adegan segar setiap frame."
+    }
+  ]
+}

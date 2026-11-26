@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "dolphin-jit-register-cache-data-oriented-refactor",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Dolphin przyjmuje projekt zorientowany na dane dla pamięci podręcznej rejestrów JIT x86",
+  "summary": "Dolphin refaktoryzuje swoją pamięć podręczną rejestrów x86 z tablicy struktur na strukturę tablic, wykorzystując zestawy bitów (bitsets) do przyspieszenia generowania kodu JIT i opróżniania stanu.",
+  "heroAlt": "Konsole Nintendo GameCube i Wii ustawione obok siebie na czystym stole warsztatowym",
+  "searchKeywords": [
+    "Dolphin",
+    "GameCube",
+    "Wii",
+    "JIT",
+    "regcache",
+    "x86-64",
+    "optymalizacja kompilatora",
+    "emulacja"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Dolphin pull request #14806",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Narzut tablicy struktur w śledzeniu rejestrów"
+    },
+    {
+      "type": "paragraph",
+      "text": "W 64-bitowym rekompilatorze JIT emulatora Dolphin, pamięć podręczna rejestrów odpowiada za mapowanie symulowanych rejestrów PowerPC na fizyczne rejestry procesora hosta. Historycznie ten podsystem śledził stany rejestrów za pomocą tablicy struktur, gdzie pojedynczy obiekt rejestru w pamięci podręcznej przechowywał właściwości takie jak informacja, czy rejestr jest powiązany, zmodyfikowany lub zachowany w pamięci gościa. Odpytywanie o te właściwości wymagało sprawdzania oddzielnych pól w wielu obiektach w pętli. Ponieważ procedury zarządzania rejestrami, takie jak opróżnianie, są wykonywane często podczas generowania kodu, wywołujący byli zmuszeni do wykonywania złożonych ręcznych operacji na maskach bitowych, aby ograniczyć iterację i złagodzić spadki wydajności podczas translacji bloków."
+    },
+    {
+      "type": "heading",
+      "text": "Przejście na zestawy bitów i strukturę tablic"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pull request #14806 zastępuje ten układ tablicy struktur projektem struktury tablic, całkowicie eliminując oddzielny nagłówek rejestru w pamięci podręcznej. Główne stany rejestrów są teraz zorganizowane w kompaktowe tablice, którym towarzyszą zestawy bitów reprezentujące status rejestrów hosta i gościa. Ponieważ stany logiczne są upakowane w zestawy bitów, takie jak dedykowane typy masek bitowych hosta i gościa, filtrowanie rejestrów dla określonych operacji pamięci podręcznej można wykonać za pomocą pojedynczej instrukcji bitowej. Operacje takie jak opróżnianie rejestrów nie wymagają już od kodu wywołującego ręcznego filtrowania kandydatów do rejestrów w celu zachowania wydajności, co usprawnia zarówno wewnętrzne mechanizmy pamięci podręcznej rejestrów, jak i kod wywołujący w całym rekompilatorze JIT."
+    },
+    {
+      "type": "heading",
+      "text": "Skrócenie czasu dynamicznej rekompilacji dla graczy"
+    },
+    {
+      "type": "paragraph",
+      "text": "Chociaż pamięć podręczna rejestrów nie zmienia matematycznego wyniku emulowanych instrukcji PowerPC, wydajność dynamicznej rekompilacji bezpośrednio wpływa na płynność działania gier. Kompilacja JIT odbywa się w sposób ciągły, gdy gry odkrywają nowe ścieżki kodu, a duży narzut w procedurach translacji może powodować zauważalne zacięcia klatek. Profilowanie obciążeń – takich jak wielokrotne wstrzymywanie meczu w NBA Live 2005 – wykazało wyraźne zmniejszenie udziału czasu procesora zużywanego przez zarządzanie rejestrami. Kilka procedur pamięci podręcznej rejestrów przestało być wyraźnie widocznych w profilerach wydajności, co potwierdza, że usprawnione oceny zestawów bitów zapewniają szybszą kompilację JIT podczas wykonywania na procesorach hosta x86-64."
+    },
+    {
+      "type": "heading",
+      "text": "Obecny zakres platformy i mapa drogowa architektury"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ten projekt zorientowany na dane jest obecnie zaimplementowany tylko dla backendu JIT x86-64, pozostawiając systemy oparte na ARM bez zmian na ten moment. Długoterminowe notatki dotyczące architektury wskazują na plany ujednolicenia interfejsów pamięci podręcznej rejestrów przy użyciu wzorca Curiously Recurring Template Pattern, co pozwoliłoby na współdzielone zarządzanie rejestrami między architekturami, uwzględniając jednocześnie różną liczbę rejestrów i ograniczenia miejsca docelowego w pamięci. Ujednolicony interfejs pamięci podręcznej rejestrów położyłby również techniczne fundamenty pod obsługę rozgałęzień wewnątrz bloków JIT. Przyszłe prace mogą ocenić przeniesienie większej liczby operacji pamięci podręcznej rejestrów do plików nagłówkowych w celu umożliwienia inliningu, potencjalnie w połączeniu z kompilacją typu unity, aby złagodzić dłuższy czas kompilacji C++."
+    }
+  ]
+}

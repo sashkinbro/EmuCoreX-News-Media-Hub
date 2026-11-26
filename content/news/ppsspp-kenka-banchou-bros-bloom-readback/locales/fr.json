@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-kenka-banchou-bros-bloom-readback",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "PPSSPP synchronise les lectures VRAM pour l'effet bloom de Kenka Banchou Bros",
+  "summary": "PPSSPP résout les artefacts de bloom persistants dans Kenka Banchou Bros: Tokyo Battle Royale en relisant les cibles de rendu VRAM avant les passes de seuil du CPU.",
+  "heroAlt": "Une console de jeu portable PlayStation Portable affichant son écran et ses boutons directionnels.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Kenka Banchou Bros",
+    "émulation PSP",
+    "lecture VRAM",
+    "VRAM readback",
+    "éclairage bloom",
+    "post-traitement",
+    "émulation graphique"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23177",
+    "implementation": "Correctif et revue"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tampons de trame obsolètes dans le post-traitement hybride"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dans Kenka Banchou Bros: Tokyo Battle Royale, le post-traitement de l'effet bloom repose sur un pipeline hybride partagé entre le matériel graphique dédié de la PSP et son processeur principal. Le moteur rend la scène 3D actuelle dans un petit tampon RGB 565 16 bits de 128x128 en VRAM à l'adresse 0x0417c000. Au lieu de traiter les zones lumineuses à l'aide de shaders GPU ou de blits, le jeu exécute une routine de seuillage directement sur le CPU MIPS, écrivant les reflets filtrés dans un tampon secondaire à 0x04174000 avant de les superposer. L'émulation de ce processus nécessite de ramener la surface rendue par le GPU dans la mémoire visible par le CPU. PPSSPP n'effectuait auparavant cette lecture qu'une seule fois lors de l'exécution initiale, laissant d'anciennes données visuelles bloquées en mémoire et figées à l'écran après le chargement de sauvegardes."
+    },
+    {
+      "type": "heading",
+      "text": "Interception de la routine de seuillage CPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour garantir que le CPU reçoive la sortie de rendu actuelle, PPSSPP intercepte désormais la fonction de passe de luminosité du jeu via ses tables d'émulation de haut niveau. L'analyseur MIPS identifie la routine à l'aide d'un hash de signature, indexant au-delà d'une instruction de branchement initiale pour intercepter la logique opérationnelle. Lorsqu'elle est déclenchée, la fonction de remplacement valide le pointeur d'objet, résout l'adresse du tampon source de 0x8000 octets dans la VRAM et invoque une lecture vers la mémoire hôte juste avant le début des calculs. Parallèlement, PPSSPP a mis à jour la logique de test rapide de boîte englobante au sein du moteur de rendu commun. En renvoyant « false » plutôt qu'en échouant à une assertion interne lors du traitement de tracés à position zéro invalides, l'émulateur évite les plantages lors de la rencontre d'appels de rendu irréguliers présents dans les dumps de trames."
+    },
+    {
+      "type": "heading",
+      "text": "Élimination des artefacts d'éclairage persistants"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour les joueurs utilisant Kenka Banchou Bros, ce changement corrige un bug visuel persistant où des halos d'éclairage statiques restaient superposés à l'action. Faire pivoter la caméra ou restaurer un état sauvegardé provoquait auparavant le flottement de la lueur des scènes précédentes sur l'écran, obscurcissant les combats et la navigation visuelle. Comme l'émulateur transfère désormais la trame mise à jour de 0x8000 octets dans la mémoire système avant chaque passe de seuil, l'effet bloom résultant reflète avec précision la géométrie en direct et les changements d'éclairage en temps réel. L'interception ciblée des fonctions permet à l'émulateur de maintenir la fidélité visuelle sans recourir à des lectures GPU plein écran agressives qui pourraient dégrader les performances d'émulation."
+    },
+    {
+      "type": "heading",
+      "text": "Vérification et limites de la cible"
+    },
+    {
+      "type": "paragraph",
+      "text": "Le correctif utilise un hook de remplacement spécifique au jeu plutôt qu'une heuristique graphique globale, limitant strictement les changements aux titres exécutant cette routine de seuillage connue. La vérification a été effectuée par inspection directe de la mémoire du tampon de sortie à l'adresse 0x04174000. Avant le correctif, le dump de la mémoire après avoir déplacé la caméra en jeu depuis une sauvegarde active montrait que le tampon de destination conservait les données de pixels de la perspective initiale enregistrée. Avec le hook de lecture actif, les dumps mémoire ultérieurs ont démontré que le tampon de destination s'actualise immédiatement avec des coordonnées correspondant à la perspective mise à jour du joueur, confirmant que le CPU traite avec succès les nouvelles données de scène à chaque trame."
+    }
+  ]
+}
