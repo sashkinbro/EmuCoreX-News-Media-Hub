@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Meningkatkan Sinkronisasi CMask untuk Komposisi UI yang Akurat di shadPS4",
+  "summary": "Pembaruan baru pada buffer cache shadPS4 mengatasi bug rendering di Days Gone di mana data UI lama menyebabkan artefak berwarna pelangi. Dengan menangani status CMask yang telah dibersihkan dengan benar, emulator kini menghindari pembacaan buffer yang salah.",
+  "heroAlt": "Tampilan dekat casing hitam ramping dan sirip ventilasi konsol PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "emulator PlayStation 4",
+    "buffer cache",
+    "CMask",
+    "artefak rendering",
+    "Days Gone",
+    "Vulkan",
+    "emulator",
+    "grafis"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Artefak Pelangi dan Komposisi UI"
+    },
+    {
+      "type": "paragraph",
+      "text": "Di Days Gone (CUSA09175), pemain mengamati anomali rendering yang jelas di mana salinan noise berwarna pelangi dari model karakter, khususnya kepala dan tangan, tertumpuk di atas gambar utama. Hal ini terjadi karena game tersebut menggunakan operasi fast-clear pada overlay UI-nya tetapi tidak segera mengisinya dengan draw call baru. Sebaliknya, game tersebut membaca CMask—struktur metadata tingkat perangkat keras yang digunakan untuk kompresi warna—sebagai buffer standar selama compute pass berikutnya. Pass ini bertanggung jawab untuk menyusun overlay ke dalam frame akhir berdasarkan tile yang ditandai di dalam CMask. Tanpa pelacakan status yang dibersihkan dengan benar, emulator memberikan data lama ke GPU, yang menyebabkan kerusakan visual."
+    },
+    {
+      "type": "heading",
+      "text": "Menyempurnakan Logika Sinkronisasi CMask"
+    },
+    {
+      "type": "paragraph",
+      "text": "Resolusi teknis melibatkan modifikasi fungsi BufferCache::SynchronizeMemoryFromImage di dalam core video shadPS4. Sebelumnya, emulator akan mengisi CMask dengan nilai yang diperluas setiap kali menyinkronkan memori dari sebuah gambar, terlepas dari status mask saat itu. Logika baru memperkenalkan pemeriksaan untuk metadata clear_mask. Jika metadata menunjukkan bahwa cache tekstur menyimpan mask sebagai status dibersihkan, sistem kini mengisi buffer dengan angka nol alih-alih nilai yang diperluas. Perubahan ini memastikan bahwa compute pass mengidentifikasi overlay sebagai kosong dengan benar, mencegah emulator menyusun informasi usang dari rendering pass sebelumnya ke dalam frame saat ini."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak pada Gameplay dan Kesetiaan Visual"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bagi pemain, penyesuaian ini secara langsung menghasilkan pengalaman visual yang lebih bersih dalam judul-judul yang mengandalkan komposisi berbasis komputasi yang kompleks. Dalam kasus khusus Days Gone, artefak bayangan pelangi yang sebelumnya mengganggu cutscene intro dan gameplay kini hilang. Perbaikan ini diverifikasi menggunakan konfigurasi GPU tertentu, termasuk readback gambar linear yang diaktifkan, yang sering kali diperlukan untuk sinkronisasi buffer yang akurat dalam judul-judul PlayStation 4 dengan kesetiaan tinggi. Dengan memastikan bahwa buffer cache mencerminkan status tekstur yang dibersihkan secara akurat, emulator bergerak lebih dekat ke akurasi tingkat perangkat keras dalam cara menangani interaksi antara pipeline grafis tradisional dan compute shader selama pemrosesan pasca (post-processing)."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Kompatibilitas Masa Depan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Di luar peningkatan langsung pada Days Gone, pengujian telah memverifikasi bahwa perubahan ini tidak menimbulkan regresi pada game populer lainnya. Judul-judul seperti God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider, dan Cyberpunk 2077 telah diuji dan tidak menunjukkan perubahan dalam perilaku rendering, yang mengonfirmasi stabilitas implementasi ini. Meskipun pull request khusus ini menyelesaikan hambatan visual utama, penting untuk dicatat bahwa beberapa game mungkin masih memerlukan perbaikan tambahan yang belum digabungkan untuk mencapai status yang sepenuhnya dapat dimainkan. Pembaruan ini mewakili penyempurnaan terarah dari buffer cache shadPS4, meningkatkan keandalan sinkronisasi memori di berbagai konfigurasi perangkat keras dan driver."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "改进用于资源描述符掩码的着色器重编译器精度",
+  "summary": "shadPS4 着色器重编译器的一项新更新通过正确处理纹理资源描述符上的位运算，解决了《God of War》中的一个关键崩溃问题，使游戏能够进入实际游玩阶段。",
+  "heroAlt": "PlayStation 4 主机内部电路和 APU 的特写。",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "着色器重编译器",
+    "God of War",
+    "战神",
+    "T# descriptor",
+    "T# 描述符",
+    "bitwise masking",
+    "位掩码",
+    "GPU emulation"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "识别资源发现失败"
+    },
+    {
+      "type": "paragraph",
+      "text": "在模拟《God of War》的过程中，shadPS4 着色器重编译器在资源发现阶段遇到了关键的断言失败。该问题源于游戏引擎处理纹理资源描述符的方式，具体来说是 T# 结构的 dword 1。在片段着色器 0xd0bae472 中，引擎利用位与（AND）运算在运行时修改描述符。此特定操作旨在清除 NUM_FORMAT 字段，从而有效地指示硬件将图像读取为无符号归一化格式。由于模拟器的重编译器预期这些描述符会进行标准的常量缓冲区读取，因此无法解析经过位运算修改的源，导致着色器在正确初始化之前就发生了崩溃。"
+    },
+    {
+      "type": "heading",
+      "text": "实现位运算后处理逻辑"
+    },
+    {
+      "type": "paragraph",
+      "text": "为了解决这个问题，开发团队在着色器重编译器中引入了一种新的获取后处理机制。系统现在可以识别针对图像描述符第一个 dword 的 BitwiseAnd32 操作码。当检测到此模式时，重编译器会提取立即数掩码值（例如 0xc3ffffff）并将其存储为特定的后处理指令。在资源修补阶段，该掩码会被应用于图像资源元数据。这确保了模拟器通过应用原始硬件会执行的相同位运算逻辑，正确解释纹理的预期格式，从而使着色器发现阶段能够成功完成，而不会触发断言。"
+    },
+    {
+      "type": "heading",
+      "text": "对《God of War》游戏体验的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "这一架构变更的主要结果是《God of War》（CUSA07410）不再停留在初始的 GPU 通信阶段。玩家现在可以穿过菜单进入实际的游戏环境。测试表明，为了获得最佳效果，需要特定的配置设置（如直接内存访问和特定的回读模式），以避免出现景观条纹等视觉伪影。此修复代表了该游戏兼容性向前迈出的重要一步，因为它解决了游戏渲染管线与模拟 GPU 资源管理系统交互方式中的一个根本性障碍，使该游戏从无法启动的状态转变为可进行实际游玩。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与硬件兼容性"
+    },
+    {
+      "type": "paragraph",
+      "text": "该实现已在 Linux 下使用 AMD Ryzen 处理器和 Radeon 集成显卡（RADV 驱动程序）的系统上进行了验证。该修复程序与旨在防止 GPU 重置和改进内存管理的其他几项近期 pull request 一起进行了测试。通过处理这些游戏动态掩码资源描述符的边缘情况，模拟器在更广泛的使用类似着色器优化技术的游戏中获得了更好的稳定性。开发人员和贡献者可以通过监控资源发现日志中的新位运算后处理标志来验证此更改，确保图像描述符在发送到宿主图形 API 之前被正确转换。"
+    }
+  ]
+}

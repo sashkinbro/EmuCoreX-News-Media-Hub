@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Poprawa synchronizacji CMask dla precyzyjnego kompozytowania interfejsu w shadPS4",
+  "summary": "Nowa aktualizacja pamięci podręcznej bufora w shadPS4 rozwiązuje błąd renderowania w Days Gone, gdzie nieaktualne dane interfejsu powodowały powstawanie tęczowych artefaktów. Dzięki poprawnemu obsłużeniu stanów wyczyszczonej CMask, emulator unika teraz błędnych odczytów bufora.",
+  "heroAlt": "Zbliżenie na elegancką czarną obudowę i żebra wentylacyjne konsoli PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "emulator PlayStation 4",
+    "bufor pamięci podręcznej",
+    "buffer cache",
+    "CMask",
+    "artefakty renderowania",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Poprawka i weryfikacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Tęczowe artefakty i kompozytowanie interfejsu"
+    },
+    {
+      "type": "paragraph",
+      "text": "W grze Days Gone (CUSA09175) gracze zaobserwowali wyraźną anomalię renderowania, w której tęczowe, zaszumione kopie modeli postaci, w szczególności głów i dłoni, były nakładane na główny obraz. Działo się tak, ponieważ gra wykorzystuje operację szybkiego czyszczenia (fast-clear) na swojej nakładce interfejsu, ale nie wypełnia jej natychmiast nowymi wywołaniami rysowania. Zamiast tego, podczas kolejnego przebiegu obliczeniowego (compute pass), odczytuje ona CMask – strukturę metadanych na poziomie sprzętowym używaną do kompresji kolorów – jako standardowy bufor. Ten przebieg odpowiada za kompozytowanie nakładki na finalną klatkę w oparciu o kafelki oznaczone wewnątrz CMask. Bez odpowiedniego śledzenia stanu wyczyszczenia, emulator dostarczał do GPU nieaktualne dane, co prowadziło do uszkodzeń wizualnych."
+    },
+    {
+      "type": "heading",
+      "text": "Udoskonalenie logiki synchronizacji CMask"
+    },
+    {
+      "type": "paragraph",
+      "text": "Rozwiązanie techniczne obejmuje modyfikację funkcji BufferCache::SynchronizeMemoryFromImage wewnątrz rdzenia wideo shadPS4. Wcześniej emulator wypełniał CMask rozszerzoną wartością za każdym razem, gdy synchronizował pamięć z obrazu, niezależnie od aktualnego stanu maski. Nowa logika wprowadza sprawdzenie metadanych clear_mask. Jeśli metadane wskazują, że pamięć podręczna tekstur przechowuje maskę jako wyczyszczoną, system wypełnia teraz bufor zerami zamiast rozszerzoną wartością. Ta zmiana zapewnia, że przebieg obliczeniowy poprawnie identyfikuje nakładkę jako pustą, zapobiegając kompozytowaniu przez emulator przestarzałych informacji z poprzednich przebiegów renderowania do bieżącej klatki."
+    },
+    {
+      "type": "heading",
+      "text": "Wpływ na rozgrywkę i wierność wizualną"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dla graczy ta korekta przekłada się bezpośrednio na czystsze wrażenia wizualne w tytułach opierających się na złożonym kompozytowaniu obliczeniowym. W konkretnym przypadku Days Gone, tęczowe artefakty typu „ghosting”, które wcześniej nękały początkowe przerywniki filmowe i rozgrywkę, teraz zniknęły. Poprawka została zweryfikowana przy użyciu określonych konfiguracji GPU, w tym włączonych odczytów liniowych obrazu (linear image readbacks), które są często niezbędne do dokładnej synchronizacji bufora w tytułach wysokiej wierności na PlayStation 4. Dzięki zapewnieniu, że pamięć podręczna bufora dokładnie odzwierciedla stan wyczyszczonych tekstur, emulator zbliża się do dokładności na poziomie sprzętowym w sposobie obsługi interakcji między tradycyjnymi potokami graficznymi a shaderami obliczeniowymi podczas przetwarzania końcowego."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i przyszła kompatybilność"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poza natychmiastowymi ulepszeniami w Days Gone, testy potwierdziły, że ta zmiana nie wprowadza regresji w innych popularnych grach. Tytuły takie jak God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider oraz Cyberpunk 2077 zostały przetestowane i nie wykazały żadnych zmian w zachowaniu renderowania, co potwierdza stabilność implementacji. Chociaż ten konkretny pull request rozwiązuje główną przeszkodę wizualną, należy pamiętać, że niektóre gry mogą nadal wymagać dodatkowych, jeszcze niepołączonych poprawek, aby osiągnąć w pełni grywalny stan. Ta aktualizacja stanowi ukierunkowane udoskonalenie pamięci podręcznej bufora shadPS4, poprawiając niezawodność synchronizacji pamięci w różnych konfiguracjach sprzętowych i sterowników."
+    }
+  ]
+}

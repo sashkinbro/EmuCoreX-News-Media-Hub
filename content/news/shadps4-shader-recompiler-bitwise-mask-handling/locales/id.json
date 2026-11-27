@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Meningkatkan Akurasi Recompiler Shader untuk Masking Deskriptor Sumber Daya",
+  "summary": "Pembaruan baru pada recompiler shader shadPS4 mengatasi crash kritis pada God of War dengan menangani operasi bitwise pada deskriptor sumber daya tekstur secara tepat, sehingga memungkinkan game untuk masuk ke tahap gameplay.",
+  "heroAlt": "Tampilan jarak dekat dari sirkuit internal dan APU konsol PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "recompiler shader",
+    "God of War",
+    "T# descriptor",
+    "deskriptor T#",
+    "bitwise masking",
+    "masking bitwise",
+    "GPU emulation",
+    "emulasi GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengidentifikasi Kegagalan Penemuan Sumber Daya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Selama emulasi God of War, recompiler shader shadPS4 mengalami kegagalan assertion kritis dalam tahap penemuan sumber daya. Masalah ini berakar dari cara mesin game menangani deskriptor sumber daya tekstur, khususnya dword 1 dari struktur T#. Pada fragment shader 0xd0bae472, mesin menggunakan operasi bitwise AND untuk memodifikasi deskriptor saat runtime. Operasi spesifik ini ditujukan untuk membersihkan field NUM_FORMAT, yang secara efektif menginstruksikan perangkat keras untuk membaca gambar sebagai format unsigned normalized. Karena recompiler emulator mengharapkan pembacaan constant buffer standar untuk deskriptor ini, ia tidak dapat menyelesaikan sumber yang dimodifikasi secara bitwise, yang menyebabkan crash sebelum shader dapat diinisialisasi dengan benar."
+    },
+    {
+      "type": "heading",
+      "text": "Mengimplementasikan Logika Pasca-Operasi Bitwise"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk mengatasi hal ini, tim pengembang memperkenalkan mekanisme pasca-operasi fetch baru di dalam recompiler shader. Sistem sekarang mengidentifikasi opcode BitwiseAnd32 ketika menargetkan dword pertama dari deskriptor gambar. Ketika pola ini terdeteksi, recompiler mengekstrak nilai mask langsung—seperti 0xc3ffffff—dan menyimpannya sebagai instruksi pasca-operasi khusus. Selama fase patching sumber daya, mask ini diterapkan pada metadata sumber daya gambar. Hal ini memastikan bahwa emulator menafsirkan format tekstur yang dimaksudkan dengan benar dengan menerapkan logika bitwise yang sama seperti yang akan dilakukan perangkat keras asli, sehingga memungkinkan tahap penemuan shader selesai dengan sukses tanpa memicu assertion."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak pada Gameplay God of War"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hasil utama dari perubahan arsitektur ini adalah God of War (CUSA07410) tidak lagi terhenti pada tahap komunikasi GPU awal. Pemain sekarang dapat melanjutkan melalui menu dan masuk ke lingkungan permainan yang sebenarnya. Pengujian menunjukkan bahwa untuk hasil yang optimal, pengaturan konfigurasi spesifik seperti akses memori langsung dan mode readback tertentu diperlukan untuk menghindari artefak visual seperti striping lanskap. Perbaikan ini mewakili langkah maju yang signifikan bagi kompatibilitas judul tersebut, karena mengatasi hambatan mendasar dalam cara pipeline rendering game berinteraksi dengan sistem manajemen sumber daya GPU yang diemulasi, memindahkan judul tersebut dari status tidak dapat booting ke gameplay aktif."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Kompatibilitas Perangkat Keras"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementasi ini diverifikasi pada sistem yang menggunakan prosesor AMD Ryzen dan grafis terintegrasi Radeon di bawah driver RADV pada Linux. Perbaikan ini diuji bersama dengan beberapa pull request terbaru lainnya yang ditujukan untuk mencegah reset GPU dan meningkatkan manajemen memori. Dengan menangani kasus-kasus khusus di mana game secara dinamis melakukan masking pada deskriptor sumber daya, emulator mendapatkan stabilitas yang lebih baik di berbagai judul yang menggunakan teknik optimasi shader serupa. Pengembang dan kontributor dapat memverifikasi perubahan ini dengan memantau log penemuan sumber daya untuk flag pasca-operasi bitwise yang baru, memastikan bahwa deskriptor gambar diubah dengan benar sebelum dikirim ke API grafis host."
+    }
+  ]
+}

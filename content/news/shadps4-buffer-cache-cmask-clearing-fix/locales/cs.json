@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zlepšení synchronizace CMask pro přesnou kompozici uživatelského rozhraní v shadPS4",
+  "summary": "Nová aktualizace mezipaměti vyrovnávací paměti (buffer cache) v shadPS4 řeší chybu vykreslování ve hře Days Gone, kde zastaralá data uživatelského rozhraní způsobovala duhové artefakty. Správným zpracováním stavů vymazané CMask se nyní emulátor vyhýbá nesprávnému čtení z vyrovnávací paměti.",
+  "heroAlt": "Detailní záběr na elegantní černé šasi a ventilační žebra konzole PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "emulátor PlayStation 4",
+    "buffer cache",
+    "mezipaměť vyrovnávací paměti",
+    "CMask",
+    "vykreslovací artefakty",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Oprava a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Duhové artefakty a kompozice uživatelského rozhraní"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ve hře Days Gone (CUSA09175) pozorovali hráči výraznou anomálii vykreslování, kdy se přes hlavní obraz překrývaly duhové kopie modelů postav, konkrétně hlav a rukou. K tomu docházelo, protože hra využívá operaci rychlého vymazání (fast-clear) na své překryvné vrstvě uživatelského rozhraní, ale okamžitě ji nenaplní novými vykreslovacími příkazy (draw calls). Místo toho během následného výpočetního průchodu (compute pass) čte CMask – hardwarovou metadatovou strukturu používanou pro kompresi barev – jako standardní vyrovnávací paměť. Tento průchod je zodpovědný za kompozici překryvné vrstvy do finálního snímku na základě dlaždic označených v CMask. Bez řádného sledování stavu vymazání poskytoval emulátor GPU zastaralá data, což vedlo k vizuálnímu poškození."
+    },
+    {
+      "type": "heading",
+      "text": "Zpřesnění logiky synchronizace CMask"
+    },
+    {
+      "type": "paragraph",
+      "text": "Technické řešení zahrnuje úpravu funkce BufferCache::SynchronizeMemoryFromImage v rámci video jádra shadPS4. Dříve emulátor vyplnil CMask rozšířenou hodnotou pokaždé, když synchronizoval paměť z obrázku, bez ohledu na aktuální stav masky. Nová logika zavádí kontrolu metadat clear_mask. Pokud metadata indikují, že mezipaměť textur drží masku jako vymazanou, systém nyní vyplní vyrovnávací paměť nulami namísto rozšířené hodnoty. Tato změna zajišťuje, že výpočetní průchod správně identifikuje překryvnou vrstvu jako prázdnou, čímž brání emulátoru v kompozici zastaralých informací z předchozích vykreslovacích průchodů do aktuálního snímku."
+    },
+    {
+      "type": "heading",
+      "text": "Dopad na hratelnost a vizuální věrnost"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pro hráče tato úprava přímo znamená čistší vizuální zážitek v titulech, které spoléhají na komplexní výpočetní kompozici. V konkrétním případě Days Gone jsou duhové artefakty, které dříve sužovaly úvodní filmečky a hratelnost, nyní pryč. Oprava byla ověřena pomocí specifických konfigurací GPU, včetně povoleného lineárního čtení obrázků (linear image readbacks), které jsou často nezbytné pro přesnou synchronizaci vyrovnávací paměti u vysoce věrných titulů pro PlayStation 4. Tím, že emulátor zajišťuje, aby mezipaměť vyrovnávací paměti přesně odrážela stav vymazaných textur, se přibližuje hardwarové přesnosti v tom, jak zpracovává interakci mezi tradičními grafickými kanály a výpočetními shadery během post-processingu."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a budoucí kompatibilita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Kromě bezprostředních vylepšení pro Days Gone testování potvrdilo, že tato změna nezavádí regrese v jiných významných hrách. Tituly jako God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider a Cyberpunk 2077 byly testovány a nevykázaly žádné změny ve vykreslovacím chování, což potvrzuje stabilitu implementace. I když tento konkrétní pull request řeší zásadní vizuální překážku, je důležité poznamenat, že některé hry mohou stále vyžadovat další, dosud nesloučené opravy, aby dosáhly plně hratelného stavu. Tato aktualizace představuje cílené vylepšení mezipaměti vyrovnávací paměti shadPS4, které zvyšuje spolehlivost synchronizace paměti napříč různými konfiguracemi hardwaru a ovladačů."
+    }
+  ]
+}

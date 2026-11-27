@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Verbesserung der Color Mask-Synchronisation für präzises UI-Compositing in shadPS4",
+  "summary": "Ein neues Update für den Buffer Cache von shadPS4 behebt einen Rendering-Fehler in Days Gone, bei dem veraltete UI-Daten zu regenbogenfarbenen Artefakten führten. Durch die korrekte Handhabung gelöschter CMask-Zustände vermeidet der Emulator nun fehlerhafte Puffer-Lesezugriffe.",
+  "heroAlt": "Eine Nahaufnahme des eleganten schwarzen Gehäuses und der Lüftungsschlitze einer PlayStation 4-Konsole.",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "PlayStation 4-Emulator",
+    "buffer cache",
+    "Puffercache",
+    "CMask",
+    "rendering artifacts",
+    "Rendering-Artefakte",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Patch und Überprüfung"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Regenbogen-Artefakte und UI-Compositing"
+    },
+    {
+      "type": "paragraph",
+      "text": "In Days Gone (CUSA09175) beobachteten Spieler eine deutliche Rendering-Anomalie, bei der regenbogenfarbene, verrauschte Kopien von Charaktermodellen, insbesondere Köpfe und Hände, über das Hauptbild gelegt wurden. Dies geschah, weil das Spiel einen Fast-Clear-Vorgang auf seinem UI-Overlay verwendet, diesen jedoch nicht sofort mit neuen Draw-Calls füllt. Stattdessen liest es die CMask – eine Hardware-Metadatenstruktur für die Farbkompression – während eines nachfolgenden Compute-Passes als Standardpuffer aus. Dieser Pass ist für das Compositing des Overlays auf das finale Bild verantwortlich, basierend auf den in der CMask markierten Kacheln. Ohne eine korrekte Nachverfolgung des gelöschten Zustands lieferte der Emulator veraltete Daten an die GPU, was zu visuellen Fehlern führte."
+    },
+    {
+      "type": "heading",
+      "text": "Verfeinerung der CMask-Synchronisationslogik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die technische Lösung beinhaltet die Modifikation der Funktion BufferCache::SynchronizeMemoryFromImage innerhalb des shadPS4-Videokerns. Zuvor füllte der Emulator eine CMask immer dann mit einem erweiterten Wert, wenn er Speicher von einem Bild synchronisierte, unabhängig vom aktuellen Zustand der Maske. Die neue Logik führt eine Überprüfung der clear_mask-Metadaten ein. Wenn die Metadaten anzeigen, dass der Textur-Cache die Maske als gelöscht markiert hat, füllt das System den Puffer nun mit Nullen anstelle des erweiterten Wertes. Diese Änderung stellt sicher, dass der Compute-Pass das Overlay korrekt als leer identifiziert und verhindert, dass der Emulator veraltete Informationen aus früheren Rendering-Passes in das aktuelle Bild einfügt."
+    },
+    {
+      "type": "heading",
+      "text": "Auswirkungen auf Gameplay und visuelle Wiedergabetreue"
+    },
+    {
+      "type": "paragraph",
+      "text": "Für Spieler bedeutet diese Anpassung direkt ein saubereres visuelles Erlebnis in Titeln, die auf komplexem, Compute-basiertem Compositing basieren. Im speziellen Fall von Days Gone sind die Regenbogen-Geisterbilder, die zuvor die Intro-Zwischensequenzen und das Gameplay beeinträchtigten, nun verschwunden. Der Fix wurde mit spezifischen GPU-Konfigurationen verifiziert, einschließlich aktivierter linearer Image-Readbacks, die oft für eine präzise Puffer-Synchronisation bei hochauflösenden PlayStation 4-Titeln erforderlich sind. Indem sichergestellt wird, dass der Buffer Cache den Zustand gelöschter Texturen korrekt widerspiegelt, nähert sich der Emulator der hardwarenahen Genauigkeit bei der Interaktion zwischen traditionellen Grafik-Pipelines und Compute-Shadern während des Post-Processings an."
+    },
+    {
+      "type": "heading",
+      "text": "Verifizierung und zukünftige Kompatibilität"
+    },
+    {
+      "type": "paragraph",
+      "text": "Über die unmittelbaren Verbesserungen für Days Gone hinaus wurde durch Tests bestätigt, dass diese Änderung keine Regressionen in anderen hochkarätigen Spielen verursacht. Titel wie God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider und Cyberpunk 2077 wurden getestet und zeigten keine Änderungen im Rendering-Verhalten, was die Stabilität der Implementierung bestätigt. Während dieser spezifische Pull Request ein großes visuelles Hindernis beseitigt, ist es wichtig zu beachten, dass einige Spiele möglicherweise noch zusätzliche, bisher nicht zusammengeführte Korrekturen benötigen, um einen vollständig spielbaren Zustand zu erreichen. Dieses Update stellt eine gezielte Verfeinerung des shadPS4-Buffer-Caches dar und verbessert die Zuverlässigkeit der Speichersynchronisation über verschiedene Hardware- und Treiberkonfigurationen hinweg."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Kaynak Tanımlayıcı Maskeleme için Shader Yeniden Derleyici Doğruluğunun İyileştirilmesi",
+  "summary": "shadPS4 shader yeniden derleyicisine gelen yeni bir güncelleme, doku kaynak tanımlayıcıları üzerindeki bit düzeyinde işlemleri doğru bir şekilde ele alarak God of War'daki kritik bir çökme sorununu çözüyor ve oyunun oynanış aşamasına geçmesine olanak tanıyor.",
+  "heroAlt": "Bir PlayStation 4 konsolunun dahili devrelerinin ve APU'sunun yakın çekimi.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "shader yeniden derleyici",
+    "God of War",
+    "T# descriptor",
+    "T# tanımlayıcı",
+    "bitwise masking",
+    "bit düzeyinde maskeleme",
+    "GPU emulation",
+    "GPU emülasyonu"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Kaynak Keşfi Hatasının Belirlenmesi"
+    },
+    {
+      "type": "paragraph",
+      "text": "God of War emülasyonu sırasında, shadPS4 shader yeniden derleyicisi, kaynak keşfi aşamasında kritik bir iddia (assertion) hatasıyla karşılaştı. Sorun, oyun motorunun doku kaynak tanımlayıcılarını, özellikle de T# yapısının dword 1 kısmını işleme biçiminden kaynaklanıyordu. 0xd0bae472 numaralı fragment shader'da motor, tanımlayıcıyı çalışma zamanında değiştirmek için bit düzeyinde bir AND işlemi kullanıyordu. Bu özel işlem, NUM_FORMAT alanını temizlemeyi ve donanıma görüntüyü işaretsiz normalleştirilmiş bir format olarak okuması talimatını vermeyi amaçlıyordu. Emülatörün yeniden derleyicisi bu tanımlayıcılar için standart bir sabit arabellek okuması beklediğinden, bit düzeyinde değiştirilmiş kaynağı çözümleyemedi ve shader düzgün bir şekilde başlatılamadan çökmesine yol açtı."
+    },
+    {
+      "type": "heading",
+      "text": "Bit Düzeyinde İşlem Sonrası Mantığının Uygulanması"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bunu çözmek için geliştirme ekibi, shader yeniden derleyicisi içinde yeni bir getirme sonrası işlem mekanizması tanıttı. Sistem artık bir görüntü tanımlayıcısının ilk dword'unu hedeflediğinde BitwiseAnd32 işlem kodunu tanımlıyor. Bu desen algılandığında, yeniden derleyici 0xc3ffffff gibi anlık maske değerini çıkarır ve bunu özel bir işlem sonrası komutu olarak saklar. Kaynak yamalama aşamasında, bu maske görüntü kaynağı meta verilerine uygulanır. Bu, emülatörün orijinal donanımın gerçekleştireceği aynı bit düzeyinde mantığı uygulayarak dokunun amaçlanan formatını doğru bir şekilde yorumlamasını sağlar ve shader keşfi aşamasının iddiaları tetiklemeden başarıyla tamamlanmasına olanak tanır."
+    },
+    {
+      "type": "heading",
+      "text": "God of War Oynanışına Etkisi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu mimari değişikliğin birincil sonucu, God of War'un (CUSA07410) artık ilk GPU iletişim aşamasında durmamasıdır. Oyuncular artık menülerden geçip gerçek oyun ortamına girebilirler. Testler, en iyi sonuçlar için manzara çizgilenmesi gibi görsel hatalardan kaçınmak adına doğrudan bellek erişimi ve belirli geri okuma modları gibi özel yapılandırma ayarlarının gerekli olduğunu göstermektedir. Bu düzeltme, oyunun işleme hattının emüle edilmiş GPU'nun kaynak yönetimi sistemiyle nasıl etkileşime girdiği konusundaki temel bir engeli ele aldığı ve oyunu açılmayan bir durumdan aktif oynanış durumuna taşıdığı için başlığın uyumluluğu adına ileriye doğru atılmış önemli bir adımdır."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Donanım Uyumluluğu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Uygulama, Linux üzerinde RADV sürücüsü altında AMD Ryzen işlemciler ve Radeon entegre grafik birimleri kullanan sistemlerde doğrulandı. Düzeltme, GPU sıfırlamalarını önlemeyi ve bellek yönetimini iyileştirmeyi amaçlayan diğer birkaç yeni pull request ile birlikte test edildi. Oyunların kaynak tanımlayıcılarını dinamik olarak maskelediği bu uç durumları ele alarak, emülatör benzer shader optimizasyon tekniklerini kullanan daha geniş bir oyun yelpazesinde daha iyi kararlılık kazanır. Geliştiriciler ve katkıda bulunanlar, görüntü tanımlayıcılarının ana grafik API'sine gönderilmeden önce doğru şekilde dönüştürüldüğünden emin olmak için kaynak keşfi günlüklerini yeni bit düzeyinde işlem sonrası bayrağı açısından izleyerek bu değişikliği doğrulayabilirler."
+    }
+  ]
+}

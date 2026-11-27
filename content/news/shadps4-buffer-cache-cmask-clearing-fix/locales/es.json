@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mejora de la sincronización de CMask para una composición de interfaz precisa en shadPS4",
+  "summary": "Una nueva actualización de la caché de búfer de shadPS4 soluciona un error de renderizado en Days Gone donde datos de interfaz obsoletos causaban artefactos de colores arcoíris. Al gestionar correctamente los estados de CMask borrados, el emulador ahora evita lecturas de búfer incorrectas.",
+  "heroAlt": "Un primer plano de la elegante carcasa negra y las aletas de ventilación de una consola PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "emulador de PlayStation 4",
+    "caché de búfer",
+    "CMask",
+    "artefactos de renderizado",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Artefactos arcoíris y composición de interfaz"
+    },
+    {
+      "type": "paragraph",
+      "text": "En Days Gone (CUSA09175), los jugadores observaron una anomalía de renderizado distintiva donde copias con ruido de colores arcoíris de los modelos de los personajes, específicamente cabezas y manos, se superponían sobre la imagen principal. Esto ocurría porque el juego utiliza una operación de borrado rápido en su capa de interfaz, pero no la completa inmediatamente con nuevas llamadas de dibujo. En su lugar, lee la CMask —una estructura de metadatos a nivel de hardware utilizada para la compresión de color— como un búfer estándar durante un pase de cómputo posterior. Este pase es responsable de componer la capa sobre el fotograma final basándose en los mosaicos marcados dentro de la CMask. Sin un seguimiento adecuado del estado borrado, el emulador proporcionaba datos obsoletos a la GPU, lo que provocaba corrupción visual."
+    },
+    {
+      "type": "heading",
+      "text": "Refinamiento de la lógica de sincronización de CMask"
+    },
+    {
+      "type": "paragraph",
+      "text": "La resolución técnica implica modificar la función BufferCache::SynchronizeMemoryFromImage dentro del núcleo de vídeo de shadPS4. Anteriormente, el emulador rellenaba una CMask con un valor expandido cada vez que sincronizaba la memoria desde una imagen, independientemente del estado actual de la máscara. La nueva lógica introduce una comprobación para los metadatos clear_mask. Si los metadatos indican que la caché de texturas mantiene la máscara como borrada, el sistema ahora rellena el búfer con ceros en lugar del valor expandido. Este cambio asegura que el pase de cómputo identifique correctamente la capa como vacía, evitando que el emulador componga información desactualizada de pases de renderizado anteriores en el fotograma actual."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto en la jugabilidad y fidelidad visual"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para los jugadores, este ajuste se traduce directamente en una experiencia visual más limpia en títulos que dependen de una composición compleja basada en cómputo. En el caso específico de Days Gone, los artefactos de efecto fantasma arcoíris que antes plagaban las escenas cinemáticas de introducción y la jugabilidad ahora están ausentes. La corrección se verificó utilizando configuraciones de GPU específicas, incluyendo lecturas lineales de imagen habilitadas, que a menudo son necesarias para una sincronización de búfer precisa en títulos de alta fidelidad de PlayStation 4. Al asegurar que la caché de búfer refleje con precisión el estado de las texturas borradas, el emulador se acerca a la precisión a nivel de hardware en la forma en que maneja la interacción entre las tuberías gráficas tradicionales y los sombreadores de cómputo durante el posprocesamiento."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y compatibilidad futura"
+    },
+    {
+      "type": "paragraph",
+      "text": "Más allá de las mejoras inmediatas para Days Gone, las pruebas han verificado que este cambio no introduce regresiones en otros juegos de alto perfil. Títulos como God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider y Cyberpunk 2077 fueron probados y no mostraron cambios en el comportamiento de renderizado, confirmando la estabilidad de la implementación. Aunque este pull request específico resuelve un obstáculo visual importante, es importante señalar que algunos juegos aún pueden requerir correcciones adicionales, aún no fusionadas, para alcanzar un estado totalmente jugable. Esta actualización representa un refinamiento específico de la caché de búfer de shadPS4, mejorando la fiabilidad de la sincronización de memoria a través de diversas configuraciones de hardware y controladores."
+    }
+  ]
+}

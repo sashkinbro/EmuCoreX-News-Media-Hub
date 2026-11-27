@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Migliorare l'accuratezza del ricompilatore di shader per il masking dei descrittori di risorse",
+  "summary": "Un nuovo aggiornamento del ricompilatore di shader di shadPS4 risolve un crash critico in God of War gestendo correttamente le operazioni bitwise sui descrittori delle risorse texture, consentendo al gioco di procedere verso il gameplay.",
+  "heroAlt": "Un primo piano dei circuiti interni e della APU di una console PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "ricompilatore di shader",
+    "God of War",
+    "T# descriptor",
+    "bitwise masking",
+    "mascheramento bitwise",
+    "GPU emulation",
+    "emulazione GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "graphics": "Grafica"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identificazione del fallimento nel rilevamento delle risorse"
+    },
+    {
+      "type": "paragraph",
+      "text": "Durante l'emulazione di God of War, il ricompilatore di shader di shadPS4 ha riscontrato un fallimento critico di asserzione all'interno del passaggio di rilevamento delle risorse. Il problema derivava dal modo in cui il motore di gioco gestisce i descrittori delle risorse texture, nello specifico il dword 1 della struttura T#. Nel fragment shader 0xd0bae472, il motore utilizzava un'operazione bitwise AND per modificare il descrittore in fase di esecuzione. Questa specifica operazione era intesa a pulire il campo NUM_FORMAT, istruendo effettivamente l'hardware a leggere l'immagine come un formato normalizzato senza segno. Poiché il ricompilatore dell'emulatore si aspettava una lettura standard del buffer costante per questi descrittori, non riusciva a risolvere la sorgente modificata tramite bitwise, portando a un crash prima che lo shader potesse essere inizializzato correttamente."
+    },
+    {
+      "type": "heading",
+      "text": "Implementazione della logica di post-operazione bitwise"
+    },
+    {
+      "type": "paragraph",
+      "text": "Per risolvere questo problema, il team di sviluppo ha introdotto un nuovo meccanismo di post-operazione di fetch all'interno del ricompilatore di shader. Il sistema ora identifica l'opcode BitwiseAnd32 quando punta al primo dword di un descrittore di immagine. Quando questo pattern viene rilevato, il ricompilatore estrae il valore della maschera immediata - come 0xc3ffffff - e lo memorizza come una specifica istruzione post-op. Durante la fase di patching delle risorse, questa maschera viene applicata ai metadati della risorsa immagine. Ciò garantisce che l'emulatore interpreti correttamente il formato previsto della texture applicando la stessa logica bitwise che l'hardware originale eseguirebbe, consentendo al passaggio di rilevamento dello shader di completarsi con successo senza attivare asserzioni."
+    },
+    {
+      "type": "heading",
+      "text": "Impatto sul gameplay di God of War"
+    },
+    {
+      "type": "paragraph",
+      "text": "Il risultato principale di questo cambiamento architetturale è che God of War (CUSA07410) non si blocca più nella fase iniziale di comunicazione con la GPU. I giocatori possono ora procedere attraverso i menu e arrivare all'ambiente di gioco vero e proprio. I test indicano che per risultati ottimali sono necessarie specifiche impostazioni di configurazione, come l'accesso diretto alla memoria e particolari modalità di readback, per evitare artefatti visivi come lo striping del paesaggio. Questa correzione rappresenta un passo avanti significativo per la compatibilità del titolo, poiché affronta un ostacolo fondamentale nel modo in cui la pipeline di rendering del gioco interagisce con il sistema di gestione delle risorse della GPU emulata, portando il titolo da uno stato di non avvio al gameplay attivo."
+    },
+    {
+      "type": "heading",
+      "text": "Verifica e compatibilità hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "L'implementazione è stata verificata su sistemi che utilizzano processori AMD Ryzen e grafica integrata Radeon con driver RADV su Linux. La correzione è stata testata insieme a diverse altre recenti pull request mirate a prevenire i reset della GPU e migliorare la gestione della memoria. Gestendo questi casi limite in cui i giochi mascherano dinamicamente i descrittori delle risorse, l'emulatore ottiene una migliore stabilità su una gamma più ampia di titoli che utilizzano tecniche di ottimizzazione degli shader simili. Sviluppatori e collaboratori possono verificare questa modifica monitorando i log di rilevamento delle risorse per il nuovo flag post-op bitwise, assicurandosi che i descrittori di immagine vengano trasformati correttamente prima di essere inviati all'API grafica host."
+    }
+  ]
+}

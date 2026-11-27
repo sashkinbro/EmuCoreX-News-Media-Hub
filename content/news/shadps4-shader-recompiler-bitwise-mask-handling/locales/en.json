@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Improving Shader Recompiler Accuracy for Resource Descriptor Masking",
+  "summary": "A new update to the shadPS4 shader recompiler addresses a critical crash in God of War by correctly handling bitwise operations on texture resource descriptors, allowing the game to progress into gameplay.",
+  "heroAlt": "A close-up of the internal circuitry and APU of a PlayStation 4 console.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "God of War",
+    "T# descriptor",
+    "bitwise masking",
+    "GPU emulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifying the Resource Discovery Failure"
+    },
+    {
+      "type": "paragraph",
+      "text": "During the emulation of God of War, the shadPS4 shader recompiler encountered a critical assertion failure within the resource discovery pass. The issue stemmed from how the game engine handles texture resource descriptors, specifically dword 1 of the T# structure. In fragment shader 0xd0bae472, the engine utilized a bitwise AND operation to modify the descriptor at runtime. This specific operation was intended to clear the NUM_FORMAT field, effectively instructing the hardware to read the image as an unsigned normalized format. Because the emulator's recompiler expected a standard constant buffer read for these descriptors, it could not resolve the bitwise-modified source, leading to a crash before the shader could be properly initialized."
+    },
+    {
+      "type": "heading",
+      "text": "Implementing Bitwise Post-Operation Logic"
+    },
+    {
+      "type": "paragraph",
+      "text": "To resolve this, the development team introduced a new fetch post-operation mechanism within the shader recompiler. The system now identifies the BitwiseAnd32 opcode when it targets the first dword of an image descriptor. When this pattern is detected, the recompiler extracts the immediate mask value—such as 0xc3ffffff—and stores it as a specific post-op instruction. During the resource patching phase, this mask is applied to the image resource metadata. This ensures that the emulator correctly interprets the intended format of the texture by applying the same bitwise logic the original hardware would perform, allowing the shader discovery pass to complete successfully without triggering assertions."
+    },
+    {
+      "type": "heading",
+      "text": "Impact on God of War Gameplay"
+    },
+    {
+      "type": "paragraph",
+      "text": "The primary result of this architectural change is that God of War (CUSA07410) no longer halts at the initial GPU communication stage. Players can now progress through the menus and into the actual game environment. Testing indicates that for optimal results, specific configuration settings like direct memory access and specific readback modes are required to avoid visual artifacts such as landscape striping. This fix represents a significant step forward for the title's compatibility, as it addresses a fundamental hurdle in how the game's rendering pipeline interacts with the emulated GPU's resource management system, moving the title from a non-booting state to active gameplay."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and Hardware Compatibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "The implementation was verified on systems utilizing AMD Ryzen processors and Radeon integrated graphics under the RADV driver on Linux. The fix was tested in conjunction with several other recent pull requests aimed at preventing GPU resets and improving memory management. By handling these edge cases where games dynamically mask resource descriptors, the emulator gains better stability across a wider range of titles that use similar shader optimization techniques. Developers and contributors can verify this change by monitoring the resource discovery logs for the new bitwise post-op flag, ensuring that image descriptors are correctly transformed before they are sent to the host graphics API."
+    }
+  ]
+}

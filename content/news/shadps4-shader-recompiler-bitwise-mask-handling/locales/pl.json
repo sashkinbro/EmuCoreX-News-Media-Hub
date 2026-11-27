@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Poprawa dokładności rekompilatora shaderów dla maskowania deskryptorów zasobów",
+  "summary": "Nowa aktualizacja rekompilatora shaderów shadPS4 rozwiązuje krytyczny błąd w God of War poprzez poprawne obsługiwanie operacji bitowych na deskryptorach zasobów tekstur, co pozwala grze na przejście do właściwej rozgrywki.",
+  "heroAlt": "Zbliżenie na wewnętrzne obwody i APU konsoli PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "rekompilator shaderów",
+    "God of War",
+    "T# descriptor",
+    "deskryptor T#",
+    "bitwise masking",
+    "maskowanie bitowe",
+    "GPU emulation",
+    "emulacja GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Poprawka i weryfikacja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identyfikacja błędu wykrywania zasobów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Podczas emulacji God of War, rekompilator shaderów shadPS4 napotkał krytyczny błąd asercji wewnątrz etapu wykrywania zasobów. Problem wynikał ze sposobu, w jaki silnik gry obsługuje deskryptory zasobów tekstur, a konkretnie z dword 1 struktury T#. W shaderze fragmentów 0xd0bae472 silnik wykorzystywał operację bitową AND do modyfikacji deskryptora w czasie rzeczywistym. Ta konkretna operacja miała na celu wyczyszczenie pola NUM_FORMAT, skutecznie instruując sprzęt, aby odczytywał obraz jako format bez znakowy znormalizowany. Ponieważ rekompilator emulatora oczekiwał standardowego odczytu z bufora stałych dla tych deskryptorów, nie był w stanie rozpoznać źródła zmodyfikowanego bitowo, co prowadziło do awarii przed poprawną inicjalizacją shadera."
+    },
+    {
+      "type": "heading",
+      "text": "Implementacja logiki operacji bitowych typu post-op"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby rozwiązać ten problem, zespół programistów wprowadził nowy mechanizm operacji typu post-op (pooperacyjnych) wewnątrz rekompilatora shaderów. System identyfikuje teraz kod operacji BitwiseAnd32, gdy jest on skierowany na pierwszy dword deskryptora obrazu. Po wykryciu tego wzorca, rekompilator wyodrębnia bezpośrednią wartość maski – taką jak 0xc3ffffff – i przechowuje ją jako specyficzną instrukcję post-op. Podczas fazy patchowania zasobów, maska ta jest nakładana na metadane zasobu obrazu. Zapewnia to, że emulator poprawnie interpretuje zamierzony format tekstury poprzez zastosowanie tej samej logiki bitowej, którą wykonałby oryginalny sprzęt, pozwalając na pomyślne zakończenie etapu wykrywania shaderów bez wyzwalania asercji."
+    },
+    {
+      "type": "heading",
+      "text": "Wpływ na rozgrywkę w God of War"
+    },
+    {
+      "type": "paragraph",
+      "text": "Głównym rezultatem tej zmiany architektonicznej jest to, że God of War (CUSA07410) nie zatrzymuje się już na początkowym etapie komunikacji z GPU. Gracze mogą teraz przechodzić przez menu i wejść do właściwego środowiska gry. Testy wskazują, że dla uzyskania optymalnych wyników wymagane są określone ustawienia konfiguracyjne, takie jak bezpośredni dostęp do pamięci (direct memory access) oraz specyficzne tryby odczytu zwrotnego, aby uniknąć artefaktów wizualnych, takich jak pasy na krajobrazie. Ta poprawka stanowi znaczący krok naprzód w kompatybilności tego tytułu, ponieważ rozwiązuje fundamentalną przeszkodę w sposobie, w jaki potok renderowania gry współdziała z systemem zarządzania zasobami emulowanego GPU, przenosząc tytuł ze stanu braku uruchamiania do aktywnej rozgrywki."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i kompatybilność sprzętowa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementacja została zweryfikowana na systemach wykorzystujących procesory AMD Ryzen oraz zintegrowaną grafikę Radeon pod kontrolą sterownika RADV w systemie Linux. Poprawka była testowana w połączeniu z kilkoma innymi niedawnymi pull requestami mającymi na celu zapobieganie resetom GPU i poprawę zarządzania pamięcią. Dzięki obsłudze tych przypadków brzegowych, w których gry dynamicznie maskują deskryptory zasobów, emulator zyskuje lepszą stabilność w szerszym zakresie tytułów wykorzystujących podobne techniki optymalizacji shaderów. Deweloperzy i współtwórcy mogą zweryfikować tę zmianę, monitorując logi wykrywania zasobów pod kątem nowej flagi bitowej post-op, upewniając się, że deskryptory obrazu są poprawnie przekształcane przed wysłaniem ich do hostowanego API graficznego."
+    }
+  ]
+}

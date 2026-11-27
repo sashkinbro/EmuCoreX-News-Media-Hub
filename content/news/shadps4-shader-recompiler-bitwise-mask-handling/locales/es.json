@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mejora de la precisión del recompilador de sombreadores para el enmascaramiento de descriptores de recursos",
+  "summary": "Una nueva actualización del recompilador de sombreadores de shadPS4 soluciona un bloqueo crítico en God of War al manejar correctamente las operaciones a nivel de bits en los descriptores de recursos de textura, permitiendo que el juego avance hasta la jugabilidad.",
+  "heroAlt": "Un primer plano de los circuitos internos y la APU de una consola PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "recompilador de sombreadores",
+    "God of War",
+    "T# descriptor",
+    "descriptor T#",
+    "bitwise masking",
+    "enmascaramiento a nivel de bits",
+    "GPU emulation",
+    "emulación de GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identificación del fallo en el descubrimiento de recursos"
+    },
+    {
+      "type": "paragraph",
+      "text": "Durante la emulación de God of War, el recompilador de sombreadores de shadPS4 encontró un fallo de aserción crítico dentro de la fase de descubrimiento de recursos. El problema se originó en cómo el motor del juego maneja los descriptores de recursos de textura, específicamente el dword 1 de la estructura T#. En el sombreador de fragmentos 0xd0bae472, el motor utilizaba una operación AND a nivel de bits para modificar el descriptor en tiempo de ejecución. Esta operación específica tenía como objetivo limpiar el campo NUM_FORMAT, instruyendo efectivamente al hardware para que leyera la imagen como un formato normalizado sin signo. Debido a que el recompilador del emulador esperaba una lectura de búfer de constantes estándar para estos descriptores, no pudo resolver la fuente modificada a nivel de bits, lo que provocó un bloqueo antes de que el sombreador pudiera inicializarse correctamente."
+    },
+    {
+      "type": "heading",
+      "text": "Implementación de la lógica de post-operación a nivel de bits"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para resolver esto, el equipo de desarrollo introdujo un nuevo mecanismo de post-operación de obtención dentro del recompilador de sombreadores. El sistema ahora identifica el código de operación BitwiseAnd32 cuando apunta al primer dword de un descriptor de imagen. Cuando se detecta este patrón, el recompilador extrae el valor de la máscara inmediata —como 0xc3ffffff— y lo almacena como una instrucción de post-operación específica. Durante la fase de parcheo de recursos, esta máscara se aplica a los metadatos del recurso de imagen. Esto asegura que el emulador interprete correctamente el formato previsto de la textura aplicando la misma lógica a nivel de bits que realizaría el hardware original, permitiendo que la fase de descubrimiento de sombreadores se complete con éxito sin activar aserciones."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto en la jugabilidad de God of War"
+    },
+    {
+      "type": "paragraph",
+      "text": "El resultado principal de este cambio arquitectónico es que God of War (CUSA07410) ya no se detiene en la etapa inicial de comunicación con la GPU. Los jugadores ahora pueden avanzar a través de los menús y entrar en el entorno de juego real. Las pruebas indican que, para obtener resultados óptimos, se requieren ajustes de configuración específicos, como el acceso directo a memoria y modos de lectura específicos, para evitar artefactos visuales como el rayado del paisaje. Esta corrección representa un paso adelante significativo para la compatibilidad del título, ya que aborda un obstáculo fundamental en cómo la canalización de renderizado del juego interactúa con el sistema de gestión de recursos de la GPU emulada, pasando el título de un estado de no arranque a una jugabilidad activa."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y compatibilidad de hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "La implementación se verificó en sistemas que utilizan procesadores AMD Ryzen y gráficos integrados Radeon bajo el controlador RADV en Linux. La corrección se probó junto con otras varias solicitudes de extracción recientes destinadas a prevenir reinicios de la GPU y mejorar la gestión de la memoria. Al manejar estos casos extremos donde los juegos enmascaran dinámicamente los descriptores de recursos, el emulador obtiene una mejor estabilidad en una gama más amplia de títulos que utilizan técnicas de optimización de sombreadores similares. Los desarrolladores y colaboradores pueden verificar este cambio monitoreando los registros de descubrimiento de recursos para detectar la nueva bandera de post-operación a nivel de bits, asegurando que los descriptores de imagen se transformen correctamente antes de ser enviados a la API de gráficos del host."
+    }
+  ]
+}

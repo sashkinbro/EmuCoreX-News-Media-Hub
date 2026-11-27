@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4'te Doğru UI Birleştirme için Renk Maskesi Senkronizasyonunun İyileştirilmesi",
+  "summary": "shadPS4'ün arabellek önbelleğine gelen yeni bir güncelleme, Days Gone oyununda eski UI verilerinin gökkuşağı renginde bozulmalara neden olduğu bir işleme hatasını gideriyor. Temizlenmiş CMask durumlarını doğru bir şekilde ele alan emülatör, artık hatalı arabellek okumalarının önüne geçiyor.",
+  "heroAlt": "Bir PlayStation 4 konsolunun şık siyah kasasının ve havalandırma kanallarının yakın çekimi.",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emülatörü",
+    "buffer cache",
+    "arabellek önbelleği",
+    "CMask",
+    "rendering artifacts",
+    "görüntü işleme hataları",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Gökkuşağı Renkli Bozulmalar ve UI Birleştirme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Days Gone (CUSA09175) oyununda oyuncular, ana görüntünün üzerine bindirilmiş, özellikle kafa ve eller gibi karakter modellerinin gökkuşağı rengindeki gürültülü kopyalarından oluşan belirgin bir işleme anormalliği gözlemlediler. Bu durum, oyunun UI katmanında hızlı bir temizleme (fast-clear) işlemi kullanması ancak burayı hemen yeni çizim çağrılarıyla doldurmaması nedeniyle meydana geliyordu. Bunun yerine, sonraki bir hesaplama (compute) geçişi sırasında renk sıkıştırması için kullanılan donanım seviyesinde bir meta veri yapısı olan CMask'ı standart bir arabellek olarak okuyordu. Bu geçiş, CMask içinde işaretlenen döşemelere (tiles) dayalı olarak katmanı nihai kare üzerinde birleştirmekten sorumludur. Temizlenmiş durumun düzgün bir şekilde takip edilmemesi nedeniyle emülatör, GPU'ya eski verileri sağlıyor ve bu da görsel bozulmalara yol açıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "CMask Senkronizasyon Mantığının İyileştirilmesi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Teknik çözüm, shadPS4 video çekirdeği içindeki BufferCache::SynchronizeMemoryFromImage işlevinin değiştirilmesini içeriyor. Daha önce emülatör, maskenin mevcut durumuna bakılmaksızın, bir görüntüden bellek senkronize ettiğinde CMask'ı genişletilmiş bir değerle dolduruyordu. Yeni mantık, clear_mask meta verisi için bir kontrol getiriyor. Eğer meta veriler doku önbelleğinin maskeyi temizlenmiş olarak tuttuğunu gösteriyorsa, sistem artık arabelleği genişletilmiş değer yerine sıfırlarla dolduruyor. Bu değişiklik, hesaplama geçişinin katmanı boş olarak doğru bir şekilde tanımlamasını sağlayarak emülatörün önceki işleme geçişlerinden kalan eski bilgileri mevcut kareyle birleştirmesini engelliyor."
+    },
+    {
+      "type": "heading",
+      "text": "Oynanış ve Görsel Doğruluk Üzerindeki Etkisi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oyuncular için bu ayarlama, karmaşık hesaplama tabanlı birleştirmeye dayanan oyunlarda doğrudan daha temiz bir görsel deneyim anlamına geliyor. Days Gone özelinde, daha önce giriş ara sahnelerini ve oynanışı etkileyen gökkuşağı renkli hayalet bozulmalar artık mevcut değil. Düzeltme, yüksek kaliteli PlayStation 4 oyunlarında doğru arabellek senkronizasyonu için genellikle gerekli olan etkinleştirilmiş doğrusal görüntü geri okumaları (linear image readbacks) dahil olmak üzere belirli GPU yapılandırmaları kullanılarak doğrulandı. Arabellek önbelleğinin temizlenmiş dokuların durumunu doğru bir şekilde yansıtmasını sağlayan emülatör, işlem sonrası (post-processing) sırasında geleneksel grafik hatları ile hesaplama gölgelendiricileri (compute shaders) arasındaki etkileşimi yönetme konusunda donanım seviyesinde doğruluğa bir adım daha yaklaşıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Gelecekteki Uyumluluk"
+    },
+    {
+      "type": "paragraph",
+      "text": "Days Gone'daki acil iyileştirmelerin ötesinde, testler bu değişikliğin diğer popüler oyunlarda herhangi bir gerilemeye yol açmadığını doğruladı. God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider ve Cyberpunk 2077 gibi oyunlar test edildi ve işleme davranışlarında herhangi bir değişiklik görülmedi, bu da uygulamanın kararlılığını doğruladı. Bu özel pull request büyük bir görsel engeli çözse de, bazı oyunların tamamen oynanabilir bir duruma gelmesi için henüz birleştirilmemiş ek düzeltmelere ihtiyaç duyabileceğini belirtmek önemlidir. Bu güncelleme, shadPS4 arabellek önbelleğinin hedeflenmiş bir iyileştirmesini temsil ederek, farklı donanım ve sürücü yapılandırmalarında bellek senkronizasyonunun güvenilirliğini artırıyor."
+    }
+  ]
+}

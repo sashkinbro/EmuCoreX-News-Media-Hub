@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Improving Color Mask Synchronization for Accurate UI Compositing in shadPS4",
+  "summary": "A new update to shadPS4's buffer cache addresses a rendering bug in Days Gone where stale UI data caused rainbow-colored artifacts. By correctly handling cleared CMask states, the emulator now avoids incorrect buffer reads.",
+  "heroAlt": "A close-up of the sleek black casing and ventilation fins of a PlayStation 4 console.",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "buffer cache",
+    "CMask",
+    "rendering artifacts",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Rainbow Artifacts and UI Compositing"
+    },
+    {
+      "type": "paragraph",
+      "text": "In Days Gone (CUSA09175), players observed a distinct rendering anomaly where rainbow-colored noise copies of character models, specifically heads and hands, were superimposed over the main image. This occurred because the game utilizes a fast-clear operation on its UI overlay but does not immediately populate it with new draw calls. Instead, it reads the CMask—a hardware-level metadata structure used for color compression—as a standard buffer during a subsequent compute pass. This pass is responsible for compositing the overlay onto the final frame based on the tiles marked within the CMask. Without proper tracking of the cleared state, the emulator was providing stale data to the GPU, leading to visual corruption."
+    },
+    {
+      "type": "heading",
+      "text": "Refining CMask Synchronization Logic"
+    },
+    {
+      "type": "paragraph",
+      "text": "The technical resolution involves modifying the BufferCache::SynchronizeMemoryFromImage function within the shadPS4 video core. Previously, the emulator would fill a CMask with an expanded value whenever it synchronized memory from an image, regardless of the mask's current state. The new logic introduces a check for the clear_mask metadata. If the metadata indicates that the texture cache holds the mask as cleared, the system now fills the buffer with zeros instead of the expanded value. This change ensures that the compute pass correctly identifies the overlay as empty, preventing the emulator from compositing outdated information from previous rendering passes into the current frame."
+    },
+    {
+      "type": "heading",
+      "text": "Impact on Gameplay and Visual Fidelity"
+    },
+    {
+      "type": "paragraph",
+      "text": "For players, this adjustment directly translates to a cleaner visual experience in titles that rely on complex compute-based compositing. In the specific case of Days Gone, the rainbow ghosting artifacts that previously plagued the intro cutscenes and gameplay are now absent. The fix was verified using specific GPU configurations, including enabled linear image readbacks, which are often necessary for accurate buffer synchronization in high-fidelity PlayStation 4 titles. By ensuring that the buffer cache accurately reflects the state of cleared textures, the emulator moves closer to hardware-level accuracy in how it handles the interaction between traditional graphics pipelines and compute shaders during post-processing."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and Future Compatibility"
+    },
+    {
+      "type": "paragraph",
+      "text": "Beyond the immediate improvements to Days Gone, testing has verified that this change does not introduce regressions in other high-profile games. Titles such as God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider, and Cyberpunk 2077 were tested and showed no changes in rendering behavior, confirming the stability of the implementation. While this specific pull request resolves a major visual hurdle, it is important to note that some games may still require additional, yet-to-be-merged fixes to reach a fully playable state. This update represents a targeted refinement of the shadPS4 buffer cache, improving the reliability of memory synchronization across diverse hardware and driver configurations."
+    }
+  ]
+}

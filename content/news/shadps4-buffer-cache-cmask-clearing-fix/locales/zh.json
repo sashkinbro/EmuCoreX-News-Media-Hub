@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "改进 shadPS4 中用于精确 UI 合成的颜色掩码（Color Mask）同步",
+  "summary": "shadPS4 缓冲区缓存的一项新更新解决了《Days Gone》中的一个渲染错误，该错误曾导致陈旧的 UI 数据产生彩虹色伪影。通过正确处理已清除的 CMask 状态，模拟器现在避免了错误的缓冲区读取。",
+  "heroAlt": "PlayStation 4 主机光滑的黑色外壳和通风散热片的特写。",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 模拟器",
+    "buffer cache",
+    "缓冲区缓存",
+    "CMask",
+    "颜色掩码",
+    "rendering artifacts",
+    "渲染伪影",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "彩虹伪影与 UI 合成"
+    },
+    {
+      "type": "paragraph",
+      "text": "在《Days Gone》（CUSA09175）中，玩家观察到一种独特的渲染异常，即角色模型（特别是头部和手部）的彩虹色噪点副本会叠加在主图像上。出现这种情况是因为游戏在其 UI 覆盖层上使用了快速清除操作，但并没有立即用新的绘制调用来填充它。相反，它在随后的计算通道中将 CMask（一种用于颜色压缩的硬件级元数据结构）作为标准缓冲区进行读取。该通道负责根据 CMask 中标记的图块将覆盖层合成到最终帧上。由于无法正确跟踪已清除的状态，模拟器向 GPU 提供了陈旧的数据，从而导致了视觉损坏。"
+    },
+    {
+      "type": "heading",
+      "text": "优化 CMask 同步逻辑"
+    },
+    {
+      "type": "paragraph",
+      "text": "技术解决方案涉及修改 shadPS4 视频核心中的 BufferCache::SynchronizeMemoryFromImage 函数。此前，无论掩码当前处于什么状态，模拟器在从图像同步内存时都会用扩展值填充 CMask。新的逻辑引入了对 clear_mask 元数据的检查。如果元数据表明纹理缓存将掩码视为已清除，系统现在会用零填充缓冲区，而不是扩展值。这一更改确保了计算通道能正确识别覆盖层为空，从而防止模拟器将之前渲染通道中的过时信息合成到当前帧中。"
+    },
+    {
+      "type": "heading",
+      "text": "对游戏体验和视觉保真度的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于玩家而言，这一调整直接转化为在依赖复杂计算合成的游戏中获得更清晰的视觉体验。在《Days Gone》的特定案例中，此前困扰开场过场动画和游戏过程的彩虹重影伪影现在已不复存在。该修复已通过特定的 GPU 配置进行了验证，包括启用的线性图像回读（linear image readbacks），这对于高保真 PlayStation 4 游戏中的精确缓冲区同步通常是必要的。通过确保缓冲区缓存准确反映已清除纹理的状态，模拟器在处理后期处理过程中传统图形管线与计算着色器之间的交互时，更接近硬件级的准确性。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与未来兼容性"
+    },
+    {
+      "type": "paragraph",
+      "text": "除了对《Days Gone》的直接改进外，测试还证实此更改不会在其他知名游戏中引入回归问题。《God of War》、《Spider-Man: Miles Morales》、《Shadow of the Tomb Raider》和《Cyberpunk 2077》等游戏均经过测试，渲染行为未发生变化，证实了该实现的稳定性。虽然此特定的 pull request 解决了主要的视觉障碍，但需要注意的是，某些游戏可能仍需要额外的、尚未合并的修复才能达到完全可玩的状态。此更新代表了对 shadPS4 缓冲区缓存的针对性优化，提高了在不同硬件和驱动程序配置下内存同步的可靠性。"
+    }
+  ]
+}

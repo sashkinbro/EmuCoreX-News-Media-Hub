@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Amélioration de la synchronisation du masque de couleur pour une composition d'interface précise dans shadPS4",
+  "summary": "Une nouvelle mise à jour du cache de tampon de shadPS4 corrige un bug de rendu dans Days Gone où des données d'interface obsolètes provoquaient des artefacts aux couleurs arc-en-ciel. En gérant correctement les états effacés du CMask, l'émulateur évite désormais les lectures de tampon incorrectes.",
+  "heroAlt": "Un gros plan sur le boîtier noir élégant et les ailettes de ventilation d'une console PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "émulateur PlayStation 4",
+    "buffer cache",
+    "cache de tampon",
+    "CMask",
+    "rendering artifacts",
+    "artefacts de rendu",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "Correctif et revue"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Artefacts arc-en-ciel et composition de l'interface"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dans Days Gone (CUSA09175), les joueurs ont observé une anomalie de rendu distincte où des copies bruitées aux couleurs arc-en-ciel de modèles de personnages, plus précisément des têtes et des mains, étaient superposées sur l'image principale. Cela se produisait parce que le jeu utilise une opération d'effacement rapide sur sa superposition d'interface mais ne la remplit pas immédiatement avec de nouveaux appels de dessin. Au lieu de cela, il lit le CMask — une structure de métadonnées au niveau matériel utilisée pour la compression des couleurs — comme un tampon standard lors d'une passe de calcul ultérieure. Cette passe est responsable de la composition de la superposition sur l'image finale en fonction des tuiles marquées dans le CMask. Sans un suivi approprié de l'état effacé, l'émulateur fournissait des données obsolètes au GPU, entraînant une corruption visuelle."
+    },
+    {
+      "type": "heading",
+      "text": "Raffinage de la logique de synchronisation du CMask"
+    },
+    {
+      "type": "paragraph",
+      "text": "La résolution technique implique la modification de la fonction BufferCache::SynchronizeMemoryFromImage au sein du cœur vidéo de shadPS4. Auparavant, l'émulateur remplissait un CMask avec une valeur étendue à chaque fois qu'il synchronisait la mémoire à partir d'une image, indépendamment de l'état actuel du masque. La nouvelle logique introduit une vérification des métadonnées clear_mask. Si les métadonnées indiquent que le cache de texture contient le masque comme étant effacé, le système remplit désormais le tampon avec des zéros au lieu de la valeur étendue. Ce changement garantit que la passe de calcul identifie correctement la superposition comme vide, empêchant l'émulateur de composer des informations obsolètes provenant de passes de rendu précédentes dans l'image actuelle."
+    },
+    {
+      "type": "heading",
+      "text": "Impact sur le gameplay et la fidélité visuelle"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour les joueurs, cet ajustement se traduit directement par une expérience visuelle plus propre dans les titres qui reposent sur une composition complexe basée sur le calcul. Dans le cas spécifique de Days Gone, les artefacts de rémanence arc-en-ciel qui affectaient auparavant les cinématiques d'introduction et le gameplay sont désormais absents. Le correctif a été vérifié en utilisant des configurations GPU spécifiques, y compris des lectures linéaires d'images activées, qui sont souvent nécessaires pour une synchronisation précise des tampons dans les titres PlayStation 4 haute fidélité. En garantissant que le cache de tampon reflète fidèlement l'état des textures effacées, l'émulateur se rapproche de la précision matérielle dans la manière dont il gère l'interaction entre les pipelines graphiques traditionnels et les shaders de calcul lors du post-traitement."
+    },
+    {
+      "type": "heading",
+      "text": "Vérification et compatibilité future"
+    },
+    {
+      "type": "paragraph",
+      "text": "Au-delà des améliorations immédiates apportées à Days Gone, les tests ont vérifié que ce changement n'introduit pas de régressions dans d'autres jeux de premier plan. Des titres tels que God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider et Cyberpunk 2077 ont été testés et n'ont montré aucun changement dans le comportement de rendu, confirmant la stabilité de l'implémentation. Bien que cette pull request spécifique résolve un obstacle visuel majeur, il est important de noter que certains jeux peuvent encore nécessiter des correctifs supplémentaires, non encore fusionnés, pour atteindre un état pleinement jouable. Cette mise à jour représente un raffinement ciblé du cache de tampon de shadPS4, améliorant la fiabilité de la synchronisation de la mémoire à travers diverses configurations matérielles et de pilotes."
+    }
+  ]
+}

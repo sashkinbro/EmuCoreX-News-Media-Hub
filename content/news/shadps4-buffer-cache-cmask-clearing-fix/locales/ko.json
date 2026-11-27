@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-buffer-cache-cmask-clearing-fix",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4의 정확한 UI 합성을 위한 컬러 마스크 동기화 개선",
+  "summary": "shadPS4 버퍼 캐시의 새로운 업데이트를 통해 Days Gone에서 오래된 UI 데이터로 인해 무지개색 아티팩트가 발생하던 렌더링 버그가 해결되었습니다. 이제 지워진 CMask 상태를 올바르게 처리함으로써 에뮬레이터가 잘못된 버퍼를 읽는 문제를 방지합니다.",
+  "heroAlt": "PlayStation 4 콘솔의 매끄러운 검은색 케이스와 환기 핀을 근접 촬영한 모습.",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "PlayStation 4 에뮬레이터",
+    "buffer cache",
+    "버퍼 캐시",
+    "CMask",
+    "rendering artifacts",
+    "렌더링 아티팩트",
+    "Days Gone",
+    "Vulkan"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "graphics": "그래픽"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5778",
+    "implementation": "패치 및 검토"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "무지개 아티팩트와 UI 합성"
+    },
+    {
+      "type": "paragraph",
+      "text": "Days Gone(CUSA09175)에서 플레이어들은 캐릭터 모델, 특히 머리와 손의 무지개색 노이즈 복사본이 메인 이미지 위에 겹쳐 보이는 뚜렷한 렌더링 이상 현상을 관찰했습니다. 이는 게임이 UI 오버레이에 빠른 지우기(fast-clear) 작업을 사용하지만, 즉시 새로운 드로우 콜로 채우지 않기 때문에 발생했습니다. 대신, 이후 컴퓨트 패스에서 색상 압축에 사용되는 하드웨어 수준의 메타데이터 구조인 CMask를 표준 버퍼로 읽어 들입니다. 이 패스는 CMask 내에 표시된 타일을 기반으로 오버레이를 최종 프레임에 합성하는 역할을 합니다. 지워진 상태를 적절하게 추적하지 못하면 에뮬레이터가 GPU에 오래된 데이터를 제공하여 시각적 손상이 발생하게 됩니다."
+    },
+    {
+      "type": "heading",
+      "text": "CMask 동기화 로직 개선"
+    },
+    {
+      "type": "paragraph",
+      "text": "기술적인 해결책은 shadPS4 비디오 코어 내의 BufferCache::SynchronizeMemoryFromImage 함수를 수정하는 것입니다. 이전에는 마스크의 현재 상태와 관계없이 이미지에서 메모리를 동기화할 때마다 에뮬레이터가 CMask를 확장된 값으로 채웠습니다. 새로운 로직은 clear_mask 메타데이터에 대한 확인 절차를 도입했습니다. 메타데이터가 텍스처 캐시가 마스크를 지워진 상태로 유지하고 있음을 나타내면, 시스템은 이제 확장된 값 대신 0으로 버퍼를 채웁니다. 이 변경 사항은 컴퓨트 패스가 오버레이를 비어 있는 것으로 올바르게 식별하도록 보장하여, 에뮬레이터가 이전 렌더링 패스의 오래된 정보를 현재 프레임에 합성하는 것을 방지합니다."
+    },
+    {
+      "type": "heading",
+      "text": "게임 플레이 및 시각적 충실도에 미치는 영향"
+    },
+    {
+      "type": "paragraph",
+      "text": "플레이어에게 이 조정은 복잡한 컴퓨트 기반 합성에 의존하는 타이틀에서 더 깔끔한 시각적 경험을 제공하는 것으로 직결됩니다. Days Gone의 경우, 이전 인트로 컷신과 게임 플레이를 괴롭혔던 무지개 고스팅 아티팩트가 이제 사라졌습니다. 이 수정 사항은 고충실도 PlayStation 4 타이틀에서 정확한 버퍼 동기화를 위해 종종 필요한 선형 이미지 리드백(linear image readbacks) 활성화를 포함한 특정 GPU 구성에서 검증되었습니다. 버퍼 캐시가 지워진 텍스처의 상태를 정확하게 반영하도록 함으로써, 에뮬레이터는 포스트 프로세싱 중에 전통적인 그래픽 파이프라인과 컴퓨트 셰이더 간의 상호 작용을 처리하는 방식에서 하드웨어 수준의 정확도에 한 걸음 더 다가섰습니다."
+    },
+    {
+      "type": "heading",
+      "text": "검증 및 향후 호환성"
+    },
+    {
+      "type": "paragraph",
+      "text": "Days Gone에 대한 즉각적인 개선 외에도, 테스트를 통해 이 변경 사항이 다른 유명 게임에서 회귀 현상을 일으키지 않음을 확인했습니다. God of War, Spider-Man: Miles Morales, Shadow of the Tomb Raider, Cyberpunk 2077과 같은 타이틀을 테스트한 결과 렌더링 동작에 변화가 없었으며, 이는 구현의 안정성을 확인시켜 줍니다. 이번 특정 pull request가 주요 시각적 문제를 해결했지만, 일부 게임은 완전히 플레이 가능한 상태에 도달하기 위해 아직 병합되지 않은 추가 수정 사항이 필요할 수 있다는 점을 유의해야 합니다. 이번 업데이트는 shadPS4 버퍼 캐시의 목표 지향적인 개선을 나타내며, 다양한 하드웨어 및 드라이버 구성 전반에서 메모리 동기화의 신뢰성을 향상시킵니다."
+    }
+  ]
+}

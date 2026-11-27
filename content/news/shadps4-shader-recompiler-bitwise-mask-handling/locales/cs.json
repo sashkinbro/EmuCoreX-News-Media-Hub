@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-shader-recompiler-bitwise-mask-handling",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Zlepšení přesnosti rekompilátoru shaderů pro maskování deskriptorů prostředků",
+  "summary": "Nová aktualizace rekompilátoru shaderů shadPS4 řeší kritický pád hry God of War správným zpracováním bitových operací u deskriptorů texturových prostředků, což umožňuje hře pokračovat do samotného hraní.",
+  "heroAlt": "Detail vnitřních obvodů a APU konzole PlayStation 4.",
+  "searchKeywords": [
+    "shadPS4",
+    "shader recompiler",
+    "rekompilátor shaderů",
+    "God of War",
+    "T# descriptor",
+    "T# deskriptor",
+    "bitwise masking",
+    "bitové maskování",
+    "GPU emulation",
+    "emulace GPU"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5769",
+    "implementation": "Oprava a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Identifikace selhání při vyhledávání prostředků"
+    },
+    {
+      "type": "paragraph",
+      "text": "Během emulace hry God of War narazil rekompilátor shaderů shadPS4 na kritické selhání kontrolního výrazu (assertion failure) v rámci průchodu vyhledávání prostředků. Problém pramenil ze způsobu, jakým herní engine nakládá s deskriptory texturových prostředků, konkrétně se slovem dword 1 struktury T#. Ve fragmentovém shaderu 0xd0bae472 engine využíval bitovou operaci AND k úpravě deskriptoru za běhu. Tato konkrétní operace měla za cíl vymazat pole NUM_FORMAT, čímž efektivně instruovala hardware, aby četl obraz jako formát bez znaménka (unsigned normalized). Protože rekompilátor emulátoru očekával pro tyto deskriptory standardní čtení z konstantního bufferu, nedokázal vyřešit bitově modifikovaný zdroj, což vedlo k pádu ještě předtím, než mohl být shader správně inicializován."
+    },
+    {
+      "type": "heading",
+      "text": "Implementace logiky bitové pooperační operace"
+    },
+    {
+      "type": "paragraph",
+      "text": "K vyřešení tohoto problému zavedl vývojový tým nový mechanismus pooperačního načítání (fetch post-operation) v rámci rekompilátoru shaderů. Systém nyní identifikuje operační kód BitwiseAnd32, pokud cílí na první dword deskriptoru obrazu. Jakmile je tento vzor detekován, rekompilátor extrahuje hodnotu okamžité masky – například 0xc3ffffff – a uloží ji jako specifickou pooperační instrukci. Během fáze záplatování prostředků je tato maska aplikována na metadata obrazového prostředku. To zajišťuje, že emulátor správně interpretuje zamýšlený formát textury použitím stejné bitové logiky, jakou by provedl původní hardware, což umožňuje úspěšné dokončení průchodu vyhledávání shaderů bez vyvolání chybových hlášení."
+    },
+    {
+      "type": "heading",
+      "text": "Dopad na hraní God of War"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hlavním výsledkem této architektonické změny je, že se hra God of War (CUSA07410) již nezastavuje ve fázi počáteční komunikace s GPU. Hráči nyní mohou procházet nabídkami a vstoupit do samotného herního prostředí. Testování naznačuje, že pro optimální výsledky jsou vyžadována specifická nastavení konfigurace, jako je přímý přístup do paměti (direct memory access) a určité režimy zpětného čtení (readback modes), aby se předešlo vizuálním artefaktům, jako je pruhování krajiny. Tato oprava představuje významný krok vpřed pro kompatibilitu titulu, protože řeší zásadní překážku v tom, jak vykreslovací pipeline hry interaguje se systémem správy prostředků emulovaného GPU, čímž posouvá titul ze stavu, kdy se nespustil, k aktivnímu hraní."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a hardwarová kompatibilita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Implementace byla ověřena na systémech využívajících procesory AMD Ryzen a integrovanou grafiku Radeon pod ovladačem RADV v systému Linux. Oprava byla testována ve spojení s několika dalšími nedávnými pull requesty zaměřenými na prevenci resetů GPU a zlepšení správy paměti. Díky ošetření těchto hraničních případů, kdy hry dynamicky maskují deskriptory prostředků, získává emulátor lepší stabilitu napříč širší škálou titulů, které využívají podobné techniky optimalizace shaderů. Vývojáři a přispěvatelé mohou tuto změnu ověřit sledováním protokolů vyhledávání prostředků pro nový příznak bitové pooperační operace, čímž zajistí, že deskriptory obrazu budou správně transformovány předtím, než budou odeslány hostitelskému grafickému API."
+    }
+  ]
+}
