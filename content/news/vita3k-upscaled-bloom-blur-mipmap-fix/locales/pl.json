@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Naprawa rozmycia i artefaktów bloom przy skalowaniu w Vita3K",
+  "summary": "Vita3K zachowuje teraz oryginalne parametry filtrowania tekstur podczas skalowania poprzez generowanie mipmap dla celów renderowania, co rozwiązuje problem zniekształconych efektów blur i bloom.",
+  "heroAlt": "Konsola przenośna PlayStation Vita leżąca na czystej, płaskiej powierzchni z włączonym ekranem.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "skalowanie",
+    "bloom",
+    "Vulkan",
+    "texture filtering",
+    "filtrowanie tekstur",
+    "shader recompilation",
+    "rekompilacja shaderów"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4425",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Błędne parametry filtrowania przy wyższych rozdzielczościach"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gdy Vita3K renderowało sceny powyżej natywnej rozdzielczości, efekty post-processingu, takie jak bloom, blur i poświata, często ulegały zauważalnej degradacji wizualnej. Silniki gier na PlayStation Vita często implementują te efekty poprzez próbkowanie powierzchni kolorów z filtrowaniem dwuliniowym, polegając na stałych parametrach texeli, aby naturalnie mieszać sąsiednie próbki w obrębie obrazu. Zwiększenie wewnętrznej rozdzielczości renderowania mnoży liczbę texeli w tej samej przestrzeni ekranu, co zmniejsza zasięg przestrzenny filtra. Zamiast płynnych przejść, skalowane gry generowały blokowe, nierównomiernie rozłożone poświaty. Co więcej, kopie celów renderowania w Vulkan pomijały barierę przed poprzednimi zapisami kolorów, tworząc zagrożenia typu read-after-write na sprzęcie."
+    },
+    {
+      "type": "heading",
+      "text": "Mipmapowane cele renderowania i kontrola LOD shaderów"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby przywrócić natywne proporcje próbkowania bez kompromisów w renderowaniu wysokiej rozdzielczości, zarówno backendy OpenGL, jak i Vulkan przydzielają teraz i generują mipmapy dla skalowanych powierzchni kolorów. Renderer przekazuje współczynnik skali rozdzielczości oraz logarytmiczną wartość poziomu szczegółowości (LOD) do etapu fragmentów poprzez bloki uniform. W translatorze shaderów heurystyka analizy identyfikuje przejścia, w których powierzchnia jest próbkowana wielokrotnie, sygnalizując celowe przejście filtrowania. Następnie translator kieruje instrukcje próbkowania tekstur na obliczony poziom mipmapy, pozwalając próbkom zachować oryginalne parametry sprzętowe. Dodatkowo, pamięć podręczna powierzchni Vulkan wymusza teraz bariery potoku przed operacjami kopiowania, aby rozwiązać problemy z synchronizacją."
+    },
+    {
+      "type": "heading",
+      "text": "Płynniejsze efekty wizualne i spójność graficzna"
+    },
+    {
+      "type": "paragraph",
+      "text": "Te poprawki eliminują ostre pasmowanie i dryf przestrzenny w przejściach post-processingu, gdy gracze zwiększają mnożniki rozdzielczości. W testach tytułów takich jak Hatsune Miku: Project DIVA X przy rozdzielczości 2x, poświaty interfejsu i bloom specular zmieniły się z szorstkich, przesuniętych kwadratów w płynne i poprawnie wyśrodkowane oświetlenie. Pomiary w klatkach testowych wykazały, że mediana przesunięcia poświaty względem trójkąta spadła z 3,92 piksela do 3,20 piksela przy podwójnej rozdzielczości. Zmiana ta zapewnia również spójność wizualną między implementacjami Vulkan i OpenGL, gwarantując, że oba backendy generują spójne wyniki filtrowania, niezależnie od tego, czy działają w oryginalnej rozdzielczości Vita, czy przy wysokich mnożnikach."
+    },
+    {
+      "type": "heading",
+      "text": "Unieważnienie pamięci podręcznej shaderów i wyniki walidacji"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ponieważ te heurystyki filtrowania dostosowują generowanie instrukcji SPIR-V i wprowadzają nowe układy bloków uniform, Vita3K podniosło wewnętrzną wersję pamięci podręcznej shaderów do 16. Istniejące potoki shaderów zostaną automatycznie przekompilowane przy uruchomieniu. Poprawki synchronizacji zostały potwierdzone za pomocą narzędzi walidacyjnych Vulkan, które wykazały, że liczba ostrzeżeń o zagrożeniach w ścieżce rzutowania spadła z dziesięciu do zera. Chociaż narzędzia do przechwytywania, takie jak RenderDoc, maskowały warunki wyścigu poprzez serializację powtórek poleceń GPU podczas inspekcji, wstawione bariery bezpośrednio zapobiegają uszkodzeniu danych potoku na fizycznym sprzęcie stacjonarnym, w tym na nowoczesnych kartach graficznych, takich jak AMD RX 9070 XT."
+    }
+  ]
+}

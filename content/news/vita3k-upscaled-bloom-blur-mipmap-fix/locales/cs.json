@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Oprava rozmazání při upscalingu a artefaktů bloom ve Vita3K",
+  "summary": "Vita3K nyní při upscalingu zachovává původní stopy filtrování textur generováním mipmap pro renderovací cíle, čímž řeší zkreslené průchody blur a bloom.",
+  "heroAlt": "Ruční konzole PlayStation Vita ležící na čistém rovném povrchu s viditelnou obrazovkou.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "převzorkování",
+    "bloom",
+    "Vulkan",
+    "texture filtering",
+    "filtrování textur",
+    "shader recompilation",
+    "rekompilace shaderů"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4425",
+    "implementation": "Patch a recenze"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Narušené stopy filtrování při vyšších rozlišeních"
+    },
+    {
+      "type": "paragraph",
+      "text": "Když Vita3K vykresloval scény ve vyšším než nativním rozlišení, post-processingové efekty jako bloom, blur a záře často trpěly znatelnou vizuální degradací. Herní enginy pro PlayStation Vita často implementují tyto efekty vzorkováním barevných ploch pomocí bilineárního filtrování, přičemž spoléhají na fixní stopy texelů pro přirozené prolnutí sousedních vzorků v obraze. Zvýšení interního rozlišení vykreslování znásobuje počet texelů v rámci stejného prostoru obrazovky, což zmenšuje prostorový dosah filtru. Místo jemných přechodů vytvářely hry při upscalingu blokové, nerovnoměrně rozložené svatozáře. Navíc kopie renderovacích cílů ve Vulkan vynechávaly bariéru proti předchozím zápisům barev, což na hardwaru vytvářelo rizika typu read-after-write."
+    },
+    {
+      "type": "heading",
+      "text": "Mipmapované renderovací cíle a kontrola LOD shaderů"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pro obnovení nativních proporcí vzorkování bez kompromisů ve vykreslování ve vysokém rozlišení nyní backendy OpenGL i Vulkan alokují a generují mipmapy pro upscalované barevné plochy. Renderer předává faktor měřítka rozlišení a logaritmickou hodnotu úrovně detailů (LOD) do fragmentové fáze prostřednictvím uniformních bloků. V překladači shaderů identifikuje analytická heuristika průchody, kde je plocha vzorkována vícekrát, což signalizuje záměrný průchod filtrování. Překladač následně směruje instrukce vzorkování textur na vypočítanou úroveň mipmapy, což umožňuje, aby vzorky zachovaly původní hardwarovou stopu. Kromě toho nyní mezipaměť povrchů ve Vulkan vynucuje bariéry pipeline před operacemi kopírování, aby se vyřešila rizika synchronizace."
+    },
+    {
+      "type": "heading",
+      "text": "Hladší vizuální efekty a grafická parita"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato vylepšení eliminují ostré pruhování a prostorový posun v post-processingových průchodech, když hráči zvýší násobitele rozlišení. Při testování na titulech jako Hatsune Miku: Project DIVA X při rozlišení 2x se záře uživatelského rozhraní a spekulární bloom změnily z hrubých, posunutých boxů na hladké a správně vycentrované osvětlení. Měření napříč testovacími snímky ukázalo, že medián posunu záře vůči trojúhelníkům klesl z 3,92 pixelů na 3,20 pixelů při dvojnásobném rozlišení. Tato změna také dosahuje vizuální parity mezi implementacemi Vulkan a OpenGL, což zajišťuje, že oba backendy produkují konzistentní výsledky filtrování bez ohledu na to, zda pracují v původním rozlišení Vita nebo při vysokých násobitelích."
+    },
+    {
+      "type": "heading",
+      "text": "Invalidace mezipaměti shaderů a výsledky validace"
+    },
+    {
+      "type": "paragraph",
+      "text": "Protože tyto heuristiky filtrování upravují generování instrukcí SPIR-V a zavádějí nová rozvržení uniformních bloků, Vita3K zvýšil svou interní verzi mezipaměti shaderů na 16. Stávající pipeline shaderů se po spuštění automaticky rekompilují. Opravy synchronizace byly potvrzeny pomocí validačních nástrojů Vulkan, které nahlásily pokles varování před riziky v cestě cast z deseti na nulu. Zatímco nástroje pro zachycení jako RenderDoc maskovaly podmínku závodu serializací přehrávání příkazů GPU během inspekce, vložené bariéry přímo zabraňují poškození dat v pipeline na fyzickém desktopovém hardwaru, včetně moderních grafických karet, jako je AMD RX 9070 XT."
+    }
+  ]
+}

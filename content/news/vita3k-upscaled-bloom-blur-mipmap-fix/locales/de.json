@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Behebung von unscharfen Upscaling- und Bloom-Artefakten in Vita3K",
+  "summary": "Vita3K bewahrt nun die ursprünglichen Texturfilterungs-Footprints während des Upscalings durch die Generierung von Mipmaps für Render-Targets, wodurch verzerrte Bloom- und Weichzeichner-Durchgänge behoben werden.",
+  "heroAlt": "PlayStation Vita Handheld-Konsole auf einer sauberen, flachen Oberfläche mit eingeschaltetem Bildschirm.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "Upscaling",
+    "Bloom",
+    "Vulkan",
+    "Texturfilterung",
+    "Shader-Rekompilierung",
+    "Grafik",
+    "Emulation"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "Vita3K Pull Request #4425",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Defekte Filter-Footprints bei höheren Auflösungen"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wenn Vita3K Szenen über der nativen Auflösung rendert, litten Post-Processing-Effekte wie Bloom, Weichzeichner und Leuchteffekte oft unter einer sichtbaren visuellen Verschlechterung. PlayStation Vita-Spiel-Engines implementieren diese Effekte häufig durch das Sampling von Farboberflächen mit bilinearer Filterung, wobei sie sich auf feste Texel-Footprints verlassen, um benachbarte Samples natürlich über ein Bild hinweg zu mischen. Die Erhöhung der internen Rendering-Auflösung vervielfacht die Anzahl der Texel im gleichen Bildschirmbereich, was die räumliche Reichweite des Filters verringert. Anstelle von weichen Übergängen erzeugten hochskalierte Spiele blockartige, ungleichmäßig verteilte Halos. Darüber hinaus ließen Vulkan Render-Target-Cast-Kopien eine Barriere gegen vorangegangene Farbschreibvorgänge aus, was zu Read-after-Write-Gefahren auf der Hardware führte."
+    },
+    {
+      "type": "heading",
+      "text": "Mipmapped Render-Targets und Shader LOD-Steuerung"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um die nativen Sampling-Proportionen wiederherzustellen, ohne das hochauflösende Rendering zu beeinträchtigen, weisen sowohl die OpenGL- als auch die Vulkan-Backends nun Mipmaps für hochskalierte Farboberflächen zu und generieren diese. Der Renderer übergibt den Auflösungsskalierungsfaktor und einen logarithmischen Level-of-Detail-Wert über Uniform-Blöcke an die Fragment-Stufe. Im Shader-Übersetzer identifiziert eine Analyse-Heuristik Durchgänge, bei denen eine Oberfläche mehrfach abgetastet wird, was auf einen beabsichtigten Filterungsdurchgang hinweist. Der Übersetzer leitet dann Textur-Sampling-Anweisungen auf das berechnete Mip-Level um, wodurch die Taps den ursprünglichen Hardware-Footprint beibehalten können. Zusätzlich erzwingt der Vulkan-Oberflächen-Cache nun Pipeline-Barrieren vor Kopiervorgängen, um Synchronisationsgefahren zu beheben."
+    },
+    {
+      "type": "heading",
+      "text": "Glattere visuelle Effekte und grafische Parität"
+    },
+    {
+      "type": "paragraph",
+      "text": "Diese Anpassungen eliminieren harte Banding-Effekte und räumliche Verschiebungen bei Post-Processing-Durchgängen, wenn Spieler die Auflösungsmultiplikatoren erhöhen. Bei Tests mit Titeln wie Hatsune Miku: Project DIVA X bei 2-facher Auflösung änderten sich UI-Leuchteffekte und specular Bloom von groben, versetzten Kästchen zu glatter und korrekt zentrierter Beleuchtung. Messungen über Test-Frames hinweg zeigten, dass der mittlere Glow-zu-Dreieck-Versatz bei doppelter Auflösung von 3,92 Pixeln auf 3,20 Pixel sank. Die Änderung erreicht zudem eine visuelle Parität zwischen den Vulkan- und OpenGL-Implementierungen und stellt sicher, dass beide Backends konsistente Filterergebnisse liefern, egal ob sie in der ursprünglichen Vita-Auflösung oder mit hohen Multiplikatoren betrieben werden."
+    },
+    {
+      "type": "heading",
+      "text": "Shader-Cache-Invalidierung und Validierungsergebnisse"
+    },
+    {
+      "type": "paragraph",
+      "text": "Da diese Filter-Heuristiken die SPIR-V-Anweisungsgenerierung anpassen und neue Uniform-Block-Layouts einführen, hat Vita3K seine interne Shader-Cache-Version auf 16 angehoben. Bestehende Shader-Pipelines werden beim Start automatisch neu kompiliert. Die Synchronisations-Fixes wurden mithilfe von Vulkan-Validierungstools bestätigt, die berichteten, dass die Warnungen vor Cast-Path-Gefahren von zehn auf null fielen. Während Capture-Tools wie RenderDoc die Race-Condition durch Serialisierung von GPU-Befehlswiederholungen während der Inspektion maskierten, verhindern die eingefügten Barrieren direkt eine Pipeline-Datenkorruption auf physischer Desktop-Hardware, einschließlich moderner Grafikkarten wie der AMD RX 9070 XT."
+    }
+  ]
+}

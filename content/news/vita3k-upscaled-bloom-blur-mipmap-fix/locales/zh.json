@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "修复 Vita3K 中的升频模糊与泛光伪影",
+  "summary": "Vita3K 现在通过为渲染目标生成 mipmap，在升频过程中保留原始纹理过滤覆盖范围，从而解决了模糊和泛光通道失真的问题。",
+  "heroAlt": "一台放置在干净平坦表面上的 PlayStation Vita 手持游戏机，屏幕处于显示状态。",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "升频",
+    "bloom",
+    "泛光",
+    "Vulkan",
+    "texture filtering",
+    "纹理过滤",
+    "shader recompilation"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4425",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "高分辨率下的过滤覆盖范围损坏"
+    },
+    {
+      "type": "paragraph",
+      "text": "当 Vita3K 在高于原生分辨率下渲染场景时，泛光、模糊和辉光等后期处理效果往往会出现明显的视觉退化。PlayStation Vita 游戏引擎通常通过双线性过滤采样颜色表面来实现这些效果，依赖固定的纹理像素覆盖范围在图像中自然地混合相邻采样。提高内部渲染分辨率会增加相同屏幕空间内的纹理像素数量，从而缩小过滤器的空间覆盖范围。升频后的游戏产生的不再是柔和的过渡，而是块状且分布不均的光晕。此外，Vulkan 渲染目标转换副本省略了针对先前颜色写入的屏障，导致硬件上出现写后读（read-after-write）风险。"
+    },
+    {
+      "type": "heading",
+      "text": "Mipmap 渲染目标与着色器 LOD 控制"
+    },
+    {
+      "type": "paragraph",
+      "text": "为了在不影响高分辨率渲染的情况下恢复原始采样比例，OpenGL 和 Vulkan 后端现在都会为升频后的颜色表面分配并生成 mipmap。渲染器通过 uniform block 将分辨率缩放因子和对数细节级别（LOD）值传递给片段阶段。在着色器转换器中，分析启发式算法会识别出表面被多次采样的通道，从而标记出有意的过滤通道。随后，转换器将纹理采样指令指向计算出的 mip 级别，使采样点能够保持原始硬件的覆盖范围。此外，Vulkan 表面缓存现在会在复制操作前强制执行流水线屏障，以解决同步风险。"
+    },
+    {
+      "type": "heading",
+      "text": "更平滑的视觉效果与图形一致性"
+    },
+    {
+      "type": "paragraph",
+      "text": "这些调整消除了玩家提高分辨率倍数时后期处理通道中出现的严重条带和空间漂移。在《初音未来：歌姬计划 X》（Hatsune Miku: Project DIVA X）等游戏于 2 倍分辨率下进行的测试中，UI 辉光和镜面泛光从粗糙、偏移的方块转变为平滑且居中准确的光照。跨测试帧的测量显示，在双倍分辨率下，中位辉光到三角形的偏移量从 3.92 像素下降到了 3.20 像素。此项更改还实现了 Vulkan 和 OpenGL 实现之间的视觉一致性，确保两个后端无论是在原始 Vita 分辨率还是高倍率下运行，都能产生一致的过滤结果。"
+    },
+    {
+      "type": "heading",
+      "text": "着色器缓存失效与验证结果"
+    },
+    {
+      "type": "paragraph",
+      "text": "由于这些过滤启发式算法调整了 SPIR-V 指令生成并引入了新的 uniform block 布局，Vita3K 将其内部着色器缓存版本提升至 16。现有的着色器流水线将在启动时自动重新编译。同步修复已通过 Vulkan 验证工具确认，报告显示转换路径风险警告从十个降至零。虽然 RenderDoc 等捕获工具在检查过程中通过序列化 GPU 命令重放掩盖了竞争条件，但插入的屏障直接防止了物理桌面硬件（包括 AMD RX 9070 XT 等现代显卡）上的流水线数据损坏。"
+    }
+  ]
+}

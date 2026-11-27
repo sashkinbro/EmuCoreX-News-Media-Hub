@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Memperbaiki Artefak Blur dan Bloom yang Terdistorsi pada Vita3K",
+  "summary": "Vita3K kini mempertahankan footprint penyaringan tekstur asli selama upscaling dengan membuat mipmap untuk render target, sehingga mengatasi blur dan bloom pass yang terdistorsi.",
+  "heroAlt": "Konsol genggam PlayStation Vita diletakkan di atas permukaan datar yang bersih dengan layar yang menyala.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "peningkatan resolusi",
+    "bloom",
+    "Vulkan",
+    "texture filtering",
+    "penyaringan tekstur",
+    "shader recompilation",
+    "rekompilasi shader"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4425",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Footprint Penyaringan yang Rusak pada Resolusi Lebih Tinggi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ketika Vita3K merender adegan di atas resolusi asli, efek pasca-pemrosesan seperti bloom, blur, dan glow sering kali mengalami penurunan visual yang nyata. Mesin game PlayStation Vita sering mengimplementasikan efek ini dengan mengambil sampel permukaan warna menggunakan penyaringan bilinear, yang mengandalkan footprint texel tetap untuk memadukan sampel yang berdekatan di seluruh gambar secara alami. Meningkatkan resolusi rendering internal melipatgandakan jumlah texel di ruang layar yang sama, yang memperkecil jangkauan spasial filter tersebut. Alih-alih transisi yang halus, game yang di-upscale menghasilkan halo yang kotak-kotak dan terdistribusi tidak merata. Selain itu, salinan cast render target Vulkan menghilangkan barrier terhadap penulisan warna sebelumnya, sehingga menciptakan bahaya read-after-write pada perangkat keras."
+    },
+    {
+      "type": "heading",
+      "text": "Render Target dengan Mipmap dan Kontrol LOD Shader"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk mengembalikan proporsi pengambilan sampel asli tanpa mengorbankan rendering resolusi tinggi, backend OpenGL dan Vulkan kini mengalokasikan serta membuat mipmap untuk permukaan warna yang di-upscale. Renderer meneruskan faktor skala resolusi dan nilai level-of-detail logaritmik ke tahap fragment melalui uniform block. Dalam penerjemah shader, heuristik analisis mengidentifikasi pass di mana permukaan diambil sampelnya beberapa kali, yang menandakan pass penyaringan yang disengaja. Penerjemah kemudian mengarahkan instruksi pengambilan sampel tekstur ke level mip yang dihitung, memungkinkan tap untuk mempertahankan footprint perangkat keras asli. Selain itu, cache permukaan Vulkan kini menerapkan pipeline barrier sebelum operasi penyalinan untuk mengatasi bahaya sinkronisasi."
+    },
+    {
+      "type": "heading",
+      "text": "Efek Visual yang Lebih Halus dan Kesetaraan Grafis"
+    },
+    {
+      "type": "paragraph",
+      "text": "Penyesuaian ini menghilangkan banding yang kasar dan pergeseran spasial pada pass pasca-pemrosesan saat pemain meningkatkan pengali resolusi. Dalam pengujian pada judul seperti Hatsune Miku: Project DIVA X pada resolusi 2x, glow UI dan specular bloom berubah dari kotak yang kasar dan tidak sejajar menjadi pencahayaan yang halus dan terpusat dengan benar. Pengukuran di seluruh frame pengujian menunjukkan median offset glow-to-triangle turun dari 3,92 piksel menjadi 3,20 piksel pada resolusi ganda. Perubahan ini juga mencapai kesetaraan visual antara implementasi Vulkan dan OpenGL, memastikan kedua backend menghasilkan hasil penyaringan yang konsisten baik saat beroperasi pada resolusi asli Vita maupun pengali tinggi."
+    },
+    {
+      "type": "heading",
+      "text": "Invalidasi Cache Shader dan Hasil Validasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Karena heuristik penyaringan ini menyesuaikan pembuatan instruksi SPIR-V dan memperkenalkan tata letak uniform block baru, Vita3K menaikkan versi cache shader internalnya ke 16. Pipeline shader yang ada akan melakukan rekompilasi secara otomatis saat peluncuran. Perbaikan sinkronisasi dikonfirmasi menggunakan alat validasi Vulkan, yang melaporkan bahwa peringatan bahaya cast-path turun dari sepuluh menjadi nol. Meskipun alat tangkapan seperti RenderDoc menutupi kondisi race dengan melakukan serialisasi pemutaran ulang perintah GPU selama inspeksi, barrier yang disisipkan secara langsung mencegah kerusakan data pipeline pada perangkat keras desktop fisik, termasuk kartu grafis modern seperti AMD RX 9070 XT."
+    }
+  ]
+}

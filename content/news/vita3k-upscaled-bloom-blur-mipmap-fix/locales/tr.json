@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K'ta Ölçeklendirilmiş Bulanıklık ve Bloom Hatalarını Düzeltme",
+  "summary": "Vita3K artık render hedefleri için mipmap'ler oluşturarak ölçeklendirme sırasında orijinal doku filtreleme ayak izlerini koruyor ve bozuk bulanıklık ile bloom geçişlerini çözüyor.",
+  "heroAlt": "Temiz ve düz bir yüzey üzerinde ekranı görünen PlayStation Vita el konsolu.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "ölçeklendirme",
+    "bloom",
+    "Vulkan",
+    "texture filtering",
+    "doku filtreleme",
+    "shader recompilation",
+    "shader yeniden derleme"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4425",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Daha Yüksek Çözünürlüklerde Bozuk Filtreleme Ayak İzleri"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vita3K sahneleri doğal çözünürlüğün üzerinde render ettiğinde, bloom, bulanıklık ve parıltı gibi işlem sonrası (post-processing) efektler genellikle gözle görülür görsel bozulmalara maruz kalıyordu. PlayStation Vita oyun motorları bu efektleri genellikle renk yüzeylerini çift doğrusal (bilinear) filtreleme ile örnekleyerek uygular ve görüntü genelinde bitişik örnekleri doğal bir şekilde harmanlamak için sabit teksel ayak izlerine güvenir. Dahili render çözünürlüğünü artırmak, aynı ekran alanındaki teksel sayısını çoğaltır ve bu da filtrenin uzamsal erişimini daraltır. Ölçeklendirilmiş oyunlar, yumuşak geçişler yerine bloklu ve düzensiz dağılmış haleler üretiyordu. Ayrıca, Vulkan render hedefi döküm kopyaları, önceki renk yazımlarına karşı bir bariyeri ihmal ederek donanım üzerinde yazma sonrası okuma (read-after-write) tehlikeleri oluşturuyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Mipmap'li Render Hedefleri ve Shader LOD Kontrolü"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yüksek çözünürlüklü render işleminden ödün vermeden doğal örnekleme oranlarını geri yüklemek için hem OpenGL hem de Vulkan arka uçları artık ölçeklendirilmiş renk yüzeyleri için mipmap'ler ayırıyor ve oluşturuyor. Render motoru, çözünürlük ölçek faktörünü ve logaritmik detay seviyesi (LOD) değerini uniform bloklar aracılığıyla fragment aşamasına iletir. Shader çeviricisinde, bir analiz buluşsal yöntemi (heuristic), bir yüzeyin birden çok kez örneklendiği geçişleri tanımlayarak kasıtlı bir filtreleme geçişine işaret eder. Çevirici daha sonra doku örnekleme talimatlarını hesaplanan mip seviyesine yönlendirerek, örneklerin orijinal donanım ayak izini korumasını sağlar. Ek olarak, Vulkan yüzey önbelleği artık senkronizasyon tehlikelerini çözmek için kopyalama işlemlerinden önce pipeline bariyerlerini zorunlu kılar."
+    },
+    {
+      "type": "heading",
+      "text": "Daha Pürüzsüz Görsel Efektler ve Grafik Eşitliği"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu ayarlamalar, oyuncular çözünürlük çarpanlarını artırdığında işlem sonrası geçişlerdeki sert bantlaşmayı ve uzamsal kaymayı ortadan kaldırır. Hatsune Miku: Project DIVA X gibi oyunlarda 2x çözünürlükte yapılan testlerde, arayüz parıltıları ve speküler bloom, pürüzlü ve kaymış kutulardan pürüzsüz ve düzgün ortalanmış aydınlatmaya dönüştü. Test kareleri üzerindeki ölçümler, parıltıdan üçgene olan medyan ofsetin çift çözünürlükte 3.92 pikselden 3.20 piksele düştüğünü gösterdi. Bu değişiklik ayrıca Vulkan ve OpenGL uygulamaları arasında görsel eşitliği sağlayarak, her iki arka ucun da orijinal Vita çözünürlüğünde veya yüksek çarpanlarda çalışırken tutarlı filtreleme sonuçları üretmesini garanti eder."
+    },
+    {
+      "type": "heading",
+      "text": "Shader Önbelleği Geçersiz Kılma ve Doğrulama Sonuçları"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu filtreleme buluşsal yöntemleri SPIR-V talimat üretimini ayarladığı ve yeni uniform blok düzenleri getirdiği için, Vita3K dahili shader önbellek sürümünü 16'ya yükseltti. Mevcut shader pipeline'ları başlatma sırasında otomatik olarak yeniden derlenecektir. Senkronizasyon düzeltmeleri, döküm yolu tehlike uyarılarının ondan sıfıra düştüğünü bildiren Vulkan doğrulama araçları kullanılarak onaylandı. RenderDoc gibi yakalama araçları, inceleme sırasında GPU komut tekrarlarını sıralayarak yarış durumunu maskelese de, eklenen bariyerler AMD RX 9070 XT gibi modern grafik kartları da dahil olmak üzere fiziksel masaüstü donanımlarında pipeline veri bozulmasını doğrudan önler."
+    }
+  ]
+}

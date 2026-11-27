@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "fr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Correction du flou et des artefacts de bloom lors de l'upscaling dans Vita3K",
+  "summary": "Vita3K préserve désormais les empreintes de filtrage de texture originales lors de l'upscaling en générant des mipmaps pour les cibles de rendu, résolvant ainsi les passes de flou et de bloom déformées.",
+  "heroAlt": "Console portable PlayStation Vita posée sur une surface plane et propre affichant son écran.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "mise à l'échelle",
+    "bloom",
+    "Vulkan",
+    "texture filtering",
+    "filtrage de texture",
+    "shader recompilation",
+    "recompilation de shaders"
+  ],
+  "categoryLabels": {
+    "emulation": "Émulation",
+    "graphics": "Graphismes"
+  },
+  "sourceLabels": {
+    "change": "Pull request Vita3K #4425",
+    "implementation": "Correctif et revue"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Empreintes de filtrage défectueuses aux résolutions élevées"
+    },
+    {
+      "type": "paragraph",
+      "text": "Lorsque Vita3K rendait des scènes au-delà de la résolution native, les effets de post-traitement tels que le bloom, le flou et la lueur subissaient souvent une dégradation visuelle notable. Les moteurs de jeu de la PlayStation Vita implémentent fréquemment ces effets en échantillonnant des surfaces de couleur avec un filtrage bilinéaire, s'appuyant sur des empreintes de texels fixes pour mélanger naturellement les échantillons adjacents à travers une image. L'augmentation de la résolution de rendu interne multiplie le nombre de texels sur le même espace d'écran, ce qui réduit la portée spatiale du filtre. Au lieu de transitions douces, les jeux mis à l'échelle produisaient des halos pixélisés et inégalement répartis. De plus, les copies de cibles de rendu Vulkan omettaient une barrière contre les écritures de couleur précédentes, créant des risques de lecture après écriture sur le matériel."
+    },
+    {
+      "type": "heading",
+      "text": "Cibles de rendu avec mipmaps et contrôle du LOD des shaders"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pour restaurer les proportions d'échantillonnage natives sans compromettre le rendu haute résolution, les backends OpenGL et Vulkan allouent et génèrent désormais des mipmaps pour les surfaces de couleur mises à l'échelle. Le moteur de rendu transmet le facteur d'échelle de résolution et une valeur logarithmique de niveau de détail (LOD) à l'étape de fragmentation via des uniform blocks. Dans le traducteur de shaders, une heuristique d'analyse identifie les passes où une surface est échantillonnée plusieurs fois, signalant une passe de filtrage intentionnelle. Le traducteur dirige ensuite les instructions d'échantillonnage de texture vers le niveau de mip calculé, permettant aux taps de maintenir l'empreinte matérielle d'origine. De plus, le cache de surface Vulkan impose désormais des barrières de pipeline avant les opérations de copie pour résoudre les risques de synchronisation."
+    },
+    {
+      "type": "heading",
+      "text": "Effets visuels plus fluides et parité graphique"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ces ajustements éliminent les bandes brutales et la dérive spatiale dans les passes de post-traitement lorsque les joueurs augmentent les multiplicateurs de résolution. Lors de tests sur des titres comme Hatsune Miku: Project DIVA X à une résolution 2x, les lueurs de l'interface utilisateur et le bloom spéculaire sont passés de boîtes rugueuses et décalées à un éclairage fluide et correctement centré. La mesure sur les images de test a montré que le décalage médian entre la lueur et le triangle est passé de 3,92 pixels à 3,20 pixels en double résolution. Le changement permet également d'atteindre une parité visuelle entre les implémentations Vulkan et OpenGL, garantissant que les deux backends produisent des résultats de filtrage cohérents, qu'ils fonctionnent à la résolution originale de la Vita ou avec des multiplicateurs élevés."
+    },
+    {
+      "type": "heading",
+      "text": "Invalidation du cache de shaders et résultats de validation"
+    },
+    {
+      "type": "paragraph",
+      "text": "Parce que ces heuristiques de filtrage ajustent la génération d'instructions SPIR-V et introduisent de nouvelles dispositions d'uniform blocks, Vita3K a fait passer sa version interne de cache de shaders à 16. Les pipelines de shaders existants seront automatiquement recompilés au lancement. Les correctifs de synchronisation ont été confirmés à l'aide d'outils de validation Vulkan, qui ont rapporté que les avertissements de risque sur le chemin de copie sont passés de dix à zéro. Bien que les outils de capture comme RenderDoc masquent la condition de course en sérialisant les relectures de commandes GPU pendant l'inspection, les barrières insérées empêchent directement la corruption des données du pipeline sur le matériel de bureau physique, y compris les cartes graphiques modernes telles que l'AMD RX 9070 XT."
+    }
+  ]
+}

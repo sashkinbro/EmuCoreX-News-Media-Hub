@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-upscaled-bloom-blur-mipmap-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Fixing Upscaled Blur and Bloom Artifacts in Vita3K",
+  "summary": "Vita3K now preserves original texture filtering footprints during upscaling by generating mipmaps for render targets, resolving distorted blur and bloom passes.",
+  "heroAlt": "PlayStation Vita handheld console resting on a clean flat surface showing its screen.",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita",
+    "upscaling",
+    "bloom",
+    "Vulkan",
+    "texture filtering",
+    "shader recompilation"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4425",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Broken Filtering Footprints at Higher Resolutions"
+    },
+    {
+      "type": "paragraph",
+      "text": "When Vita3K rendered scenes above native resolution, post-processing effects such as bloom, blur, and glow often suffered noticeable visual degradation. PlayStation Vita game engines frequently implement these effects by sampling color surfaces with bilinear filtering, relying on fixed texel footprints to naturally blend adjacent samples across an image. Increasing the internal rendering resolution multiplies the number of texels across the same screen space, which shrinks the filter's spatial reach. Instead of soft transitions, upscaled games produced blocky, unevenly distributed halos. Furthermore, Vulkan render target cast copies omitted a barrier against preceding color writes, creating read-after-write hazards on hardware."
+    },
+    {
+      "type": "heading",
+      "text": "Mipmapped Render Targets and Shader LOD Control"
+    },
+    {
+      "type": "paragraph",
+      "text": "To restore native sampling proportions without compromising high-resolution rendering, both the OpenGL and Vulkan backends now allocate and generate mipmaps for upscaled color surfaces. The renderer passes the resolution scale factor and a logarithmic level-of-detail value to the fragment stage through uniform blocks. In the shader translator, an analysis heuristic identifies passes where a surface is sampled multiple times, signaling an intentional filtering pass. The translator then directs texture sampling instructions toward the calculated mip level, allowing taps to maintain the original hardware footprint. Additionally, the Vulkan surface cache now enforces pipeline barriers before copy operations to resolve synchronization hazards."
+    },
+    {
+      "type": "heading",
+      "text": "Smoother Visual Effects and Graphic Parity"
+    },
+    {
+      "type": "paragraph",
+      "text": "These adjustments eliminate harsh banding and spatial drift in post-processing passes when players increase resolution multipliers. In testing on titles like Hatsune Miku: Project DIVA X at 2x resolution, UI glows and specular bloom shifted from rough, offset boxes to smooth and properly centered lighting. Measurement across test frames showed the median glow-to-triangle offset drop from 3.92 pixels down to 3.20 pixels at double resolution. The change also achieves visual parity between the Vulkan and OpenGL implementations, ensuring both backends produce consistent filtering results whether operating at original Vita resolution or high multipliers."
+    },
+    {
+      "type": "heading",
+      "text": "Shader Cache Invalidation and Validation Results"
+    },
+    {
+      "type": "paragraph",
+      "text": "Because these filtering heuristics adjust SPIR-V instruction generation and introduce new uniform block layouts, Vita3K bumped its internal shader cache version to 16. Existing shader pipelines will recompile automatically upon launch. The synchronization fixes were confirmed using Vulkan validation tooling, which reported that cast-path hazard warnings fell from ten to zero. While capture tools like RenderDoc masked the race condition by serializing GPU command replays during inspection, the inserted barriers directly prevent pipeline data corruption on physical desktop hardware, including modern graphics cards such as the AMD RX 9070 XT."
+    }
+  ]
+}
