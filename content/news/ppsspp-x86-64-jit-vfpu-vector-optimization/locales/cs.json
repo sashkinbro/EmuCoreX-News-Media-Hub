@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimalizace vektorových operací VFPU pro x86-64 JIT",
+  "summary": "PPSSPP zlepšuje výkon x86-64 sladěním svého IR JIT se zpracováním vektorů v ARM64, čímž výrazně snižuje režii instrukcí u komplexních maticových operací a skalárních součinů.",
+  "heroAlt": "Detail přední strany PlayStation Portable, zobrazující směrový ovladač a analogovou páčku.",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "emulace",
+    "vektorové operace",
+    "výkon",
+    "maticové násobení"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23194",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Snížení režie instrukcí VFPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Vektorová jednotka s plovoucí řádovou čárkou (VFPU) v PSP je komplexní komponenta, která zpracovává maticové transformace a vektorovou matematiku, což je kritické pro 3D grafiku a fyziku. Dříve JIT kompilátor pro x86-64 Intermediate Representation (IR) zpracovával určité vektorové instrukce, jako jsou maticová násobení (vmmul) a vektorové součiny (vcrsp.t), jejich rozkladem na mnoho menších, jednotlivých operací. Například jediná instrukce vmmul.q mohla vést až ke 45 instrukcím IR. Tento vysoký počet instrukcí zvyšoval režii JIT při zpracování a provádění, což vedlo k méně efektivnímu generování kódu pro hry, které jsou silně závislé na těchto specifických schopnostech VFPU."
+    },
+    {
+      "type": "heading",
+      "text": "Sjednocená implementace IR a SIMD"
+    },
+    {
+      "type": "paragraph",
+      "text": "Tato aktualizace uvádí backend x86-64 do souladu s optimalizacemi dříve implementovanými pro ARM64. Zavedením operací Vec4VfpuMultiDot a Vec4VfpuCross může nyní JIT používat specializovanou rutinu pro skalární součin. Na hardwaru x86-64 nyní emulátor využívá specifické instrukce SIMD, jako jsou CMPPS (Compare Packed Single-Precision Floating-Point Values) a MOVMSKPS (Move Mask from Packed Single-Precision Floating-Point Values) pro vektorové porovnávání. Tento architektonický posun drasticky snižuje nároky na IR; výše zmíněná instrukce vmmul.q byla zefektivněna ze 45 instrukcí na pouhých 13. Implementace také obsahuje logiku pro přeskakování zbytečných výpočtů v kanálech, které nepřispívají ke konečnému výsledku."
+    },
+    {
+      "type": "heading",
+      "text": "Dopad na výkon a přesnost"
+    },
+    {
+      "type": "paragraph",
+      "text": "Pro hráče se tyto změny přímo promítají do zlepšené rychlosti emulace, zejména u titulů, které ve velké míře využívají VFPU pro geometrické nebo fyzikální výpočty. Testování výkonu napříč několika hrami ukázalo snížení doby provádění JIT na snímek. Zatímco některé hry zaznamenaly mírné zlepšení o 3 % až 17 %, tituly, které jsou silně závislé na těchto vektorových instrukcích, zaznamenaly téměř 50% snížení doby zpracování JIT. Navzdory těmto významným strukturálním změnám v logice JIT zůstává přesnost emulace prioritou. Nová implementace byla ověřena prostřednictvím přísného testování CPUEquivalence, čímž bylo zajištěno, že výsledky optimalizovaného x86-64 JIT odpovídají výstupu interpretu bit po bitu napříč různými velikostmi a orientacemi matic."
+    },
+    {
+      "type": "heading",
+      "text": "Technické nuance a ověření"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktualizace zavádí novou konfigurační volbu vfpuDotRuns pro správu způsobu, jakým jsou zpracovávány po sobě jdoucí instrukce skalárního součinu. Na x86-64 kompilátor určuje, zda je efektivnější seskupit je do operace multi-dot, nebo je ponechat jako jednotlivé skalární součiny na základě dostupnosti registrů Vec4. Je důležité poznamenat, že tyto specifické optimalizace jsou exkluzivní pro 64bitový backend x86; 32bitový JIT x86 postrádá nezbytnou rutinu pro skalární součin a nadále používá starší cestu IR. Vývojáři ověřili stabilitu těchto změn pomocí pspautotests a jednotkových testů, jako je VFPUDotJit, čímž potvrdili, že okrajové případy zahrnující NaN (Not-a-Number) a překrývající se operandy jsou zpracovávány konzistentně s předchozími verzemi."
+    }
+  ]
+}

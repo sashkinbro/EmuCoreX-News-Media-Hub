@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimización de operaciones vectoriales VFPU para JIT x86-64",
+  "summary": "PPSSPP mejora el rendimiento en x86-64 al alinear su IR JIT con el manejo vectorial de ARM64, reduciendo significativamente la sobrecarga de instrucciones para operaciones complejas de matrices y productos punto.",
+  "heroAlt": "Un primer plano de la parte frontal de la PlayStation Portable, mostrando la cruceta direccional y el stick analógico.",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "emulación",
+    "operaciones vectoriales",
+    "rendimiento",
+    "multiplicación de matrices"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Pull request #23194 de PPSSPP",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Reducción de la sobrecarga de instrucciones VFPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "La unidad de punto flotante vectorial (VFPU) de la PSP es un componente complejo que maneja transformaciones de matrices y matemáticas vectoriales, las cuales son críticas para los gráficos 3D y la física. Anteriormente, el compilador JIT de representación intermedia (IR) para x86-64 manejaba ciertas instrucciones vectoriales, como multiplicaciones de matrices (vmmul) y productos cruzados (vcrsp.t), descomponiéndolas en muchas operaciones individuales más pequeñas. Por ejemplo, una sola instrucción vmmul.q podía resultar en hasta 45 instrucciones IR. Este elevado número de instrucciones aumentaba la sobrecarga para que el JIT las procesara y ejecutara, lo que derivaba en una generación de código menos eficiente para juegos que dependen en gran medida de estas capacidades específicas de la VFPU."
+    },
+    {
+      "type": "heading",
+      "text": "Implementación unificada de IR y SIMD"
+    },
+    {
+      "type": "paragraph",
+      "text": "Esta actualización alinea el backend de x86-64 con las optimizaciones implementadas previamente para ARM64. Al introducir las operaciones Vec4VfpuMultiDot y Vec4VfpuCross, el JIT ahora puede utilizar una rutina especializada de producto punto. En hardware x86-64, el emulador utiliza ahora instrucciones SIMD específicas como CMPPS (Compare Packed Single-Precision Floating-Point Values) y MOVMSKPS (Move Mask from Packed Single-Precision Floating-Point Values) para comparaciones vectoriales. Este cambio arquitectónico reduce drásticamente la huella de IR; la mencionada instrucción vmmul.q se ha optimizado de 45 instrucciones a solo 13. La implementación también incluye lógica para omitir cálculos innecesarios en carriles que no contribuyen al resultado final."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto en el rendimiento y la precisión"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para los jugadores, estos cambios se traducen directamente en una mayor velocidad de emulación, particularmente en títulos que hacen un uso extensivo de la VFPU para cálculos de geometría o física. Las pruebas de rendimiento en varios juegos mostraron una reducción en el tiempo de ejecución del JIT por fotograma. Si bien algunos juegos vieron mejoras modestas del 3% al 17%, los títulos que dependen fuertemente de estas instrucciones vectoriales experimentaron una reducción de casi el 50% en el tiempo de procesamiento del JIT. A pesar de estos cambios estructurales significativos en la lógica del JIT, la precisión de la emulación sigue siendo una prioridad. La nueva implementación ha sido verificada mediante rigurosas pruebas de CPUEquivalence, asegurando que los resultados del JIT optimizado para x86-64 coincidan bit a bit con la salida del intérprete en varios tamaños y orientaciones de matrices."
+    },
+    {
+      "type": "heading",
+      "text": "Matices técnicos y verificación"
+    },
+    {
+      "type": "paragraph",
+      "text": "La actualización introduce una nueva opción de configuración, vfpuDotRuns, para gestionar cómo se manejan las instrucciones consecutivas de producto punto. En x86-64, el compilador determina si es más eficiente agruparlas en una operación de producto multipunto o mantenerlas como puntos individuales según la disponibilidad de registros Vec4. Es importante señalar que estas optimizaciones específicas son exclusivas del backend x86 de 64 bits; el JIT x86 de 32 bits carece de la rutina de punto necesaria y continúa utilizando la ruta IR anterior. Los desarrolladores verificaron la estabilidad de estos cambios utilizando pspautotests y pruebas unitarias como VFPUDotJit, confirmando que los casos extremos que involucran NaNs (Not-a-Number) y operandos superpuestos se manejan de manera consistente con versiones anteriores."
+    }
+  ]
+}

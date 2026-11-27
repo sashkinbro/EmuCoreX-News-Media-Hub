@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimalizace přestaveb stencil bufferu a testů ohraničujících rámečků v grafickém enginu",
+  "summary": "Nové optimalizace v PPSSPP zlepšují výkon ve hře Silent Hill a dalších titulech díky vylepšení přestaveb stencil bufferu a zefektivnění výpočtů ohraničujících rámečků.",
+  "heroAlt": "Detail přední strany PlayStation Portable zobrazující směrový ovladač a obrazovku.",
+  "searchKeywords": [
+    "PPSSPP",
+    "emulátor",
+    "grafický engine",
+    "stencil buffer",
+    "ohraničující rámeček",
+    "bounding box",
+    "výkon",
+    "optimalizace"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23193",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Neefektivita ve správě stencil bufferu a culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Grafický engine PlayStation Portable často vyžaduje komplexní reinterpretaci bufferu, kde jsou data zapsaná jako barva později interpretována jako informace pro stencil. Dříve, když hra provedla operaci reinterpretace, emulátor spustil přestavbu stencil bufferu pro celou vyrovnávací paměť. Na mobilních GPU, kterým chybí export stencilu ve fragment shaderu, vyžadoval tento proces vykreslení přes celou obrazovku pro každý bit stencilu, což spotřebovávalo značné prostředky GPU. U titulů jako Silent Hill: Shattered Memories, které v každém snímku reinterpretují malé stínové mapy do rohů bufferu, mohla tato režie tvořit téměř polovinu celkového času snímku. Kromě toho smyčka testu ohraničujícího rámečku (bounding box), což je kritická součást pro culling, trpěla vysokým počtem instrukcí na architekturách ARM64 kvůli neefektivnímu omezování indexů vrcholů a kontrolám ořezávání hloubky."
+    },
+    {
+      "type": "heading",
+      "text": "Zpřesnění logiky přestavby a cullingu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby se tyto úzké hrdla vyřešily, byl proces přestavby stencilu upraven tak, aby sledoval konkrétní obdélník ovlivněný operací reinterpretace. Místo zpracování celého bufferu nyní engine pouze kopíruje a přestavuje upravenou oblast. Pro GPU bez exportu stencilu engine před provedením bitových průchodů vynuluje konkrétní obdélník pomocí vykreslovacího volání (draw call). Současně byla smyčka testu ohraničujícího rámečku refaktorována tak, aby odstranila redundantní omezení a využila šablony pro ořezávání hloubky. Tato architektonická změna snížila počet instrukcí smyčky na ARM64 ze 114 na 84, což kompilátoru umožnilo lépe vektorizovat kód. Tato vylepšení zajišťují, že emulátor tráví méně času redundantními výpočty při zachování vysoké přesnosti vykreslování."
+    },
+    {
+      "type": "heading",
+      "text": "Nárůst výkonu pro mobilní hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dopad těchto změn je nejvíce patrný na mobilním hardwaru střední třídy, jako jsou zařízení vybavená CPU Cortex-A53 a GPU Adreno 506. Obě hry Silent Hill zaznamenávají nárůst výkonu mezi 20 % a 40 % ve scénářích zahrnujících reinterpretaci stencilu. Optimalizace ohraničujících rámečků poskytují širší přínos, což přináší přibližně 1,4% zrychlení v různých hrách, kde jsou testy cullingu významnou součástí vlákna emulátoru. Byly implementovány i menší optimalizace, jako je přidání kontroly fronty vykreslování před prováděním virtuálních volání ve funkci flush a opětovné využití paměti v MemBlockInfo, aby se předešlo častým výpadkům stránek (page faults). Tyto úpravy společně snižují režii instrukcí ve hrách, které často načítají vyhledávací tabulky barev nebo vydávají mnoho malých vykreslovacích volání."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a standardy přesnosti"
+    },
+    {
+      "type": "paragraph",
+      "text": "Udržení přesnosti vykreslování bylo během těchto optimalizací prioritou. Nová logika částečné přestavby stencilu byla ověřena proti sadám výpisů celých snímků, aby se zajistily výsledky přesné na pixel napříč backendy Vulkan, OpenGL a Direct3D 11. Testování potvrdilo, že částečné přestavby produkují identický výstup jako předchozí metoda celého bufferu, a to i na mobilních zařízeních bez nativní podpory exportu stencilu. Změny ohraničujících rámečků byly podobně validovány prostřednictvím automatizovaných CI testů snímků, aby se zajistilo, že nedošlo k žádným regresím v geometrickém cullingu. I když softwarový renderer zůstává těmito konkrétními změnami GE nedotčen, celková vylepšení poskytují efektivnější cestu pro hardwarově akcelerované vykreslování napříč širokou škálou mobilních a desktopových platforem."
+    }
+  ]
+}

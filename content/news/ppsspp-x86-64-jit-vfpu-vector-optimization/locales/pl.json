@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optymalizacja operacji wektorowych VFPU dla JIT x86-64",
+  "summary": "PPSSPP poprawia wydajność x86-64 poprzez dostosowanie swojego IR JIT do obsługi wektorów w ARM64, znacząco redukując narzut instrukcji dla złożonych operacji macierzowych i iloczynów skalarnych.",
+  "heroAlt": "Zbliżenie na przedni panel PlayStation Portable, pokazujące krzyżak kierunkowy i gałkę analogową.",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "emulacja",
+    "operacje wektorowe",
+    "wydajność",
+    "mnożenie macierzy"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "Pull request PPSSPP #23194",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Redukcja narzutu instrukcji VFPU"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jednostka zmiennoprzecinkowa wektorowa (VFPU) w konsoli PSP to złożony komponent obsługujący transformacje macierzy i matematykę wektorową, które są kluczowe dla grafiki 3D i fizyki. Wcześniej kompilator JIT Intermediate Representation (IR) dla x86-64 obsługiwał niektóre instrukcje wektorowe, takie jak mnożenie macierzy (vmmul) i iloczyny wektorowe (vcrsp.t), rozbijając je na wiele mniejszych, pojedynczych operacji. Na przykład pojedyncza instrukcja vmmul.q mogła skutkować nawet 45 instrukcjami IR. Ta duża liczba instrukcji zwiększała narzut JIT podczas przetwarzania i wykonywania, co prowadziło do mniej wydajnego generowania kodu w grach intensywnie korzystających z tych konkretnych możliwości VFPU."
+    },
+    {
+      "type": "heading",
+      "text": "Ujednolicona implementacja IR i SIMD"
+    },
+    {
+      "type": "paragraph",
+      "text": "Ta aktualizacja dostosowuje backend x86-64 do optymalizacji wdrożonych wcześniej dla ARM64. Dzięki wprowadzeniu operacji Vec4VfpuMultiDot i Vec4VfpuCross, JIT może teraz korzystać ze specjalistycznej procedury iloczynu skalarnego. Na sprzęcie x86-64 emulator wykorzystuje teraz specyficzne instrukcje SIMD, takie jak CMPPS (Compare Packed Single-Precision Floating-Point Values) oraz MOVMSKPS (Move Mask from Packed Single-Precision Floating-Point Values) do porównań wektorowych. Ta zmiana architektoniczna drastycznie zmniejsza rozmiar IR; wspomniana wcześniej instrukcja vmmul.q została usprawniona z 45 instrukcji do zaledwie 13. Implementacja zawiera również logikę pomijania niepotrzebnych obliczeń w liniach, które nie przyczyniają się do uzyskania ostatecznego wyniku."
+    },
+    {
+      "type": "heading",
+      "text": "Wpływ na wydajność i dokładność"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dla graczy zmiany te przekładają się bezpośrednio na poprawę szybkości emulacji, szczególnie w tytułach, które w szerokim zakresie wykorzystują VFPU do obliczeń geometrycznych lub fizycznych. Testy wydajności w kilku grach wykazały skrócenie czasu wykonywania JIT na klatkę. Podczas gdy niektóre gry odnotowały umiarkowaną poprawę rzędu 3% do 17%, tytuły silnie zależne od tych instrukcji wektorowych doświadczyły niemal 50% redukcji czasu przetwarzania JIT. Pomimo tych znaczących zmian strukturalnych w logice JIT, dokładność emulacji pozostaje priorytetem. Nowa implementacja została zweryfikowana poprzez rygorystyczne testy CPUEquivalence, zapewniając, że wyniki zoptymalizowanego JIT x86-64 są identyczne bit po bicie z wynikami interpretera dla różnych rozmiarów i orientacji macierzy."
+    },
+    {
+      "type": "heading",
+      "text": "Techniczne niuanse i weryfikacja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aktualizacja wprowadza nową opcję konfiguracyjną, vfpuDotRuns, służącą do zarządzania sposobem obsługi kolejnych instrukcji iloczynu skalarnego. Na x86-64 kompilator określa, czy bardziej wydajne jest zgrupowanie ich w operację multi-dot, czy pozostawienie jako pojedynczych operacji dot, w oparciu o dostępność rejestrów Vec4. Należy zauważyć, że te konkretne optymalizacje są dostępne wyłącznie dla 64-bitowego backendu x86; 32-bitowy JIT x86 nie posiada niezbędnej procedury dot i nadal korzysta ze starszej ścieżki IR. Programiści zweryfikowali stabilność tych zmian przy użyciu pspautotests oraz testów jednostkowych, takich jak VFPUDotJit, potwierdzając, że przypadki brzegowe obejmujące wartości NaN (Not-a-Number) oraz nakładające się operandy są obsługiwane w sposób spójny z poprzednimi wersjami."
+    }
+  ]
+}

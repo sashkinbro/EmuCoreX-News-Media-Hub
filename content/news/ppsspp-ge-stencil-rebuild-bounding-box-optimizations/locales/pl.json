@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optymalizacja przebudowy stencil oraz testów bounding box w silniku graficznym",
+  "summary": "Nowe optymalizacje w PPSSPP poprawiają wydajność w Silent Hill i innych tytułach poprzez udoskonalenie przebudowy bufora stencil oraz usprawnienie obliczeń bounding box.",
+  "heroAlt": "Zbliżenie na przedni panel PlayStation Portable, pokazujące krzyżak kierunkowy i ekran.",
+  "searchKeywords": [
+    "PPSSPP",
+    "emulator",
+    "silnik graficzny",
+    "graphics engine",
+    "bufor stencil",
+    "stencil buffer",
+    "bounding box",
+    "wydajność",
+    "performance",
+    "optymalizacja"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23193",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Nieefektywności w zarządzaniu stencil i cullingiem"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silnik graficzny PlayStation Portable często wymaga złożonej reinterpretacji bufora, gdzie dane zapisane jako kolor są później traktowane jako informacje stencil. Wcześniej, gdy gra wykonywała operację reinterpretacji, emulator wyzwalał przebudowę pełnego bufora stencil. Na mobilnych GPU, którym brakuje eksportu stencil w shaderze fragmentów, proces ten wymagał rysowania pełnoekranowego dla każdego bitu stencil, zużywając znaczące zasoby GPU. W tytułach takich jak Silent Hill: Shattered Memories, które w każdej klatce reinterpretują małe mapy cieni do rogów bufora, narzut ten mógł stanowić niemal połowę całkowitego czasu klatki. Dodatkowo, pętla testu bounding box — kluczowy komponent dla cullingu — cierpiała z powodu wysokiej liczby instrukcji na architekturach ARM64 z powodu nieefektywnego ograniczania indeksów wierzchołków i kontroli przycinania głębi."
+    },
+    {
+      "type": "heading",
+      "text": "Udoskonalenie logiki przebudowy i cullingu"
+    },
+    {
+      "type": "paragraph",
+      "text": "Aby rozwiązać te wąskie gardła, proces przebudowy stencil został zmodyfikowany tak, aby śledził konkretny prostokąt dotknięty operacją reinterpretacji. Zamiast przetwarzać cały bufor, silnik kopiuje i przebudowuje teraz tylko zmodyfikowany obszar. Dla GPU bez eksportu stencil, silnik zeruje konkretny prostokąt za pomocą wywołania rysowania przed wykonaniem przejść bit po bicie. Jednocześnie pętla testu bounding box została zrefaktoryzowana, aby usunąć zbędne ograniczenia i wykorzystać szablony do przycinania głębi. Ta zmiana architektoniczna zredukowała liczbę instrukcji pętli na ARM64 ze 114 do 84, pozwalając kompilatorowi na lepszą wektoryzację kodu. Te udoskonalenia zapewniają, że emulator spędza mniej czasu na zbędnych obliczeniach, zachowując jednocześnie wysoką precyzję renderowania."
+    },
+    {
+      "type": "heading",
+      "text": "Wzrost wydajności dla sprzętu mobilnego"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wpływ tych zmian jest najbardziej widoczny na sprzęcie mobilnym średniej klasy, takim jak urządzenia z CPU Cortex-A53 i GPU Adreno 506. Obie gry z serii Silent Hill odnotowują wzrost wydajności między 20% a 40% w scenariuszach obejmujących reinterpretację stencil. Optymalizacje bounding box zapewniają szersze korzyści, dając około 1,4% przyspieszenia w różnych grach, w których testy cullingu stanowią znaczącą część wątku emulatora. Wdrożono również mniejsze optymalizacje, takie jak dodanie sprawdzenia kolejkowanych rysowań przed wykonaniem wywołań wirtualnych w funkcji flush oraz ponowne wykorzystanie pamięci w MemBlockInfo, aby uniknąć częstych błędów strony. Te poprawki łącznie redukują narzut instrukcji w grach, które często ładują tablice wyszukiwania kolorów lub generują wiele małych wywołań rysowania."
+    },
+    {
+      "type": "heading",
+      "text": "Weryfikacja i standardy dokładności"
+    },
+    {
+      "type": "paragraph",
+      "text": "Utrzymanie dokładności renderowania było priorytetem podczas tych optymalizacji. Nowa logika częściowej przebudowy stencil została zweryfikowana względem pełnych zestawów zrzutów klatek, aby zapewnić wyniki idealne co do piksela w backendach Vulkan, OpenGL i Direct3D 11. Testy potwierdziły, że częściowe przebudowy dają identyczny wynik jak poprzednia metoda pełnego bufora, nawet na urządzeniach mobilnych bez natywnego wsparcia dla eksportu stencil. Zmiany w bounding box zostały podobnie zweryfikowane poprzez zautomatyzowane testy klatek CI, aby upewnić się, że nie wystąpiły regresje w cullingu geometrii. Choć renderer programowy pozostaje nienaruszony przez te konkretne zmiany GE, ogólne ulepszenia zapewniają bardziej wydajną ścieżkę dla renderowania akcelerowanego sprzętowo na szerokiej gamie platform mobilnych i stacjonarnych."
+    }
+  ]
+}

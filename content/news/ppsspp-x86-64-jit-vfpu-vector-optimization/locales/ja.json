@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "x86-64 JIT向けVFPUベクトル演算の最適化",
+  "summary": "PPSSPPは、IR JITをARM64のベクトル処理に合わせることでx86-64のパフォーマンスを向上させ、複雑な行列演算やドット積演算における命令オーバーヘッドを大幅に削減しました。",
+  "heroAlt": "PlayStation Portableの前面のクローズアップ。方向キーとアナログパッドが見える。",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "emulation",
+    "エミュレーション",
+    "vector operations",
+    "ベクトル演算",
+    "performance",
+    "パフォーマンス"
+  ],
+  "categoryLabels": {
+    "emulation": "エミュレーション",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23194",
+    "implementation": "パッチおよびレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "VFPU命令オーバーヘッドの削減"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSPのVector Floating Point Unit (VFPU) は、3Dグラフィックスや物理演算に不可欠な行列変換やベクトル演算を処理する複雑なコンポーネントです。以前のx86-64 Intermediate Representation (IR) JITコンパイラは、行列乗算 (vmmul) や外積 (vcrsp.t) といった特定のベクトル命令を、多数の小さな個別操作に分解することで処理していました。例えば、1つのvmmul.q命令が最大45個のIR命令に変換されることもありました。この高い命令数はJITの処理および実行におけるオーバーヘッドを増大させ、これらのVFPU機能を多用するゲームにおいてコード生成の効率を低下させていました。"
+    },
+    {
+      "type": "heading",
+      "text": "IRとSIMD実装の統合"
+    },
+    {
+      "type": "paragraph",
+      "text": "今回のアップデートにより、x86-64バックエンドはARM64向けに以前実装された最適化と同等のものになりました。Vec4VfpuMultiDotおよびVec4VfpuCross操作を導入することで、JITは専用のドット積ルーチンを使用できるようになりました。x86-64ハードウェア上では、エミュレータはベクトル比較のためにCMPPS (Compare Packed Single-Precision Floating-Point Values) やMOVMSKPS (Move Mask from Packed Single-Precision Floating-Point Values) といった特定のSIMD命令を利用します。このアーキテクチャの変更によりIRのフットプリントは劇的に削減され、前述のvmmul.q命令は45命令からわずか13命令へと効率化されました。また、この実装には最終結果に寄与しないレーンの不要な計算をスキップするロジックも含まれています。"
+    },
+    {
+      "type": "heading",
+      "text": "パフォーマンスと精度への影響"
+    },
+    {
+      "type": "paragraph",
+      "text": "プレイヤーにとって、これらの変更はエミュレーション速度の向上に直結します。特にジオメトリや物理演算でVFPUを多用するタイトルで顕著です。複数のゲームで行ったパフォーマンステストでは、フレームあたりのJIT実行時間が短縮されました。一部のゲームでは3%から17%の控えめな改善が見られた一方で、これらのベクトル命令に強く依存するタイトルでは、JIT処理時間が約50%削減されました。JITロジックの大幅な構造変更にもかかわらず、エミュレーションの精度は引き続き最優先事項です。新しい実装は厳格なCPUEquivalenceテストを通じて検証されており、最適化されたx86-64 JITの結果が、さまざまな行列サイズや向きにおいてインタープリタの出力とビット単位で一致することが確認されています。"
+    },
+    {
+      "type": "heading",
+      "text": "技術的な詳細と検証"
+    },
+    {
+      "type": "paragraph",
+      "text": "このアップデートでは、連続するドット積命令の処理方法を管理するための新しい設定オプション「vfpuDotRuns」が導入されました。x86-64では、コンパイラがVec4レジスタの利用可能性に基づいて、これらをマルチドット演算としてグループ化するか、単一のドット積として維持するかを判断し、より効率的な方を選択します。これらの特定の最適化は64ビットx86バックエンド専用であり、32ビットx86 JITには必要なドットルーチンがないため、引き続き古いIRパスが使用される点に注意が必要です。開発者はpspautotestsやVFPUDotJitなどのユニットテストを使用してこれらの変更の安定性を検証し、NaN (Not-a-Number) や重なり合うオペランドを含むエッジケースが以前のバージョンと一貫して処理されることを確認しました。"
+    }
+  ]
+}

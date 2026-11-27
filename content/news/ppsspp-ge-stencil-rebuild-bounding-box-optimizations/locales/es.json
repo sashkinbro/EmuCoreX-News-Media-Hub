@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimización de las reconstrucciones de stencil y las pruebas de bounding box en el motor gráfico",
+  "summary": "Las nuevas optimizaciones en PPSSPP mejoran el rendimiento en Silent Hill y otros títulos al refinar las reconstrucciones del stencil buffer y agilizar los cálculos de bounding box.",
+  "heroAlt": "Un primer plano de la parte frontal de la PlayStation Portable mostrando la cruceta direccional y la pantalla.",
+  "searchKeywords": [
+    "PPSSPP",
+    "emulador",
+    "motor gráfico",
+    "stencil buffer",
+    "bounding box",
+    "rendimiento",
+    "optimización",
+    "emulación",
+    "gráficos"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23193",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ineficiencias en la gestión y el culling del stencil"
+    },
+    {
+      "type": "paragraph",
+      "text": "El motor gráfico de la PlayStation Portable a menudo requiere una reinterpretación compleja de buffers, donde los datos escritos como color se tratan posteriormente como información de stencil. Anteriormente, cuando un juego realizaba una operación de reinterpretación, el emulador activaba una reconstrucción completa del buffer de stencil. En GPUs móviles que carecen de exportación de stencil en el fragment shader, este proceso requería un dibujo a pantalla completa por cada bit de stencil, consumiendo recursos significativos de la GPU. En títulos como Silent Hill: Shattered Memories, que reinterpreta pequeños mapas de sombras en las esquinas del buffer en cada frame, esta sobrecarga podía representar casi la mitad del tiempo total del frame. Además, el bucle de prueba de bounding box, un componente crítico para el culling, sufría de un alto conteo de instrucciones en arquitecturas ARM64 debido a comprobaciones ineficientes de recorte de profundidad y sujeción de índices de vértices."
+    },
+    {
+      "type": "heading",
+      "text": "Refinamiento de la lógica de reconstrucción y culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Para abordar estos cuellos de botella, el proceso de reconstrucción de stencil se modificó para rastrear el rectángulo específico afectado por una operación de reinterpretación. En lugar de procesar todo el buffer, el motor ahora solo copia y reconstruye el área modificada. Para las GPUs sin exportación de stencil, el motor pone a cero el rectángulo específico con una llamada de dibujo antes de realizar pasadas bit a bit. Simultáneamente, el bucle de prueba de bounding box fue refactorizado para eliminar sujeciones redundantes y utilizar plantillas para el recorte de profundidad. Este cambio arquitectónico redujo el conteo de instrucciones del bucle en ARM64 de 114 a 84, permitiendo al compilador vectorizar mejor el código. Estos refinamientos aseguran que el emulador pase menos tiempo en cálculos redundantes mientras mantiene una alta precisión de renderizado."
+    },
+    {
+      "type": "heading",
+      "text": "Ganancias de rendimiento para hardware móvil"
+    },
+    {
+      "type": "paragraph",
+      "text": "El impacto de estos cambios es más visible en hardware móvil de gama media, como dispositivos que cuentan con la CPU Cortex-A53 y la GPU Adreno 506. Ambos juegos de Silent Hill experimentan aumentos de rendimiento de entre el 20% y el 40% en escenarios que involucran reinterpretación de stencil. Las optimizaciones de bounding box proporcionan un beneficio más amplio, produciendo una aceleración de aproximadamente el 1.4% en varios juegos donde las pruebas de culling son una parte significativa del hilo del emulador. También se implementaron optimizaciones menores, como añadir una comprobación de dibujos en cola antes de realizar llamadas virtuales en la función flush y reutilizar memoria en MemBlockInfo para evitar fallos de página frecuentes. Estos ajustes reducen colectivamente la sobrecarga de instrucciones en juegos que cargan frecuentemente tablas de búsqueda de color o emiten muchas llamadas de dibujo pequeñas."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y estándares de precisión"
+    },
+    {
+      "type": "paragraph",
+      "text": "Mantener la precisión del renderizado fue una prioridad durante estas optimizaciones. La nueva lógica de reconstrucción parcial de stencil se verificó contra conjuntos completos de volcados de frames para asegurar resultados píxel perfectos en los backends de Vulkan, OpenGL y Direct3D 11. Las pruebas confirmaron que las reconstrucciones parciales producen una salida idéntica al método anterior de buffer completo, incluso en dispositivos móviles sin soporte nativo de exportación de stencil. Los cambios en el bounding box fueron validados de manera similar a través de pruebas de frames automatizadas en CI para asegurar que no hubiera regresiones en el culling de geometría. Aunque el renderizador por software permanece sin cambios por estas modificaciones específicas del GE, las mejoras generales proporcionan una ruta más eficiente para el renderizado acelerado por hardware en una amplia variedad de plataformas móviles y de escritorio."
+    }
+  ]
+}

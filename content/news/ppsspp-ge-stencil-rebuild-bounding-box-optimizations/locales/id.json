@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Mengoptimalkan Pembangunan Ulang Stencil dan Uji Bounding Box pada Graphics Engine",
+  "summary": "Optimasi baru di PPSSPP meningkatkan performa pada Silent Hill dan judul lainnya dengan menyempurnakan pembangunan ulang stencil buffer dan merampingkan kalkulasi bounding box.",
+  "heroAlt": "Tampilan jarak dekat bagian depan PlayStation Portable yang memperlihatkan tombol arah dan layar.",
+  "searchKeywords": [
+    "PPSSPP",
+    "emulator",
+    "graphics engine",
+    "mesin grafis",
+    "stencil buffer",
+    "bounding box",
+    "kotak pembatas",
+    "performance",
+    "performa",
+    "optimization"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23193",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ketidakefisienan dalam Manajemen Stencil dan Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Graphics Engine PlayStation Portable sering kali memerlukan reinterpretasi buffer yang kompleks, di mana data yang ditulis sebagai warna nantinya diperlakukan sebagai informasi stencil. Sebelumnya, ketika sebuah game melakukan operasi reinterpretasi, emulator akan memicu pembangunan ulang stencil buffer secara penuh. Pada GPU seluler yang tidak memiliki ekspor stencil di fragment shader, proses ini memerlukan penggambaran layar penuh untuk setiap bit stencil, yang mengonsumsi sumber daya GPU secara signifikan. Pada judul seperti Silent Hill: Shattered Memories, yang menginterpretasikan ulang peta bayangan kecil ke sudut buffer setiap frame, overhead ini dapat memakan hampir setengah dari total waktu frame. Selain itu, loop uji bounding box—komponen penting untuk culling—mengalami jumlah instruksi yang tinggi pada arsitektur ARM64 karena penjepitan indeks vertex dan pemeriksaan pemotongan kedalaman (depth clipping) yang tidak efisien."
+    },
+    {
+      "type": "heading",
+      "text": "Menyempurnakan Logika Pembangunan Ulang dan Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Untuk mengatasi hambatan ini, proses pembangunan ulang stencil dimodifikasi untuk melacak persegi panjang spesifik yang terpengaruh oleh operasi reinterpretasi. Alih-alih memproses seluruh buffer, mesin kini hanya menyalin dan membangun ulang area yang dimodifikasi. Untuk GPU tanpa ekspor stencil, mesin menolkan persegi panjang tertentu dengan draw call sebelum melakukan pass bit-demi-bit. Secara bersamaan, loop uji bounding box difaktorkan ulang untuk menghapus penjepitan yang berlebihan dan menggunakan template untuk pemotongan kedalaman. Perubahan arsitektur ini mengurangi jumlah instruksi loop pada ARM64 dari 114 menjadi 84, yang memungkinkan kompiler untuk melakukan vektorisasi kode dengan lebih baik. Penyempurnaan ini memastikan bahwa emulator menghabiskan lebih sedikit waktu untuk kalkulasi yang berlebihan sambil tetap mempertahankan presisi rendering yang tinggi."
+    },
+    {
+      "type": "heading",
+      "text": "Peningkatan Performa untuk Perangkat Seluler"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dampak dari perubahan ini paling terlihat pada perangkat seluler kelas menengah, seperti perangkat yang menggunakan CPU Cortex-A53 dan GPU Adreno 506. Kedua game Silent Hill mengalami peningkatan performa antara 20% hingga 40% dalam skenario yang melibatkan reinterpretasi stencil. Optimasi bounding box memberikan manfaat yang lebih luas, menghasilkan percepatan sekitar 1,4% di berbagai game di mana uji culling merupakan bagian signifikan dari thread emulator. Optimasi yang lebih kecil juga diimplementasikan, seperti menambahkan pemeriksaan untuk draw yang mengantre sebelum melakukan panggilan virtual dalam fungsi flush dan menggunakan kembali memori di MemBlockInfo untuk menghindari page fault yang sering terjadi. Penyesuaian ini secara kolektif mengurangi overhead instruksi pada game yang sering memuat tabel pencarian warna atau mengeluarkan banyak draw call kecil."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan Standar Akurasi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Menjaga akurasi rendering menjadi prioritas selama optimasi ini. Logika pembangunan ulang stencil parsial yang baru diverifikasi terhadap set dump frame penuh untuk memastikan hasil yang sempurna secara piksel di seluruh backend Vulkan, OpenGL, dan Direct3D 11. Pengujian mengonfirmasi bahwa pembangunan ulang parsial menghasilkan output yang identik dengan metode seluruh buffer sebelumnya, bahkan pada perangkat seluler tanpa dukungan ekspor stencil asli. Perubahan bounding box divalidasi secara serupa melalui pengujian frame CI otomatis untuk memastikan tidak ada regresi dalam culling geometri. Meskipun software renderer tidak terpengaruh oleh perubahan GE spesifik ini, peningkatan secara keseluruhan memberikan jalur yang lebih efisien untuk rendering yang dipercepat perangkat keras di berbagai platform seluler dan desktop."
+    }
+  ]
+}

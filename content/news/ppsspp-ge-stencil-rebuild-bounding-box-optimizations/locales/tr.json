@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Grafik Motoru Stencil Yeniden Oluşturma ve Sınırlayıcı Kutu Testlerini Optimize Etme",
+  "summary": "PPSSPP'deki yeni optimizasyonlar, stencil buffer yeniden oluşturma işlemlerini iyileştirerek ve sınırlayıcı kutu hesaplamalarını sadeleştirerek Silent Hill ve diğer oyunlarda performansı artırıyor.",
+  "heroAlt": "PlayStation Portable'ın yön tuşlarını ve ekranını gösteren ön yüzünün yakın çekimi.",
+  "searchKeywords": [
+    "PPSSPP",
+    "emulator",
+    "emülatör",
+    "graphics engine",
+    "grafik motoru",
+    "stencil buffer",
+    "şablon tamponu",
+    "bounding box",
+    "sınırlayıcı kutu",
+    "performance"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23193",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Stencil Yönetimi ve Ayıklama İşlemlerindeki Verimsizlikler"
+    },
+    {
+      "type": "paragraph",
+      "text": "PlayStation Portable'ın Graphics Engine'i genellikle, renk olarak yazılan verilerin daha sonra stencil bilgisi olarak işlendiği karmaşık tampon yeniden yorumlama (buffer reinterpretation) işlemlerine ihtiyaç duyar. Daha önce, bir oyun yeniden yorumlama işlemi gerçekleştirdiğinde, emülatör tam tamponlu bir stencil yeniden oluşturma işlemini tetiklerdi. Fragment shader'da stencil export özelliği bulunmayan mobil GPU'larda bu süreç, her bir stencil biti için tam ekran çizim gerektiriyor ve önemli ölçüde GPU kaynağı tüketiyordu. Her karede küçük gölge haritalarını tamponun köşelerine yeniden yorumlayan Silent Hill: Shattered Memories gibi oyunlarda, bu ek yük toplam kare süresinin neredeyse yarısını oluşturabiliyordu. Ek olarak, ayıklama (culling) için kritik bir bileşen olan sınırlayıcı kutu (bounding box) test döngüsü, verimsiz köşe dizini sınırlama (vertex index clamping) ve derinlik kırpma (depth clipping) kontrolleri nedeniyle ARM64 mimarilerinde yüksek komut sayılarından muzdarip oluyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Yeniden Oluşturma ve Ayıklama Mantığını İyileştirme"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu darboğazları gidermek için stencil yeniden oluşturma süreci, bir yeniden yorumlama işleminden etkilenen belirli dikdörtgen alanı takip edecek şekilde değiştirildi. Motor artık tüm tamponu işlemek yerine yalnızca değiştirilen alanı kopyalıyor ve yeniden oluşturuyor. Stencil export özelliği olmayan GPU'lar için motor, bit bazlı geçişleri gerçekleştirmeden önce belirli dikdörtgeni bir çizim çağrısıyla sıfırlıyor. Eş zamanlı olarak, sınırlayıcı kutu test döngüsü, gereksiz sınırlamaları kaldırmak ve derinlik kırpma için şablonlar (templates) kullanmak üzere yeniden yapılandırıldı. Bu mimari değişiklik, döngünün ARM64 üzerindeki komut sayısını 114'ten 84'e düşürerek derleyicinin kodu daha iyi vektörize etmesine olanak tanıdı. Bu iyileştirmeler, emülatörün yüksek işleme hassasiyetini korurken gereksiz hesaplamalara daha az zaman harcamasını sağlıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Mobil Donanımlar İçin Performans Kazanımları"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu değişikliklerin etkisi, Cortex-A53 CPU ve Adreno 506 GPU barındıran cihazlar gibi orta segment mobil donanımlarda en belirgin şekilde görülüyor. Her iki Silent Hill oyunu da stencil yeniden yorumlaması içeren senaryolarda %20 ile %40 arasında performans artışı gösteriyor. Sınırlayıcı kutu optimizasyonları, ayıklama testlerinin emülatör iş parçacığının önemli bir parçası olduğu çeşitli oyunlarda yaklaşık %1,4'lük bir hızlanma sağlayarak daha geniş bir fayda sunuyor. Flush fonksiyonunda sanal çağrılar yapmadan önce kuyruğa alınmış çizimler için bir kontrol eklenmesi ve sık sayfa hatalarını (page faults) önlemek için MemBlockInfo'da belleğin yeniden kullanılması gibi daha küçük optimizasyonlar da uygulandı. Bu ayarlamalar, sık sık renk arama tabloları yükleyen veya çok sayıda küçük çizim çağrısı yapan oyunlardaki komut yükünü toplu olarak azaltıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve Doğruluk Standartları"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu optimizasyonlar sırasında işleme doğruluğunu korumak bir öncelikti. Yeni kısmi stencil yeniden oluşturma mantığı, Vulkan, OpenGL ve Direct3D 11 arka uçlarında piksel düzeyinde mükemmel sonuçlar sağlamak için tam kare döküm setlerine karşı doğrulandı. Testler, kısmi yeniden oluşturmaların, yerel stencil export desteği olmayan mobil cihazlarda bile önceki tam tampon yöntemiyle aynı çıktıyı ürettiğini onayladı. Sınırlayıcı kutu değişiklikleri de benzer şekilde, geometri ayıklama işlemlerinde herhangi bir gerileme olmadığından emin olmak için otomatik CI kare testleri aracılığıyla doğrulandı. Yazılımsal işleyici bu spesifik GE değişikliklerinden etkilenmese de, genel iyileştirmeler çok çeşitli mobil ve masaüstü platformlarda donanım hızlandırmalı işleme için daha verimli bir yol sağlıyor."
+    }
+  ]
+}

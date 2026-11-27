@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimierung von Stencil-Rebuilds und Bounding-Box-Tests der Grafik-Engine",
+  "summary": "Neue Optimierungen in PPSSPP verbessern die Leistung in Silent Hill und anderen Titeln durch die Verfeinerung von Stencil-Buffer-Rebuilds und die Straffung von Bounding-Box-Berechnungen.",
+  "heroAlt": "Eine Nahaufnahme der Vorderseite der PlayStation Portable, die das Steuerkreuz und den Bildschirm zeigt.",
+  "searchKeywords": [
+    "PPSSPP",
+    "Emulator",
+    "Grafik-Engine",
+    "Stencil-Buffer",
+    "Stencil-Puffer",
+    "Bounding Box",
+    "Begrenzungsrahmen",
+    "Leistung",
+    "Performance",
+    "Optimierung"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP Pull Request #23193",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Ineffizienzen bei der Stencil-Verwaltung und beim Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Grafik-Engine der PlayStation Portable erfordert häufig eine komplexe Puffer-Neuinterpretation, bei der Daten, die als Farbe geschrieben wurden, später als Stencil-Informationen behandelt werden. Wenn ein Spiel bisher eine Neuinterpretations-Operation durchführte, löste der Emulator einen vollständigen Stencil-Rebuild des Puffers aus. Auf mobilen GPUs, denen der Stencil-Export im Fragment-Shader fehlt, erforderte dieser Prozess einen Vollbild-Draw für jedes Stencil-Bit, was erhebliche GPU-Ressourcen verbrauchte. In Titeln wie Silent Hill: Shattered Memories, die in jedem Frame kleine Schatten-Maps in Ecken des Puffers neu interpretieren, konnte dieser Overhead fast die Hälfte der gesamten Frame-Zeit ausmachen. Zusätzlich litt die Bounding-Box-Testschleife – eine kritische Komponente für das Culling – auf ARM64-Architekturen unter einer hohen Befehlsanzahl aufgrund ineffizienter Vertex-Index-Clamping- und Depth-Clipping-Prüfungen."
+    },
+    {
+      "type": "heading",
+      "text": "Verfeinerung der Rebuild- und Culling-Logik"
+    },
+    {
+      "type": "paragraph",
+      "text": "Um diese Engpässe zu beheben, wurde der Stencil-Rebuild-Prozess so modifiziert, dass das spezifische Rechteck verfolgt wird, das von einer Neuinterpretations-Operation betroffen ist. Anstatt den gesamten Puffer zu verarbeiten, kopiert und rekonstruiert die Engine nun nur noch den modifizierten Bereich. Für GPUs ohne Stencil-Export setzt die Engine das spezifische Rechteck mit einem Draw-Call auf Null, bevor sie Bit-für-Bit-Durchläufe durchführt. Gleichzeitig wurde die Bounding-Box-Testschleife refaktorisiert, um redundante Clamps zu entfernen und Templates für das Depth-Clipping zu nutzen. Diese architektonische Änderung reduzierte die Befehlsanzahl der Schleife auf ARM64 von 114 auf 84, wodurch der Compiler den Code besser vektorisieren kann. Diese Verfeinerungen stellen sicher, dass der Emulator weniger Zeit mit redundanten Berechnungen verbringt und gleichzeitig eine hohe Rendering-Präzision beibehält."
+    },
+    {
+      "type": "heading",
+      "text": "Leistungssteigerungen für mobile Hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Auswirkungen dieser Änderungen sind am deutlichsten auf mobiler Hardware der Mittelklasse sichtbar, wie etwa bei Geräten mit Cortex-A53 CPU und Adreno 506 GPU. Beide Silent Hill-Spiele verzeichnen Leistungssteigerungen zwischen 20 % und 40 % in Szenarien, die Stencil-Neuinterpretationen beinhalten. Die Bounding-Box-Optimierungen bieten einen breiteren Nutzen und führen zu einer Geschwindigkeitssteigerung von etwa 1,4 % in verschiedenen Spielen, bei denen Culling-Tests einen wesentlichen Teil des Emulator-Threads ausmachen. Kleinere Optimierungen wurden ebenfalls implementiert, wie das Hinzufügen einer Prüfung auf wartende Draws vor dem Ausführen virtueller Aufrufe in der Flush-Funktion und die Wiederverwendung von Speicher in MemBlockInfo, um häufige Page-Faults zu vermeiden. Diese Anpassungen reduzieren insgesamt den Befehls-Overhead in Spielen, die häufig Color-Lookup-Tables laden oder viele kleine Draw-Calls ausgeben."
+    },
+    {
+      "type": "heading",
+      "text": "Verifizierung und Genauigkeitsstandards"
+    },
+    {
+      "type": "paragraph",
+      "text": "Die Aufrechterhaltung der Rendering-Genauigkeit hatte während dieser Optimierungen Priorität. Die neue Logik für den partiellen Stencil-Rebuild wurde anhand vollständiger Frame-Dump-Sets verifiziert, um pixelgenaue Ergebnisse über Vulkan-, OpenGL- und Direct3D 11-Backends hinweg sicherzustellen. Tests bestätigten, dass die partiellen Rebuilds identische Ausgaben wie die vorherige Methode mit dem gesamten Puffer erzeugen, selbst auf mobilen Geräten ohne native Unterstützung für Stencil-Export. Die Bounding-Box-Änderungen wurden in ähnlicher Weise durch automatisierte CI-Frame-Tests validiert, um sicherzustellen, dass keine Regressionen beim Geometrie-Culling auftreten. Während der Software-Renderer von diesen spezifischen GE-Änderungen unberührt bleibt, bieten die Gesamtverbesserungen einen effizienteren Pfad für hardwarebeschleunigtes Rendering auf einer Vielzahl von mobilen und Desktop-Plattformen."
+    }
+  ]
+}

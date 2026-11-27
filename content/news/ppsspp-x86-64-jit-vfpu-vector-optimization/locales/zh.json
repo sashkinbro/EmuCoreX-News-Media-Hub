@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "优化 x86-64 JIT 的 VFPU 向量运算",
+  "summary": "PPSSPP 通过使其 IR JIT 与 ARM64 的向量处理保持一致，显著减少了复杂矩阵和点积运算的指令开销，从而提升了 x86-64 的性能。",
+  "heroAlt": "PlayStation Portable 正面的特写，展示了方向键和模拟摇杆。",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "emulation",
+    "模拟",
+    "vector operations",
+    "向量运算",
+    "performance",
+    "性能"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23194",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "减少 VFPU 指令开销"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSP 的向量浮点运算单元 (VFPU) 是一个复杂的组件，用于处理矩阵变换和向量数学运算，这对 3D 图形和物理计算至关重要。此前，x86-64 中间表示 (IR) JIT 编译器在处理某些向量指令（如矩阵乘法 vmmul 和叉积 vcrsp.t）时，会将它们拆解为许多更小的独立操作。例如，一条 vmmul.q 指令可能会产生多达 45 条 IR 指令。这种高指令数量增加了 JIT 处理和执行的开销，导致在严重依赖这些特定 VFPU 功能的游戏中，代码生成效率较低。"
+    },
+    {
+      "type": "heading",
+      "text": "统一 IR 与 SIMD 实现"
+    },
+    {
+      "type": "paragraph",
+      "text": "此次更新使 x86-64 后端与之前为 ARM64 实现的优化保持一致。通过引入 Vec4VfpuMultiDot 和 Vec4VfpuCross 操作，JIT 现在可以使用专门的点积例程。在 x86-64 硬件上，模拟器现在利用特定的 SIMD 指令（如 CMPPS 和 MOVMSKPS）进行向量比较。这种架构转变大幅减少了 IR 的占用空间；前述的 vmmul.q 指令已从 45 条精简至仅 13 条。该实现还包含跳过对最终结果无贡献的通道中不必要计算的逻辑。"
+    },
+    {
+      "type": "heading",
+      "text": "对性能和准确性的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "对于玩家而言，这些变化直接转化为模拟速度的提升，特别是在大量使用 VFPU 进行几何或物理计算的游戏中。在多款游戏进行的性能测试显示，每帧的 JIT 执行时间有所减少。虽然一些游戏的性能提升幅度在 3% 到 17% 之间，但严重依赖这些向量指令的游戏，其 JIT 处理时间减少了近 50%。尽管 JIT 逻辑发生了重大的结构性变化，但模拟准确性仍然是重中之重。新的实现已通过严格的 CPUEquivalence 测试验证，确保优化后的 x86-64 JIT 在各种矩阵大小和方向下的结果与解释器的输出逐位一致。"
+    },
+    {
+      "type": "heading",
+      "text": "技术细节与验证"
+    },
+    {
+      "type": "paragraph",
+      "text": "此次更新引入了一个新的配置选项 vfpuDotRuns，用于管理连续点积指令的处理方式。在 x86-64 上，编译器会根据 Vec4 寄存器的可用性，判断将它们组合成多点运算还是保持为单点运算更为高效。需要注意的是，这些特定的优化仅限于 64 位 x86 后端；32 位 x86 JIT 缺乏必要的点积例程，并将继续使用旧的 IR 路径。开发人员使用 pspautotests 和 VFPUDotJit 等单元测试验证了这些更改的稳定性，确认了涉及 NaN（非数字）和重叠操作数的边缘情况处理方式与之前版本保持一致。"
+    }
+  ]
+}

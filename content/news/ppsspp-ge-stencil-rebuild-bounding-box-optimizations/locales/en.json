@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-ge-stencil-rebuild-bounding-box-optimizations",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Optimizing Graphics Engine Stencil Rebuilds and Bounding Box Tests",
+  "summary": "New optimizations in PPSSPP improve performance in Silent Hill and other titles by refining stencil buffer rebuilds and streamlining bounding box calculations.",
+  "heroAlt": "A close-up of the PlayStation Portable's front face showing the directional pad and screen.",
+  "searchKeywords": [
+    "PPSSPP",
+    "emulator",
+    "graphics engine",
+    "stencil buffer",
+    "bounding box",
+    "performance",
+    "optimization"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23193",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Inefficiencies in Stencil Management and Culling"
+    },
+    {
+      "type": "paragraph",
+      "text": "The PlayStation Portable's Graphics Engine often requires complex buffer reinterpretation, where data written as color is later treated as stencil information. Previously, when a game performed a reinterpret operation, the emulator would trigger a full-buffer stencil rebuild. On mobile GPUs lacking stencil export in the fragment shader, this process required a full-screen draw for every stencil bit, consuming significant GPU resources. In titles like Silent Hill: Shattered Memories, which reinterprets small shadow maps into corners of the buffer every frame, this overhead could account for nearly half of the total frame time. Additionally, the bounding box test loop—a critical component for culling—suffered from high instruction counts on ARM64 architectures due to inefficient vertex index clamping and depth clipping checks."
+    },
+    {
+      "type": "heading",
+      "text": "Refining the Rebuild and Culling Logic"
+    },
+    {
+      "type": "paragraph",
+      "text": "To address these bottlenecks, the stencil rebuild process was modified to track the specific rectangle affected by a reinterpret operation. Instead of processing the entire buffer, the engine now only copies and rebuilds the modified area. For GPUs without stencil export, the engine zeroes the specific rectangle with a draw call before performing bit-by-bit passes. Simultaneously, the bounding box test loop was refactored to remove redundant clamps and utilize templates for depth clipping. This architectural change reduced the loop's instruction count on ARM64 from 114 to 84, allowing the compiler to better vectorize the code. These refinements ensure that the emulator spends less time on redundant calculations while maintaining high rendering precision."
+    },
+    {
+      "type": "heading",
+      "text": "Performance Gains for Mobile Hardware"
+    },
+    {
+      "type": "paragraph",
+      "text": "The impact of these changes is most visible on mid-range mobile hardware, such as devices featuring the Cortex-A53 CPU and Adreno 506 GPU. Both Silent Hill games see performance increases between 20% and 40% in scenarios involving stencil reinterpretation. The bounding box optimizations provide a broader benefit, yielding approximately a 1.4% speedup in various games where culling tests are a significant part of the emulator thread. Smaller optimizations were also implemented, such as adding a check for queued draws before making virtual calls in the flush function and reusing memory in MemBlockInfo to avoid frequent page faults. These adjustments collectively reduce instruction overhead in games that frequently load color lookup tables or issue many small draw calls."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and Accuracy Standards"
+    },
+    {
+      "type": "paragraph",
+      "text": "Maintaining rendering accuracy was a priority during these optimizations. The new partial stencil rebuild logic was verified against full frame dump sets to ensure pixel-perfect results across Vulkan, OpenGL, and Direct3D 11 backends. Testing confirmed that the partial rebuilds produce identical output to the previous whole-buffer method, even on mobile devices without native stencil export support. The bounding box changes were similarly validated through automated CI frame tests to ensure no regressions in geometry culling. While the software renderer remains unaffected by these specific GE changes, the overall improvements provide a more efficient path for hardware-accelerated rendering across a wide variety of mobile and desktop platforms."
+    }
+  ]
+}

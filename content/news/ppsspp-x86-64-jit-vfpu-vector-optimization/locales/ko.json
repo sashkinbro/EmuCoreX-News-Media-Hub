@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "x86-64 JIT을 위한 VFPU 벡터 연산 최적화",
+  "summary": "PPSSPP는 IR JIT을 ARM64의 벡터 처리 방식에 맞춰 조정함으로써 x86-64 성능을 향상시켰으며, 복잡한 행렬 및 내적 연산에 대한 명령어 오버헤드를 크게 줄였습니다.",
+  "heroAlt": "방향키와 아날로그 놉이 보이는 PlayStation Portable 전면부의 근접 사진.",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "에뮬레이션",
+    "emulation",
+    "벡터 연산",
+    "vector operations",
+    "성능",
+    "performance"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23194",
+    "implementation": "패치 및 검토"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "VFPU 명령어 오버헤드 감소"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSP의 VFPU(Vector Floating Point Unit)는 3D 그래픽과 물리 연산에 필수적인 행렬 변환 및 벡터 수학을 처리하는 복잡한 구성 요소입니다. 이전에는 x86-64 IR(Intermediate Representation) JIT 컴파일러가 행렬 곱셈(vmmul) 및 외적(vcrsp.t)과 같은 특정 벡터 명령어를 처리할 때 이를 수많은 작은 개별 연산으로 분해했습니다. 예를 들어, 단일 vmmul.q 명령어 하나가 최대 45개의 IR 명령어로 이어질 수 있었습니다. 이러한 높은 명령어 수는 JIT가 처리하고 실행하는 데 드는 오버헤드를 증가시켰고, 결과적으로 이러한 특정 VFPU 기능에 크게 의존하는 게임들에 대해 비효율적인 코드 생성을 초래했습니다."
+    },
+    {
+      "type": "heading",
+      "text": "통합 IR 및 SIMD 구현"
+    },
+    {
+      "type": "paragraph",
+      "text": "이번 업데이트는 x86-64 백엔드를 이전에 ARM64에 구현된 최적화와 일치시킵니다. Vec4VfpuMultiDot 및 Vec4VfpuCross 연산을 도입함으로써, JIT는 이제 특수 내적 루틴을 사용할 수 있게 되었습니다. x86-64 하드웨어에서 에뮬레이터는 이제 벡터 비교를 위해 CMPPS(Compare Packed Single-Precision Floating-Point Values) 및 MOVMSKPS(Move Mask from Packed Single-Precision Floating-Point Values)와 같은 특정 SIMD 명령어를 활용합니다. 이러한 아키텍처 변화는 IR 사용량을 획기적으로 줄였으며, 앞서 언급한 vmmul.q 명령어는 45개에서 13개로 간소화되었습니다. 또한 이 구현에는 최종 결과에 기여하지 않는 레인(lane)의 불필요한 계산을 건너뛰는 로직이 포함되어 있습니다."
+    },
+    {
+      "type": "heading",
+      "text": "성능 및 정확도에 미치는 영향"
+    },
+    {
+      "type": "paragraph",
+      "text": "사용자에게 이러한 변화는 에뮬레이션 속도 향상으로 직접 이어지며, 특히 지오메트리나 물리 계산을 위해 VFPU를 광범위하게 사용하는 타이틀에서 두드러집니다. 여러 게임에 걸친 성능 테스트 결과, 프레임당 JIT 실행 시간이 감소한 것으로 나타났습니다. 일부 게임은 3%에서 17% 정도의 완만한 개선을 보였지만, 이러한 벡터 명령어에 크게 의존하는 타이틀은 JIT 처리 시간이 거의 50% 가까이 단축되었습니다. JIT 로직에 대한 이러한 중대한 구조적 변경에도 불구하고 에뮬레이션 정확도는 여전히 우선순위로 유지됩니다. 새로운 구현은 엄격한 CPUEquivalence 테스트를 통해 검증되었으며, 최적화된 x86-64 JIT의 결과가 다양한 행렬 크기와 방향에 걸쳐 인터프리터의 출력과 비트 단위로 일치함을 보장합니다."
+    },
+    {
+      "type": "heading",
+      "text": "기술적 세부 사항 및 검증"
+    },
+    {
+      "type": "paragraph",
+      "text": "이번 업데이트는 연속적인 내적 명령어가 처리되는 방식을 관리하기 위해 vfpuDotRuns라는 새로운 구성 옵션을 도입합니다. x86-64에서 컴파일러는 Vec4 레지스터의 가용성에 따라 이를 다중 내적 연산으로 그룹화하는 것이 효율적인지, 아니면 단일 내적으로 유지하는 것이 효율적인지를 결정합니다. 이러한 특정 최적화는 64비트 x86 백엔드 전용이며, 32비트 x86 JIT는 필요한 내적 루틴이 부족하여 기존의 이전 IR 경로를 계속 사용한다는 점에 유의해야 합니다. 개발자들은 pspautotests 및 VFPUDotJit과 같은 단위 테스트를 사용하여 이러한 변경 사항의 안정성을 검증했으며, NaN(Not-a-Number) 및 겹치는 피연산자와 관련된 예외 사례들이 이전 버전과 일관되게 처리됨을 확인했습니다."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "ppsspp-x86-64-jit-vfpu-vector-optimization",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "x86-64 JIT için VFPU Vektör İşlemlerini Optimize Etme",
+  "summary": "PPSSPP, IR JIT yapısını ARM64'ün vektör işleme mantığıyla hizalayarak x86-64 performansını artırıyor ve karmaşık matris ile nokta çarpımı işlemleri için komut yükünü önemli ölçüde azaltıyor.",
+  "heroAlt": "PlayStation Portable'ın ön yüzünün yakın çekimi; yön tuşlarını ve analog çubuğu gösteriyor.",
+  "searchKeywords": [
+    "PPSSPP",
+    "VFPU",
+    "x86-64",
+    "JIT",
+    "emülasyon",
+    "emulation",
+    "vektör işlemleri",
+    "vector operations",
+    "performans",
+    "performance"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "cpu": "CPU"
+  },
+  "sourceLabels": {
+    "change": "PPSSPP pull request #23194",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "VFPU Komut Yükünün Azaltılması"
+    },
+    {
+      "type": "paragraph",
+      "text": "PSP'nin Vektör Kayan Nokta Birimi (VFPU), 3D grafikler ve fizik hesaplamaları için kritik olan matris dönüşümlerini ve vektör matematiğini yöneten karmaşık bir bileşendir. Daha önce, x86-64 Ara Temsil (IR) JIT derleyicisi, matris çarpımları (vmmul) ve çapraz çarpımlar (vcrsp.t) gibi belirli vektör komutlarını, bunları birçok küçük ve bağımsız işleme bölerek yönetiyordu. Örneğin, tek bir vmmul.q komutu 45 adede kadar IR komutuyla sonuçlanabiliyordu. Bu yüksek komut sayısı, JIT'in işlemesi ve yürütmesi gereken yükü artırarak, bu özel VFPU yeteneklerine yoğun bir şekilde güvenen oyunlar için daha az verimli kod üretimine yol açıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Birleşik IR ve SIMD Uygulaması"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bu güncelleme, x86-64 arka ucunu daha önce ARM64 için uygulanan optimizasyonlarla uyumlu hale getiriyor. Vec4VfpuMultiDot ve Vec4VfpuCross işlemlerinin tanıtılmasıyla, JIT artık özel bir nokta çarpımı rutini kullanabiliyor. x86-64 donanımında emülatör, vektör karşılaştırmaları için artık CMPPS (Paketlenmiş Tek Hassasiyetli Kayan Noktalı Değerleri Karşılaştır) ve MOVMSKPS (Paketlenmiş Tek Hassasiyetli Kayan Noktalı Değerlerden Maske Taşı) gibi belirli SIMD komutlarını kullanıyor. Bu mimari değişim, IR ayak izini önemli ölçüde azaltıyor; bahsi geçen vmmul.q komutu 45 komuttan sadece 13 komuta düşürülerek sadeleştirildi. Uygulama ayrıca, nihai sonuca katkıda bulunmayan şeritlerdeki gereksiz hesaplamaları atlamak için mantık da içeriyor."
+    },
+    {
+      "type": "heading",
+      "text": "Performans ve Doğruluk Üzerindeki Etki"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oyuncular için bu değişiklikler, özellikle geometri veya fizik hesaplamaları için VFPU'yu yoğun şekilde kullanan oyunlarda, doğrudan iyileştirilmiş emülasyon hızı anlamına geliyor. Birçok oyunda yapılan performans testleri, kare başına JIT yürütme süresinde bir azalma olduğunu gösterdi. Bazı oyunlarda %3 ile %17 arasında mütevazı iyileşmeler görülürken, bu vektör komutlarına büyük ölçüde bağımlı olan oyunlar JIT işleme süresinde yaklaşık %50'lik bir azalma yaşadı. JIT mantığındaki bu önemli yapısal değişikliklere rağmen, emülasyon doğruluğu bir öncelik olmaya devam ediyor. Yeni uygulama, optimize edilmiş x86-64 JIT sonuçlarının, çeşitli matris boyutları ve yönelimlerinde yorumlayıcının (interpreter) çıktısıyla bit düzeyinde eşleştiğini garanti eden titiz CPUEquivalence testleri ile doğrulandı."
+    },
+    {
+      "type": "heading",
+      "text": "Teknik Ayrıntılar ve Doğrulama"
+    },
+    {
+      "type": "paragraph",
+      "text": "Güncelleme, ardışık nokta çarpımı komutlarının nasıl yönetileceğini kontrol etmek için vfpuDotRuns adında yeni bir yapılandırma seçeneği getiriyor. x86-64 üzerinde derleyici, Vec4 kayıtlarının kullanılabilirliğine bağlı olarak bunları çoklu nokta işlemi olarak gruplandırmanın mı yoksa tekli nokta olarak tutmanın mı daha verimli olduğuna karar veriyor. Bu özel optimizasyonların yalnızca 64-bit x86 arka ucuna özel olduğunu belirtmek önemlidir; 32-bit x86 JIT gerekli nokta çarpımı rutinine sahip değildir ve eski IR yolunu kullanmaya devam etmektedir. Geliştiriciler, bu değişikliklerin kararlılığını pspautotests ve VFPUDotJit gibi birim testlerini kullanarak doğruladılar ve NaN (Sayı Değil) değerlerini ve örtüşen işlenenleri içeren uç durumların önceki sürümlerle tutarlı bir şekilde ele alındığını teyit ettiler."
+    }
+  ]
+}
