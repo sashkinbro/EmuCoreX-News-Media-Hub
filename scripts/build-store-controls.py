@@ -28,7 +28,7 @@ import zipfile
 import zlib
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
 CTRL = ROOT / "store" / "controls"
@@ -36,6 +36,8 @@ SRC = CTRL / "src"
 DIST = CTRL / "dist"
 ZIP_DATE = (2020, 1, 1, 0, 0, 0)
 S = 3  # supersampling for the vector skins
+PACKAGE_VERSION = 2
+INPUT_TOGGLE = "left_input_toggle"
 
 FACE = ["cross", "circle", "square", "triangle"]
 DIRS = ["up", "down", "left", "right"]
@@ -5450,6 +5452,7 @@ def make_ingame(skin, T):
         put(im, T["analog_base"], cx, 598, 0.78, op, px)
         put(im, T["analog_stick"], cx, 598, 0.78, op, px)
     put(im, T["select"], 520, 660, 0.62, op, px)
+    put(im, T[INPUT_TOGGLE], 640, 660, 0.24, op, px)
     put(im, T["start"], 760, 660, 0.62, op, px)
     return im.convert("RGB")
 
@@ -5476,7 +5479,7 @@ def build_zip(skin, images, label_ink=False):
             "pressEffect": skin.press}
     if label_ink:
         spec["labelColors"] = label_colors(skin)
-    manifest = {"formatVersion": 1, "id": skin.id, "version": 1, "skin": spec}
+    manifest = {"formatVersion": 1, "id": skin.id, "version": PACKAGE_VERSION, "skin": spec}
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z:
         def add(name, data):
@@ -5522,7 +5525,7 @@ def keep_label_locales(cats, path):
 
 
 def listing_of(skin):
-    return {"version": 1, "categories": skin.cats, "tags": skin.tags, "featured": skin.featured,
+    return {"version": PACKAGE_VERSION, "categories": skin.cats, "tags": skin.tags, "featured": skin.featured,
             "publishedAt": "2026-11-24T12:00:00Z", "requiresPro": skin.pro, "minAppVersionCode": 0,
             "swatch": skin.swatch, "name": {"en": skin.name}, "description": {"en": skin.desc}}
 
@@ -5554,19 +5557,36 @@ def render_blanks(skin):
     return T
 
 
+def input_toggle_art(skin, stick, pressed):
+    c = Ctx(skin, "analog_stick", pressed)
+    mask = c.new()
+    draw = ImageDraw.Draw(mask)
+    radius = 46 * S
+    draw.ellipse((c.cx - radius, c.cy - radius, c.cx + radius, c.cy + radius), outline=255, width=10 * S)
+    radius = 14 * S
+    draw.ellipse((c.cx - radius, c.cy - radius, c.cx + radius, c.cy + radius), fill=255)
+    ink = skin.sym_color(c)
+    outline = (255, 255, 255) if sum(ink) < 384 else (0, 0, 0)
+    mark = finish(mark_paint(c, mask, ink, outline=(outline, 3)), c)
+    tile = over(stick, mark)
+    return ImageEnhance.Brightness(tile).enhance(0.84) if pressed else tile
+
+
 def render_all(skin):
     T = {}
     for part in PARTS:
         T[part] = skin.render(part, False)
         if part != "analog_base":
             T[part + "_pressed"] = skin.render(part, True)
+    for suffix in ("", "_pressed"):
+        T[INPUT_TOGGLE + suffix] = input_toggle_art(skin, T["analog_stick" + suffix], bool(suffix))
     return T
 
 
 # The neutral package: the same skin for apps whose buttons are not PlayStation symbols (Nintendo, Sega). It holds
 # the label-free art plus the parts that carry no symbol (d-pad, stick). Kept apart from item.ecxcontrols so the
 # PlayStation package stays exactly as released apps expect it (they accept at most 48 skin images).
-NEUTRAL_SHARED = ["dpad_" + d for d in DIRS] + ["analog_base", "analog_stick"]
+NEUTRAL_SHARED = ["dpad_" + d for d in DIRS] + ["analog_base", "analog_stick", INPUT_TOGGLE]
 
 
 def neutral_images(skin, shared_png):
@@ -5584,6 +5604,34 @@ def add_neutral(skin):
     (out_dir / "neutral.ecxcontrols").write_bytes(build_zip(skin, neutral_images(skin, shared), label_ink=True))
     (out_dir / "build.json").write_text(json.dumps({"sourceSha256": digest_of(listing_text)}, indent=2) + "\n",
                                         encoding="utf-8", newline="\n")
+
+
+def add_input_toggle(skin):
+    """Adds the toggle to published skins while keeping the existing button art byte-for-byte."""
+    out_dir = DIST / skin.id
+    package_path = out_dir / "item.ecxcontrols"
+    neutral_path = out_dir / "neutral.ecxcontrols"
+
+    def read_images(path):
+        with zipfile.ZipFile(path) as archive:
+            return {name[:-4]: archive.read(name) for name in archive.namelist() if name.endswith(".png")}
+
+    images = read_images(package_path)
+    neutral = read_images(neutral_path)
+    tiles = {key: Image.open(io.BytesIO(data)).convert("RGBA") for key, data in images.items()}
+    for suffix in ("", "_pressed"):
+        key = INPUT_TOGGLE + suffix
+        tiles[key] = input_toggle_art(skin, tiles["analog_stick" + suffix], bool(suffix))
+        images[key] = neutral[key] = png_bytes(tiles[key])
+
+    listing_path = SRC / skin.id / "listing.json"
+    listing_text = json.dumps(keep_locales(listing_of(skin), listing_path), indent=2, ensure_ascii=False) + "\n"
+    write_text(listing_path, listing_text)
+    package_path.write_bytes(build_zip(skin, images))
+    neutral_path.write_bytes(build_zip(skin, neutral, label_ink=True))
+    (out_dir / "ingame.webp").write_bytes(webp_bytes(make_ingame(skin, tiles)))
+    stamp = json.dumps({"sourceSha256": digest_of(listing_text)}, indent=2) + "\n"
+    write_text(out_dir / "build.json", stamp)
 
 
 def build_skin(skin, force=False, tiles_dir=None):
@@ -6634,6 +6682,11 @@ def main(argv):
     cats = keep_label_locales([{"id": i, "labels": {"en": n}} for i, n in CATEGORIES], CTRL / "categories.json")
     write_text(CTRL / "categories.json", json.dumps(cats, indent=2, ensure_ascii=False) + "\n")
     chosen = [s for s in SKINS if not ids or s.id in ids]
+    if "--add-input-toggle" in argv:
+        for s in chosen:
+            add_input_toggle(s)
+            print("input toggle " + s.id, flush=True)
+        return
     if "--add-neutral" in argv:
         for s in chosen:
             add_neutral(s)

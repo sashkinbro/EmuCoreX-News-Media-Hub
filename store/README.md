@@ -70,7 +70,7 @@ Two flavours in one format:
 ```
 - `skin` (optional): art for on-screen buttons. `images` maps control ids (`cross`, `circle`,
   `square`, `triangle`, `dpad_up|down|left|right`, `l1`, `l2`, `r1`, `r2`, `l3`, `r3`, `start`,
-  `select`, `analog_base`, `analog_stick`, …) to PNG/WebP files in the archive (square, ≥ 192 px,
+  `select`, `left_input_toggle`, `analog_base`, `analog_stick`, …) to PNG/WebP files in the archive (square, ≥ 192 px,
   transparent background), optional `<id>_pressed`; `tint`, `opacity`, `pressEffect`.
   Unmapped controls fall back to the built-in vector art.
 - `layout` (optional):
