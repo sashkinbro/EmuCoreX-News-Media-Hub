@@ -36,12 +36,13 @@ SRC = CTRL / "src"
 DIST = CTRL / "dist"
 ZIP_DATE = (2020, 1, 1, 0, 0, 0)
 S = 3  # supersampling for the vector skins
-PACKAGE_VERSION = 2
+PACKAGE_VERSION = 3
 INPUT_TOGGLE = "left_input_toggle"
 
 FACE = ["cross", "circle", "square", "triangle"]
 DIRS = ["up", "down", "left", "right"]
 SHOULDERS = ["l1", "l2", "r1", "r2"]
+WIDE_PARTS = SHOULDERS + ["start", "select"]
 PARTS = FACE + ["dpad_" + d for d in DIRS] + SHOULDERS + ["l3", "r3", "start", "select", "analog_base", "analog_stick"]
 # Parts that also ship as label-free "blank_<part>" art. Apps for other consoles (Nintendo, Sega) draw their own
 # button labels (A/B/X/Y, L/ZL, 1/2, +/-...) on these, so one skin fits every app.
@@ -325,7 +326,8 @@ class Ctx:
         return Image.new("L", (self.w, self.h), 0)
 
     def rect_box(self):
-        return {"sh1": (14, 52, 242, 140), "sh2": (14, 30, 242, 162), "small": (30, 62, 226, 130)}[self.kind]
+        # Match the roughly 2:1 and 5:3 viewports of the built-in wide controls.
+        return {"sh1": (14, 39, 242, 153), "sh2": (14, 28, 242, 164), "small": (30, 47, 226, 145)}[self.kind]
 
     def geom(self, inset=0):
         if inset in self._g:
@@ -3787,11 +3789,12 @@ def _vor(c, pts):
     return idx, np.sqrt(best)
 
 
-def _polar(c, M):
+def _polar(c, M, circular=False):
     yy, xx = _grid(c)
     x0, y0, x1, y1, cx, cy = _bb(M)
     rx, ry = max(1.0, (x1 - x0) / 2.0), max(1.0, (y1 - y0) / 2.0)
-    u, v = (xx - cx) / rx, (yy - cy) / ry
+    dx, dy = (max(rx, ry), max(rx, ry)) if circular else (rx, ry)
+    u, v = (xx - cx) / dx, (yy - cy) / dy
     return np.sqrt(u * u + v * v), np.arctan2(v, u), (x0, y0, x1, y1, cx, cy, rx, ry)
 
 
@@ -4265,7 +4268,8 @@ def mat_studs(sk, c, M, hi, lo):
 
 
 def mat_swirl(sk, c, M, hi, lo):
-    rr, th, g = _polar(c, M)
+    # Draw the spiral with the same units on both axes, then clip it to the button.
+    rr, th, g = _polar(c, M, circular=c.kind in ("sh1", "sh2", "small"))
     ph = (th / 6.2832) * 3.0 + rr * 2.6
     w = np.clip((np.sin(ph * 6.2832) * 6.0) * 0.5 + 0.5, 0, 1)[..., None]
     a = np.array(hi[:3], np.float32)
@@ -5544,12 +5548,12 @@ def digest_of(listing_text):
     return h.hexdigest()
 
 
-def render_blanks(skin):
+def render_blanks(skin, parts=BLANK_PARTS):
     global BLANK
     T = {}
     BLANK = True
     try:
-        for part in BLANK_PARTS:
+        for part in parts:
             T["blank_" + part] = skin.render(part, False)
             T["blank_" + part + "_pressed"] = skin.render(part, True)
     finally:
@@ -5606,8 +5610,8 @@ def add_neutral(skin):
                                         encoding="utf-8", newline="\n")
 
 
-def add_input_toggle(skin):
-    """Adds the toggle to published skins while keeping the existing button art byte-for-byte."""
+def refresh_wide_controls(skin):
+    """Rebuilds shoulder, Start and Select tiles without rerendering the other published artwork."""
     out_dir = DIST / skin.id
     package_path = out_dir / "item.ecxcontrols"
     neutral_path = out_dir / "neutral.ecxcontrols"
@@ -5618,11 +5622,11 @@ def add_input_toggle(skin):
 
     images = read_images(package_path)
     neutral = read_images(neutral_path)
+    for part in WIDE_PARTS:
+        images[part] = png_bytes(skin.render(part, False))
+        images[part + "_pressed"] = png_bytes(skin.render(part, True))
+    neutral.update({key: png_bytes(tile) for key, tile in render_blanks(skin, WIDE_PARTS).items()})
     tiles = {key: Image.open(io.BytesIO(data)).convert("RGBA") for key, data in images.items()}
-    for suffix in ("", "_pressed"):
-        key = INPUT_TOGGLE + suffix
-        tiles[key] = input_toggle_art(skin, tiles["analog_stick" + suffix], bool(suffix))
-        images[key] = neutral[key] = png_bytes(tiles[key])
 
     listing_path = SRC / skin.id / "listing.json"
     listing_text = json.dumps(keep_locales(listing_of(skin), listing_path), indent=2, ensure_ascii=False) + "\n"
@@ -6682,10 +6686,10 @@ def main(argv):
     cats = keep_label_locales([{"id": i, "labels": {"en": n}} for i, n in CATEGORIES], CTRL / "categories.json")
     write_text(CTRL / "categories.json", json.dumps(cats, indent=2, ensure_ascii=False) + "\n")
     chosen = [s for s in SKINS if not ids or s.id in ids]
-    if "--add-input-toggle" in argv:
+    if "--refresh-wide-controls" in argv:
         for s in chosen:
-            add_input_toggle(s)
-            print("input toggle " + s.id, flush=True)
+            refresh_wide_controls(s)
+            print("wide controls " + s.id, flush=True)
         return
     if "--add-neutral" in argv:
         for s in chosen:
