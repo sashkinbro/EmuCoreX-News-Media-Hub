@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 Meningkatkan Pengikatan Tekstur di Seluruh Tahap Shader",
+  "summary": "Sebuah pull request yang digabungkan mengubah cara backend Vulkan mengikat tekstur sehingga semua tahap shader melihat tampilan yang konsisten dari setiap gambar, menghilangkan data usang dan konflik tata letak ketika satu tahap menulis dan tahap lain membaca sumber daya yang sama.",
+  "heroAlt": "Close-up papan induk PlayStation 4 yang menampilkan AMD APU dan chip memori GDDR5",
+  "searchKeywords": [
+    "shadPS4",
+    "emulator PlayStation 4",
+    "Vulkan",
+    "pengikatan tekstur",
+    "tahap shader",
+    "tata letak gambar",
+    "subrect"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5754",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Mengapa Model Pengikatan Lama Tidak Memadai"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sebelumnya, rasterizer mengikat tekstur secara individual untuk setiap tahap shader — vertex, fragment, compute, dan seterusnya — dengan memanggil BindTextures di dalam loop per-tahap. Jika tahap berikutnya mengikat kembali gambar yang sama dengan tata letak atau tampilan yang berbeda, tahap sebelumnya bisa terus merujuk deskriptor usang atau tata letak yang tidak kompatibel. Ketidakcocokan itu menghasilkan dua masalah konkret: gambar bisa terlihat usang bagi tahap yang sudah diproses, dan konflik tata letak muncul ketika satu tahap menulis ke gambar sementara tahap berikutnya membacanya. Kedua masalah ini bermanifestasi sebagai artefak rendering atau crash pada game yang menggunakan kembali tekstur di seluruh tahap pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "Cara Kerja Pendekatan Dua-Tahap Baru"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch ini membagi penanganan tekstur menjadi dua tahap yang berbeda. Pertama, PrepareTextures dijalankan untuk setiap tahap dan hanya mencatat metadata gambar — deskriptor, persyaratan tata letak, dan pelacakan penulisan — ke dalam array stage_image_writes baru tanpa menyentuh set deskriptor. Setelah semua tahap dipersiapkan, satu panggilan BindTextures menulis set deskriptor lengkap sekali, menggunakan informasi yang terakumulasi. Ini menjamin bahwa setiap tahap melihat indeks pengikatan dan tata letak yang sama untuk gambar tertentu. Fungsi Runtime::Transit juga mendapatkan overload yang menerima BackingImage eksplisit, memungkinkan penyegaran subrect menargetkan backing yang benar tanpa FlushBarriers tambahan."
+    },
+    {
+      "type": "heading",
+      "text": "Dampak pada Kompatibilitas dan Performa"
+    },
+    {
+      "type": "paragraph",
+      "text": "Game yang merender ke tekstur dalam satu pass dan mensampelnya di pass lain — pola umum untuk post-processing, shadow maps, atau deferred shading — seharusnya sekarang melihat hasil yang benar tanpa solusi manual. Penghapusan flag needs_rebind demi flag Registered menyederhanakan mesin status gambar dan mengurangi rebind berlebihan ketika gambar diperluas atau tumpang tindih di cache tekstur. Lebih sedikit FlushBarriers berarti overhead driver lebih rendah, yang bisa berarti frame pacing lebih halus di game yang berat bandwidth. Penulis PR secara khusus meminta verifikasi bahwa checkerboard rendering masih berfungsi, menunjukkan perubahan ini menyentuh jalur penskalaan resolusi yang digunakan beberapa game first-party."
+    },
+    {
+      "type": "heading",
+      "text": "Apa yang Perlu Diverifikasi Selanjutnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Merge request menyebut checkerboard rendering sebagai risiko regresi, jadi penguji harus mencoba judul yang dikenal menggunakan teknik tersebut — seperti Horizon Zero Dawn atau God of War — dan memastikan output yang di-upscale tetap stabil. Di luar itu, game apa pun yang banyak menggunakan kembali render target di seluruh antrian compute dan graphics adalah kasus stres yang baik. Karena perubahan ini terbatas pada backend Vulkan dan cache tekstur, backend lain tidak terpengaruh, tetapi logika staging yang sama bisa diporting ke jalur Metal atau DX12 di masa depan jika mereka menunjukkan bug kohesi-tahap serupa."
+    }
+  ]
+}

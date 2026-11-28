@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Fixes Internal Register Advancement in EXTERNAL Repeat Mode",
+  "summary": "A shader translator bug caused repeated USSE instructions in EXTERNAL mode to overwrite the same internal register, breaking lighting in Silent Hill: Book of Memories and Oddworld: New 'n' Tasty. The fix advances non-GPI internal registers per repeat, matching INTERNAL and BOTH mode behavior.",
+  "heroAlt": "A PlayStation Vita handheld console showing its OLED screen and dual analog sticks on a neutral background",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emulator",
+    "shader translator",
+    "USSE instruction",
+    "EXTERNAL repeat mode",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "What was wrong"
+    },
+    {
+      "type": "paragraph",
+      "text": "The USSE translator's `get_repeat_offset` function only applied register offsets to FPINTERNAL operands when the repeat mode was INTERNAL or BOTH. In EXTERNAL mode the offset remained zero, so every repeat of an instruction wrote to the same internal register. Silent Hill: Book of Memories uses a `VMAD` instruction with EXTERNAL repeat mode, count two, destination `i1`, and sources `sa32` then `sa36`. The following `VDP` instruction (BOTH mode) reads `i1` and `i2` and normalizes `i2`. Because the `VMAD` wrote `internals[1]` twice and never touched `internals[2]`, the light vector fed to `VDP` was whatever stale data resided in that register. The result was shattered title-menu geometry, noisy walls, and incorrect lighting across the game. Oddworld: New 'n' Tasty exhibited a similar overwrite in a vertex program where a later `fma` read a stale `i1`."
+    },
+    {
+      "type": "heading",
+      "text": "How the change works"
+    },
+    {
+      "type": "paragraph",
+      "text": "The fix modifies `get_repeat_offset` so that in EXTERNAL mode a non-GPI internal register advances by one per repeat, exactly as it does in INTERNAL and BOTH modes. GPI operands continue to receive an offset of zero. The logic now checks the repeat mode first: if it is EXTERNAL, the function returns `repeat_index` for FPINTERNAL banks and `repeat_index * 4` for other banks. This matches the hardware behavior where each repeat of an EXTERNAL-mode instruction targets the next internal register. The shader cache version constant was also incremented from 17 to 18, forcing recompilation of cached shaders so that previously translated, broken programs are regenerated with the corrected register indexing."
+    },
+    {
+      "type": "heading",
+      "text": "What it affects for players"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories now renders its title menu and in-game lighting correctly; meshes no longer explode into spikes and walls appear solid instead of noisy. The fix was verified over sixteen frames across eighty seconds with the boot-logo patch that works around a separate fatal error. Oddworld: New 'n' Tasty's menu renders identically before and after, confirming the vertex program now reads the value the program computed rather than a stale register. Testing across 1,233 shaders from nineteen games showed only six shaders changed—five from Silent Hill and one from Oddworld—indicating the change is tightly scoped and does not introduce regressions elsewhere."
+    },
+    {
+      "type": "heading",
+      "text": "Verification and next steps"
+    },
+    {
+      "type": "paragraph",
+      "text": "The fix was validated with RenderDoc captures on the Vulkan renderer, which showed NaN or garbage light-vector varyings before the change and correct values after. Both renderers, all memory mapping modes, and a fresh shader cache were tested. The translator reports no unhandled instructions at trace level. Users should ensure they are on a build that includes the cache version bump (18) so that old cached shaders are discarded; otherwise the broken translations will persist. No further work items are mentioned in the pull request, but the pattern suggests monitoring other titles that use EXTERNAL repeat mode with internal destinations for similar issues."
+    }
+  ]
+}

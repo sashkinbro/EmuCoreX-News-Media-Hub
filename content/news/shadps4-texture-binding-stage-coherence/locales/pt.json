@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 Melhora Vinculação de Texturas Entre Estágios de Shader",
+  "summary": "Um pull request mesclado retrabalha como o backend Vulkan vincula texturas para que todos os estágios de shader vejam uma visão consistente de cada imagem, eliminando dados obsoletos e conflitos de layout quando um estágio escreve e outro lê o mesmo recurso.",
+  "heroAlt": "Close-up de uma placa-mãe do PlayStation 4 mostrando o APU AMD e chips de memória GDDR5",
+  "searchKeywords": [
+    "shadPS4",
+    "emulador PlayStation 4",
+    "Vulkan",
+    "vinculação de textura",
+    "estágios de shader",
+    "layout de imagem",
+    "subrect"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "pull request #5754 do shadPS4",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por que o modelo de vinculação antigo ficou aquém"
+    },
+    {
+      "type": "paragraph",
+      "text": "Anteriormente, o rasterizador vinculava texturas individualmente para cada estágio de shader — vértice, fragmento, computação e assim por diante — chamando BindTextures dentro do loop por estágio. Se um estágio posterior revinculasse a mesma imagem com um layout ou visualização diferentes, o estágio anterior poderia continuar referenciando um descritor obsoleto ou um layout incompatível. Essa incompatibilidade produzia dois problemas concretos: uma imagem poderia parecer obsoleta para um estágio que já havia sido processado, e conflitos de layout surgiam quando um estágio escrevia em uma imagem enquanto um estágio subsequente lia dela. Ambos os problemas se manifestam como artefatos de renderização ou falhas em jogos que reutilizam texturas entre estágios do pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "Como funciona a nova abordagem de duas passagens"
+    },
+    {
+      "type": "paragraph",
+      "text": "O patch divide o tratamento de texturas em duas passagens distintas. Primeiro, PrepareTextures é executado para cada estágio e apenas registra os metadados da imagem — descritores, requisitos de layout e rastreamento de escrita — em um novo array stage_image_writes sem tocar nos conjuntos de descritores. Após todos os estágios terem sido preparados, uma única chamada BindTextures grava o conjunto de descritores completo de uma vez, usando as informações acumuladas. Isso garante que cada estágio veja o mesmo índice de vinculação e layout para uma determinada imagem. A função Runtime::Transit também ganhou uma sobrecarga que aceita um BackingImage explícito, permitindo que atualizações de subrect atinjam o backing correto sem FlushBarriers extras."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto na compatibilidade e desempenho"
+    },
+    {
+      "type": "paragraph",
+      "text": "Jogos que renderizam em uma textura em uma passagem e a amostram em outra — um padrão comum para pós-processamento, mapas de sombra ou sombreamento diferido — agora devem ver resultados corretos sem soluções manuais. A remoção da flag needs_rebind em favor de uma flag Registered simplifica a máquina de estados da imagem e reduz revinculações redundantes quando as imagens são expandidas ou sobrepostas no cache de texturas. Menos FlushBarriers significam menos sobrecarga do driver, o que pode se traduzir em melhor ritmo de quadros em títulos que exigem muita largura de banda. O autor do PR pediu especificamente a verificação de que a renderização em xadrez ainda funciona, indicando que a mudança afeta caminhos de escalonamento de resolução usados por vários jogos first-party."
+    },
+    {
+      "type": "heading",
+      "text": "O que verificar a seguir"
+    },
+    {
+      "type": "paragraph",
+      "text": "O merge request destaca a renderização em xadrez como risco de regressão, então os testadores devem exercitar títulos conhecidos por usar essa técnica — como Horizon Zero Dawn ou God of War — e confirmar que a saída com upscale permanece estável. Além disso, qualquer jogo que reutilize intensivamente alvos de renderização entre filas de computação e gráficos é um bom caso de estresse. Como a mudança está confinada ao backend Vulkan e ao cache de texturas, nenhum outro backend é afetado, mas a mesma lógica de preparação poderia ser portada para os caminhos Metal ou DX12 no futuro, se exibirem bugs semelhantes de coerência de estágio."
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, EXTERNAL Tekrar Modunda Dahili Yazmaç İlerlemesini Düzeltiyor",
+  "summary": "Bir gölgelendirici çevirici hatası, EXTERNAL modundaki tekrarlanan USSE komutlarının aynı dahili yazmacın üzerine yazılmasına neden olarak Silent Hill: Book of Memories ve Oddworld: New 'n' Tasty oyunlarındaki ışıklandırmayı bozuyordu. Düzeltme, GPI olmayan dahili yazmaçları her tekrarda ilerleterek INTERNAL ve BOTH modlarındaki davranışla uyumlu hale getiriyor.",
+  "heroAlt": "Nötr bir arka plan üzerinde OLED ekranını ve çift analog çubuğunu gösteren bir PlayStation Vita el konsolu",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emülatörü",
+    "shader translator",
+    "gölgelendirici çevirici",
+    "USSE instruction",
+    "USSE komutu",
+    "EXTERNAL repeat mode",
+    "EXTERNAL tekrar modu",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Sorun neydi"
+    },
+    {
+      "type": "paragraph",
+      "text": "USSE çeviricisinin `get_repeat_offset` işlevi, yazmaç ofsetlerini yalnızca tekrar modu INTERNAL veya BOTH olduğunda FPINTERNAL işlenenlerine uyguluyordu. EXTERNAL modunda ofset sıfır kaldığı için, bir komutun her tekrarı aynı dahili yazmaca yazıyordu. Silent Hill: Book of Memories, EXTERNAL tekrar modu, iki tekrar sayısı, hedef `i1` ve kaynaklar `sa32` ardından `sa36` olan bir `VMAD` komutu kullanıyor. Bunu takip eden `VDP` komutu (BOTH modu) `i1` ve `i2` değerlerini okuyor ve `i2` değerini normalleştiriyor. `VMAD` komutu `internals[1]` üzerine iki kez yazdığı ve `internals[2]` değerine hiç dokunmadığı için, `VDP`'ye beslenen ışık vektörü o yazmaçta kalan eski verilerden ibaretti. Sonuç olarak başlık menüsü geometrisi parçalanıyor, duvarlar gürültülü görünüyor ve oyun genelinde yanlış ışıklandırma oluşuyordu. Oddworld: New 'n' Tasty, sonraki bir `fma` komutunun eski bir `i1` değerini okuduğu bir köşe programında benzer bir üzerine yazma sorunu sergiliyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Değişiklik nasıl çalışıyor"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme, `get_repeat_offset` işlevini değiştirerek EXTERNAL modunda GPI olmayan bir dahili yazmacın, tıpkı INTERNAL ve BOTH modlarında olduğu gibi her tekrarda bir birim ilerlemesini sağlıyor. GPI işlenenleri sıfır ofset almaya devam ediyor. Mantık artık önce tekrar modunu kontrol ediyor: Eğer mod EXTERNAL ise, işlev FPINTERNAL bankaları için `repeat_index` değerini, diğer bankalar için ise `repeat_index * 4` değerini döndürüyor. Bu, EXTERNAL modu komutunun her tekrarının bir sonraki dahili yazmacı hedeflediği donanım davranışıyla eşleşiyor. Gölgelendirici önbellek sürüm sabiti de 17'den 18'e yükseltilerek, önbelleğe alınmış gölgelendiricilerin yeniden derlenmesi zorunlu kılındı; böylece daha önce çevrilmiş hatalı programlar düzeltilmiş yazmaç indeksleme ile yeniden oluşturuluyor."
+    },
+    {
+      "type": "heading",
+      "text": "Oyuncular için etkileri nelerdir"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories artık başlık menüsünü ve oyun içi ışıklandırmayı doğru şekilde işliyor; ağlar artık sivri uçlar halinde patlamıyor ve duvarlar gürültülü görünmek yerine düzgün görünüyor. Düzeltme, ayrı bir kritik hatayı aşan önyükleme logosu yaması ile seksen saniye boyunca on altı kare üzerinde doğrulandı. Oddworld: New 'n' Tasty'nin menüsü, köşe programının artık eski bir yazmaç yerine programın hesapladığı değeri okuduğunu doğrulayarak, değişiklik öncesi ve sonrası aynı şekilde işleniyor. On dokuz oyundan 1.233 gölgelendirici üzerinde yapılan testler, yalnızca altı gölgelendiricinin değiştiğini (beşi Silent Hill'den, biri Oddworld'den) gösterdi; bu da değişikliğin dar kapsamlı olduğunu ve başka yerlerde gerilemelere yol açmadığını kanıtlıyor."
+    },
+    {
+      "type": "heading",
+      "text": "Doğrulama ve sonraki adımlar"
+    },
+    {
+      "type": "paragraph",
+      "text": "Düzeltme, Vulkan oluşturucusu üzerindeki RenderDoc kayıtları ile doğrulandı; bu kayıtlar değişiklikten önce NaN veya hatalı ışık vektörü değişkenleri, değişiklikten sonra ise doğru değerleri gösterdi. Her iki oluşturucu, tüm bellek eşleme modları ve temiz bir gölgelendirici önbelleği test edildi. Çevirici, izleme düzeyinde işlenmemiş hiçbir komut rapor etmiyor. Kullanıcılar, eski önbelleğe alınmış gölgelendiricilerin atılması için önbellek sürüm yükseltmesini (18) içeren bir sürümde olduklarından emin olmalıdır; aksi takdirde hatalı çeviriler devam edecektir. Pull request içerisinde başka bir çalışma maddesinden bahsedilmiyor, ancak bu durum, dahili hedeflerle EXTERNAL tekrar modunu kullanan diğer oyunların benzer sorunlar için izlenmesi gerektiğini gösteriyor."
+    }
+  ]
+}

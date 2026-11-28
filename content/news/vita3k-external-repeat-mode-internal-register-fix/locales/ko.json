@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "ko",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K, EXTERNAL 반복 모드에서 내부 레지스터 증가 문제 수정",
+  "summary": "셰이더 번역기 버그로 인해 EXTERNAL 모드에서 반복되는 USSE 명령어가 동일한 내부 레지스터를 덮어쓰면서 Silent Hill: Book of Memories와 Oddworld: New 'n' Tasty의 조명 문제가 발생했습니다. 이번 수정은 INTERNAL 및 BOTH 모드 동작과 일치하도록 반복마다 비 GPI 내부 레지스터를 증가시킵니다.",
+  "heroAlt": "중립적인 배경에 OLED 화면과 듀얼 아날로그 스틱이 있는 PlayStation Vita 휴대용 콘솔",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita 에뮬레이터",
+    "shader translator",
+    "셰이더 번역기",
+    "USSE instruction",
+    "USSE 명령어",
+    "EXTERNAL repeat mode",
+    "EXTERNAL 반복 모드",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty"
+  ],
+  "categoryLabels": {
+    "emulation": "에뮬레이션",
+    "graphics": "그래픽"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "패치 및 검토"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "문제점"
+    },
+    {
+      "type": "paragraph",
+      "text": "USSE 번역기의 `get_repeat_offset` 함수는 반복 모드가 INTERNAL 또는 BOTH일 때만 FPINTERNAL 피연산자에 레지스터 오프셋을 적용했습니다. EXTERNAL 모드에서는 오프셋이 0으로 유지되어 명령어의 모든 반복이 동일한 내부 레지스터에 기록되었습니다. Silent Hill: Book of Memories는 EXTERNAL 반복 모드, 카운트 2, 대상 `i1`, 소스 `sa32` 및 `sa36`을 사용하는 `VMAD` 명령어를 사용합니다. 이어지는 `VDP` 명령어(BOTH 모드)는 `i1`과 `i2`를 읽고 `i2`를 정규화합니다. `VMAD`가 `internals[1]`에 두 번 기록하고 `internals[2]`는 건드리지 않았기 때문에, `VDP`에 전달된 라이트 벡터는 해당 레지스터에 남아 있던 오래된 데이터였습니다. 그 결과 타이틀 메뉴 지오메트리가 깨지고, 벽이 노이즈처럼 보이며, 게임 전반에 걸쳐 조명이 잘못 표시되었습니다. Oddworld: New 'n' Tasty도 버텍스 프로그램에서 나중에 `fma`가 오래된 `i1`을 읽는 유사한 덮어쓰기 현상을 보였습니다."
+    },
+    {
+      "type": "heading",
+      "text": "변경 사항 작동 방식"
+    },
+    {
+      "type": "paragraph",
+      "text": "이번 수정은 `get_repeat_offset`을 변경하여 EXTERNAL 모드에서도 비 GPI 내부 레지스터가 INTERNAL 및 BOTH 모드와 동일하게 반복당 1씩 증가하도록 했습니다. GPI 피연산자는 계속해서 0의 오프셋을 받습니다. 이제 로직은 반복 모드를 먼저 확인합니다. EXTERNAL인 경우 함수는 FPINTERNAL 뱅크에 대해 `repeat_index`를, 다른 뱅크에 대해서는 `repeat_index * 4`를 반환합니다. 이는 EXTERNAL 모드 명령어의 각 반복이 다음 내부 레지스터를 대상으로 하는 하드웨어 동작과 일치합니다. 또한 셰이더 캐시 버전 상수가 17에서 18로 증가하여, 이전에 번역된 잘못된 프로그램이 수정된 레지스터 인덱싱으로 다시 생성되도록 캐시된 셰이더의 재컴파일을 강제합니다."
+    },
+    {
+      "type": "heading",
+      "text": "플레이어에게 미치는 영향"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories는 이제 타이틀 메뉴와 게임 내 조명을 올바르게 렌더링합니다. 메시가 뾰족하게 튀어나오지 않으며 벽이 노이즈 없이 단단하게 보입니다. 이 수정 사항은 별도의 치명적인 오류를 우회하는 부팅 로고 패치와 함께 80초 동안 16프레임에 걸쳐 검증되었습니다. Oddworld: New 'n' Tasty의 메뉴는 수정 전후가 동일하게 렌더링되어, 버텍스 프로그램이 이제 오래된 레지스터 대신 프로그램이 계산한 값을 읽는다는 것을 확인했습니다. 19개 게임의 1,233개 셰이더를 테스트한 결과 단 6개의 셰이더(Silent Hill 5개, Oddworld 1개)만 변경되었으며, 이는 변경 범위가 좁고 다른 곳에 회귀 문제를 일으키지 않음을 나타냅니다."
+    },
+    {
+      "type": "heading",
+      "text": "검증 및 향후 계획"
+    },
+    {
+      "type": "paragraph",
+      "text": "이 수정 사항은 Vulkan 렌더러에서 RenderDoc 캡처를 통해 검증되었으며, 변경 전에는 NaN 또는 잘못된 라이트 벡터 베이링이 나타났으나 변경 후에는 올바른 값이 표시되었습니다. 두 렌더러, 모든 메모리 매핑 모드, 새로운 셰이더 캐시가 테스트되었습니다. 번역기는 추적 수준에서 처리되지 않은 명령어를 보고하지 않습니다. 사용자는 캐시된 이전 셰이더가 삭제되도록 캐시 버전 범프(18)가 포함된 빌드를 사용해야 합니다. 그렇지 않으면 잘못된 번역이 계속 유지됩니다. 풀 리퀘스트에 추가 작업 항목은 언급되지 않았지만, 유사한 문제를 방지하기 위해 내부 대상을 사용하는 EXTERNAL 반복 모드를 사용하는 다른 타이틀을 모니터링하는 것이 좋습니다."
+    }
+  ]
+}

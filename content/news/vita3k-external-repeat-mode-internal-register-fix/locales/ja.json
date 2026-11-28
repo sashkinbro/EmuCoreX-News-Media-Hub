@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "ja",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3KがEXTERNALリピートモードにおける内部レジスタの進捗問題を修正",
+  "summary": "シェーダー変換のバグにより、EXTERNALモードでのUSSE命令の繰り返しが同じ内部レジスタを上書きし、『Silent Hill: Book of Memories』や『Oddworld: New 'n' Tasty』のライティングが崩れていました。この修正により、非GPI内部レジスタがリピートごとに進むようになり、INTERNALおよびBOTHモードの挙動と一致するようになりました。",
+  "heroAlt": "ニュートラルな背景にOLED画面とデュアルアナログスティックを備えたPlayStation Vita携帯ゲーム機",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita emulator",
+    "PlayStation Vita エミュレーター",
+    "shader translator",
+    "シェーダー変換",
+    "USSE instruction",
+    "USSE命令",
+    "EXTERNAL repeat mode",
+    "EXTERNALリピートモード",
+    "Silent Hill Book of Memories"
+  ],
+  "categoryLabels": {
+    "emulation": "エミュレーション",
+    "graphics": "グラフィックス"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "パッチおよびレビュー"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "問題の内容"
+    },
+    {
+      "type": "paragraph",
+      "text": "USSEトランスレーターの`get_repeat_offset`関数は、リピートモードがINTERNALまたはBOTHの場合にのみ、FPINTERNALオペランドに対してレジスタオフセットを適用していました。EXTERNALモードではオフセットがゼロのままだったため、命令が繰り返されるたびに同じ内部レジスタに書き込まれていました。『Silent Hill: Book of Memories』では、EXTERNALリピートモード、カウント2、宛先`i1`、ソース`sa32`および`sa36`を持つ`VMAD`命令が使用されています。その後の`VDP`命令（BOTHモード）は`i1`と`i2`を読み取り、`i2`を正規化します。`VMAD`は`internals[1]`に2回書き込み、`internals[2]`には一度も触れなかったため、`VDP`に供給されるライトベクトルは、そのレジスタに残っていた古いデータとなっていました。その結果、タイトルメニューのジオメトリが崩れ、壁にノイズが乗り、ゲーム全体でライティングが不正確になっていました。『Oddworld: New 'n' Tasty』でも同様の現象が頂点プログラムで発生しており、後の`fma`が古い`i1`を読み取っていました。"
+    },
+    {
+      "type": "heading",
+      "text": "修正の仕組み"
+    },
+    {
+      "type": "paragraph",
+      "text": "この修正では`get_repeat_offset`を改良し、EXTERNALモードにおいて非GPI内部レジスタがリピートごとに1つ進むようにしました。これはINTERNALおよびBOTHモードと全く同じ挙動です。GPIオペランドは引き続きオフセットゼロを受け取ります。ロジックはまずリピートモードを確認するようになり、EXTERNALであれば、FPINTERNALバンクに対しては`repeat_index`を、その他のバンクに対しては`repeat_index * 4`を返すようになりました。これは、EXTERNALモード命令の各リピートが次の内部レジスタをターゲットとするハードウェアの挙動と一致します。また、シェーダーキャッシュのバージョン定数が17から18に引き上げられ、キャッシュされたシェーダーの再コンパイルが強制されることで、以前に変換された破損プログラムが修正済みのレジスタインデックスで再生成されるようになります。"
+    },
+    {
+      "type": "heading",
+      "text": "プレイヤーへの影響"
+    },
+    {
+      "type": "paragraph",
+      "text": "『Silent Hill: Book of Memories』は、タイトルメニューとゲーム内のライティングが正しくレンダリングされるようになり、メッシュがスパイク状に崩れることもなく、壁もノイズではなくソリッドに見えるようになりました。この修正は、別の致命的なエラーを回避するブートロゴパッチを適用した状態で、80秒間にわたる16フレームの検証を行いました。『Oddworld: New 'n' Tasty』のメニューは修正前後で同一のレンダリング結果となり、頂点プログラムが古いレジスタではなく計算された値を正しく読み取っていることが確認されました。19タイトルから抽出した1,233個のシェーダーをテストした結果、変更があったのはわずか6個（Silent Hillから5個、Oddworldから1個）であり、この変更の影響範囲が限定的で、他への回帰バグを引き起こさないことが示されています。"
+    },
+    {
+      "type": "heading",
+      "text": "検証と今後のステップ"
+    },
+    {
+      "type": "paragraph",
+      "text": "この修正は、VulkanレンダラーでのRenderDocキャプチャを使用して検証されました。修正前にはNaNやゴミデータとなっていたライトベクトルバリアントが、修正後には正しい値を示すようになりました。両方のレンダラー、すべてのメモリマッピングモード、およびクリーンなシェーダーキャッシュでテスト済みです。トランスレーターはトレースレベルで未処理の命令を報告していません。ユーザーは、古いキャッシュされたシェーダーが破棄されるよう、キャッシュバージョン（18）を含むビルドを使用していることを確認してください。そうでない場合、破損した変換が残存します。プルリクエストにはこれ以上の作業項目は記載されていませんが、EXTERNALリピートモードを内部宛先で使用する他のタイトルでも同様の問題がないか監視することが推奨されます。"
+    }
+  ]
+}

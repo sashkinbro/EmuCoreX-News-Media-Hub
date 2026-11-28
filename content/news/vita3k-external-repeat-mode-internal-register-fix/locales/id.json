@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "id",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K Memperbaiki Kemajuan Register Internal dalam Mode Pengulangan EXTERNAL",
+  "summary": "Bug pada penerjemah shader menyebabkan instruksi USSE yang berulang dalam mode EXTERNAL menimpa register internal yang sama, sehingga merusak pencahayaan di Silent Hill: Book of Memories dan Oddworld: New 'n' Tasty. Perbaikan ini memajukan register internal non-GPI per pengulangan, menyamai perilaku mode INTERNAL dan BOTH.",
+  "heroAlt": "Konsol genggam PlayStation Vita yang menampilkan layar OLED dan stik analog ganda dengan latar belakang netral",
+  "searchKeywords": [
+    "Vita3K",
+    "emulator PlayStation Vita",
+    "penerjemah shader",
+    "instruksi USSE",
+    "mode pengulangan EXTERNAL",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty",
+    "emulator",
+    "grafis"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulasi",
+    "graphics": "Grafis"
+  },
+  "sourceLabels": {
+    "change": "Pull request Vita3K #4207",
+    "implementation": "Patch dan tinjauan"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Apa yang salah"
+    },
+    {
+      "type": "paragraph",
+      "text": "Fungsi `get_repeat_offset` pada penerjemah USSE hanya menerapkan offset register ke operan FPINTERNAL ketika mode pengulangan adalah INTERNAL atau BOTH. Dalam mode EXTERNAL, offset tetap nol, sehingga setiap pengulangan instruksi menulis ke register internal yang sama. Silent Hill: Book of Memories menggunakan instruksi `VMAD` dengan mode pengulangan EXTERNAL, hitungan dua, tujuan `i1`, dan sumber `sa32` lalu `sa36`. Instruksi `VDP` berikutnya (mode BOTH) membaca `i1` dan `i2` serta menormalisasi `i2`. Karena `VMAD` menulis `internals[1]` dua kali dan tidak pernah menyentuh `internals[2]`, vektor cahaya yang diberikan ke `VDP` adalah data usang apa pun yang tersimpan di register tersebut. Hasilnya adalah geometri menu judul yang hancur, dinding yang berisik, dan pencahayaan yang tidak tepat di seluruh permainan. Oddworld: New 'n' Tasty menunjukkan penimpaan serupa dalam program vertex di mana `fma` selanjutnya membaca `i1` yang usang."
+    },
+    {
+      "type": "heading",
+      "text": "Bagaimana perubahan ini bekerja"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan ini memodifikasi `get_repeat_offset` sehingga dalam mode EXTERNAL, register internal non-GPI bertambah satu per pengulangan, persis seperti yang terjadi pada mode INTERNAL dan BOTH. Operan GPI terus menerima offset nol. Logika sekarang memeriksa mode pengulangan terlebih dahulu: jika EXTERNAL, fungsi mengembalikan `repeat_index` untuk bank FPINTERNAL dan `repeat_index * 4` untuk bank lainnya. Ini sesuai dengan perilaku perangkat keras di mana setiap pengulangan instruksi mode EXTERNAL menargetkan register internal berikutnya. Konstanta versi cache shader juga ditingkatkan dari 17 menjadi 18, memaksa kompilasi ulang shader yang di-cache agar program yang sebelumnya diterjemahkan dengan rusak dapat dibuat ulang dengan pengindeksan register yang dikoreksi."
+    },
+    {
+      "type": "heading",
+      "text": "Apa dampaknya bagi pemain"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories sekarang merender menu judul dan pencahayaan dalam game dengan benar; mesh tidak lagi meledak menjadi paku dan dinding tampak solid alih-alih berisik. Perbaikan ini diverifikasi selama enam belas frame dalam delapan puluh detik dengan patch boot-logo yang mengatasi kesalahan fatal terpisah. Menu Oddworld: New 'n' Tasty merender secara identik sebelum dan sesudah, mengonfirmasi bahwa program vertex sekarang membaca nilai yang dihitung oleh program alih-alih register yang usang. Pengujian pada 1.233 shader dari sembilan belas game menunjukkan hanya enam shader yang berubah—lima dari Silent Hill dan satu dari Oddworld—menunjukkan bahwa perubahan ini memiliki cakupan yang ketat dan tidak menimbulkan regresi di tempat lain."
+    },
+    {
+      "type": "heading",
+      "text": "Verifikasi dan langkah selanjutnya"
+    },
+    {
+      "type": "paragraph",
+      "text": "Perbaikan ini divalidasi dengan tangkapan RenderDoc pada renderer Vulkan, yang menunjukkan NaN atau variasi vektor cahaya sampah sebelum perubahan dan nilai yang benar setelahnya. Kedua renderer, semua mode pemetaan memori, dan cache shader baru telah diuji. Penerjemah tidak melaporkan instruksi yang tidak tertangani pada tingkat pelacakan. Pengguna harus memastikan mereka menggunakan build yang menyertakan peningkatan versi cache (18) agar shader cache lama dibuang; jika tidak, terjemahan yang rusak akan tetap ada. Tidak ada item pekerjaan lebih lanjut yang disebutkan dalam pull request, tetapi polanya menyarankan untuk memantau judul lain yang menggunakan mode pengulangan EXTERNAL dengan tujuan internal untuk masalah serupa."
+    }
+  ]
+}

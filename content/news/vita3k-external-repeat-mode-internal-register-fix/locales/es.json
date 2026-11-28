@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corrige el avance de registros internos en el modo de repetición EXTERNAL",
+  "summary": "Un error en el traductor de sombreadores provocaba que las instrucciones USSE repetidas en modo EXTERNAL sobrescribieran el mismo registro interno, rompiendo la iluminación en Silent Hill: Book of Memories y Oddworld: New 'n' Tasty. La corrección hace avanzar los registros internos no GPI por repetición, igualando el comportamiento de los modos INTERNAL y BOTH.",
+  "heroAlt": "Una consola portátil PlayStation Vita mostrando su pantalla OLED y sus dos sticks analógicos sobre un fondo neutro",
+  "searchKeywords": [
+    "Vita3K",
+    "emulador de PlayStation Vita",
+    "traductor de sombreadores",
+    "instrucción USSE",
+    "modo de repetición EXTERNAL",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty",
+    "emulación",
+    "gráficos"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "¿Qué estaba mal?"
+    },
+    {
+      "type": "paragraph",
+      "text": "La función `get_repeat_offset` del traductor USSE solo aplicaba desplazamientos de registro a los operandos FPINTERNAL cuando el modo de repetición era INTERNAL o BOTH. En el modo EXTERNAL, el desplazamiento permanecía en cero, por lo que cada repetición de una instrucción escribía en el mismo registro interno. Silent Hill: Book of Memories utiliza una instrucción `VMAD` con modo de repetición EXTERNAL, conteo de dos, destino `i1` y fuentes `sa32` y luego `sa36`. La siguiente instrucción `VDP` (modo BOTH) lee `i1` e `i2` y normaliza `i2`. Debido a que `VMAD` escribió en `internals[1]` dos veces y nunca tocó `internals[2]`, el vector de luz enviado a `VDP` era cualquier dato obsoleto que residiera en ese registro. El resultado era una geometría del menú de título destrozada, paredes con ruido e iluminación incorrecta en todo el juego. Oddworld: New 'n' Tasty mostró una sobrescritura similar en un programa de vértices donde un `fma` posterior leía un `i1` obsoleto."
+    },
+    {
+      "type": "heading",
+      "text": "Cómo funciona el cambio"
+    },
+    {
+      "type": "paragraph",
+      "text": "La corrección modifica `get_repeat_offset` para que, en el modo EXTERNAL, un registro interno no GPI avance uno por repetición, exactamente como lo hace en los modos INTERNAL y BOTH. Los operandos GPI continúan recibiendo un desplazamiento de cero. La lógica ahora verifica primero el modo de repetición: si es EXTERNAL, la función devuelve `repeat_index` para los bancos FPINTERNAL y `repeat_index * 4` para otros bancos. Esto coincide con el comportamiento del hardware donde cada repetición de una instrucción en modo EXTERNAL apunta al siguiente registro interno. La constante de versión de la caché de sombreadores también se incrementó de 17 a 18, forzando la recompilación de los sombreadores en caché para que los programas previamente traducidos y rotos se regeneren con la indexación de registros corregida."
+    },
+    {
+      "type": "heading",
+      "text": "Qué afecta a los jugadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories ahora renderiza correctamente su menú de título y la iluminación dentro del juego; las mallas ya no explotan en picos y las paredes aparecen sólidas en lugar de ruidosas. La corrección se verificó durante dieciséis fotogramas a lo largo de ochenta segundos con el parche del logotipo de inicio que soluciona un error fatal independiente. El menú de Oddworld: New 'n' Tasty se renderiza de forma idéntica antes y después, confirmando que el programa de vértices ahora lee el valor que el programa calculó en lugar de un registro obsoleto. Las pruebas en 1,233 sombreadores de diecinueve juegos mostraron que solo seis sombreadores cambiaron (cinco de Silent Hill y uno de Oddworld), lo que indica que el cambio tiene un alcance limitado y no introduce regresiones en otras partes."
+    },
+    {
+      "type": "heading",
+      "text": "Verificación y próximos pasos"
+    },
+    {
+      "type": "paragraph",
+      "text": "La corrección se validó con capturas de RenderDoc en el renderizador Vulkan, que mostraron valores NaN o basura en las variaciones del vector de luz antes del cambio y valores correctos después. Se probaron ambos renderizadores, todos los modos de mapeo de memoria y una caché de sombreadores nueva. El traductor no reporta instrucciones no controladas a nivel de traza. Los usuarios deben asegurarse de estar en una compilación que incluya el aumento de versión de caché (18) para que los sombreadores antiguos en caché se descarten; de lo contrario, las traducciones rotas persistirán. No se mencionan más tareas en el pull request, pero el patrón sugiere monitorear otros títulos que utilicen el modo de repetición EXTERNAL con destinos internos para detectar problemas similares."
+    }
+  ]
+}

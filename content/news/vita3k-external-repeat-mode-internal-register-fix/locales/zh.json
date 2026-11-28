@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K 修复了 EXTERNAL 重复模式下的内部寄存器递增问题",
+  "summary": "着色器转换器中的一个错误导致 EXTERNAL 模式下的重复 USSE 指令覆盖了同一个内部寄存器，从而破坏了 Silent Hill: Book of Memories 和 Oddworld: New 'n' Tasty 中的光照效果。此修复程序使非 GPI 内部寄存器在每次重复时递增，从而与 INTERNAL 和 BOTH 模式的行为保持一致。",
+  "heroAlt": "一台 PlayStation Vita 手持游戏机，展示了其 OLED 屏幕和双模拟摇杆，背景为中性色调",
+  "searchKeywords": [
+    "Vita3K",
+    "PlayStation Vita 模拟器",
+    "shader translator",
+    "着色器转换器",
+    "USSE instruction",
+    "USSE 指令",
+    "EXTERNAL repeat mode",
+    "EXTERNAL 重复模式",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "问题所在"
+    },
+    {
+      "type": "paragraph",
+      "text": "USSE 转换器的 `get_repeat_offset` 函数仅在重复模式为 INTERNAL 或 BOTH 时，才将寄存器偏移量应用于 FPINTERNAL 操作数。在 EXTERNAL 模式下，偏移量保持为零，因此指令的每次重复都会写入同一个内部寄存器。Silent Hill: Book of Memories 使用了带有 EXTERNAL 重复模式的 `VMAD` 指令，重复计数为 2，目标寄存器为 `i1`，源寄存器分别为 `sa32` 和 `sa36`。随后的 `VDP` 指令（BOTH 模式）读取 `i1` 和 `i2` 并对 `i2` 进行归一化。由于 `VMAD` 两次写入了 `internals[1]` 且从未触及 `internals[2]`，因此馈送给 `VDP` 的光向量是该寄存器中残留的陈旧数据。结果导致标题菜单几何图形破碎、墙壁出现噪点，以及整个游戏的光照错误。Oddworld: New 'n' Tasty 在顶点程序中表现出类似的覆盖问题，其中后续的 `fma` 读取了陈旧的 `i1`。"
+    },
+    {
+      "type": "heading",
+      "text": "更改原理"
+    },
+    {
+      "type": "paragraph",
+      "text": "该修复程序修改了 `get_repeat_offset`，使得在 EXTERNAL 模式下，非 GPI 内部寄存器在每次重复时递增 1，这与 INTERNAL 和 BOTH 模式下的行为完全一致。GPI 操作数继续保持零偏移。逻辑现在首先检查重复模式：如果是 EXTERNAL，该函数针对 FPINTERNAL 库返回 `repeat_index`，针对其他库返回 `repeat_index * 4`。这符合硬件行为，即 EXTERNAL 模式指令的每次重复都指向下一个内部寄存器。着色器缓存版本常量也从 17 增加到 18，强制重新编译缓存的着色器，以便之前转换错误的程序能够以正确的寄存器索引重新生成。"
+    },
+    {
+      "type": "heading",
+      "text": "对玩家的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories 现在可以正确渲染其标题菜单和游戏内光照；网格不再破碎成尖刺，墙壁看起来坚实而没有噪点。该修复程序通过引导徽标补丁（用于绕过另一个致命错误）在 80 秒内对 16 帧进行了验证。Oddworld: New 'n' Tasty 的菜单在更改前后渲染效果一致，证实了顶点程序现在读取的是程序计算出的值，而不是陈旧的寄存器值。对来自 19 款游戏的 1,233 个着色器进行的测试显示，只有 6 个着色器发生了变化（其中 5 个来自 Silent Hill，1 个来自 Oddworld），这表明该更改影响范围较小，且不会在其他地方引入回归问题。"
+    },
+    {
+      "type": "heading",
+      "text": "验证与后续步骤"
+    },
+    {
+      "type": "paragraph",
+      "text": "该修复程序已通过 Vulkan 渲染器上的 RenderDoc 捕获进行了验证，结果显示在更改前存在 NaN 或错误的变体光向量，更改后数值正确。所有渲染器、所有内存映射模式以及全新的着色器缓存均已通过测试。转换器在跟踪级别报告没有未处理的指令。用户应确保使用包含缓存版本提升（18）的版本，以便丢弃旧的缓存着色器；否则错误的转换将持续存在。Pull request 中未提及进一步的工作项，但该模式建议监控其他在内部目标中使用 EXTERNAL 重复模式的标题，以防出现类似问题。"
+    }
+  ]
+}

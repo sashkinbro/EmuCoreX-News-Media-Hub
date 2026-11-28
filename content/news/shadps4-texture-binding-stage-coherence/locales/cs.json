@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 vylepšuje vazbu textur napříč fázemi shaderů",
+  "summary": "Sloučený pull request přepracovává způsob, jakým Vulkan backend váže textury, aby všechny fáze shaderů viděly konzistentní zobrazení každého obrázku, čímž se eliminují zastaralá data a konflikty rozvržení v případech, kdy jedna fáze zapisuje a druhá čte stejný zdroj.",
+  "heroAlt": "Detail základní desky PlayStation 4 zobrazující AMD APU a paměťové čipy GDDR5",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "emulátor PlayStation 4",
+    "Vulkan",
+    "texture binding",
+    "vazba textur",
+    "shader stages",
+    "fáze shaderů",
+    "image layout",
+    "rozvržení obrázku"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5754",
+    "implementation": "Patch a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Proč starý model vazby nestačil"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dříve rasterizátor vázal textury jednotlivě pro každou fázi shaderu – vertex, fragment, compute atd. – voláním BindTextures uvnitř smyčky pro danou fázi. Pokud pozdější fáze znovu navázala stejný obrázek s jiným rozvržením nebo pohledem, dřívější fáze mohla nadále odkazovat na zastaralý deskriptor nebo nekompatibilní rozvržení. Tento nesoulad způsoboval dva konkrétní problémy: obrázek se mohl jevit jako zastaralý pro fázi, která již byla zpracována, a vznikaly konflikty rozvržení, když jedna fáze zapisovala do obrázku, zatímco následná fáze z něj četla. Oba problémy se projevují jako vykreslovací artefakty nebo pády ve hrách, které opakovaně používají textury napříč fázemi pipeline."
+    },
+    {
+      "type": "heading",
+      "text": "Jak funguje nový dvoufázový přístup"
+    },
+    {
+      "type": "paragraph",
+      "text": "Patch rozděluje zpracování textur do dvou odlišných průchodů. Nejprve se pro každou fázi spustí PrepareTextures, který pouze zaznamená metadata obrázku – deskriptory, požadavky na rozvržení a sledování zápisu – do nového pole stage_image_writes, aniž by se dotkl sad deskriptorů. Poté, co jsou všechny fáze připraveny, jediné volání BindTextures zapíše kompletní sadu deskriptorů najednou s využitím nashromážděných informací. To zaručuje, že každá fáze vidí stejný index vazby a rozvržení pro daný obrázek. Funkce Runtime::Transit také získala přetížení, které přijímá explicitní BackingImage, což umožňuje, aby aktualizace subrect cílily na správné podkladové úložiště bez nutnosti dalších FlushBarriers."
+    },
+    {
+      "type": "heading",
+      "text": "Dopad na kompatibilitu a výkon"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hry, které vykreslují do textury v jednom průchodu a vzorkují ji v jiném – což je běžný vzor pro post-processing, stínové mapy nebo deferred shading – by nyní měly dosahovat správných výsledků bez manuálních obezliček. Odstranění příznaku needs_rebind ve prospěch příznaku Registered zjednodušuje stavový automat obrázků a snižuje redundantní přebalování, když jsou obrázky v mezipaměti textur rozšiřovány nebo překrývány. Méně FlushBarriers znamená nižší režii ovladače, což se může projevit plynulejším časováním snímků u titulů náročných na šířku pásma. Autor PR konkrétně požádal o ověření, zda stále funguje checkerboard rendering, což naznačuje, že změna zasahuje cesty škálování rozlišení používané několika hrami z první ruky."
+    },
+    {
+      "type": "heading",
+      "text": "Co ověřit příště"
+    },
+    {
+      "type": "paragraph",
+      "text": "Sloučený požadavek označuje checkerboard rendering jako riziko regrese, takže testeři by měli vyzkoušet tituly, o kterých je známo, že tuto techniku používají – jako například Horizon Zero Dawn nebo God of War – a potvrdit, že upscalovaný výstup zůstává stabilní. Kromě toho je každá hra, která intenzivně využívá render targety napříč compute a grafickými frontami, dobrým zátěžovým testem. Protože je změna omezena na Vulkan backend a mezipaměť textur, žádné jiné backendy nejsou ovlivněny, ale stejná logika stagingu by mohla být v budoucnu přenesena do cest Metal nebo DX12, pokud by vykazovaly podobné chyby v koherenci fází."
+    }
+  ]
+}

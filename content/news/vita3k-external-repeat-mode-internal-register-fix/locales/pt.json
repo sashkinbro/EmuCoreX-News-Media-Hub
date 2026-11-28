@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "pt",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corrige o avanço de registro interno no modo de repetição EXTERNAL",
+  "summary": "Um bug no tradutor de shader fazia com que instruções USSE repetidas no modo EXTERNAL sobrescrevessem o mesmo registro interno, quebrando a iluminação em Silent Hill: Book of Memories e Oddworld: New 'n' Tasty. A correção avança registros internos não-GPI por repetição, igualando o comportamento dos modos INTERNAL e BOTH.",
+  "heroAlt": "Um console portátil PlayStation Vita exibindo sua tela OLED e dois analógicos em um fundo neutro",
+  "searchKeywords": [
+    "Vita3K",
+    "emulador de PlayStation Vita",
+    "tradutor de shader",
+    "instrução USSE",
+    "modo de repetição EXTERNAL",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty",
+    "emulação",
+    "gráficos"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulação",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "Patch e revisão"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "O que estava errado"
+    },
+    {
+      "type": "paragraph",
+      "text": "A função `get_repeat_offset` do tradutor USSE aplicava offsets de registro a operandos FPINTERNAL apenas quando o modo de repetição era INTERNAL ou BOTH. No modo EXTERNAL, o offset permanecia zero, então cada repetição de uma instrução escrevia no mesmo registro interno. Silent Hill: Book of Memories usa uma instrução `VMAD` com modo de repetição EXTERNAL, contagem dois, destino `i1` e fontes `sa32` e depois `sa36`. A instrução `VDP` subsequente (modo BOTH) lê `i1` e `i2` e normaliza `i2`. Como o `VMAD` escreveu em `internals[1]` duas vezes e nunca tocou em `internals[2]`, o vetor de luz enviado ao `VDP` era qualquer dado obsoleto que residisse naquele registro. O resultado era uma geometria de menu de título fragmentada, paredes com ruído e iluminação incorreta em todo o jogo. Oddworld: New 'n' Tasty exibia uma sobrescrita semelhante em um programa de vértice onde um `fma` posterior lia um `i1` obsoleto."
+    },
+    {
+      "type": "heading",
+      "text": "Como a mudança funciona"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção modifica `get_repeat_offset` para que, no modo EXTERNAL, um registro interno não-GPI avance um por repetição, exatamente como faz nos modos INTERNAL e BOTH. Operandos GPI continuam a receber um offset de zero. A lógica agora verifica o modo de repetição primeiro: se for EXTERNAL, a função retorna `repeat_index` para bancos FPINTERNAL e `repeat_index * 4` para outros bancos. Isso corresponde ao comportamento do hardware, onde cada repetição de uma instrução em modo EXTERNAL tem como alvo o próximo registro interno. A constante de versão do cache de shader também foi incrementada de 17 para 18, forçando a recompilação de shaders em cache para que programas anteriormente traduzidos e corrompidos sejam regenerados com a indexação de registro corrigida."
+    },
+    {
+      "type": "heading",
+      "text": "O que afeta os jogadores"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories agora renderiza seu menu de título e a iluminação dentro do jogo corretamente; as malhas não explodem mais em espinhos e as paredes parecem sólidas em vez de ruidosas. A correção foi verificada ao longo de dezesseis quadros em oitenta segundos com o patch de boot-logo que contorna um erro fatal separado. O menu de Oddworld: New 'n' Tasty renderiza de forma idêntica antes e depois, confirmando que o programa de vértice agora lê o valor que o programa calculou em vez de um registro obsoleto. Testes em 1.233 shaders de dezenove jogos mostraram que apenas seis shaders mudaram — cinco de Silent Hill e um de Oddworld —, indicando que a mudança tem um escopo restrito e não introduz regressões em outros lugares."
+    },
+    {
+      "type": "heading",
+      "text": "Verificação e próximos passos"
+    },
+    {
+      "type": "paragraph",
+      "text": "A correção foi validada com capturas do RenderDoc no renderizador Vulkan, que mostraram varyings de vetor de luz NaN ou corrompidos antes da mudança e valores corretos depois. Ambos os renderizadores, todos os modos de mapeamento de memória e um cache de shader limpo foram testados. O tradutor não relata instruções não tratadas no nível de rastreamento. Os usuários devem garantir que estão em uma versão que inclua o aumento da versão do cache (18) para que os shaders antigos em cache sejam descartados; caso contrário, as traduções corrompidas persistirão. Nenhum item de trabalho adicional é mencionado no pull request, mas o padrão sugere monitorar outros títulos que usam o modo de repetição EXTERNAL com destinos internos para problemas semelhantes."
+    }
+  ]
+}

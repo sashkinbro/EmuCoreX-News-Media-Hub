@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "pl",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 poprawia wiązanie tekstur między etapami shaderów",
+  "summary": "Scalony pull request przebudowuje sposób, w jaki backend Vulkan wiąże tekstury, tak aby wszystkie etapy shaderów widziały spójny widok każdego obrazu, eliminując przestarzałe dane i konflikty układów, gdy jeden etap zapisuje, a inny odczytuje ten sam zasób.",
+  "heroAlt": "Zbliżenie na płytę główną PlayStation 4 pokazująca procesor AMD APU i pamięci GDDR5",
+  "searchKeywords": [
+    "shadPS4",
+    "emulator PlayStation 4",
+    "Vulkan",
+    "wiązanie tekstur",
+    "etapy shaderów",
+    "układ obrazu",
+    "subrect"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulacja",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5754",
+    "implementation": "Poprawka i recenzja"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Dlaczego stary model wiązania okazał się niewystarczający"
+    },
+    {
+      "type": "paragraph",
+      "text": "Wcześniej rasterizer wiązał tekstury indywidualnie dla każdego etapu shadera — wierzchołków, fragmentów, obliczeń itd. — wywołując BindTextures wewnątrz pętli per-etapowej. Jeśli późniejszy etap ponownie wiązał ten sam obraz z innym układem lub widokiem, wcześniejszy etap mógł nadal odwoływać się do przestarzałego deskryptora lub niekompatybilnego układu. To niezgodność generowała dwa konkretne problemy: obraz mógł wydawać się przestarzały dla etapu, który został już przetworzony, a konflikty układów pojawiały się, gdy jeden etap zapisywał do obrazu, a kolejny go odczytywał. Obie kwestie objawiają się jako artefakty renderowania lub awarie w grach, które ponownie używają tekstur między etapami potoku."
+    },
+    {
+      "type": "heading",
+      "text": "Jak działa nowe dwuetapowe podejście"
+    },
+    {
+      "type": "paragraph",
+      "text": "Poprawka dzieli obsługę tekstur na dwa odrębne etapy. Najpierw PrepareTextures uruchamia się dla każdego etapu i jedynie rejestruje metadane obrazu — deskryptory, wymagania układu i śledzenie zapisów — w nowej tablicy stage_image_writes, nie dotykając zestawów deskryptorów. Po przygotowaniu wszystkich etapów, pojedyncze wywołanie BindTextures zapisuje kompletny zestaw deskryptorów raz, używając zgromadzonych informacji. To gwarantuje, że każdy etap widzi ten sam indeks wiązania i układ dla danego obrazu. Funkcja Runtime::Transit otrzymała również przeciążenie akceptujące jawny BackingImage, co pozwala odświeżaniom subrect na celowanie we właściwe backing bez dodatkowych FlushBarriers."
+    },
+    {
+      "type": "heading",
+      "text": "Wpływ na kompatybilność i wydajność"
+    },
+    {
+      "type": "paragraph",
+      "text": "Gry, które renderują do tekstury w jednym przejściu, a próbkują ją w innym — powszechny wzorzec dla post-processingu, map cieni lub deferred shading — powinny teraz uzyskiwać poprawne rezultaty bez ręcznych obejść. Usunięcie flagi needs_rebind na rzecz flagi Registered upraszcza maszynę stanów obrazu i zmniejsza zbędne ponowne wiązania, gdy obrazy są rozszerzane lub nakładane w pamięci podręcznej tekstur. Mniej FlushBarriers oznacza mniejsze obciążenie sterownika, co może przekładać się na płynniejsze tempo klatek w grach intensywnie korzystających z przepustowości. Autor PR prosił wprost o weryfikację, czy checkerboard rendering nadal działa, co wskazuje, że zmiana dotyka ścieżek skalowania rozdzielczości używanych przez kilka gier first-party."
+    },
+    {
+      "type": "heading",
+      "text": "Co zweryfikować dalej"
+    },
+    {
+      "type": "paragraph",
+      "text": "Merge request wskazuje checkerboard rendering jako ryzyko regresji, więc testerzy powinni przetestować tytuły znane z używania tej techniki — takie jak Horizon Zero Dawn czy God of War — i potwierdzić, że wyjście przeskalowane pozostaje stabilne. Poza tym, każda gra, która intensywnie ponownie używa celów renderowania między kolejkami obliczeniowymi i graficznymi, jest dobrym przypadkiem stresowym. Ponieważ zmiana jest ograniczona do backendu Vulkan i pamięci podręcznej tekstur, inne backendy nie są dotknięte, ale ta sama logika etapowa mogłaby zostać przeniesiona na ścieżki Metal lub DX12 w przyszłości, jeśli wykażą podobne błędy spójności etapów."
+    }
+  ]
+}

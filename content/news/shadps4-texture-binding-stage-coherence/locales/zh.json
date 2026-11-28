@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "zh",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 改进跨着色器阶段的纹理绑定",
+  "summary": "一个已合并的拉取请求重新设计了 Vulkan 后端绑定纹理的方式，使所有着色器阶段都能看到每个图像的一致视图，消除了当一个阶段写入而另一个阶段读取同一资源时出现的陈旧数据和布局冲突。",
+  "heroAlt": "PlayStation 4 主板特写，展示 AMD APU 和 GDDR5 存储芯片",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 模拟器",
+    "Vulkan",
+    "纹理绑定",
+    "着色器阶段",
+    "图像布局",
+    "子矩形"
+  ],
+  "categoryLabels": {
+    "emulation": "模拟",
+    "graphics": "图形"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 拉取请求 #5754",
+    "implementation": "补丁与审查"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "旧绑定模式为何不足"
+    },
+    {
+      "type": "paragraph",
+      "text": "以前，光栅化器通过在每阶段循环内调用 BindTextures，为每个着色器阶段（顶点、片段、计算等）单独绑定纹理。如果后续阶段以不同的布局或视图重新绑定同一图像，先前的阶段可能继续引用陈旧的描述符或不兼容的布局。这种不匹配导致了两个具体问题：对于已处理的阶段，图像可能显得陈旧；当一个阶段写入图像而后续阶段从中读取时，会出现布局冲突。这两个问题在跨管线阶段重用纹理的游戏中表现为渲染伪影或崩溃。"
+    },
+    {
+      "type": "heading",
+      "text": "新的两遍方法如何工作"
+    },
+    {
+      "type": "paragraph",
+      "text": "该补丁将纹理处理拆分为两个不同的遍。首先，PrepareTextures 为每个阶段运行，仅将图像元数据（描述符、布局要求和写入跟踪）记录到新的 stage_image_writes 数组中，而不接触描述符集。所有阶段准备就绪后，一次 BindTextures 调用即可使用累积的信息完整写入描述符集。这保证了每个阶段对于给定图像看到相同的绑定索引和布局。Runtime::Transit 函数也新增了一个接受显式 BackingImage 的重载，允许子矩形刷新定位到正确的后备图像，而无需额外的 FlushBarriers。"
+    },
+    {
+      "type": "heading",
+      "text": "对兼容性和性能的影响"
+    },
+    {
+      "type": "paragraph",
+      "text": "在一个遍中渲染到纹理并在另一个遍中对其采样的游戏（这是后处理、阴影贴图或延迟着色的常见模式）现在应该能在无需手动变通的情况下获得正确结果。移除 needs_rebind 标志并改用 Registered 标志简化了图像状态机，并减少了图像在纹理缓存中扩展或重叠时的冗余重新绑定。更少的 FlushBarriers 意味着更低的驱动开销，这在带宽密集型标题中可转化为更平滑的帧节奏。PR 作者特别要求验证棋盘渲染仍然有效，表明该变更涉及多个第一方游戏使用的分辨率缩放路径。"
+    },
+    {
+      "type": "heading",
+      "text": "接下来需要验证的内容"
+    },
+    {
+      "type": "paragraph",
+      "text": "合并请求将棋盘渲染标记为回归风险，因此测试人员应运行已知使用该技术的标题（如《地平线：零之曙光》或《战神》），并确认升级后的输出保持稳定。除此之外，任何在计算队列和图形队列间大量重用渲染目标的游戏都是很好的压力测试用例。由于该变更仅限于 Vulkan 后端和纹理缓存，其他后端不受影响，但如果 Metal 或 DX12 路径出现类似的阶段一致性错误，未来可将相同的暂存逻辑移植过去。"
+    }
+  ]
+}

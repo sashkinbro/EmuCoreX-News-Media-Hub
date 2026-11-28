@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "es",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 mejora la vinculación de texturas entre etapas de sombreado",
+  "summary": "Una solicitud de extracción (pull request) fusionada rediseña la forma en que el backend de Vulkan vincula las texturas para que todas las etapas de sombreado vean una representación consistente de cada imagen, eliminando datos obsoletos y conflictos de diseño cuando una etapa escribe y otra lee el mismo recurso.",
+  "heroAlt": "Primer plano de una placa base de PlayStation 4 que muestra la APU de AMD y los chips de memoria GDDR5",
+  "searchKeywords": [
+    "shadPS4",
+    "emulador de PlayStation 4",
+    "PlayStation 4 emulator",
+    "Vulkan",
+    "vinculación de texturas",
+    "texture binding",
+    "etapas de sombreado",
+    "shader stages",
+    "diseño de imagen",
+    "image layout"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulación",
+    "graphics": "Gráficos"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5754",
+    "implementation": "Parche y revisión"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Por qué el antiguo modelo de vinculación se quedaba corto"
+    },
+    {
+      "type": "paragraph",
+      "text": "Anteriormente, el rasterizador vinculaba las texturas individualmente para cada etapa de sombreado (vértice, fragmento, cómputo, etc.) llamando a BindTextures dentro del bucle de cada etapa. Si una etapa posterior volvía a vincular la misma imagen con un diseño o vista diferente, la etapa anterior podía seguir haciendo referencia a un descriptor obsoleto o a un diseño incompatible. Esa discrepancia producía dos problemas concretos: una imagen podía parecer obsoleta para una etapa que ya había sido procesada, y surgían conflictos de diseño cuando una etapa escribía en una imagen mientras una etapa posterior la leía. Ambos problemas se manifiestan como artefactos de renderizado o bloqueos en juegos que reutilizan texturas entre etapas de la tubería (pipeline)."
+    },
+    {
+      "type": "heading",
+      "text": "Cómo funciona el nuevo enfoque de dos pasadas"
+    },
+    {
+      "type": "paragraph",
+      "text": "El parche divide el manejo de texturas en dos pasadas distintas. Primero, PrepareTextures se ejecuta para cada etapa y simplemente registra los metadatos de la imagen (descriptores, requisitos de diseño y seguimiento de escritura) en una nueva matriz stage_image_writes sin tocar los conjuntos de descriptores. Después de preparar todas las etapas, una única llamada a BindTextures escribe el conjunto completo de descriptores una vez, utilizando la información acumulada. Esto garantiza que cada etapa vea el mismo índice de vinculación y diseño para una imagen determinada. La función Runtime::Transit también obtuvo una sobrecarga que acepta un BackingImage explícito, lo que permite que las actualizaciones de subrect apunten al respaldo correcto sin necesidad de FlushBarriers adicionales."
+    },
+    {
+      "type": "heading",
+      "text": "Impacto en la compatibilidad y el rendimiento"
+    },
+    {
+      "type": "paragraph",
+      "text": "Los juegos que renderizan en una textura en una pasada y la muestrean en otra (un patrón común para post-procesamiento, mapas de sombras o sombreado diferido) deberían mostrar ahora resultados correctos sin soluciones manuales. La eliminación del indicador needs_rebind en favor de un indicador Registered simplifica la máquina de estados de la imagen y reduce las revinculaciones redundantes cuando las imágenes se expanden o superponen en la caché de texturas. Menos FlushBarriers significan menos sobrecarga del controlador, lo que puede traducirse en una cadencia de fotogramas más fluida en títulos con gran uso de ancho de banda. El autor del PR solicitó específicamente verificar que el renderizado de tablero de ajedrez (checkerboard rendering) siga funcionando, lo que indica que el cambio afecta a las rutas de escalado de resolución utilizadas por varios juegos propios (first-party)."
+    },
+    {
+      "type": "heading",
+      "text": "Qué verificar a continuación"
+    },
+    {
+      "type": "paragraph",
+      "text": "La solicitud de fusión señala el renderizado de tablero de ajedrez como un riesgo de regresión, por lo que los evaluadores deben probar títulos conocidos por usar esa técnica, como Horizon Zero Dawn o God of War, y confirmar que la salida escalada se mantiene estable. Más allá de eso, cualquier juego que reutilice intensamente objetivos de renderizado (render targets) entre colas de cómputo y gráficos es un buen caso de prueba de estrés. Debido a que el cambio se limita al backend de Vulkan y a la caché de texturas, ningún otro backend se ve afectado, pero la misma lógica de almacenamiento provisional podría trasladarse a las rutas de Metal o DX12 en el futuro si presentan errores de coherencia de etapa similares."
+    }
+  ]
+}

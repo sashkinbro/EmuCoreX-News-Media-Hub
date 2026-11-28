@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "de",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 verbessert Texturbindung über Shader-Stufen hinweg",
+  "summary": "Ein zusammengeführter Pull Request überarbeitet die Art und Weise, wie das Vulkan-Backend Texturen bindet, sodass alle Shader-Stufen eine konsistente Sicht auf jedes Bild erhalten. Dies eliminiert veraltete Daten und Layout-Konflikte, wenn eine Stufe in eine Ressource schreibt und eine andere sie liest.",
+  "heroAlt": "Nahaufnahme eines PlayStation 4-Mainboards mit der AMD APU und GDDR5-Speicherchips",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "PlayStation 4-Emulator",
+    "Vulkan",
+    "texture binding",
+    "Texturbindung",
+    "shader stages",
+    "Shader-Stufen",
+    "image layout",
+    "Bild-Layout"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Grafik"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 Pull Request #5754",
+    "implementation": "Patch und Review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Warum das alte Bindungsmodell nicht ausreichte"
+    },
+    {
+      "type": "paragraph",
+      "text": "Zuvor band der Rasterizer Texturen individuell für jede Shader-Stufe – Vertex, Fragment, Compute usw. – durch den Aufruf von BindTextures innerhalb der stufenspezifischen Schleife. Wenn eine spätere Stufe dasselbe Bild mit einem anderen Layout oder einer anderen Ansicht neu band, konnte die frühere Stufe weiterhin auf einen veralteten Deskriptor oder ein inkompatibles Layout verweisen. Diese Diskrepanz führte zu zwei konkreten Problemen: Ein Bild konnte für eine bereits verarbeitete Stufe veraltet erscheinen, und es entstanden Layout-Konflikte, wenn eine Stufe in ein Bild schrieb, während eine nachfolgende Stufe daraus las. Beide Probleme äußern sich als Rendering-Artefakte oder Abstürze in Spielen, die Texturen über Pipeline-Stufen hinweg wiederverwenden."
+    },
+    {
+      "type": "heading",
+      "text": "Wie der neue Zwei-Pass-Ansatz funktioniert"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Patch unterteilt die Texturverarbeitung in zwei separate Durchläufe. Zuerst läuft PrepareTextures für jede Stufe und zeichnet lediglich die Bild-Metadaten – Deskriptoren, Layout-Anforderungen und Schreib-Tracking – in einem neuen stage_image_writes-Array auf, ohne die Deskriptor-Sets zu berühren. Nachdem alle Stufen vorbereitet wurden, schreibt ein einziger BindTextures-Aufruf das vollständige Deskriptor-Set einmalig unter Verwendung der gesammelten Informationen. Dies garantiert, dass jede Stufe für ein gegebenes Bild denselben Bindungsindex und dasselbe Layout sieht. Die Runtime::Transit-Funktion erhielt zudem eine Überladung, die ein explizites BackingImage akzeptiert, wodurch Subrect-Aktualisierungen das korrekte Backing ohne zusätzliche FlushBarriers ansteuern können."
+    },
+    {
+      "type": "heading",
+      "text": "Auswirkungen auf Kompatibilität und Performance"
+    },
+    {
+      "type": "paragraph",
+      "text": "Spiele, die in einem Durchlauf in eine Textur rendern und sie in einem anderen abtasten – ein gängiges Muster für Post-Processing, Shadow Maps oder Deferred Shading – sollten nun korrekte Ergebnisse ohne manuelle Workarounds liefern. Die Entfernung des needs_rebind-Flags zugunsten eines Registered-Flags vereinfacht die Bild-Zustandsmaschine und reduziert redundante Neubindungen, wenn Bilder im Textur-Cache erweitert oder überlappt werden. Weniger FlushBarriers bedeuten einen geringeren Treiber-Overhead, was sich in bandbreitenintensiven Titeln in einer gleichmäßigeren Framerate niederschlagen kann. Der Autor des PR bat ausdrücklich um die Überprüfung, ob Checkerboard-Rendering weiterhin funktioniert, was darauf hindeutet, dass die Änderung Auflösungsskalierungspfade betrifft, die von mehreren First-Party-Spielen verwendet werden."
+    },
+    {
+      "type": "heading",
+      "text": "Was als Nächstes zu prüfen ist"
+    },
+    {
+      "type": "paragraph",
+      "text": "Der Merge Request nennt Checkerboard-Rendering als Regressionsrisiko, daher sollten Tester Titel ausprobieren, die bekanntermaßen diese Technik verwenden – wie Horizon Zero Dawn oder God of War – und bestätigen, dass die hochskalierte Ausgabe stabil bleibt. Darüber hinaus ist jedes Spiel, das Render-Targets intensiv über Compute- und Grafik-Queues hinweg wiederverwendet, ein guter Stresstest. Da die Änderung auf das Vulkan-Backend und den Textur-Cache beschränkt ist, sind keine anderen Backends betroffen, aber die gleiche Staging-Logik könnte in Zukunft auf die Metal- oder DX12-Pfade portiert werden, falls diese ähnliche Stufen-Kohärenzfehler aufweisen."
+    }
+  ]
+}

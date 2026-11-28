@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "it",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K corregge l'avanzamento del registro interno nella modalità di ripetizione EXTERNAL",
+  "summary": "Un bug del traduttore di shader causava la sovrascrittura dello stesso registro interno da parte di istruzioni USSE ripetute in modalità EXTERNAL, compromettendo l'illuminazione in Silent Hill: Book of Memories e Oddworld: New 'n' Tasty. La correzione fa avanzare i registri interni non-GPI a ogni ripetizione, uniformandosi al comportamento delle modalità INTERNAL e BOTH.",
+  "heroAlt": "Una console portatile PlayStation Vita che mostra il suo schermo OLED e i due stick analogici su uno sfondo neutro",
+  "searchKeywords": [
+    "Vita3K",
+    "emulatore PlayStation Vita",
+    "traduttore shader",
+    "istruzione USSE",
+    "modalità di ripetizione EXTERNAL",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty",
+    "emulazione",
+    "grafica"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulazione",
+    "graphics": "Grafica"
+  },
+  "sourceLabels": {
+    "change": "Pull request Vita3K #4207",
+    "implementation": "Patch e revisione"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Cosa non funzionava"
+    },
+    {
+      "type": "paragraph",
+      "text": "La funzione `get_repeat_offset` del traduttore USSE applicava gli offset di registro agli operandi FPINTERNAL solo quando la modalità di ripetizione era INTERNAL o BOTH. In modalità EXTERNAL l'offset rimaneva zero, quindi ogni ripetizione di un'istruzione scriveva nello stesso registro interno. Silent Hill: Book of Memories utilizza un'istruzione `VMAD` con modalità di ripetizione EXTERNAL, conteggio due, destinazione `i1` e sorgenti `sa32` poi `sa36`. La successiva istruzione `VDP` (modalità BOTH) legge `i1` e `i2` e normalizza `i2`. Poiché la `VMAD` ha scritto `internals[1]` due volte senza mai toccare `internals[2]`, il vettore luminoso fornito a `VDP` era costituito da dati obsoleti presenti in quel registro. Il risultato era una geometria del menu principale frammentata, pareti disturbate e un'illuminazione errata in tutto il gioco. Oddworld: New 'n' Tasty mostrava una sovrascrittura simile in un vertex program in cui una successiva `fma` leggeva una `i1` obsoleta."
+    },
+    {
+      "type": "heading",
+      "text": "Come funziona la modifica"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione modifica `get_repeat_offset` in modo che, in modalità EXTERNAL, un registro interno non-GPI avanzi di uno per ogni ripetizione, esattamente come avviene nelle modalità INTERNAL e BOTH. Gli operandi GPI continuano a ricevere un offset pari a zero. La logica ora controlla prima la modalità di ripetizione: se è EXTERNAL, la funzione restituisce `repeat_index` per i banchi FPINTERNAL e `repeat_index * 4` per gli altri banchi. Questo corrisponde al comportamento dell'hardware in cui ogni ripetizione di un'istruzione in modalità EXTERNAL punta al registro interno successivo. Anche la costante di versione della cache degli shader è stata incrementata da 17 a 18, forzando la ricompilazione degli shader memorizzati nella cache in modo che i programmi precedentemente tradotti e difettosi vengano rigenerati con l'indicizzazione dei registri corretta."
+    },
+    {
+      "type": "heading",
+      "text": "Cosa comporta per i giocatori"
+    },
+    {
+      "type": "paragraph",
+      "text": "Silent Hill: Book of Memories ora renderizza correttamente il menu principale e l'illuminazione in-game; le mesh non esplodono più in punte e le pareti appaiono solide invece che disturbate. La correzione è stata verificata su sedici frame nell'arco di ottanta secondi con la patch per il boot-logo che aggira un errore fatale separato. Il menu di Oddworld: New 'n' Tasty viene renderizzato in modo identico prima e dopo, confermando che il vertex program ora legge il valore calcolato dal programma anziché un registro obsoleto. I test su 1.233 shader provenienti da diciannove giochi hanno mostrato che solo sei shader sono stati modificati — cinque di Silent Hill e uno di Oddworld — indicando che la modifica ha un ambito limitato e non introduce regressioni altrove."
+    },
+    {
+      "type": "heading",
+      "text": "Verifica e passaggi successivi"
+    },
+    {
+      "type": "paragraph",
+      "text": "La correzione è stata convalidata con acquisizioni RenderDoc sul renderer Vulkan, che hanno mostrato variazioni del vettore luminoso NaN o corrotte prima della modifica e valori corretti dopo. Sono stati testati entrambi i renderer, tutte le modalità di mappatura della memoria e una cache degli shader pulita. Il traduttore non segnala istruzioni non gestite a livello di traccia. Gli utenti dovrebbero assicurarsi di utilizzare una build che includa l'incremento della versione della cache (18) in modo che i vecchi shader memorizzati nella cache vengano scartati; in caso contrario, le traduzioni errate persisteranno. Non sono menzionati ulteriori interventi nella pull request, ma il modello suggerisce di monitorare altri titoli che utilizzano la modalità di ripetizione EXTERNAL con destinazioni interne per problemi simili."
+    }
+  ]
+}

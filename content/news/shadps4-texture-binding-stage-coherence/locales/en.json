@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "en",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4 Improves Texture Binding Across Shader Stages",
+  "summary": "A merged pull request reworks how the Vulkan backend binds textures so that all shader stages see a consistent view of each image, eliminating stale data and layout conflicts when one stage writes and another reads the same resource.",
+  "heroAlt": "Close-up of a PlayStation 4 motherboard showing the AMD APU and GDDR5 memory chips",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emulator",
+    "Vulkan",
+    "texture binding",
+    "shader stages",
+    "image layout",
+    "subrect"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulation",
+    "graphics": "Graphics"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5754",
+    "implementation": "Patch and review"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Why the old binding model fell short"
+    },
+    {
+      "type": "paragraph",
+      "text": "Previously the rasterizer bound textures individually for each shader stage — vertex, fragment, compute, and so on — by calling BindTextures inside the per-stage loop. If a later stage rebound the same image with a different layout or view, the earlier stage could continue referencing a stale descriptor or an incompatible layout. That mismatch produced two concrete problems: an image could appear stale for a stage that had already been processed, and layout conflicts arose when one stage wrote to an image while a subsequent stage read from it. Both issues manifest as rendering artifacts or crashes in games that reuse textures across pipeline stages."
+    },
+    {
+      "type": "heading",
+      "text": "How the new two-pass approach works"
+    },
+    {
+      "type": "paragraph",
+      "text": "The patch splits texture handling into two distinct passes. First, PrepareTextures runs for every stage and merely records the image metadata — descriptors, layout requirements, and write tracking — into a new stage_image_writes array without touching the descriptor sets. After all stages have been prepared, a single BindTextures call writes the complete descriptor set once, using the accumulated information. This guarantees that every stage sees the same binding index and layout for a given image. The Runtime::Transit function also gained an overload that accepts an explicit BackingImage, allowing subrect refreshes to target the correct backing without extra FlushBarriers."
+    },
+    {
+      "type": "heading",
+      "text": "Impact on compatibility and performance"
+    },
+    {
+      "type": "paragraph",
+      "text": "Games that render to a texture in one pass and sample it in another — a common pattern for post-processing, shadow maps, or deferred shading — should now see correct results without manual workarounds. The removal of the needs_rebind flag in favor of a Registered flag simplifies the image state machine and reduces redundant rebinds when images are expanded or overlapped in the texture cache. Fewer FlushBarriers mean less driver overhead, which can translate to smoother frame pacing in bandwidth-heavy titles. The PR author specifically asked for verification that checkerboard rendering still works, indicating the change touches resolution-scaling paths used by several first-party games."
+    },
+    {
+      "type": "heading",
+      "text": "What to verify next"
+    },
+    {
+      "type": "paragraph",
+      "text": "The merge request calls out checkerboard rendering as a regression risk, so testers should exercise titles known to use that technique — such as Horizon Zero Dawn or God of War — and confirm that the upscaled output remains stable. Beyond that, any game that heavily reuses render targets across compute and graphics queues is a good stress case. Because the change is confined to the Vulkan backend and the texture cache, no other backends are affected, but the same staging logic could be ported to the Metal or DX12 paths in the future if they exhibit similar stage-coherence bugs."
+    }
+  ]
+}

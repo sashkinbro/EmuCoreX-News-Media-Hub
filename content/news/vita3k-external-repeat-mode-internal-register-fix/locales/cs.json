@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "vita3k-external-repeat-mode-internal-register-fix",
+  "locale": "cs",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "Vita3K opravuje posun interních registrů v režimu opakování EXTERNAL",
+  "summary": "Chyba v překladači shaderů způsobovala, že opakované instrukce USSE v režimu EXTERNAL přepisovaly stejný interní registr, což narušovalo osvětlení ve hrách Silent Hill: Book of Memories a Oddworld: New 'n' Tasty. Oprava zajišťuje posun interních registrů (mimo GPI) při každém opakování, čímž odpovídá chování v režimech INTERNAL a BOTH.",
+  "heroAlt": "Ruční konzole PlayStation Vita zobrazující svou OLED obrazovku a duální analogové páčky na neutrálním pozadí",
+  "searchKeywords": [
+    "Vita3K",
+    "emulátor PlayStation Vita",
+    "překladač shaderů",
+    "instrukce USSE",
+    "režim opakování EXTERNAL",
+    "Silent Hill Book of Memories",
+    "Oddworld New n Tasty"
+  ],
+  "categoryLabels": {
+    "emulation": "Emulace",
+    "graphics": "Grafika"
+  },
+  "sourceLabels": {
+    "change": "Vita3K pull request #4207",
+    "implementation": "Oprava a revize"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "V čem byl problém"
+    },
+    {
+      "type": "paragraph",
+      "text": "Funkce `get_repeat_offset` v překladači USSE aplikovala posuny registrů na operandy FPINTERNAL pouze v případě, že režim opakování byl INTERNAL nebo BOTH. V režimu EXTERNAL zůstal posun nulový, takže každé opakování instrukce zapisovalo do stejného interního registru. Hra Silent Hill: Book of Memories používá instrukci `VMAD` s režimem opakování EXTERNAL, počtem dva, cílem `i1` a zdroji `sa32` a následně `sa36`. Následující instrukce `VDP` (režim BOTH) čte `i1` a `i2` a normalizuje `i2`. Protože `VMAD` zapsal do `internals[1]` dvakrát a nikdy se nedotkl `internals[2]`, vektor světla předaný do `VDP` byl tvořen zastaralými daty, která v daném registru zbyla. Výsledkem byla roztříštěná geometrie úvodní nabídky, zašuměné stěny a nesprávné osvětlení v celé hře. Hra Oddworld: New 'n' Tasty vykazovala podobné přepisování ve vertex programu, kde pozdější `fma` četlo zastaralé `i1`."
+    },
+    {
+      "type": "heading",
+      "text": "Jak změna funguje"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava upravuje `get_repeat_offset` tak, aby se v režimu EXTERNAL interní registr (mimo GPI) posunul o jedna při každém opakování, přesně tak, jak je tomu v režimech INTERNAL a BOTH. Operandy GPI nadále dostávají posun nula. Logika nyní nejprve kontroluje režim opakování: pokud je EXTERNAL, funkce vrací `repeat_index` pro banky FPINTERNAL a `repeat_index * 4` pro ostatní banky. To odpovídá chování hardwaru, kde každé opakování instrukce v režimu EXTERNAL cílí na následující interní registr. Konstanta verze mezipaměti shaderů byla rovněž zvýšena ze 17 na 18, což vynucuje rekompilaci uložených shaderů, aby byly dříve chybně přeložené programy znovu vygenerovány se správným indexováním registrů."
+    },
+    {
+      "type": "heading",
+      "text": "Co to znamená pro hráče"
+    },
+    {
+      "type": "paragraph",
+      "text": "Hra Silent Hill: Book of Memories nyní správně vykresluje svou úvodní nabídku i osvětlení ve hře; sítě (meshes) se již nerozpadají na špičaté artefakty a stěny vypadají celistvě namísto zašuměných. Oprava byla ověřena během šestnácti snímků v průběhu osmdesáti sekund s použitím patche pro úvodní logo, který obchází samostatnou kritickou chybu. Nabídka hry Oddworld: New 'n' Tasty se vykresluje identicky před opravou i po ní, což potvrzuje, že vertex program nyní čte hodnotu, kterou program vypočítal, namísto zastaralého registru. Testování napříč 1 233 shadery z devatenácti her ukázalo, že se změnilo pouze šest shaderů – pět ze Silent Hill a jeden z Oddworld – což naznačuje, že změna je úzce zaměřená a nezpůsobuje regrese jinde."
+    },
+    {
+      "type": "heading",
+      "text": "Ověření a další kroky"
+    },
+    {
+      "type": "paragraph",
+      "text": "Oprava byla validována pomocí záznamů RenderDoc na rendereru Vulkan, které před změnou vykazovaly hodnoty NaN nebo chybná data vektorů světla a po změně hodnoty správné. Byly testovány oba renderery, všechny režimy mapování paměti a čistá mezipaměť shaderů. Překladač nehlásí žádné neobsloužené instrukce na úrovni trasování. Uživatelé by se měli ujistit, že používají sestavení, které obsahuje zvýšení verze mezipaměti (18), aby byly staré uložené shadery zahozeny; v opačném případě budou chybné překlady přetrvávat. V pull requestu nejsou zmíněny žádné další úkoly, ale vzorec naznačuje potřebu sledovat další tituly, které používají režim opakování EXTERNAL s interními cíli, kvůli podobným problémům."
+    }
+  ]
+}

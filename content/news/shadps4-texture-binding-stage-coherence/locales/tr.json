@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "shadps4-texture-binding-stage-coherence",
+  "locale": "tr",
+  "basedOnVersion": 1,
+  "localeVersion": 1,
+  "status": "reviewed",
+  "author": "EmuCore - Hub",
+  "title": "shadPS4, Shader Aşamaları Arasında Doku Bağlamayı İyileştiriyor",
+  "summary": "Birleştirilen bir pull request, Vulkan arka ucunun dokuları nasıl bağladığını yeniden düzenleyerek tüm shader aşamalarının her görüntü için tutarlı bir görünüm görmesini sağlıyor, bir aşama yazarken diğeri aynı kaynağı okuduğunda eski verileri ve düzen çakışmalarını ortadan kaldırıyor.",
+  "heroAlt": "AMD APU ve GDDR5 bellek çiplerini gösteren bir PlayStation 4 anakartının yakın çekimi",
+  "searchKeywords": [
+    "shadPS4",
+    "PlayStation 4 emülatörü",
+    "Vulkan",
+    "doku bağlama",
+    "shader aşamaları",
+    "görüntü düzeni",
+    "subrect"
+  ],
+  "categoryLabels": {
+    "emulation": "Emülasyon",
+    "graphics": "Grafikler"
+  },
+  "sourceLabels": {
+    "change": "shadPS4 pull request #5754",
+    "implementation": "Yama ve inceleme"
+  },
+  "blocks": [
+    {
+      "type": "heading",
+      "text": "Eski bağlama modeli neden yetersiz kaldı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Önceden rasterizatör, her shader aşaması için — vertex, fragment, compute vb. — BindTextures'ı aşama başına döngü içinde çağırarak dokuları ayrı ayrı bağlıyordu. Eğer daha sonraki bir aşama aynı görüntüyü farklı bir düzen veya görünümle yeniden bağlarsa, önceki aşama eski bir tanımlayıcıyı veya uyumsuz bir düzeni referans almaya devam edebiliyordu. Bu uyumsuzluk iki somut sorun yaratıyordu: bir görüntü, zaten işlenmiş bir aşama için eski görünüyordu ve bir aşama bir görüntüye yazarken sonraki bir aşama ondan okuduğunda düzen çakışmaları ortaya çıkıyordu. Her iki sorun da dokuları işlem hattı aşamaları arasında yeniden kullanan oyunlarda render artefaktlarına veya çökmelere yol açıyordu."
+    },
+    {
+      "type": "heading",
+      "text": "Yeni iki aşamalı yaklaşım nasıl çalışır"
+    },
+    {
+      "type": "paragraph",
+      "text": "Yama, doku işlemeyi iki farklı aşamaya bölüyor. İlk olarak, PrepareTextures her aşama için çalışır ve sadece görüntü meta verilerini — tanımlayıcılar, düzen gereksinimleri ve yazma takibi — yeni stage_image_writes dizisine kaydeder, tanımlayıcı kümelerine dokunmadan. Tüm aşamalar hazırlandıktan sonra, tek bir BindTextures çağrısı biriktirilen bilgileri kullanarak tam tanımlayıcı kümesini bir kez yazar. Bu, her aşamanın verilen bir görüntü için aynı bağlama indeksini ve düzeni görmesini garanti eder. Runtime::Transit fonksiyonu ayrıca açıkça bir BackingImage kabul eden bir aşırı yükleme kazandı, bu da subrect yenilemelerinin ekstra FlushBarriers olmadan doğru backing'i hedeflemesine olanak tanır."
+    },
+    {
+      "type": "heading",
+      "text": "Uyumluluk ve performans üzerindeki etkisi"
+    },
+    {
+      "type": "paragraph",
+      "text": "Bir geçişte bir dokuya render edip başka bir geçişte ondan örnekleyen oyunlar — post-processing, gölge haritaları veya ertelenmiş gölgelendirme için yaygın bir desen — artık manuel geçici çözümler olmadan doğru sonuçları görmeli. needs_rebind bayrağının Registered bayrağıyla değiştirilmesi, görüntü durum makinesini basitleştiriyor ve görüntüler doku önbelleğinde genişletildiğinde veya örtüştüğünde gereksiz yeniden bağlamaları azaltıyor. Daha az FlushBarriers, daha az sürücü yükü demektir ve bu da bant genişliği yoğun başlıklarda daha pürüzsüz kare temposuna yol açabilir. PR yazarı özellikle checkerboard render'ın hala çalıştığının doğrulanmasını istedi, bu da değişikliğin birkaç first-party oyunu tarafından kullanılan çözünürlük ölçekleme yollarına dokunduğunu gösteriyor."
+    },
+    {
+      "type": "heading",
+      "text": "Sonra ne doğrulanmalı"
+    },
+    {
+      "type": "paragraph",
+      "text": "Birleştirme isteği, checkerboard render'ı bir regresyon riski olarak işaret ediyor, bu yüzden testçiler bu tekniği kullanan bilinen başlıkları — Horizon Zero Dawn veya God of War gibi — test etmeli ve yukarı ölçeklenmiş çıktının kararlı kaldığını onaylamalı. Bunun ötesinde, render hedeflerini compute ve grafik kuyrukları arasında yoğun bir şekilde yeniden kullanan herhangi bir oyun iyi bir stres testi olacaktır. Değişiklik Vulkan arka ucu ve doku önbelleğiyle sınırlı olduğu için, diğer arka uçlar etkilenmez, ancak Metal veya DX12 yolları benzer aşama tutarlılığı hataları sergilerse aynı aşama mantığı gelecekte onlara da aktarılabilir."
+    }
+  ]
+}
